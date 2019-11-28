@@ -11,6 +11,7 @@
 #include "sv.hpp"
 
 namespace bitcoin {
+    bytes contract(const output&, const transaction&, index);
     
     // create a valid signature for a transaction. 
     signature sign(output out, transaction tx, index x, secret key) {
