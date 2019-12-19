@@ -1,8 +1,8 @@
 // Copyright (c) 2019 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#ifndef BITCOIN_TYPES
-#define BITCOIN_TYPES
+#ifndef GIGAMONKEY_TYPES
+#define GIGAMONKEY_TYPES
 
 #include <string>
 #include <string_view>
@@ -25,6 +25,8 @@ inline bool implies(bool a, bool b) {
 }
 
 namespace gigamonkey {
+    
+    using namespace data::exported;
     
     const boost::endian::order big_endian = boost::endian::order::big;
     const boost::endian::order little_endian = boost::endian::order::little;

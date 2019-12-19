@@ -1,8 +1,8 @@
 // Copyright (c) 2019 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#ifndef BITCOIN_ADDRESS
-#define BITCOIN_ADDRESS
+#ifndef GIGAMONKEY_ADDRESS
+#define GIGAMONKEY_ADDRESS
 
 #include "hash.hpp"
 #include "secp256k1.hpp"

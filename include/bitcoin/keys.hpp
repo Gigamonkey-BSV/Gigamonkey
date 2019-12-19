@@ -1,8 +1,8 @@
 // Copyright (c) 2019 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#ifndef BITCOIN_KEYS
-#define BITCOIN_KEYS
+#ifndef GIGAMONKEY_KEYS
+#define GIGAMONKEY_KEYS
 
 #include "secp256k1.hpp"
 

@@ -1,8 +1,8 @@
 // Copyright (c) 2019 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#ifndef BITCOIN_TXID
-#define BITCOIN_TXID
+#ifndef GIGAMONKEY_TXID
+#define GIGAMONKEY_TXID
 
 #include "hash.hpp"
 

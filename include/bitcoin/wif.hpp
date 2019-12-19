@@ -1,8 +1,8 @@
 // Copyright (c) 2019 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#ifndef BITCOIN_WIF
-#define BITCOIN_WIF
+#ifndef GIGAMONKEY_WIF
+#define GIGAMONKEY_WIF
 
 #include "keys.hpp"
 
