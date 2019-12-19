@@ -1,8 +1,8 @@
 // Copyright (c) 2019 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#ifndef BITCOIN_BITCOIN
-#define BITCOIN_BITCOIN
+#ifndef BITCOIN_TRANSACTION
+#define BITCOIN_TRANSACTION
 
 #include "keys.hpp"
 

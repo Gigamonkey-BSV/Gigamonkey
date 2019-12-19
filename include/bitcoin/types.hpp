@@ -12,7 +12,7 @@
 
 #include <boost/endian/arithmetic.hpp>
 
-#include <data/math/number/bounded.hpp>
+#include <data/math/number/bounded/bounded.hpp>
 
 #include <data/math/number/bytes/N.hpp>
 #include <data/math/number/bytes/Z.hpp>
@@ -30,10 +30,10 @@ namespace gigamonkey {
     const boost::endian::order little_endian = boost::endian::order::little;
     
     using byte = std::uint8_t;
-    using index = boost::endian::little_uint32_t;
+    using uint32_little = boost::endian::little_uint32_t;
+    using index = uint32_little;
     using uint24 = boost::endian::little_uint24_t;
     using satoshi = boost::endian::little_uint64_t;
-    using nonce = boost::endian::little_int64_t;
     
     using checksum = boost::endian::big_uint32_t;
     
@@ -47,10 +47,10 @@ namespace gigamonkey {
     using string_view = std::string_view;
     
     template <size_t size, boost::endian::order o> 
-    using uint = data::math::number::uint<size, o>; 
+    using uint = math::number::bounded<std::array<byte, size>, size, o, false>; 
     
     template <size_t size, boost::endian::order o> 
-    using integer = data::math::number::integer<size, o>;
+    using integer = math::number::bounded<std::array<byte, size>, size, o, true>;
     
     using N_bytes = data::math::number::N_bytes<little_endian>;
     using Z_bytes = data::math::number::Z_bytes<little_endian>;
@@ -63,13 +63,18 @@ namespace gigamonkey {
     using writer = data::writer<byte*>;
     using reader = data::writer<byte*>;
     
+    template <typename ... P>
+    inline bytes write(uint32 size, P... p) {
+        return data::stream::write_bytes(size, p...);
+    }
+    
     namespace bitcoin {
         
         template <typename size>
         using uint = gigamonkey::uint<size, little_endian>; 
         
         template <typename size>
-        using integer = gigamonkey::integer<size, big_endian>;
+        using integer = gigamonkey::integer<size, little_endian>;
         
     }
     

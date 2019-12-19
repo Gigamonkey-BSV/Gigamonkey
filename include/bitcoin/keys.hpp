@@ -37,7 +37,7 @@ namespace gigamonkey::bitcoin {
     };
     
     inline signature attach_sig_hash_type(const signature& s, uint32 sig_hash_type) {
-        return writer{s.size() + 4} << s << sig_hash_type;
+        return write(s.size() + 4, s, sig_hash_type)
     }
     
     inline signature sign(const secret& s, uint32 sig_hash_type, const digest_b<32>& b) {
