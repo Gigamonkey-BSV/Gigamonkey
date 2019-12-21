@@ -8,9 +8,9 @@
 
 namespace gigamonkey::bitcoin {
     
-    using txid = digest<32>;
+    using txid = gigamonkey::digest<32, little_endian>;
     
-    txid id(bytes_view b) {
+    inline txid id(bytes_view b) {
         return hash256(b);
     }
     

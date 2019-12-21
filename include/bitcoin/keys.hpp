@@ -5,6 +5,7 @@
 #define GIGAMONKEY_KEYS
 
 #include "secp256k1.hpp"
+#include "signature.hpp"
 
 namespace gigamonkey::bitcoin {
     
@@ -20,7 +21,7 @@ namespace gigamonkey::bitcoin {
         }
         
         signature sign(bytes_view message) const {
-            return secp256k1::sign(Value, signature_hash(message));
+            return bitcoin::sign(Value, signature_hash(message), Value);
         }
         
         secret operator-() const {
@@ -36,19 +37,11 @@ namespace gigamonkey::bitcoin {
         }
     };
     
-    inline signature attach_sig_hash_type(const signature& s, uint32 sig_hash_type) {
-        return write(s.size() + 4, s, sig_hash_type)
-    }
-    
-    inline signature sign(const secret& s, uint32 sig_hash_type, const digest_b<32>& b) {
-        return apply_sig_hash_type(secp256k1::sign(s, b), sig_hash_type);
-    }
-    
     struct pubkey {
-        secp256k1::pubkey Value;
+        secp256k1::pubkey_compressed Value;
         
         pubkey() : Value{} {}
-        pubkey(const secp256k1::pubkey& p) : Value{p} {}
+        pubkey(const secp256k1::pubkey_compressed& p) : Value{p} {}
         explicit pubkey(const string&);
         
         bool valid() const {
@@ -106,5 +99,4 @@ inline std::ostream& operator<<(std::ostream& o, const gigamonkey::bitcoin::pubk
 }
 
 #endif
-
 

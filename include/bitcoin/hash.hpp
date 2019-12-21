@@ -11,8 +11,8 @@ namespace gigamonkey {
     namespace sha256 {
         const size_t size = 32;
         
-        bool hash(uint<size, little_endian>&, bytes_view);
-        bool hash(uint<size, big_endian>&, bytes_view);
+        void hash(uint<size, little_endian>&, bytes_view);
+        void hash(uint<size, big_endian>&, bytes_view);
     }
 
     namespace ripemd160 {
@@ -23,10 +23,14 @@ namespace gigamonkey {
     }
     
     template <size_t size, boost::endian::order o> struct digest {
+        constexpr static endian opposite = gigamonkey::opposite_endian(o);
+        
         uint<size, o> Digest; 
         
         digest() : Digest{} {}
-        digest(uint<size, o> u) : Digest{u} {}
+        digest(const uint<size, o>& u) : Digest{u} {}
+        digest(const uint<size, opposite>& u) : Digest{u} {}
+        digest(const digest<size, opposite>& d) : Digest{d.Digest} {}
         
         operator bytes_view() const {
             return bytes_view{Digest.Array.data(), size};
@@ -65,18 +69,17 @@ namespace gigamonkey {
 
     namespace bitcoin {
         
-        template <size_t size> using digest = gigamonkey::digest<size, little_endian>;
-        template <size_t size> using digest_b = gigamonkey::digest<size, big_endian>;
+        template <size_t size> using digest = gigamonkey::digest<size, big_endian>;
     
         inline digest<20> ripemd160(bytes_view b) {
             digest<20> digest;
-            if (!gigamonkey::ripemd160::hash(digest.Digest, b)) return digest<20>{};
+            gigamonkey::ripemd160::hash(digest.Digest, b);
             return digest;
         }
         
         inline digest<32> sha256(bytes_view b) {
             digest<32> digest;
-            if (!gigamonkey::sha256::hash(digest.Digest, b)) return digest<32>{};
+            gigamonkey::sha256::hash(digest.Digest, b);
             return digest;
         }
     
@@ -96,8 +99,8 @@ namespace gigamonkey {
             return hash160(b);
         }
         
-        inline digest_b<32> signature_hash(bytes_view b) {
-            return 0 // TODO
+        inline digest<32> signature_hash(bytes_view b) {
+            return hash256(b);
         }
         
     }
