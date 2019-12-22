@@ -32,11 +32,11 @@ namespace gigamonkey {
     
     using endian = boost::endian::order;
     
-    const endian big_endian = boost::endian::order::big;
-    const endian little_endian = boost::endian::order::little;
+    const endian BigEndian = boost::endian::order::big;
+    const endian LittleEndian = boost::endian::order::little;
     
     constexpr inline endian opposite_endian(endian e) {
-        return e == big_endian ? little_endian : big_endian;
+        return e == BigEndian ? LittleEndian : BigEndian;
     }
     
     using byte = std::uint8_t;
@@ -57,19 +57,17 @@ namespace gigamonkey {
     using string = std::string;
     using string_view = std::string_view;
     
-    template <size_t size, boost::endian::order o> 
-    using uint = data::math::number::bounded<std::array<byte, size>, size, o, false>; 
+    template <size_t size, boost::endian::order e> 
+    using uint = data::math::number::bounded<std::array<byte, size>, size, e, false>; 
     
-    template <size_t size, boost::endian::order o> 
-    using integer = data::math::number::bounded<std::array<byte, size>, size, o, true>;
+    template <size_t size, boost::endian::order e> 
+    using integer = data::math::number::bounded<std::array<byte, size>, size, e, true>;
     
-    using N_bytes = data::math::number::N_bytes<little_endian>;
-    using Z_bytes = data::math::number::Z_bytes<little_endian>;
+    using N_bytes = data::math::number::N_bytes<LittleEndian>;
+    using Z_bytes = data::math::number::Z_bytes<LittleEndian>;
     
     using N = data::math::number::gmp::N;
     using Z = data::math::number::gmp::Z;
-    
-    using signature = bytes;
     
     template <typename X>
     using vector = std::vector<X>;
@@ -99,10 +97,10 @@ namespace gigamonkey {
     namespace bitcoin {
         
         template <size_t size>
-        using uint = gigamonkey::uint<size, little_endian>; 
+        using uint = gigamonkey::uint<size, LittleEndian>; 
         
         template <size_t size>
-        using integer = gigamonkey::integer<size, little_endian>;
+        using integer = gigamonkey::integer<size, LittleEndian>;
         
     }
     

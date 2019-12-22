@@ -6,57 +6,239 @@
 
 #include "types.hpp"
 #include "hash.hpp"
+#include <secp256k1.h>
 
 namespace gigamonkey::secp256k1 {
     
-    const size_t secret_size = 32;
+    const size_t SecretSize = 32;
     
-    using secret = uint<secret_size, big_endian>;
+    // There are two representations of public
+    // keys that are allowed in Bitcoin. 
+    // compressed is default. 
+    const size_t CompressedPubkeySize = 33;
+    const size_t UncompressedPubkeySize = 65;
     
-    bool valid(const secret& s);
-    
-    signature sign(const secret&, const digest<32, big_endian>&);
-    
+    // Values written at the start of the standard
+    // pubkey representation which tell how it is 
+    // represented. 
     enum pubkey_type : byte {
+        invalid = 0x00, 
         uncompressed = 0x04,
         compressed_positive = 0x03,
         compressed_negative = 0x02
     };
     
-    // There are two representations of public
-    // keys that are allowed in Bitcoin. 
-    // compressed is default. 
-    const size_t pubkey_size = 33;
-    const size_t uncompressed_pubkey_size = 65;
+    using coordinate = uint<SecretSize, LittleEndian>;
     
-    using pubkey_compressed = uint<pubkey_size, little_endian>;
-    using pubkey_uncompressed = uint<pubkey_size, little_endian>;
+    class secret;
+    class pubkey;
     
-    bool valid(const pubkey_compressed& s);
-    bool valid(const pubkey_uncompressed& s);
+    class signature {
+        friend class secret;
+        secp256k1_ecdsa_signature* Data;
+        
+    public:
+        constexpr static size_t Size = 64;
+        
+        signature() : Data{new secp256k1_ecdsa_signature()} {}
+        ~signature() {
+            delete Data;
+        }
+        
+        byte* begin() {
+            return Data->data;
+        }
+        
+        byte* end() {
+            return Data->data + Size;
+        }
+        
+        const byte* begin() const {
+            return Data->data;
+        }
+        
+        const byte* end() const {
+            return Data->data + Size;
+        }
+        
+        signature(const signature& s) : signature{} {
+            std::copy_n(s.begin(), Size, begin());
+        }
+        
+        signature(signature&& s) {
+            Data = s.Data;
+            s.Data = nullptr;
+        }
+    };
     
-    pubkey_compressed to_pubkey(const secret& s);
-    pubkey_uncompressed to_pubkey_uncompressed(const secret& s);
+    using digest = gigamonkey::digest<SecretSize, BigEndian>;
     
-    bool verify(const pubkey_compressed&, digest<32, big_endian>&, const signature&);
-    bool verify(const pubkey_uncompressed&, digest<32, big_endian>&, const signature&);
+    class secret {
+        static bool valid(bytes_view);
+        static N_bytes to_public_compressed(bytes_view);
+        static N_bytes to_public_uncompressed(bytes_view);
+        static signature sign(bytes_view, const digest&);
+        static coordinate negate(const coordinate&);
+        static coordinate plus(const coordinate&, bytes_view);
+        static coordinate times(const coordinate&, bytes_view);
+        
+    public:
+        constexpr static size_t Size = 32;
+        
+        coordinate Value;
+        
+        secret() : Value{0} {}
+        secret(const coordinate& v) : Value{v} {}
+        
+        bool valid() const {
+            return valid(Value);
+        }
+        
+        signature sign(const digest& d) const {
+            return sign(Value, d);
+        }
+        
+        pubkey to_public() const;
+        
+        secret operator-() const {
+            return negate(Value);
+        }
+        
+        secret operator+(const secret& s) const {
+            return plus(Value, s.Value);
+        }
+        
+        secret operator*(const secret& s) const {
+            return times(Value, s.Value);
+        }
+    };
     
-    secret negate(const secret&);
-    pubkey_compressed negate(const pubkey_compressed&);
-    pubkey_uncompressed negate(const pubkey_uncompressed&, const pubkey_uncompressed&);
+    class pubkey {
+        static bool valid(bytes_view);
+        static bool verify(bytes_view pubkey, digest&, const signature&);
+        static N_bytes compress(bytes_view);
+        static N_bytes decompress(bytes_view);
+        static N_bytes negate(const N_bytes&);
+        static N_bytes plus_pubkey(const N_bytes&, bytes_view);
+        static N_bytes plus_secret(const N_bytes&, bytes_view);
+        static N_bytes times(const N_bytes&, bytes_view);
+        
+    public:
+        N_bytes Value;
+        
+        pubkey() : Value{} {}
+        pubkey(const N_bytes& v) : Value{v} {}
+        
+        bool valid() const {
+            return valid(Value);
+        }
+        
+        bool verify(digest& d, const signature& s) const {
+            return verify(Value, d, s);
+        }
+        
+        size_t size() const {
+            return Value.size();
+        }
+        
+        pubkey_type type() const {
+            return size() == 0 ? invalid : pubkey_type{Value[0]};
+        }
+        
+        coordinate x() const;
+        
+        coordinate y() const;
+        
+        pubkey compress() const {
+            return compress(Value);
+        }
+        
+        pubkey decompress() const {
+            return decompress(Value);
+        }
+        
+        pubkey operator-() const {
+            return negate(Value);
+        }
+        
+        pubkey operator+(const pubkey& p) const {
+            return plus_pubkey(Value, p.Value);
+        }
+        
+        pubkey operator+(const secret& s) const {
+            return plus_secret(Value, s.Value);
+        }
+        
+        pubkey operator*(const secret& s) const {
+            return times(Value, s.Value);
+        }
+    };
     
-    secret plus(const secret&, const secret&);
-    pubkey_compressed plus(const pubkey_compressed&, const pubkey_compressed&);
-    pubkey_uncompressed plus(const pubkey_uncompressed&, const pubkey_uncompressed&);
+    inline bool valid(const secret& s) {
+        return s.valid();
+    }
     
-    pubkey_compressed plus(const pubkey_uncompressed&, const secret&);
-    pubkey_uncompressed plus(const pubkey_uncompressed&, const secret&);
+    inline signature sign(const secret& s, const digest& d) {
+        s.sign(d);
+    }
     
-    secret times(const secret&, const secret&);
-    pubkey_uncompressed times(const pubkey_uncompressed&, const secret&);
-    pubkey_uncompressed times(const pubkey_uncompressed&, const secret&);
+    inline pubkey secret::to_public() const {
+        return to_public_compressed(bytes_view(Value));
+    }
+    
+    inline secret negate(const secret& s) {
+        return -s;
+    }
+    
+    inline secret plus(const secret& a, const secret& b) {
+        return a + b;
+    }
+    
+    inline pubkey to_public(const secret& s) {
+        return s.to_public();
+    }
+    
+    inline bool valid(const pubkey& p) {
+        return p.valid();
+    }
+    
+    inline bool verify(const pubkey& p, digest& d, const signature& s) {
+        return p.verify(d, s);
+    }
+    
+    inline pubkey negate(const pubkey& p) {
+        return -p;
+    }
+    
+    inline pubkey plus(const pubkey& a, const pubkey& b) {
+        return a + b;
+    }
+    
+    inline pubkey plus(const pubkey& a, const secret& b) {
+        return a + b;
+    }
+    
+    inline secret times(const secret& a, const secret& b) {
+        return a * b;
+    }
+    
+    inline pubkey times(const pubkey& a, const secret& b) {
+        return a * b;
+    }
     
 }
 
-#endif
+namespace gigamonkey::bitcoin {
+    using secret = secp256k1::secret;
+    using pubkey = secp256k1::pubkey;
+}
 
+inline std::ostream& operator<<(std::ostream& o, const gigamonkey::secp256k1::secret& s) {
+    return o << "secret{" << s.Value << "}";
+}
+
+inline std::ostream& operator<<(std::ostream& o, const gigamonkey::secp256k1::pubkey& p) {
+    return o << "pubkey{" << p.Value << "}";
+}
+
+#endif

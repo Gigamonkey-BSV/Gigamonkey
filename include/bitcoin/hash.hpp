@@ -9,28 +9,28 @@
 namespace gigamonkey {
 
     namespace sha256 {
-        const size_t size = 32;
+        const size_t Size = 32;
         
-        void hash(uint<size, little_endian>&, bytes_view);
-        void hash(uint<size, big_endian>&, bytes_view);
+        void hash(uint<Size, LittleEndian>&, bytes_view);
+        void hash(uint<Size, BigEndian>&, bytes_view);
     }
 
     namespace ripemd160 {
-        const size_t size = 20;
+        const size_t Size = 20;
         
-        bool hash(uint<size, little_endian>&, bytes_view);
-        bool hash(uint<size, big_endian>&, bytes_view);
+        bool hash(uint<Size, LittleEndian>&, bytes_view);
+        bool hash(uint<Size, BigEndian>&, bytes_view);
     }
     
-    template <size_t size, boost::endian::order o> struct digest {
-        constexpr static endian opposite = gigamonkey::opposite_endian(o);
+    template <size_t size, boost::endian::order e> struct digest {
+        constexpr static endian Opposite = gigamonkey::opposite_endian(e);
         
-        uint<size, o> Digest; 
+        uint<size, e> Digest; 
         
         digest() : Digest{} {}
-        digest(const uint<size, o>& u) : Digest{u} {}
-        digest(const uint<size, opposite>& u) : Digest{u} {}
-        digest(const digest<size, opposite>& d) : Digest{d.Digest} {}
+        digest(const uint<size, e>& u) : Digest{u} {}
+        digest(const uint<size, Opposite>& u) : Digest{u} {}
+        digest(const digest<size, Opposite>& d) : Digest{d.Digest} {}
         
         operator bytes_view() const {
             return bytes_view{Digest.Array.data(), size};
@@ -69,7 +69,7 @@ namespace gigamonkey {
 
     namespace bitcoin {
         
-        template <size_t size> using digest = gigamonkey::digest<size, big_endian>;
+        template <size_t size> using digest = gigamonkey::digest<size, BigEndian>;
     
         inline digest<20> ripemd160(bytes_view b) {
             digest<20> digest;

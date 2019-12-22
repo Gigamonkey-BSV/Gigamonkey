@@ -45,8 +45,6 @@ namespace gigamonkey::bitcoin {
         
         explicit address(char, const pubkey&);
         
-        explicit address(char, const pubkey_uncompressed&);
-        
         explicit address(char, const secret&);
         
         operator string() const {

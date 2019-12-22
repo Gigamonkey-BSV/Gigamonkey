@@ -4,7 +4,7 @@
 #ifndef GIGAMONKEY_WIF
 #define GIGAMONKEY_WIF
 
-#include "keys.hpp"
+#include "secp256k1.hpp"
 
 namespace gigamonkey::bitcoin {
     
@@ -13,35 +13,26 @@ namespace gigamonkey::bitcoin {
         secret Secret;
         bool Compressed;
         
-        constexpr static char main_net() {
-            static const char MainNet = 0x80;
-            return MainNet;
-        }
+        constexpr static char MainNet = 0x80; 
         
-        constexpr static char test_net() {
-            static const char TestNet = 0xef;
-            return TestNet;
-        }
+        constexpr static char TestNet = 0xef;
         
-        constexpr static char compressed_suffix() {
-            static const char CompressedSuffix = 0x01;
-            return CompressedSuffix;
-        }
+        constexpr static char CompressedSuffix = 0x01;
         
         size_t size() const {
             return 33 + (Compressed ? 1 : 0); 
         }
         
         bool valid() const {
-            return Secret.valid() && (Prefix == main_net() || Prefix == test_net());
+            return Secret.valid() && (Prefix == MainNet || Prefix == TestNet);
         }
         
         // why is wif compressed bigger than wif uncompressed? 
         // because compressed keys were invented after uncompressed keys. 
         // A compressed wif code is denoted with an extra character to
         // distinguish it from an uncompressed wif code. 
-        const size_t wif_compressed_size{38};
-        const size_t wif_uncompressed_size{37};
+        const size_t CompressedSize{38};
+        const size_t UncompressedSize{37};
 
     private:
         wif() : Prefix{0}, Secret{}, Compressed{false} {}

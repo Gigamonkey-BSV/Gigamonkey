@@ -4,7 +4,7 @@
 #ifndef GIGAMONKEY_SPENDABLE
 #define GIGAMONKEY_SPENDABLE
 
-#include "keys.hpp"
+#include "secp256k1.hpp"
 #include "script.hpp"
 
 namespace gigamonkey::bitcoin {

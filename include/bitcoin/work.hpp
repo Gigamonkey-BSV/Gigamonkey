@@ -10,11 +10,11 @@ namespace gigamonkey::work {
     
     using nonce = boost::endian::little_int64_t;
     
-    using digest = gigamonkey::digest<32, little_endian>;
+    using digest = gigamonkey::digest<sha256::Size, LittleEndian>;
     
-    integer<32, little_endian> difficulty_1_target{"0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"};
+    integer<32, LittleEndian> difficulty_1_target{"0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"};
     
-    using difficulty = Q<integer<32, little_endian>, digest>;
+    using difficulty = Q<integer<32, LittleEndian>, digest>;
 
     struct target {
         uint32_little Encoded;
@@ -89,7 +89,7 @@ namespace gigamonkey::work {
     
     const uint32 message_size = 68;
     
-    using content = uint<message_size, little_endian>;
+    using content = uint<message_size, LittleEndian>;
     
     struct order {
         content Message;
@@ -106,12 +106,12 @@ namespace gigamonkey::work {
     bool satisfied(order, nonce);
     
     struct candidate {
-        uint<80, little_endian> Data;
+        uint<80, LittleEndian> Data;
     
         static data::uint<80> encode(order, nonce);
         
         candidate() : Data{} {}
-        candidate(uint<80, little_endian> d) : Data{d} {}
+        candidate(uint<80, LittleEndian> d) : Data{d} {}
         candidate(order o, nonce n) : Data{encode(o, n)} {}
         
         bool operator==(const candidate& c) {
