@@ -2,8 +2,8 @@
 // Copyright (c) 2019 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#include <bitcoin/keys.hpp>
-#include <bitcoin/address.hpp>
+#include <gigamonkey/keys.hpp>
+#include <gigamonkey/address.hpp>
 #include "gtest/gtest.h"
 
 namespace gigamonkey::bitcoin {

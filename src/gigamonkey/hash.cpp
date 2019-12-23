@@ -1,7 +1,7 @@
 // Copyright (c) 2019 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#include <bitcoin/hash.hpp>
+#include <gigamonkey/hash.hpp>
 #include <crypto++/sha.h>
 #include <crypto++/ripemd.h>
 

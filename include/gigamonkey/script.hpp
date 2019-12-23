@@ -269,8 +269,8 @@ namespace gigamonkey::bitcoin::script {
         bytes data() const {
             if (!is_push(Op)) return {};
             if (is_push_data(Op)) return Data;
-            if (Op == OP_1NEGATE) return {{OP_1NEGATE}};
-            return {{byte{Op} - byte{0x50}}};
+            if (Op == OP_1NEGATE) return {OP_1NEGATE};
+            return {byte{Op} - 0x50};
         }
         
         bool valid() {
@@ -343,10 +343,10 @@ namespace gigamonkey::bitcoin::script {
     
 }
 
-std::ostream& operator<<(std::ostream& o, abstractions::script::op);
+std::ostream& operator<<(std::ostream& o, gigamonkey::bitcoin::script::op);
 
-inline std::ostream& operator<<(std::ostream& o, abstractions::script::instruction i) {
-    if (!abstractions::script::is_push_data(i.Op)) return o << i.Op;
+inline std::ostream& operator<<(std::ostream& o, gigamonkey::bitcoin::script::instruction i) {
+    if (!gigamonkey::bitcoin::script::is_push_data(i.Op)) return o << i.Op;
     return o << i.Op << "{" << data::encoding::hex::write(i.Data) << "}";
 }
 

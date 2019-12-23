@@ -6,6 +6,7 @@
 
 #include "types.hpp"
 #include "txid.hpp"
+#include "work.hpp"
 
 namespace gigamonkey::block {
     bool valid(bytes_view);
@@ -22,6 +23,29 @@ namespace gigamonkey::header {
     uint32_little timestamp(slice<80>);
     uint32_little target(slice<80>);
     uint32_little nonce(slice<80>);
+}
+
+namespace gigamonkey::bitcoin {
+    struct header {
+        int32_little Version;
+        txid Previous;
+        txid MerkleRoot;
+        uint32_little Timestamp;
+        work::target Target;
+        uint32_little Nonce;
+        
+        uint<80> write() const;
+        
+        bool valid() const {
+            return gigamonkey::header::valid(write());
+        }
+        
+        work::difficulty difficulty() const {
+            return work::difficulty{Target.expand()};
+        }
+        
+        txid hash() const;
+    };
 }
 
 namespace gigamonkey::outpoint {

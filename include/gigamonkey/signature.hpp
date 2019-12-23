@@ -61,8 +61,8 @@ namespace gigamonkey::bitcoin {
     } 
     
     struct signature {
-        gigamonkey::signature Data;
-        signature(const gigamonkey::signature raw, sighash::directive);
+        secp256k1::signature Data;
+        signature(const secp256k1::signature raw, sighash::directive);
         bool der() const;
         uint32 sig_hash() const;
         bytes_view raw();

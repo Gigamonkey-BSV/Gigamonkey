@@ -1,7 +1,7 @@
 // Copyright (c) 2019 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#include <bitcoin/address.hpp>
+#include <gigamonkey/address.hpp>
 #include <data/encoding/base58.hpp>
 
 namespace gigamonkey::bitcoin::base58 {

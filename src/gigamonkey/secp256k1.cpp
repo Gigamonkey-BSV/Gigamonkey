@@ -1,7 +1,7 @@
 // Copyright (c) 2019 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#include <bitcoin/secp256k1.hpp>
+#include <gigamonkey/secp256k1.hpp>
 
 namespace gigamonkey::secp256k1 {
     

@@ -31,12 +31,12 @@ namespace gigamonkey::bitcoin {
         // because compressed keys were invented after uncompressed keys. 
         // A compressed wif code is denoted with an extra character to
         // distinguish it from an uncompressed wif code. 
-        const size_t CompressedSize{38};
-        const size_t UncompressedSize{37};
-
+        constexpr static size_t CompressedSize{38};
+        constexpr static size_t UncompressedSize{37};
+        
     private:
         wif() : Prefix{0}, Secret{}, Compressed{false} {}
-
+        
     public:
         wif(char p, secret s, bool c = true) : Prefix{p}, Secret{s}, Compressed{c} {}
         

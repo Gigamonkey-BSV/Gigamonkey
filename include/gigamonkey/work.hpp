@@ -14,7 +14,7 @@ namespace gigamonkey::work {
     
     integer<32, LittleEndian> difficulty_1_target{"0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"};
     
-    using difficulty = Q<integer<32, LittleEndian>, digest>;
+    using difficulty = data::math::number::fraction<integer<32, LittleEndian>, digest>;
 
     struct target {
         uint32_little Encoded;
@@ -75,21 +75,21 @@ namespace gigamonkey::work {
         } 
         
         work::difficulty difficulty() const {
-            return difficulty{difficulty_1_target, expand()};
+            return work::difficulty{difficulty_1_target, expand()};
         }
     };
     
-    const target easy{32, 0xffffff}; 
-    const target hard{3, 0x000001};
+    const target Easy{32, 0xffffff}; 
+    const target Hard{3, 0x000001};
     
-    const target success_half{32, 0x800000};
-    const target success_quarter{32, 0x400000};
-    const target success_eighth{32, 0x200000};
-    const target success_sixteenth{32, 0x100000};
+    const target SuccessHalf{32, 0x800000};
+    const target SuccessQuarter{32, 0x400000};
+    const target SuccessEighth{32, 0x200000};
+    const target SuccessSixteenth{32, 0x100000};
     
-    const uint32 message_size = 68;
+    const uint32 ContentSize = 68;
     
-    using content = uint<message_size, LittleEndian>;
+    using content = uint<ContentSize, LittleEndian>;
     
     struct order {
         content Message;

@@ -2,25 +2,25 @@
 // Copyright (c) 2019 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#include <bitcoin/work.hpp>
+#include <gigamonkey/work.hpp>
 #include "gtest/gtest.h"
 
-namespace gigamonkey::bitcoin {
+namespace gigamonkey::work {
 
     // can result in stack smashing
     TEST(WorkTest, DISABLED_TestWork) {
         
-        const target minimum_target{31, 0xffffff};
+        const target MinimumTarget{31, 0xffffff};
         
         string message{"wake up!!!!!!"};
         
         work::content to_do{0};
         std::copy(message.begin(), message.end(), to_do.begin());
         
-        const target target_half = success_half;
-        const target target_quarter = success_quarter;
-        const target target_eighth = success_eighth;
-        const target target_sixteenth = success_sixteenth;
+        const target target_half = SuccessHalf;
+        const target target_quarter = SuccessQuarter;
+        const target target_eighth = SuccessEighth;
+        const target target_sixteenth = SuccessSixteenth;
         const target target_thirty_second = minimum_target;
         
         // Unknown exception thrown here.

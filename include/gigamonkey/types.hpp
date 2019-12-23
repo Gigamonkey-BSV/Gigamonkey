@@ -72,6 +72,9 @@ namespace gigamonkey {
     template <typename X>
     using vector = std::vector<X>;
     
+    template <typename X>
+    using ptr = std::shared_ptr<X>;
+    
     template <size_t size>
     using slice = data::slice<byte, size>;
     
