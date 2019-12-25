@@ -45,6 +45,10 @@ namespace gigamonkey::secp256k1 {
             delete Data;
         }
         
+        operator bytes_view() {
+            return bytes_view{Data->data, Size};
+        }
+        
         byte* begin() {
             return Data->data;
         }

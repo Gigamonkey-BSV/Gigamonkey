@@ -44,12 +44,14 @@ namespace gigamonkey {
     using int32_little = boost::endian::little_uint32_t;
     using index = uint32_little;
     using uint24 = boost::endian::little_uint24_t;
-    using satoshi = boost::endian::little_uint64_t;
+    using uint64_little = boost::endian::little_uint64_t;
+    using satoshi = uint64_little;
     
     using checksum = boost::endian::big_uint32_t;
     
     using uint32 = std::uint32_t;
     using uint64 = std::uint64_t;
+    using int64 = std::uint64_t;
     
     using bytes = std::basic_string<byte>;
     using bytes_view = std::basic_string_view<byte>;

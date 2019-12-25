@@ -36,7 +36,7 @@ namespace gigamonkey::bitcoin {
     
     struct address {
         char Prefix;
-        digest<20> Digest;
+        gigamonkey::digest<20, LittleEndian> Digest;
         
         address() : Prefix{}, Digest{} {}
         address(char p, digest<20> d) : Digest{d} {}

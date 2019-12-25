@@ -35,7 +35,7 @@ namespace gigamonkey::bitcoin::script {
         OP_PUSHSIZE17 = 0x11,
         OP_PUSHSIZE18 = 0x12,
         OP_PUSHSIZE19 = 0x13,
-            
+        
         OP_PUSHSIZE20 = 0x14,
         OP_PUSHSIZE21 = 0x15,
         OP_PUSHSIZE22 = 0x16,
@@ -46,7 +46,7 @@ namespace gigamonkey::bitcoin::script {
         OP_PUSHSIZE27 = 0x1b,
         OP_PUSHSIZE28 = 0x1c,
         OP_PUSHSIZE29 = 0x1d,
-            
+        
         OP_PUSHSIZE30 = 0x1e,
         OP_PUSHSIZE31 = 0x1f,
         OP_PUSHSIZE32 = 0x20,
@@ -57,7 +57,7 @@ namespace gigamonkey::bitcoin::script {
         OP_PUSHSIZE37 = 0x25,
         OP_PUSHSIZE38 = 0x26,
         OP_PUSHSIZE39 = 0x27,
-            
+        
         OP_PUSHSIZE40 = 0x28,
         OP_PUSHSIZE41 = 0x29,
         OP_PUSHSIZE42 = 0x2a,
@@ -68,7 +68,7 @@ namespace gigamonkey::bitcoin::script {
         OP_PUSHSIZE47 = 0x2f,
         OP_PUSHSIZE48 = 0x30,
         OP_PUSHSIZE49 = 0x31,
-            
+        
         OP_PUSHSIZE50 = 0x32,
         OP_PUSHSIZE51 = 0x33,
         OP_PUSHSIZE52 = 0x34,
@@ -79,7 +79,7 @@ namespace gigamonkey::bitcoin::script {
         OP_PUSHSIZE57 = 0x39,
         OP_PUSHSIZE58 = 0x3a,
         OP_PUSHSIZE59 = 0x3b,
-            
+        
         OP_PUSHSIZE60 = 0x3c,
         OP_PUSHSIZE61 = 0x3d,
         OP_PUSHSIZE62 = 0x3e,
@@ -90,14 +90,14 @@ namespace gigamonkey::bitcoin::script {
         OP_PUSHSIZE67 = 0x43,
         OP_PUSHSIZE68 = 0x44,
         OP_PUSHSIZE69 = 0x45,
-            
+        
         OP_PUSHSIZE70 = 0x46,
         OP_PUSHSIZE71 = 0x47,
         OP_PUSHSIZE72 = 0x48,
         OP_PUSHSIZE73 = 0x49,
         OP_PUSHSIZE74 = 0x4a,
         OP_PUSHSIZE75 = 0x4b,
-            
+        
         OP_PUSHDATA1 = 0x4c,
         OP_PUSHDATA2 = 0x4d,
         OP_PUSHDATA4 = 0x4e,
@@ -249,6 +249,13 @@ namespace gigamonkey::bitcoin::script {
         return o <= OP_PUSHDATA4;
     }
     
+    inline uint32 next_instruction_size(bytes_view o) {
+        return o[0] <= OP_PUSHSIZE75 ? o[0] + 1 : 
+            o[0] == OP_PUSHDATA1 ? o[1] + 2 : 
+            o[0] == OP_PUSHDATA2 ? read_as_little_uint16(o[1]) + 3 : 
+            o[0] == OP_PUSHDATA4 ? read_as_little_uint32(o[1]) + 5 : 0;
+    }
+    
     struct instruction {
         op Op;
         bytes Data;
@@ -259,7 +266,7 @@ namespace gigamonkey::bitcoin::script {
         
         instruction(op p) : Op{p}, Data{} {}
         
-        instruction(bytes data) : Op{[](size_t size)->op{
+        instruction(bytes_view data) : Op{[](size_t size)->op{
             if (size <= OP_PUSHSIZE75) return static_cast<op>(size);
             if (size <= 0xffff) return OP_PUSHDATA1;
             if (size <= 0xffffffff) return OP_PUSHDATA2;
@@ -282,7 +289,7 @@ namespace gigamonkey::bitcoin::script {
                 || (Op == OP_PUSHDATA4 && size <= 0xffffffffffffffff);
         }
         
-        size_t length() const {
+        uint32 length() const {
             if (!is_push_data(Op)) return 1;
             uint32 size = Data.size();
             if (Op <= OP_PUSHSIZE75) return size + 1;
@@ -312,7 +319,7 @@ namespace gigamonkey::bitcoin::script {
             if (Push <= OP_PUSHSIZE75) return w << static_cast<byte>(Push);
             if (Push == OP_PUSHDATA1) return w << static_cast<byte>(OP_PUSHDATA1) << static_cast<byte>(size); 
             if (Push == OP_PUSHDATA2) return w << static_cast<byte>(OP_PUSHDATA2) << static_cast<uint32_little>(size); 
-            return w << static_cast<byte>(OP_PUSHDATA4) << satoshi_little{size};
+            return w << static_cast<byte>(OP_PUSHDATA4) << uint64_little{size};
         }
         
         writer write(writer w) const {
@@ -322,15 +329,21 @@ namespace gigamonkey::bitcoin::script {
         
     };
     
+    inline instruction op_code(op o) {
+        return instruction{o};
+    }
+    
+    inline instruction push_data(bytes_view b) {
+        return instruction{b};
+    }
+    
     using program = queue<instruction>;
     
     bytes compile(program p);
     
-    program decompile(bytes);
+    bytes compile(instruction i);
     
-    inline instruction op_code(op o) {
-        return instruction{o};
-    }
+    program decompile(bytes_view);
     
     inline size_t length(instruction o) {
         return o.length();

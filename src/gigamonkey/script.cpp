@@ -59,13 +59,17 @@ namespace gigamonkey::bitcoin::script {
         reader(bytes_view b) : Reader{timechain::reader{b}} {}
     };
     
-    // TODO there is an exception thrown here. 
-    // I am not initializing the string correctly. 
-    // I don't know how to do it right. 
     bytes compile(program p) {
         bytes compiled{};
         compiled.resize(length(p));
         writer{compiled} << p;
+        return compiled;
+    }
+    
+    bytes compile(instruction i) {
+        bytes compiled{};
+        compiled.resize(length(i));
+        writer{compiled} << i;
         return compiled;
     }
     

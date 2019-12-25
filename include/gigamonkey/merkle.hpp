@@ -88,12 +88,15 @@ namespace gigamonkey::merkle {
         digest Txid;
         list<step> Path;
         static path read(reader);
+        
         static path read(const bytes& b) {
             return read(reader{b});
         }
+        
         bool valid() const {
             return Path.size() > 0;
         }
+        
     private:
         list<digest> Intermediate;
         path(list<step> p, list<digest> i) : Path{p}, Intermediate{i} {}

@@ -31,15 +31,16 @@ A library with basic Bitcoin functions.
   needed to be able to spend them. 
 * redeem.hpp - function to redeem inputs to make a new Bitcoin transaction. Here the benefits of 
   the high-level programming constructs from Data shine clearly. 
+* script/
+    * pattern.hpp - pattern-matching scripts.
+    * op_return_data.hpp - representation of OP_RETURN data.
+    * pay.hpp - representations of standard pay to pubkey (p2pk) and pay to address (p2pkh) scripts. 
 
 ## Future Plans
 
-* wallet
-* Bitcoin key encryption 
-* standard script types. 
-* op_return
-* spv types
 * cpu mining
+* basic wallet
+* Bitcoin key encryption / decryption
 
 ## Name
 

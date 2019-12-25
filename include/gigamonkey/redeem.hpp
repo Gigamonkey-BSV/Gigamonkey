@@ -13,7 +13,7 @@ namespace gigamonkey::bitcoin {
     
     inline bytes redeem(funds f, int32_little version, list<output> outputs, int32_little locktime, sighash::directive d) {
         const vertex v{data::for_each([](const spendable& s)->prevout{return s.Prevout;}, f), version, outputs, locktime};
-        return transaction{version, data::for_each_indexed([&v](const spendable& s, uint32 i)->bytes{s.redeem(v, i, d)}, f), outputs, locktime}.write();
+        return transaction{version, data::for_each([&v](uint32 i, const spendable& s)->bytes{s.redeem(v, i, d)}, f), outputs, locktime}.write();
     }
 }
 

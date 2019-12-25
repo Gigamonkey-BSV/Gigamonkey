@@ -6,6 +6,7 @@
 
 #include "signature.hpp"
 #include "script.hpp"
+#include <gigamonkey/script/pay.hpp>
 
 namespace gigamonkey::bitcoin {
     
@@ -16,11 +17,13 @@ namespace gigamonkey::bitcoin {
     
     struct pay_to_pubkey final : spendable {
         secret Secret;
+        bool valid() const;
         virtual bytes redeem(vertex, index, sighash::directive) const override;
     };
     
     struct pay_to_address final : spendable {
         secret Secret;
+        bool valid() const;
         virtual bytes redeem(vertex, index, sighash::directive) const override;
     };
     
