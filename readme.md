@@ -11,7 +11,7 @@ A library with basic Bitcoin functions.
     * GMP and GMP++
     * ctre
 
-## Tour
+## Overview
 
 * types.hpp - basic types imported from data and elsewhere. In particular, types for big numbers. 
     * N, Z - natural numbers and integers provided by GMP. 
@@ -26,15 +26,16 @@ A library with basic Bitcoin functions.
 * txid.hpp - the txid of transactions. 
 * timechain.hpp - formated types of the Bitcoin blockchain. 
 * script.hpp - the Bitcoin script language. Interpreptation provided by the reference implementation. 
-* signature.hpp - the Bitcoin signature algrithm. Provided by the reference implementation (not connected yet);
-* spendable.hpp - abstract types representing outputs in the blockchain that can be spent and including all data
-  needed to be able to spend them. 
-* redeem.hpp - function to redeem inputs to make a new Bitcoin transaction. Here the benefits of 
-  the high-level programming constructs from Data shine clearly. 
 * script/
     * pattern.hpp - pattern-matching scripts.
     * op_return_data.hpp - representation of OP_RETURN data.
     * pay.hpp - representations of standard pay to pubkey (p2pk) and pay to address (p2pkh) scripts. 
+* signature.hpp - the Bitcoin signature algrithm. Provided by the reference implementation.
+* spendable.hpp - abstract types representing outputs in the blockchain that can be spent and including all data
+  needed to be able to spend them. 
+* redeem.hpp - function to redeem inputs to make a new Bitcoin transaction. Here the benefits of 
+  the high-level programming constructs from Data shine clearly. 
+* wallet.hpp - a basic wallet. 
 
 ## Future Plans
 

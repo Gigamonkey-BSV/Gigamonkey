@@ -5,26 +5,44 @@
 #define GIGAMONKEY_SPENDABLE
 
 #include "signature.hpp"
-#include "script.hpp"
 #include <gigamonkey/script/pay.hpp>
 
 namespace gigamonkey::bitcoin {
     
+    struct redeemer {
+        virtual bytes redeem(const vertex& v, index i, sighash::directive d) const = 0;
+    };
+    
+    struct pay_to_pubkey final : redeemer {
+        secret Secret;
+        virtual bytes redeem(const vertex& v, index i, sighash::directive d) const override {
+            return script::pay_to_pubkey::redeem(sign(v, i, d, Secret));
+        }
+    };
+    
+    struct pay_to_address final : redeemer {
+        secret Secret;
+        pubkey Pubkey;
+        virtual bytes redeem(const vertex& v, index i, sighash::directive d) const override {
+            return script::pay_to_address::redeem(sign(v, i, d, Secret), Pubkey);
+        }
+    };
+    
+    struct change {
+        virtual ptr<redeemer> operator++(int) const = 0;
+    };
+    
     struct spendable {
         prevout Prevout;
-        virtual bytes redeem(vertex, index i, sighash::directive) const = 0;
-    };
-    
-    struct pay_to_pubkey final : spendable {
-        secret Secret;
-        bool valid() const;
-        virtual bytes redeem(vertex, index, sighash::directive) const override;
-    };
-    
-    struct pay_to_address final : spendable {
-        secret Secret;
-        bool valid() const;
-        virtual bytes redeem(vertex, index, sighash::directive) const override;
+        ptr<redeemer> Redeemer;
+        
+        satoshi value() const {
+            return Prevout.Output.Value;
+        }
+        
+        bool valid() const {
+            return Prevout.valid() && Redeemer != nullptr;
+        } 
     };
     
 }

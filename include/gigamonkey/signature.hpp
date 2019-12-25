@@ -33,8 +33,12 @@ namespace gigamonkey::bitcoin {
     };
     
     struct prevout {
-        output Output;
+        bytes Output;
         uint<36> Outpoint;
+        
+        bool valid() const {
+            return gigamonkey::output::valid(Output) && gigamonkey::outpoint::valid(Outpoint);
+        }
     };
     
     struct vertex {
