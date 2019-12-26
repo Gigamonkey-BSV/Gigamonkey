@@ -12,7 +12,9 @@ namespace gigamonkey::bitcoin::script {
     
     struct pay_to_pubkey {
         static script::pattern pattern(bytes& pubkey) {
-            return script::pattern{push{pubkey}, OP_CHECKSIG};
+            return {alternatives{
+                push_size{secp256k1::CompressedPubkeySize, pubkey}, 
+                push_size{secp256k1::UncompressedPubkeySize, pubkey}}, OP_CHECKSIG};
         }
         
         static bytes script(pubkey);
@@ -38,7 +40,7 @@ namespace gigamonkey::bitcoin::script {
     
     struct pay_to_address {
         static script::pattern pattern(bytes& address) {
-            return script::pattern{OP_DUP, OP_HASH160, push{address}, OP_EQUALVERIFY, OP_CHECKSIG};
+            return {OP_DUP, OP_HASH160, push_size{20, address}, OP_EQUALVERIFY, OP_CHECKSIG};
         }
         
         static bytes script(const address&);

@@ -5,6 +5,7 @@
 #define GIGAMONKEY_SPENDABLE
 
 #include "signature.hpp"
+#include "timechain.hpp"
 #include <gigamonkey/script/pay.hpp>
 
 namespace gigamonkey::bitcoin {
@@ -37,7 +38,7 @@ namespace gigamonkey::bitcoin {
         ptr<redeemer> Redeemer;
         
         satoshi value() const {
-            return Prevout.Output.Value;
+            return gigamonkey::output::value(Prevout.Output);
         }
         
         bool valid() const {

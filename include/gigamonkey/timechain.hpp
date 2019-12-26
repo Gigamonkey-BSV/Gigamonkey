@@ -8,11 +8,14 @@
 #include "txid.hpp"
 #include "work.hpp"
 
-namespace gigamonkey::block {
-    bool valid(bytes_view);
-    slice<80> header(bytes_view);
-    index transactions(bytes_view);
-    bytes_view transaction(bytes_view, index);
+namespace gigamonkey::bitcoin {
+    struct timechain {
+        virtual list<uint<80>> headers(uint64 since) const = 0;
+        virtual bytes transaction(const digest<32>&) const = 0;
+        virtual bytes merkle_path(const digest<32>&) const = 0;
+        // should work for both header hash and merkle root.
+        virtual bytes block(const digest<32>&) const = 0; 
+    };
 }
 
 namespace gigamonkey::header {
@@ -153,6 +156,21 @@ namespace gigamonkey::bitcoin {
         }
         
         bytes write() const;
+    };
+}
+
+namespace gigamonkey::block {
+    bool valid(bytes_view);
+    slice<80> header(bytes_view);
+    index transactions(bytes_view);
+    bytes_view transaction(bytes_view, index);
+}
+
+namespace gigamonkey::bitcoin { 
+    struct block {
+        header Header;
+        list<transaction> Transactions;
+        bool valid() const;
     };
 }
 

@@ -253,7 +253,7 @@ namespace gigamonkey::bitcoin::script {
         return o[0] <= OP_PUSHSIZE75 ? o[0] + 1 : 
             o[0] == OP_PUSHDATA1 ? o[1] + 2 : 
             o[0] == OP_PUSHDATA2 ? read_as_little_uint16(o[1]) + 3 : 
-            o[0] == OP_PUSHDATA4 ? read_as_little_uint32(o[1]) + 5 : 0;
+            o[0] == OP_PUSHDATA4 ? read_as_little_uint32(o[1]) + 5 : 1;
     }
     
     struct instruction {

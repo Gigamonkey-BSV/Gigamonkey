@@ -16,7 +16,7 @@ namespace gigamonkey::bitcoin::script {
         if (p.size() == 0) throw fail{};
         if (p[0] != Instruction.Op) throw fail{};
         uint32 size = next_instruction_size(p);
-        if (size != 0 && (p.size() < size || p.substr(1, size) != Instruction.Data)) throw fail{};
+        if (p.size() < size || p.substr(1, size) != Instruction.Data) throw fail{};
         return p.substr(size);
     }
         

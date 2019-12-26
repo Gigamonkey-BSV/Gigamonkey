@@ -42,11 +42,30 @@ namespace gigamonkey::bitcoin::script {
         pattern() {}
     };
     
+    struct any final : pattern {
+        any() {}
+        virtual bytes_view scan(bytes_view p) const final override {
+            if (p.size() == 0) throw fail{};
+            uint32 size = next_instruction_size(p);
+            if (p.size() < size) throw fail{};
+            return p.substr(size);
+        }
+    };
+    
     struct push final : pattern {
-        push(); 
-        push(size_t size); 
-        push(const bytes&);
-        push(bytes&);
+        push();               // match any push data
+        push(int64);          // match any push data of the given value
+        push(bytes_view);     // match a push of the given data. 
+        push(bytes&);         // match any push data and save the result.
+        
+        bool match(instruction) const;
+        
+        virtual bytes_view scan(bytes_view p) const final override;
+    };
+    
+    struct push_size final : pattern {
+        push_size(size_t);           // match any push data of the given value
+        push_size(size_t, bytes&);   // match any push data and save the result.
         
         bool match(instruction) const;
         

@@ -9,6 +9,23 @@
 
 namespace gigamonkey::bitcoin {
     
+    struct change {
+        virtual ptr<redeemer> operator++(int) const = 0;
+    };
+    
+    struct spendable {
+        prevout Prevout;
+        ptr<redeemer> Redeemer;
+        
+        satoshi value() const {
+            return timechain::output::value(Prevout.Output);
+        }
+        
+        bool valid() const {
+            return Prevout.valid() && Redeemer != nullptr;
+        } 
+    };
+    
     struct funds {
         queue<spendable> Entries;
         satoshi Value;
