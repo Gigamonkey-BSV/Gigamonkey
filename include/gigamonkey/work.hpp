@@ -14,7 +14,7 @@ namespace gigamonkey::work {
     
     integer<32, LittleEndian> difficulty_1_target{"0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"};
     
-    using difficulty = data::math::number::fraction<integer<32, LittleEndian>, digest>;
+    using difficulty = data::math::number::fraction<integer<32, LittleEndian>, uint<32, LittleEndian>>;
 
     struct target {
         uint32_little Encoded;

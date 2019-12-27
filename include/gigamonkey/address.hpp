@@ -39,7 +39,7 @@ namespace gigamonkey::bitcoin {
         digest<20, LittleEndian> Digest;
         
         address() : Prefix{}, Digest{} {}
-        address(char p, digest<20> d) : Digest{d} {}
+        address(char p, digest<20, LittleEndian> d) : Digest{d} {}
         
         explicit address(const string s);
         

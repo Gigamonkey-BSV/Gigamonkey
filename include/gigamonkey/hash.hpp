@@ -28,6 +28,7 @@ namespace gigamonkey {
         uint<size, e> Digest; 
         
         digest() : Digest{} {}
+        digest(slice<32>);
         digest(const uint<size, e>& u) : Digest{u} {}
         digest(const uint<size, Opposite>& u) : Digest{u} {}
         digest(const digest<size, Opposite>& d) : Digest{d.Digest} {}
@@ -113,7 +114,7 @@ inline std::ostream& operator<<(std::ostream& o, gigamonkey::digest<size, gigamo
 template <size_t size> 
 inline std::ostream& operator<<(std::ostream& o, gigamonkey::digest<size, gigamonkey::LittleEndian>& s) {
     using namespace gigamonkey;
-    return o << digest<size, BigeEndian>{s};
+    return o << digest<size, BigEndian>{s};
 }
 
 #endif
