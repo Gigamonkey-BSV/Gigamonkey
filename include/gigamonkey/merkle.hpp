@@ -87,8 +87,17 @@ namespace gigamonkey::merkle {
     
     // for an spv node. 
     struct path {
-        index Index;
+        uint32 Index;
         list<digest> Hashes;
+        
+        static digest next(uint32 i, const digest& d, const digest& last) {
+            return (i & 1) == 1 ? concatinated(last, d) : concatinated(d, last);
+        }
+        
+        bool verify(const digest& root, const digest& leaf) {
+            if (Hashes.empty()) return leaf == root;
+            return path{Index >> 1, Hashes.rest()}.verify(root, next(Index, leaf, Hashes.first()));
+        }
     };
     
 }
