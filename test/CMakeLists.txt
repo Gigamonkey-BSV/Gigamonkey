@@ -7,8 +7,8 @@ if(${CMAKE_VERSION} VERSION_LESS 3.12)
 endif()
 
 
-ADD_EXECUTABLE(testGigamonkey  testFormat.cpp testAddresses.cpp testWork.cpp testLib.cpp )
-target_include_directories(testAbstractions PUBLIC .)
+ADD_EXECUTABLE(testGigamonkey  testFormat.cpp testAddress.cpp testWork.cpp testLib.cpp )
+target_include_directories(testGigamonkey PUBLIC .)
 target_link_libraries(testGigamonkey gmock_main gigamonkey data ${LIB_BITCOIN_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY})
 get_target_property(OUT testGigamonkey LINK_LIBRARIES)
 message(STATUS ${OUT})
