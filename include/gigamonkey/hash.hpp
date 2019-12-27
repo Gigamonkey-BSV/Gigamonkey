@@ -68,38 +68,36 @@ namespace gigamonkey {
     };
 
     namespace bitcoin {
-        
-        template <size_t size> using digest = gigamonkey::digest<size, BigEndian>;
     
-        inline digest<20> ripemd160(bytes_view b) {
-            digest<20> digest;
+        inline digest<20, BigEndian> ripemd160(bytes_view b) {
+            digest<20, BigEndian> digest;
             gigamonkey::ripemd160::hash(digest.Digest, b);
             return digest;
         }
         
-        inline digest<32> sha256(bytes_view b) {
-            digest<32> digest;
+        inline digest<32, BigEndian> sha256(bytes_view b) {
+            digest<32, BigEndian> digest;
             gigamonkey::sha256::hash(digest.Digest, b);
             return digest;
         }
     
-        inline digest<32> double_sha256(bytes_view b) {
+        inline digest<32, BigEndian> double_sha256(bytes_view b) {
             return sha256(sha256(b));
         }
         
-        inline digest<20> hash160(bytes_view b) {
+        inline digest<20, BigEndian> hash160(bytes_view b) {
             return ripemd160(sha256(b));
         }
         
-        inline digest<32> hash256(bytes_view b) {
+        inline digest<32, BigEndian> hash256(bytes_view b) {
             return double_sha256(b);
         }
         
-        inline digest<20> address_hash(bytes_view b) {
+        inline digest<20, BigEndian> address_hash(bytes_view b) {
             return hash160(b);
         }
         
-        inline digest<32> signature_hash(bytes_view b) {
+        inline digest<32, BigEndian> signature_hash(bytes_view b) {
             return hash256(b);
         }
         
@@ -108,8 +106,14 @@ namespace gigamonkey {
 }
 
 template <size_t size> 
-inline std::ostream& operator<<(std::ostream& o, gigamonkey::bitcoin::digest<size>& s) {
+inline std::ostream& operator<<(std::ostream& o, gigamonkey::digest<size, gigamonkey::BigEndian>& s) {
     return o << "digest{" << s.Digest << "}";
+}
+
+template <size_t size> 
+inline std::ostream& operator<<(std::ostream& o, gigamonkey::digest<size, gigamonkey::LittleEndian>& s) {
+    using namespace gigamonkey;
+    return o << digest<size, BigeEndian>{s};
 }
 
 #endif

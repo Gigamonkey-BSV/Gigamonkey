@@ -9,9 +9,11 @@
 
 namespace gigamonkey::merkle {
     
-    using digest = bitcoin::txid;
+    using digest = digest<32, BigEndian>;
         
-    digest concatinated(const digest&, const digest&);
+    digest concatinated(const digest& a, const digest& b) {
+        return bitcoin::hash256(write(64, a, b));
+    }
         
     enum direction : byte {
         none = 0,
@@ -85,21 +87,8 @@ namespace gigamonkey::merkle {
     
     // for an spv node. 
     struct path {
-        digest Txid;
-        list<step> Path;
-        static path read(reader);
-        
-        static path read(const bytes& b) {
-            return read(reader{b});
-        }
-        
-        bool valid() const {
-            return Path.size() > 0;
-        }
-        
-    private:
-        list<digest> Intermediate;
-        path(list<step> p, list<digest> i) : Path{p}, Intermediate{i} {}
+        index Index;
+        list<digest> Hashes;
     };
     
 }
