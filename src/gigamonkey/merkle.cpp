@@ -23,7 +23,7 @@ namespace gigamonkey::merkle {
         return steps;
     }
     
-    tree::tree(list<digest> e) : Tree{nullptr}, Leaves{}, Elements{e} {
+    /*tree::tree(list<digest> e) : Tree{nullptr}, Leaves{}, Elements{e} {
         if (Elements.size() == 0) return;
         
         list<branch*> next{};
@@ -60,5 +60,5 @@ namespace gigamonkey::merkle {
         
         Tree = next.first();
         
-    }
+    }*/
 }

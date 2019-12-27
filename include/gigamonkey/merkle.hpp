@@ -11,7 +11,7 @@ namespace gigamonkey::merkle {
     
     using digest = digest<32, BigEndian>;
         
-    digest concatinated(const digest& a, const digest& b) {
+    inline digest concatinated(const digest& a, const digest& b) {
         return bitcoin::hash256(write(64, a, b));
     }
         
@@ -27,6 +27,7 @@ namespace gigamonkey::merkle {
     
     class node {
         friend struct tree;
+        friend class branch;
         branch* Parent;
     public:
         direction Direction;
@@ -34,7 +35,8 @@ namespace gigamonkey::merkle {
         const digest& Right;
         digest Digest;
         
-        node(const digest& l, const digest& r) : Parent{nullptr}, Direction{none}, Left{l}, Right{r}, Digest{concatinated(l, r)} {}
+        node(const digest& l, const digest& r) : 
+            Parent{nullptr}, Direction{none}, Left{l}, Right{r}, Digest{concatinated(l, r)} {}
         node(const digest& d) : node{d, d} {}
     };
     

@@ -18,8 +18,8 @@ namespace gigamonkey {
     namespace ripemd160 {
         const size_t Size = 20;
         
-        bool hash(uint<Size, LittleEndian>&, bytes_view);
-        bool hash(uint<Size, BigEndian>&, bytes_view);
+        void hash(uint<Size, LittleEndian>&, bytes_view);
+        void hash(uint<Size, BigEndian>&, bytes_view);
     }
     
     template <size_t size, boost::endian::order e> struct digest {

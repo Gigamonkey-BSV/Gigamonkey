@@ -6,7 +6,7 @@
 namespace gigamonkey::bitcoin::script {
     
     struct writer {
-        timechain::writer Writer;
+        gigamonkey::writer Writer;
         writer operator<<(instruction o) const {
             return writer{write(Writer, o)};
         }
@@ -15,11 +15,11 @@ namespace gigamonkey::bitcoin::script {
             return writer{write(Writer, p)};
         }
         
-        writer(timechain::writer w) : Writer{w.Writer} {}
-        writer(bytes& b) : Writer{timechain::writer{data::slice<byte>{b}}} {}
+        writer(writer w) : Writer{w.Writer} {}
+        writer(bytes& b) : Writer{writer{data::slice<byte>{b}}} {}
     };
     
-    timechain::reader read_push(timechain::reader r, instruction& rest) {
+    reader read_push(reader r, instruction& rest) {
         uint32 size;
         if (rest.Op <= OP_PUSHSIZE75) size = rest.Op;
         if (rest.Op == OP_PUSHDATA1) {
@@ -42,10 +42,10 @@ namespace gigamonkey::bitcoin::script {
     }
     
     struct reader {
-        timechain::reader Reader;
+        gigamonkey::reader Reader;
         reader operator>>(instruction& i) const {
             byte next;
-            timechain::reader r = Reader >> next;
+            gigamonkey::reader r = Reader >> next;
             i.Op = op{next};
             if (is_push_data(i.Op)) return read_push(r, i);
             return r;
@@ -55,8 +55,8 @@ namespace gigamonkey::bitcoin::script {
             return Reader.empty();
         }
         
-        reader(timechain::reader r) : Reader{r} {}
-        reader(bytes_view b) : Reader{timechain::reader{b}} {}
+        reader(gigamonkey::reader r) : Reader{r} {}
+        reader(bytes_view b) : Reader{gigamonkey::reader{b}} {}
     };
     
     bytes compile(program p) {

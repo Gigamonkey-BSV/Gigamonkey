@@ -8,6 +8,7 @@
 #define GIGAMONKEY_SCRIPT
 
 #include "types.hpp"
+#include <boost/endian/conversion.hpp>
 
 namespace gigamonkey::bitcoin::script {
     enum op : byte {
@@ -252,8 +253,8 @@ namespace gigamonkey::bitcoin::script {
     inline uint32 next_instruction_size(bytes_view o) {
         return o[0] <= OP_PUSHSIZE75 ? o[0] + 1 : 
             o[0] == OP_PUSHDATA1 ? o[1] + 2 : 
-            o[0] == OP_PUSHDATA2 ? read_as_little_uint16(o[1]) + 3 : 
-            o[0] == OP_PUSHDATA4 ? read_as_little_uint32(o[1]) + 5 : 1;
+            o[0] == OP_PUSHDATA2 ? boost::endian::load_little_u16(&o[1]) + 3 : 
+            o[0] == OP_PUSHDATA4 ? boost::endian::load_little_u32(&o[1]) + 5 : 1;
     }
     
     struct instruction {

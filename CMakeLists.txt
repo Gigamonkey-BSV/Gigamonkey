@@ -77,7 +77,7 @@ set(Boost_USE_DEBUG_RUNTIME     ON          CACHE BOOL "") # '-g' tag
 set(Boost_COMPILER              "-mgw49"    CACHE STRING "")
 
 # Include Boost
-find_package(Boost 1.60.0 COMPONENTS system  REQUIRED)
+find_package(Boost 1.72.0 COMPONENTS system  REQUIRED)
 
 if(Boost_FOUND)
 
@@ -117,10 +117,15 @@ endif()
 add_subdirectory("${PROJECT_SOURCE_DIR}/extern/data/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/extern/bitcoin-sv/")
 add_library(gigamonkey STATIC 
-    src/gigamonkey/address.cpp
-    src/gigamonkey/wif.cpp
     src/gigamonkey/hash.cpp
     src/gigamonkey/secp256k1.cpp
+    src/gigamonkey/merkle.cpp
+    src/gigamonkey/script.cpp
+    src/gigamonkey/address.cpp
+    src/gigamonkey/wif.cpp
+    src/gigamonkey/spv.cpp
+    src/gigamonkey/script/pattern.cpp
+    src/gigamonkey/script/op_return_data.cpp
     src/bitcoin_sv/sv.cpp 
 )
 
