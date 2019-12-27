@@ -30,7 +30,6 @@ namespace gigamonkey {
         digest() : Digest{} {}
         digest(slice<32>);
         digest(const uint<size, e>& u) : Digest{u} {}
-        digest(const uint<size, Opposite>& u) : Digest{u} {}
         digest(const digest<size, Opposite>& d) : Digest{d.Digest} {}
         
         operator bytes_view() const {

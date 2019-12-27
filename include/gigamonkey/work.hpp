@@ -39,7 +39,7 @@ namespace gigamonkey::work {
         }
         
         digest expand() const{
-            return digest{digits()} >> (exponent() - 3);
+            return digest{uint<32, LittleEndian>{digits()} >> (exponent() - 3)};
         }
         
         explicit operator uint32_little() const {
@@ -75,7 +75,7 @@ namespace gigamonkey::work {
         } 
         
         work::difficulty difficulty() const {
-            return work::difficulty{difficulty_1_target, expand()};
+            return work::difficulty{difficulty_1_target, expand().Digest};
         }
     };
     

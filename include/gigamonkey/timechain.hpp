@@ -67,7 +67,7 @@ namespace gigamonkey::bitcoin {
         }
         
         work::difficulty difficulty() const {
-            return work::difficulty{Target.expand()};
+            return work::difficulty{Target.expand().Digest};
         }
         
         bool operator==(const header& h) const {

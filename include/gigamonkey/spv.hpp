@@ -38,7 +38,7 @@ namespace gigamonkey::bitcoin {
                 return valid() ? Chain.first().Cumulative : work::difficulty{0};
             }
             
-            chain add(const bitcoin::header& h) {
+            chain add(const bitcoin::header& h) const {
                 txid digest = h.hash();
                 if (Chain.first().Hash != digest) return {};
                 return chain{Chain << header{h, digest, difficulty() + h.difficulty()}};
@@ -71,7 +71,7 @@ namespace gigamonkey::bitcoin {
         
         headers() : Chains{ordered_list<chain>{} << chain{list<header>{} << header{genesis(), genesis().hash(), genesis().difficulty()}}} {}
         
-        headers attach(const bitcoin::header& h);
+        headers attach(const bitcoin::header& h) const;
         
     };
     

@@ -31,7 +31,7 @@ namespace gigamonkey::bitcoin {
     }
     
     inline string write_address(char prefix, bytes_view b) {
-        return base58::check_encode(data::stream::write(b.size() + 1, prefix, b));
+        return base58::check_encode(write(b.size() + 1, prefix, b));
     }
     
     struct address {
