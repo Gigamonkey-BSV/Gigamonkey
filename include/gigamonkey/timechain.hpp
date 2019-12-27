@@ -55,8 +55,8 @@ namespace gigamonkey::bitcoin {
             Target{gigamonkey::header::target(x)}, 
             Nonce{gigamonkey::header::nonce(x)} {}
             
-        writer write(writer);
-        uint<80> write();
+        writer write(writer) const;
+        uint<80> write() const;
         
         digest<32, BigEndian> hash() const {
             return hash256(write());
@@ -68,6 +68,15 @@ namespace gigamonkey::bitcoin {
         
         work::difficulty difficulty() const {
             return work::difficulty{Target.expand()};
+        }
+        
+        bool operator==(const header& h) const {
+            return Version == h.Version && Previous == h.Previous && MerkleRoot == h.MerkleRoot 
+                && Timestamp == h.Timestamp && Target == h.Target && Nonce == h.Nonce;
+        }
+        
+        bool operator!=(const header& h) const {
+            return !operator==(h);
         }
     };
 }

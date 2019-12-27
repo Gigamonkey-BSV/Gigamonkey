@@ -27,7 +27,7 @@ namespace gigamonkey::bitcoin {
                 break;
             }
         }
-        return headers{chains.insert(next), Headers.insert(next.Chain.first().Txid, next)};
+        return headers{chains.insert(next), Headers.insert(next.Chain.first().Hash, next)};
     }
     
 }

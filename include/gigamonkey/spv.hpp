@@ -15,8 +15,16 @@ namespace gigamonkey::bitcoin {
         
         struct header {
             bitcoin::header Header;
-            txid Txid;
+            digest<32, BigEndian> Hash;
             work::difficulty Cumulative;
+            
+            bool operator==(const header& h) const {
+                return Header == h.Header;
+            }
+            
+            bool operator!=(const header& h) const {
+                return !operator==(h);
+            }
         };
         
         struct chain {
@@ -32,7 +40,7 @@ namespace gigamonkey::bitcoin {
             
             chain add(const bitcoin::header& h) {
                 txid digest = h.hash();
-                if (Chain.first().Txid != digest) return {};
+                if (Chain.first().Hash != digest) return {};
                 return chain{Chain << header{h, digest, difficulty() + h.difficulty()}};
             }
             
@@ -51,6 +59,7 @@ namespace gigamonkey::bitcoin {
             bool operator<=(const chain& h) {
                 return difficulty() <= h.difficulty();
             }
+            
         private:
             chain(list<header> c) : Chain{c} {}
             chain() : Chain{} {}
@@ -58,7 +67,7 @@ namespace gigamonkey::bitcoin {
         };
         
         ordered_list<chain> Chains;
-        map<txid&, list<header>> Headers;
+        map<digest<32, BigEndian>&, list<header>> Headers;
         
         headers() : Chains{ordered_list<chain>{} << chain{list<header>{} << header{genesis(), genesis().hash(), genesis().difficulty()}}} {}
         
