@@ -72,8 +72,8 @@ endif()
 set(Boost_LIB_PREFIX            "lib"       CACHE STRING "")
 set(Boost_USE_MULTITHREADED     ON          CACHE BOOL "") # '-mt' flag
 set(Boost_USE_STATIC_LIBS       ON          CACHE BOOL "")
-set(Boost_USE_STATIC_RUNTIME    ON          CACHE BOOL "") # '-s' tag
-set(Boost_USE_DEBUG_RUNTIME     ON          CACHE BOOL "") # '-g' tag
+set(Boost_USE_STATIC_RUNTIME    OFF         CACHE BOOL "") # '-s' tag
+set(Boost_USE_DEBUG_RUNTIME     OFF         CACHE BOOL "") # '-g' tag
 set(Boost_COMPILER              "-mgw49"    CACHE STRING "")
 
 # Include Boost

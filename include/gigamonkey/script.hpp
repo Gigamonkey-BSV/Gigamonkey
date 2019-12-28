@@ -278,7 +278,7 @@ namespace gigamonkey::bitcoin::script {
             if (!is_push(Op)) return {};
             if (is_push_data(Op)) return Data;
             if (Op == OP_1NEGATE) return {OP_1NEGATE};
-            return {byte{Op} - 0x50};
+            return {{static_cast<byte>(byte{Op} - byte{0x50})}};
         }
         
         bool valid() {

@@ -40,6 +40,7 @@ namespace gigamonkey {
     }
     
     using byte = std::uint8_t;
+    using uint16_little = boost::endian::little_uint16_t;
     using uint32_little = boost::endian::little_uint32_t;
     using int32_little = boost::endian::little_uint32_t;
     using index = uint32_little;
@@ -81,7 +82,7 @@ namespace gigamonkey {
     using slice = data::slice<byte, size>;
     
     using writer = data::writer<byte*>;
-    using reader = data::writer<byte*>;
+    using reader = data::reader<byte*>;
     
     template <typename ... P>
     inline bytes write(uint32 size, P... p) {

@@ -15,8 +15,7 @@ namespace gigamonkey::bitcoin::script {
             return writer{write(Writer, p)};
         }
         
-        writer(writer w) : Writer{w.Writer} {}
-        writer(bytes& b) : Writer{writer{data::slice<byte>{b}}} {}
+        writer(gigamonkey::writer w) : Writer{w.Writer} {}
     };
     
     reader read_push(reader r, instruction& rest) {

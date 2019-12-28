@@ -183,7 +183,7 @@ namespace gigamonkey::secp256k1 {
     }
     
     inline signature sign(const secret& s, const digest& d) {
-        s.sign(d);
+        return s.sign(d);
     }
     
     inline pubkey secret::to_public() const {

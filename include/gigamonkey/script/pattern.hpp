@@ -81,7 +81,7 @@ namespace gigamonkey::bitcoin::script {
     
     struct repeated final : pattern {
         int64 First;
-        int64 Second;
+        int Second;
         repeated_directive Directive;
         
         repeated(op, uint32 = 1, repeated_directive = or_more);
@@ -89,7 +89,7 @@ namespace gigamonkey::bitcoin::script {
         repeated(push, uint32 = 1, repeated_directive = or_more);
         repeated(optional, uint32 = 1, repeated_directive = or_more);
         repeated(pattern, uint32 = 1, repeated_directive = or_more);
-        repeated(repeated, uint32 = 1, repeated_directive = or_more);
+        repeated(repeated, uint32, repeated_directive = or_more);
         repeated(alternatives, uint32 = 1, repeated_directive = or_more);
         
         repeated(op, uint32, uint32);
@@ -147,7 +147,7 @@ namespace gigamonkey::bitcoin::script {
         static pattern* construct(optional);
         
         template <typename X> 
-        queue<pattern*> make(X x) {
+        static queue<pattern*> make(X x) {
             return queue<pattern*>{}.prepend(construct(x));
         }
         

@@ -18,13 +18,11 @@ namespace gigamonkey::bitcoin::base58 {
     }
     
     string check_encode(bytes_view b) {
-        uint32 leading_zeros = 0;
+        size_t leading_zeros = 0;
         for (index x = 0; x <= b.size() && b[x] == 0; x++) leading_zeros++;
         string b58 = encode(b.substr(leading_zeros));
-        string Data;
-        Data.resize(1 + b58.size());
-        data::writer<char*>{Data.begin(), Data.end()} << '1' << b58;
-        return Data;
+        string ones(leading_zeros, '1');
+        return data::stream::write_string(leading_zeros + b58.size(), ones, b58);
     }
     
     bool check_decode(bytes& b, string_view s) {
