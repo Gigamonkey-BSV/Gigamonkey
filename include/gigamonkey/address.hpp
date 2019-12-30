@@ -35,30 +35,39 @@ namespace gigamonkey::bitcoin {
     }
     
     struct address {
-        char Prefix;
+        enum type : char {
+            main = '1', 
+            test = 'n'
+        };
+        
+        type Prefix;
         digest<20, LittleEndian> Digest;
         
         address() : Prefix{}, Digest{} {}
-        address(char p, digest<20, LittleEndian> d) : Digest{d} {}
+        address(const digest<20, LittleEndian>& d, char p) : Prefix{p}, Digest{d} {}
         
-        explicit address(const string s);
+        explicit address(string_view s);
         
-        explicit address(char, const pubkey&);
+        explicit address(const pubkey& pub, type p = main) : address{hash256(pub), p} {}
         
-        explicit address(char, const secret&);
+        explicit address(const secret& s, type p = main) : address{s.to_public(), p} {}
         
         operator string() const {
             return write_address(Prefix, Digest);
         }
         
-        static bool valid_prefix(char p);
+        static bool valid_prefix(type p) {
+            return p == main || p == test;
+        }
         
         bool valid() const {
             return Digest.valid() && valid_prefix(Prefix);
         }
     };
     
-    address read_address(string);
+    inline address read_address(string_view str) {
+        return address{str};
+    }
     
 }
 

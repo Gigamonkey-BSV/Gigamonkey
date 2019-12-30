@@ -19,18 +19,18 @@ namespace gigamonkey::work {
     struct target {
         uint32_little Encoded;
         
-        static target encode(byte e, uint24 v);
+        static target encode(byte e, uint24_little v);
         
         target() : Encoded{} {}
-        target(uint32 x) : Encoded{x} {}
-        target(byte e, uint24 v) : Encoded{encode(e, v)} {}
+        target(uint32_little x) : Encoded{x} {}
+        target(byte e, uint24_little v) : Encoded{encode(e, v)} {}
         
         byte exponent() const {
             return static_cast<byte>(Encoded & 0x000000ff);
         }
         
-        uint24 digits() const {
-            return uint24{Encoded >> 8};
+        uint24_little digits() const {
+            return uint24_little{Encoded >> 8};
         }
         
         bool valid() const {
@@ -139,7 +139,7 @@ namespace gigamonkey::work {
         t.exponent();
     }
     
-    inline uint24 digits(target t) {
+    inline uint24_little digits(target t) {
         return t.digits();
     }
     

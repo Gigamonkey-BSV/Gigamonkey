@@ -83,6 +83,15 @@ namespace gigamonkey::bitcoin::script {
         return p;
     }
     
+    result result::engine::run(program p) {
+        engine e{};
+        while (!(p.empty() || e.Halt)) {
+            e = e.operation(p.first());
+            p = p.rest();
+        }
+        return !e.valid() || e.Stack.empty() || N_bytes{e.Stack.first()} != 1 ? result{false, nullptr} : result{true, e.Sigops};
+    }
+    
 }
 
 std::ostream& operator<<(std::ostream& o, gigamonkey::bitcoin::script::op x) {

@@ -2,12 +2,12 @@
 // Copyright (c) 2019 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#include <gigamonkey/keys.hpp>
+#include <gigamonkey/secp256k1.hpp>
 #include <gigamonkey/address.hpp>
 #include "gtest/gtest.h"
 
 namespace gigamonkey::bitcoin {
-
+    
     struct test_data {
         string secret_wif;
         string secret_wif_uncompressed;
@@ -15,7 +15,7 @@ namespace gigamonkey::bitcoin {
         string pubkey_hex_uncompressed;
         string addr_58;
         string cashaddr;
-
+        
         test_data(string pSecret_wif,
                 string pSecret_wif_uncompressed,
                 string pPubkey_hex,
@@ -25,7 +25,7 @@ namespace gigamonkey::bitcoin {
                                             pubkey_hex{pPubkey_hex}, pubkey_hex_uncompressed{pPubkey_hex_uncompressed},
                                             addr_58{pAddr_58}, cashaddr{pCashaddr} {}
     };
-
+    
     test_data test_dat[] = {
             test_data("L2rW8amvjR19iSZ1wVU9keXBqEjQ9fMSCw9bsSKSmSCXTxqfz2Bn",
                     "5K6KqPc6q8FXyWogBXvH2jV8tiB4S5AALUDpmxadei44jTV6p4S",
@@ -52,7 +52,7 @@ namespace gigamonkey::bitcoin {
                     "1DXj3zwApeKaSCyEZD5Pjkzai8p5XmwxzY",
                     "bitcoincash:qzyhz96ud6hz40mmzw4nlgv5f7pk7dzxnqe9dp23lh")
     };
-
+    
     test_data invalid_test_dat[] = {
             test_data("IamJUNK",
                     "IamJUNK",
@@ -67,13 +67,13 @@ namespace gigamonkey::bitcoin {
                     "1DKsEVtWQ6QGWBQ32fVDuCYQasxaCApdqm",
                     "bitcoincash:qzrn9mwtv7hm8ezuanh3wk78wumt8lc9msjqmh7pu4"),
     };
-
+    
     class FormatTest : public testing::TestWithParam<test_data> {
     public:
         secret SecretWIF;
         secret SecretWIFUncompressed;
         pubkey PubkeyHex;
-        uncompressed_pubkey PubkeyHexUncompressed;
+        pubkey PubkeyHexUncompressed;
         address AddressBase58;
     protected:
         void SetUp() override {
@@ -83,15 +83,15 @@ namespace gigamonkey::bitcoin {
             PubkeyHexUncompressed = uncompressed_pubkey(GetParam().pubkey_hex_uncompressed);
             AddressBase58=address(GetParam().addr_58);
         }
-
+    
     };
-
+    
     class FormatInvalidTest : public testing::TestWithParam<test_data> {
     public:
         secret SecretWIF;
         secret SecretWIFUncompressed;
         pubkey PubkeyHex;
-        uncompressed_pubkey PubkeyHexUncompressed;
+        pubkey PubkeyHexUncompressed;
         address AddressBase58;
     protected:
         void SetUp() override {
@@ -102,77 +102,73 @@ namespace gigamonkey::bitcoin {
             AddressBase58=address(GetParam().addr_58);
             AddressCashaddr = address(cashaddr::read(GetParam().cashaddr));
         }
-
+    
     };
-
+    
     TEST_P(FormatTest, WIF) {
         EXPECT_TRUE(this->SecretWIF.valid()) << "Secret WIF is not valid";
         EXPECT_TRUE(this->SecretWIFUncompressed.valid()) << "Uncompressed Secret Wif is not valid";
         EXPECT_EQ(this->SecretWIF, this->SecretWIFUncompressed) << "Can't get public key from compressed secret";
     }
-
+    
     TEST_P(FormatTest, PubHexValid) {
         EXPECT_TRUE(this->PubkeyHex.valid()) << "Public Key is not valid";
         EXPECT_TRUE(this->PubkeyHexUncompressed.valid()) << "Uncompressed Public Key is not valid";
         EXPECT_EQ(this->SecretWIF.to_public(), PubkeyHex) << "Can't get compressed public key from secret";
-        EXPECT_EQ(this->SecretWIFUncompressed.to_public_uncompressed(), PubkeyHexUncompressed) << "Can't get uncompressed public key from secret";
+        EXPECT_EQ(this->SecretWIFUncompressed.to_public().decompress(), PubkeyHexUncompressed) << "Can't get uncompressed public key from secret";
         //EXPECT_TRUE(this->PubkeyHexUncompressed.compress() == this->PubkeyHex)
     }
-
+    
     TEST_P(FormatTest, Addr58Valid) {
         EXPECT_TRUE(this->AddressBase58.valid()) << "Address in base 58 is not valid";
     }
-
-    TEST_P(FormatTest, DISABLED_CashValid) {
-        EXPECT_TRUE(this->AddressCashaddr.valid()) << "Address in Cash is not valid";
-    }
-
+    
     TEST_P(FormatTest, SecretWIFDecompression) {
         EXPECT_EQ(this->SecretWIF, this->SecretWIFUncompressed) << "Secret Wif not equal to it's decompressed version";
     }
-
+    
     TEST_P(FormatTest, GetAddressFromPublicKey) {
         EXPECT_EQ(this->PubkeyHex.address(), this->AddressBase58) << "Can't get address from public key";
     }
-
+    
     TEST_P(FormatTest, WriteSecretWIF) {
         EXPECT_EQ(this->SecretWIF.write(), GetParam().secret_wif) << "cannot derive wif " << GetParam().secret_wif << " from key " << SecretWIF.Secret.Value;
     }
-
+    
     TEST_P(FormatTest, WritePubKey) {
         EXPECT_EQ(this->PubkeyHex.write(), GetParam().pubkey_hex);
     }
-
+    
     TEST_P(FormatTest, WriteAddress) {
         EXPECT_EQ(this->AddressBase58.write(), GetParam().addr_58);
     }
-
+    
     // Invalid Tests
-
+    
     TEST_P(FormatInvalidTest, SecretWIFInvalid) {
         EXPECT_FALSE(this->SecretWIF.valid()) << "Secret WIF is valid";
     }
-
+    
     TEST_P(FormatInvalidTest, SecretWIFUncompressedInvalid) {
         EXPECT_FALSE(this->SecretWIFUncompressed.valid()) << "Uncompressed Secret Wif is valid";
     }
-
+    
     TEST_P(FormatInvalidTest, PubHexInvalid) {
         EXPECT_FALSE(this->PubkeyHex.valid()) << "Public Key isvalid";
     }
-
+    
     TEST_P(FormatInvalidTest, PubHexUncompressedInvalid) {
         EXPECT_FALSE(this->PubkeyHexUncompressed.valid()) << "Uncompressed Public Key is valid";
     }
-
+    
     TEST_P(FormatInvalidTest, Addr58Invalid) {
         EXPECT_FALSE(this->AddressBase58.valid()) << "Address in base 58 is valid";
     }
-
+    
     TEST_P(FormatInvalidTest, DISABLED_CashInvalid) {
         EXPECT_FALSE(this->AddressCashaddr.valid()) << "Address in Cash is valid";
     }
-
+    
     INSTANTIATE_TEST_SUITE_P(Stage1Tests,Stage1Test,testing::ValuesIn(test_dat));
     INSTANTIATE_TEST_SUITE_P(Stage1InvalidTests,Stage1InvalidTest,testing::ValuesIn(invalid_test_dat));
 

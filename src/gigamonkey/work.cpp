@@ -14,7 +14,7 @@ namespace gigamonkey::work {
         if (o.Target < minimum) throw std::invalid_argument{"minimum target"};
         nonce n = 0;
         while (true) {
-            if (candidate{n, o}.valid()) return n;
+            if (candidate{o, n}.valid()) return n;
             n++;
         }
     }

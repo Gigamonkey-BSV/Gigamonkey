@@ -14,83 +14,18 @@ namespace gigamonkey::merkle {
     inline digest concatinated(const digest& a, const digest& b) {
         return bitcoin::hash256(write(64, a, b));
     }
-        
-    enum direction : byte {
-        none = 0,
-        left = 1, 
-        right = 2
-    };
     
-    struct tree;
+    class tree;
     
-    class branch;
-    
-    class node {
-        friend struct tree;
-        friend class branch;
-        branch* Parent;
+    class path {
+        friend class tree;
+        path(uint32 i, list<digest> h) : Index{i}, Hashes{h} {}
     public:
-        direction Direction;
-        const digest& Left;
-        const digest& Right;
-        digest Digest;
         
-        node(const digest& l, const digest& r) : 
-            Parent{nullptr}, Direction{none}, Left{l}, Right{r}, Digest{concatinated(l, r)} {}
-        node(const digest& d) : node{d, d} {}
-    };
-    
-    struct step {
-        direction Direction;
-        node Node;
-    };
-    
-    class branch {
-        friend struct tree;
-        branch* Left;
-        branch* Right;
-        branch(node n) : Left{nullptr}, Right{nullptr}, Node{n} {}
-        branch(branch* l, branch* r);
-        branch(branch* b) : branch{b, b} {}
-    public:
-        node Node;
-        ~branch() {
-            delete Left;
-            delete Right;
-        }
-    };
-    
-    // For a full node 
-    struct tree {
-        
-        branch* Tree;
-        map<digest&, branch*> Leaves; 
-        list<digest> Elements;
-        
-        list<step> path(const digest&);
-        
-        tree() : Tree{nullptr}, Leaves{} {}
-        tree(list<digest>);
-        ~tree() {
-            delete Tree;
-        }
-        
-        digest root() {
-            return Tree == nullptr ? digest{} : Tree->Node.Digest;
-        }
-    };
-        
-    inline digest root(list<digest> l) {
-        return tree{l}.root();
-    } 
-    
-    writer write(writer w, list<step>);
-    bytes write(list<step>);
-    
-    // for an spv node. 
-    struct path {
         uint32 Index;
         list<digest> Hashes;
+        
+        path() : Index{0}, Hashes{} {}
         
         static digest next(uint32 i, const digest& d, const digest& last) {
             return (i & 1) == 1 ? concatinated(last, d) : concatinated(d, last);
@@ -100,6 +35,29 @@ namespace gigamonkey::merkle {
             if (Hashes.empty()) return leaf == root;
             return path{Index >> 1, Hashes.rest()}.verify(root, next(Index, leaf, Hashes.first()));
         }
+    };
+    
+    class tree {
+        using digest_tree = gigamonkey::tree<digest>;
+        static queue<digest_tree> pairwise_concatinate(queue<digest_tree> l);
+        
+        static digest_tree build(queue<digest_tree> l) {
+            if (data::size(l) == 0) return {};
+            if (data::size(l) == 1) return l.first();
+            return build(pairwise_concatinate(l));
+        }
+        
+        static digest_tree build(queue<digest> l) {
+            return build(data::for_each([](const digest& d)->digest_tree{return {d};}, l));
+        }
+        
+    public:
+        uint32 Leaves;
+        digest_tree Tree;
+        
+        tree(queue<digest> l) : Leaves{data::size(l)}, Tree{build(l)} {}
+        
+        merkle::path path(uint32 index);
     };
     
 }

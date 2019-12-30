@@ -44,7 +44,7 @@ namespace gigamonkey {
     using uint32_little = boost::endian::little_uint32_t;
     using int32_little = boost::endian::little_uint32_t;
     using index = uint32_little;
-    using uint24 = boost::endian::little_uint24_t;
+    using uint24_little = boost::endian::little_uint24_t;
     using uint64_little = boost::endian::little_uint64_t;
     using satoshi = uint64_little;
     

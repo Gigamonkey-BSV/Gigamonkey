@@ -6,7 +6,7 @@
 
 namespace gigamonkey::bitcoin {
     
-    wif wif::read(const string& s) {
+    wif wif::read(string_view s) {
         wif w{};
         reader r = reader{base58::check_decode(s)} >> &w.Prefix >> &w.Secret.Value;
         char suffix;

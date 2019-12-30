@@ -16,10 +16,44 @@ namespace gigamonkey::bitcoin::script {
         if (p.size() == 0) throw fail{};
         if (p[0] != Instruction.Op) throw fail{};
         uint32 size = next_instruction_size(p);
-        if (p.size() < size || p.substr(1, size) != Instruction.Data) throw fail{};
+        // mistake here
+        if (p.size() < size || Instruction != instruction::read(p.substr(0, size))) throw fail{};
         return p.substr(size);
     }
-        
+    
+    bool push::match(const instruction& i) const {
+        switch (Type) {
+            case any : 
+                return is_push(i.Op);
+            case value : 
+                return is_push(i.Op) && Value == Z_bytes{i.data()};
+            case data : 
+                return is_push(i.Op) && Data == i.data();
+            case read : 
+                if (!is_push(i.Op)) return false;
+                Read = i.data();
+                return true;
+        }
+    }
+    
+    bytes_view push::scan(bytes_view p) const {
+        uint32 size = next_instruction_size(p);
+        if (!match(instruction::read(p.substr(0, size)))) throw fail{};
+        return p.substr(size);
+    }
+    
+    bool push_size::match(const instruction& i) const {
+        bytes Data = i.data();
+        if (Data.size() != Size) throw fail{};
+        if (Reader) Read = Data;
+    }
+    
+    bytes_view push_size::scan(bytes_view p) const {
+        uint32 size = next_instruction_size(p);
+        if (!match(instruction::read(p.substr(0, size)))) throw fail{};
+        return p.substr(size);
+    }
+    
     bytes_view pattern::sequence::scan(bytes_view p) const {
         queue<pattern*> patt = Patterns;
         while (!data::empty(patt)) {

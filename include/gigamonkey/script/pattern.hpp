@@ -9,7 +9,6 @@
 namespace gigamonkey::bitcoin::script {
     
     struct pattern {
-        
         bool match(bytes_view b) const {
             try {
                 bytes_view rest = scan(b); 
@@ -52,22 +51,48 @@ namespace gigamonkey::bitcoin::script {
         }
     };
     
-    struct push final : pattern {
-        push();               // match any push data
-        push(int64);          // match any push data of the given value
-        push(bytes_view);     // match a push of the given data. 
-        push(bytes&);         // match any push data and save the result.
-        
-        bool match(instruction) const;
+    struct pattern::atom final : pattern {
+        instruction Instruction;
+        atom(instruction i) : Instruction{i} {}
         
         virtual bytes_view scan(bytes_view p) const final override;
     };
     
-    struct push_size final : pattern {
-        push_size(size_t);           // match any push data of the given value
-        push_size(size_t, bytes&);   // match any push data and save the result.
+    class push final : public pattern {
+        enum type : byte {any, value, data, read};
+        type Type;
+        Z_bytes Value;
+        bytes Data;
+        bytes& Read;
         
-        bool match(instruction) const;
+    public:
+        // match any push data.
+        push() : Type{any}, Value{0}, Data{}, Read{Data} {}
+        // match any push data of the given value
+        push(int64 v) : Type{value}, Value{v}, Data{}, Read{Data} {}
+        // match a push of the given data. 
+        push(bytes_view b) : Type{data}, Value{0}, Data{b}, Read{Data} {}
+        // match any push data and save the result.
+        push(bytes& r) : Type{read}, Value{0}, Data{}, Read{r} {}
+        
+        bool match(const instruction& i) const;
+        
+        virtual bytes_view scan(bytes_view p) const final override;
+    };
+    
+    class push_size final : public pattern {
+        bool Reader;
+        size_t Size;
+        bytes Data;
+        bytes& Read;
+        
+    public:
+        // match any push data of the given value
+        push_size(size_t s) : Reader{false}, Size{s}, Data{}, Read{Data} {}
+        // match any push data and save the result.
+        push_size(size_t s, bytes& r) : Reader{true}, Size{s}, Data{}, Read{r} {}
+        
+        bool match(const instruction& i) const;
         
         virtual bytes_view scan(bytes_view p) const final override;
     };
@@ -110,13 +135,6 @@ namespace gigamonkey::bitcoin::script {
         optional(repeated);
         optional(pattern);
         optional(alternatives);
-        
-        virtual bytes_view scan(bytes_view p) const final override;
-    };
-    
-    struct pattern::atom final : pattern {
-        instruction Instruction;
-        atom(instruction i) : Instruction{i} {}
         
         virtual bytes_view scan(bytes_view p) const final override;
     };

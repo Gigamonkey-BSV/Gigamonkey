@@ -10,7 +10,7 @@ namespace gigamonkey::work {
     // can result in stack smashing
     TEST(WorkTest, DISABLED_TestWork) {
         
-        const target MinimumTarget{31, 0xffffff};
+        const target minimum_target{31, 0xffffff};
         
         string message{"wake up!!!!!!"};
         
@@ -36,11 +36,11 @@ namespace gigamonkey::work {
         const nonce nonce_sixteenth = work(work_order_sixteenth);
         const nonce nonce_thirty_second = work(work_order_thirty_second);
         
-        const candidate candidate_half = candidate{nonce_half, work_order_half};
-        const candidate candidate_quarter = candidate{nonce_quarter, work_order_quarter};
-        const candidate candidate_eighth = candidate{nonce_eighth, work_order_eighth};
-        const candidate candidate_sixteenth = candidate{nonce_sixteenth, work_order_sixteenth};
-        const candidate candidate_thirty_second = candidate{nonce_thirty_second, work_order_thirty_second};
+        const candidate candidate_half = candidate{work_order_half, nonce_half};
+        const candidate candidate_quarter = candidate{work_order_quarter, nonce_quarter};
+        const candidate candidate_eighth = candidate{work_order_eighth, nonce_eighth};
+        const candidate candidate_sixteenth = candidate{work_order_sixteenth, nonce_sixteenth};
+        const candidate candidate_thirty_second = candidate{work_order_thirty_second, nonce_thirty_second};
         
         EXPECT_TRUE(candidate_half.valid());
         EXPECT_TRUE(candidate_quarter.valid());

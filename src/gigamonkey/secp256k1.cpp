@@ -1,7 +1,7 @@
 // Copyright (c) 2019 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#include <gigamonkey/secp256k1.hpp>
+#include <gigamonkey/wif.hpp>
 
 namespace gigamonkey::secp256k1 {
     
@@ -98,6 +98,12 @@ namespace gigamonkey::secp256k1 {
             return {};
 
         return sig;
+    }
+    
+    secret::secret(string_view x) : secret{bitcoin::wif::read(x).Secret} {
+        if (!valid()) try {
+            Value = coordinate{x};
+        } catch (std::invalid_argument) {}
     }
     
     bool verify_signature(const secp256k1_context* context,

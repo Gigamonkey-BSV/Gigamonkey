@@ -7,8 +7,8 @@
 #ifndef GIGAMONKEY_SCRIPT
 #define GIGAMONKEY_SCRIPT
 
-#include "types.hpp"
 #include <boost/endian/conversion.hpp>
+#include "signature.hpp"
 
 namespace gigamonkey::bitcoin::script {
     enum op : byte {
@@ -272,7 +272,7 @@ namespace gigamonkey::bitcoin::script {
             if (size <= 0xffff) return OP_PUSHDATA1;
             if (size <= 0xffffffff) return OP_PUSHDATA2;
             return OP_PUSHDATA4;
-        }(data.size())}, Data{data} {}
+        }(data.size())}, Data{data} {} 
         
         bytes data() const {
             if (!is_push(Op)) return {};
@@ -327,16 +327,18 @@ namespace gigamonkey::bitcoin::script {
             if (is_push_data(Op))return write_push_data(w, Op, Data.size());
             return w << static_cast<byte>(Op);
         }
+    
+        static instruction op_code(op o) {
+            return instruction{o};
+        }
+        
+        static instruction push_data(bytes_view b) {
+            return instruction{b};
+        }
+        
+        static instruction read(bytes_view b);
         
     };
-    
-    inline instruction op_code(op o) {
-        return instruction{o};
-    }
-    
-    inline instruction push_data(bytes_view b) {
-        return instruction{b};
-    }
     
     using program = queue<instruction>;
     

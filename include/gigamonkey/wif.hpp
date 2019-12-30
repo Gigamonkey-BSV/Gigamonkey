@@ -40,9 +40,9 @@ namespace gigamonkey::bitcoin {
     public:
         wif(char p, secret s, bool c = true) : Prefix{p}, Secret{s}, Compressed{c} {}
         
-        static wif read(const string& s);
+        static wif read(string_view s);
         
-        wif(const string& s) : wif{read(s)} {}
+        wif(string_view s) : wif{read(s)} {}
         
         static string write(char, const secret&, bool compressed = true);
         

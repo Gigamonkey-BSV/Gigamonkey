@@ -93,6 +93,7 @@ namespace gigamonkey::secp256k1 {
         
         secret() : Value{0} {}
         secret(const coordinate& v) : Value{v} {}
+        secret(string_view s); // hexidecimal and wif accepted. 
         
         bool valid() const {
             return valid(Value);
@@ -132,6 +133,7 @@ namespace gigamonkey::secp256k1 {
         
         pubkey() : Value{} {}
         pubkey(const N_bytes& v) : Value{v} {}
+        explicit pubkey(string_view s);
         
         bool valid() const {
             return valid(Value);
@@ -147,6 +149,10 @@ namespace gigamonkey::secp256k1 {
         
         pubkey_type type() const {
             return size() == 0 ? invalid : pubkey_type{Value[0]};
+        }
+        
+        operator bytes_view() const {
+            return Value;
         }
         
         coordinate x() const;
