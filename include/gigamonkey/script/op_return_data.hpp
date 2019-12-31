@@ -7,10 +7,11 @@
 #include <gigamonkey/script.hpp>
 #include "pattern.hpp"
 
-namespace gigamonkey::bitcoin::script {
+namespace gigamonkey::bitcoin {
     
     struct op_return_data {
         static script::pattern pattern() {
+            using namespace script;
             static script::pattern Pattern{optional{OP_FALSE}, OP_RETURN, repeated{push{}, 0}};
             return Pattern;
         }

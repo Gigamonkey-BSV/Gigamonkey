@@ -126,7 +126,7 @@ add_library(gigamonkey STATIC
     src/gigamonkey/spv.cpp
     src/gigamonkey/script/pattern.cpp
     src/gigamonkey/script/op_return_data.cpp
-    src/bitcoin_sv/sv.cpp 
+#    src/bitcoin_sv/sv.cpp 
 )
 
 target_link_libraries(gigamonkey PUBLIC data common util bitcoinconsensus)

@@ -92,7 +92,7 @@ namespace gigamonkey::bitcoin {
 }
 
 inline std::ostream& operator<<(std::ostream& o, const gigamonkey::bitcoin::signature& x) {
-    return o << "signature{" << data::encoding::hex::write{x.Data} << "}";
+    return o << "signature{" << data::encoding::hex::write(x.Data) << "}";
 }
 
 #endif
