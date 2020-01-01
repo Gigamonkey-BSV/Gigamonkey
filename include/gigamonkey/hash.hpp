@@ -36,7 +36,7 @@ namespace gigamonkey {
             return bytes_view{Digest.Array.data(), size};
         }
         
-        operator digest<size, Opposite>() const {
+        explicit operator digest<size, Opposite>() const {
             return digest<size, Opposite>{Digest};
         }
         
@@ -119,5 +119,8 @@ inline std::ostream& operator<<(std::ostream& o, gigamonkey::digest<size, gigamo
     using namespace gigamonkey;
     return o << digest<size, BigEndian>{s};
 }
+
+template <size_t size> 
+gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer, gigamonkey::digest<size, gigamonkey::LittleEndian>& s);
 
 #endif

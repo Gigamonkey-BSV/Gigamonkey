@@ -25,9 +25,14 @@ namespace gigamonkey::header {
     int32_little version(slice<80>);
     slice<32> previous(slice<80>);
     slice<32> merkle_root(slice<80>);
-    uint32_little timestamp(slice<80>);
-    uint32_little target(slice<80>);
+    gigamonkey::timestamp timestamp(slice<80>);
+    work::target target(slice<80>);
     uint32_little nonce(slice<80>);
+    inline bytes_writer write(bytes_writer w, 
+        int32_little version, digest<32, LittleEndian> previous, digest<32, LittleEndian> root,
+        gigamonkey::timestamp time, work::target target, uint32_little nonce) {
+        return w << version << previous << root << time << target << nonce;
+    }
 }
 
 namespace gigamonkey::bitcoin {
@@ -35,7 +40,7 @@ namespace gigamonkey::bitcoin {
         int32_little Version;
         digest<32, LittleEndian> Previous;
         digest<32, LittleEndian> MerkleRoot;
-        uint32_little Timestamp;
+        timestamp Timestamp;
         work::target Target;
         uint32_little Nonce;
         
@@ -55,7 +60,10 @@ namespace gigamonkey::bitcoin {
             Target{gigamonkey::header::target(x)}, 
             Nonce{gigamonkey::header::nonce(x)} {}
             
-        bytes_writer write(bytes_writer w) const;
+        bytes_writer write(bytes_writer w) const {
+            return gigamonkey::header::write(w, Version, Previous, MerkleRoot, Timestamp, Target, Nonce);
+        }
+        
         uint<80> write() const;
         
         digest<32, BigEndian> hash() const {

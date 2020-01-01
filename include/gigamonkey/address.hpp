@@ -41,14 +41,17 @@ namespace gigamonkey::bitcoin {
         };
         
         type Prefix;
-        digest<20, LittleEndian> Digest;
+        
+        using digest = gigamonkey::digest<20, LittleEndian>;
+        
+        digest Digest;
         
         address() : Prefix{}, Digest{} {}
-        address(const digest<20, LittleEndian>& d, char p) : Prefix{p}, Digest{d} {}
+        address(const digest& d, char p) : Prefix{p}, Digest{d} {}
         
         explicit address(string_view s);
         
-        explicit address(const pubkey& pub, type p = main) : address{hash160(pub), p} {}
+        explicit address(const pubkey& pub, type p = main) : address{digest(hash160(pub)), p} {}
         
         explicit address(const secret& s, type p = main) : address{s.to_public(), p} {}
         

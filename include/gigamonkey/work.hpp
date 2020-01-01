@@ -10,7 +10,7 @@ namespace gigamonkey::work {
     
     using nonce = boost::endian::little_int64_t;
     
-    using digest = gigamonkey::digest<sha256::Size, LittleEndian>;
+    using digest = gigamonkey::digest<sha256::Size, BigEndian>;
     
     integer<32, LittleEndian> difficulty_1_target{"0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"};
     
@@ -153,6 +153,10 @@ namespace gigamonkey::work {
     
     nonce work(order);
     
+}
+
+inline gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer w, const gigamonkey::work::target& t) {
+    return w << t.Encoded;
 }
 
 #endif

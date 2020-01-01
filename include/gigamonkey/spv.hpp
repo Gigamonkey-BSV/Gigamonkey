@@ -39,7 +39,7 @@ namespace gigamonkey::bitcoin {
             }
             
             chain add(const bitcoin::header& h) const {
-                txid digest = h.hash();
+                digest<32, BigEndian> digest = h.hash();
                 if (Chain.first().Hash != digest) return {};
                 return chain{Chain << header{h, digest, difficulty() + h.difficulty()}};
             }

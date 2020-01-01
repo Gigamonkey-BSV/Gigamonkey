@@ -102,6 +102,24 @@ namespace gigamonkey {
         return data::stream::write_bytes(size, p...);
     }
     
+    struct timestamp {
+        int32_little Timestamp;
+        
+        bool operator==(const timestamp&) const;
+        bool operator!=(const timestamp&) const;
+        bool operator<(const timestamp&) const;
+        bool operator>(const timestamp&) const;
+        bool operator<=(const timestamp&) const;
+        bool operator>=(const timestamp&) const;
+        
+        string_writer write(string_writer) const;
+        string write() const;
+        
+        bytes_writer write(bytes_writer w) const {
+            return w << Timestamp;
+        }
+    };
+    
     bytes_writer write_var_int(bytes_writer, uint64);
     
     template <typename X> 
@@ -123,6 +141,14 @@ namespace gigamonkey {
         
     }
     
+}
+
+inline std::ostream& operator<<(std::ostream& o, const gigamonkey::timestamp& s) {
+    return o << s.write();
+}
+
+inline gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer w, const gigamonkey::timestamp& s) {
+    return w << s.Timestamp;
 }
 
 #endif

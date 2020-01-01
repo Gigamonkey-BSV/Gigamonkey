@@ -11,7 +11,7 @@ namespace gigamonkey::bitcoin {
     using txid = gigamonkey::digest<sha256::Size, LittleEndian>;
     
     inline txid id(bytes_view b) {
-        return hash256(b);
+        return txid(hash256(b));
     }
     
 }
