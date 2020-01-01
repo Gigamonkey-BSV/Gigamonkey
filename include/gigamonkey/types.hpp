@@ -105,6 +105,11 @@ namespace gigamonkey {
     struct timestamp {
         int32_little Timestamp;
         
+        timestamp& operator=(const timestamp& t) {
+            Timestamp = t.Timestamp;
+            return *this;
+        }
+        
         bool operator==(const timestamp&) const;
         bool operator!=(const timestamp&) const;
         bool operator<(const timestamp&) const;

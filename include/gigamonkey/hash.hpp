@@ -40,10 +40,13 @@ namespace gigamonkey {
             return digest<size, Opposite>{Digest};
         }
         
-        // Zero represents invalid. 
+        // Zero represents invalid even though it is theoretically
+        // possible for a hash digest to come out all zeros. 
         bool valid() const {
             return Digest != 0;
         }
+        
+        digest& operator=(const digest&);
         
         bool operator==(const digest& d) const {
             return Digest == d.Digest;
@@ -110,17 +113,20 @@ namespace gigamonkey {
 }
 
 template <size_t size> 
-inline std::ostream& operator<<(std::ostream& o, gigamonkey::digest<size, gigamonkey::BigEndian>& s) {
+inline std::ostream& operator<<(std::ostream& o, const gigamonkey::digest<size, gigamonkey::BigEndian>& s) {
     return o << "digest{" << s.Digest << "}";
 }
 
 template <size_t size> 
-inline std::ostream& operator<<(std::ostream& o, gigamonkey::digest<size, gigamonkey::LittleEndian>& s) {
+inline std::ostream& operator<<(std::ostream& o, const gigamonkey::digest<size, gigamonkey::LittleEndian>& s) {
     using namespace gigamonkey;
     return o << digest<size, BigEndian>{s};
 }
 
 template <size_t size> 
-gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer, gigamonkey::digest<size, gigamonkey::LittleEndian>& s);
+gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer, const gigamonkey::digest<size, gigamonkey::LittleEndian>& s);
+
+template <size_t size> 
+gigamonkey::bytes_reader operator>>(gigamonkey::bytes_reader, gigamonkey::digest<size, gigamonkey::LittleEndian>& s);
 
 #endif

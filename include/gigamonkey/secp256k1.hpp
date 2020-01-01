@@ -6,6 +6,7 @@
 
 #include "types.hpp"
 #include "hash.hpp"
+#include <data/encoding/integer.hpp>
 #include <secp256k1.h>
 
 namespace gigamonkey::secp256k1 {
@@ -44,6 +45,8 @@ namespace gigamonkey::secp256k1 {
         ~signature() {
             delete Data;
         }
+        
+        signature& operator=(const signature&);
         
         operator bytes_view() {
             return bytes_view{Data->data, Size};
@@ -99,6 +102,8 @@ namespace gigamonkey::secp256k1 {
             return valid(Value);
         }
         
+        secret& operator=(const secret&);
+        
         signature sign(const digest& d) const {
             return sign(Value, d);
         }
@@ -138,6 +143,8 @@ namespace gigamonkey::secp256k1 {
         bool valid() const {
             return valid(Value);
         }
+        
+        pubkey& operator=(const pubkey&);
         
         bool verify(digest& d, const signature& s) const {
             return verify(Value, d, s);
@@ -181,6 +188,14 @@ namespace gigamonkey::secp256k1 {
         
         pubkey operator*(const secret& s) const {
             return times(Value, s.Value);
+        }
+        
+        bytes_writer write(bytes_writer w) const {
+            w << Value;
+        }
+        
+        string write_string() const {
+            return data::encoding::hexidecimal::write(Value);
         }
     };
     

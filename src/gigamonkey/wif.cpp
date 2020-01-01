@@ -3,6 +3,7 @@
 
 #include <gigamonkey/wif.hpp>
 #include <gigamonkey/address.hpp>
+#include <gigamonkey/txid.hpp>
 
 namespace gigamonkey::bitcoin {
     
@@ -10,9 +11,11 @@ namespace gigamonkey::bitcoin {
         bytes data;
         if (!base58::check_decode(data, s)) return wif{};
         wif w{};
-        bytes_reader r = reader(data) >> w.Prefix >> w.Secret.Value; 
+        txid d;
+        bytes_reader r = reader(data) >> w.Prefix >> d; 
         char suffix;
-        w.Compressed = (!(r >> suffix).valid()) || suffix == CompressedSuffix;  
+        w.Compressed = (!(r >> suffix).valid()) || suffix == CompressedSuffix; 
+        w.Secret.Value = digest<32, BigEndian>(d);
         return w;
     }
     

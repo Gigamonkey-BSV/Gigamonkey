@@ -30,10 +30,6 @@ namespace gigamonkey::bitcoin {
         
     }
     
-    inline string write_address(char prefix, bytes_view b) {
-        return base58::check_encode(write(b.size() + 1, prefix, b));
-    }
-    
     struct address {
         enum type : char {
             main = '1', 
@@ -54,9 +50,17 @@ namespace gigamonkey::bitcoin {
         explicit address(const pubkey& pub, type p = main) : address{digest(hash160(pub)), p} {}
         
         explicit address(const secret& s, type p = main) : address{s.to_public(), p} {}
+    
+        static string write(char prefix, bytes_view b) {
+            return base58::check_encode(gigamonkey::write(b.size() + 1, prefix, b));
+        }
+        
+        string write() const {
+            return write(Prefix, Digest);
+        }
         
         operator string() const {
-            return write_address(Prefix, Digest);
+            return write();
         }
         
         static bool valid_prefix(type p) {

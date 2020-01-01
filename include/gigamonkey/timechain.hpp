@@ -89,6 +89,10 @@ namespace gigamonkey::bitcoin {
     };
 }
 
+inline gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer w, const gigamonkey::bitcoin::header& h) {
+    return h.write(w);
+}
+
 namespace gigamonkey::outpoint {
     bool valid(slice<36>);
     slice<32> reference(slice<36>);
@@ -114,6 +118,10 @@ namespace gigamonkey::bitcoin {
     };
 }
 
+inline gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer w, const gigamonkey::bitcoin::outpoint& o) {
+    return o.write(w);
+}
+
 namespace gigamonkey::input {
     bool valid(bytes_view);
     slice<36> previous(bytes_view);
@@ -121,7 +129,7 @@ namespace gigamonkey::input {
     uint32_little sequence(bytes_view);
     
     inline bytes_writer write(bytes_writer w, const bitcoin::outpoint& o, bytes_view script, uint32_little sequence) {
-        return o.write(w) << script << sequence;
+        return w << o << script << sequence;
     }
 }
 

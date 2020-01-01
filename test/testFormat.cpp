@@ -5,6 +5,7 @@
 #include <gigamonkey/secp256k1.hpp>
 #include <gigamonkey/address.hpp>
 #include "gtest/gtest.h"
+#include <gigamonkey/wif.hpp>
 
 namespace gigamonkey::bitcoin {
     
@@ -127,15 +128,16 @@ namespace gigamonkey::bitcoin {
     }
     
     TEST_P(FormatTest, GetAddressFromPublicKey) {
-        EXPECT_EQ(this->PubkeyHex.address(), this->AddressBase58) << "Can't get address from public key";
+        EXPECT_EQ(bitcoin::address{this->PubkeyHex}, this->AddressBase58) << "Can't get address from public key";
     }
     
     TEST_P(FormatTest, WriteSecretWIF) {
-        EXPECT_EQ(this->SecretWIF.write(), GetParam().secret_wif) << "cannot derive wif " << GetParam().secret_wif << " from key " << SecretWIF.Secret.Value;
+        wif Wif{wif::MainNet, this->SecretWIF, true};
+        EXPECT_EQ(Wif.write(), GetParam().secret_wif) << "cannot derive wif " << GetParam().secret_wif << " from key " << SecretWIF.Value;
     }
     
     TEST_P(FormatTest, WritePubKey) {
-        EXPECT_EQ(this->PubkeyHex.write(), GetParam().pubkey_hex);
+        EXPECT_EQ(this->PubkeyHex.write_string(), GetParam().pubkey_hex);
     }
     
     TEST_P(FormatTest, WriteAddress) {
@@ -162,10 +164,6 @@ namespace gigamonkey::bitcoin {
     
     TEST_P(FormatInvalidTest, Addr58Invalid) {
         EXPECT_FALSE(this->AddressBase58.valid()) << "Address in base 58 is valid";
-    }
-    
-    TEST_P(FormatInvalidTest, DISABLED_CashInvalid) {
-        EXPECT_FALSE(this->AddressCashaddr.valid()) << "Address in Cash is valid";
     }
     
     INSTANTIATE_TEST_SUITE_P(Stage1Tests,Stage1Test,testing::ValuesIn(test_dat));
