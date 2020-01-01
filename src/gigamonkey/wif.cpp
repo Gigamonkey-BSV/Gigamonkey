@@ -10,18 +10,19 @@ namespace gigamonkey::bitcoin {
         bytes data;
         if (!base58::check_decode(data, s)) return wif{};
         wif w{};
-        reader r = reader{data} >> &w.Prefix >> &w.Secret.Value; 
+        bytes_reader r = reader(data) >> w.Prefix >> w.Secret.Value; 
         char suffix;
-        w.Compressed = (!(r >> &suffix).valid()) || suffix == compressed_suffix();  
+        w.Compressed = (!(r >> suffix).valid()) || suffix == CompressedSuffix;  
         return w;
     }
     
+    
     string wif::write(char prefix, const secret& s, bool compressed) {
-        string data;
+        bytes data;
         data.resize(compressed ? CompressedSize : UncompressedSize);
-        writer w = writer{data.begin(), data.end()} << prefix << s; 
-        if (compressed) w << compressed_suffix() else w;
-        return data;
+        bytes_writer w = writer(data) << prefix << s; 
+        if (compressed) w << CompressedSuffix;
+        return base58::check_encode(data);
     }
     
 }

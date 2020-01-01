@@ -316,14 +316,14 @@ namespace gigamonkey::bitcoin::script {
             return !operator==(o);
         }
         
-        static writer write_push_data(writer w, op Push, size_t size) {
+        static bytes_writer write_push_data(bytes_writer w, op Push, size_t size) {
             if (Push <= OP_PUSHSIZE75) return w << static_cast<byte>(Push);
             if (Push == OP_PUSHDATA1) return w << static_cast<byte>(OP_PUSHDATA1) << static_cast<byte>(size); 
             if (Push == OP_PUSHDATA2) return w << static_cast<byte>(OP_PUSHDATA2) << static_cast<uint32_little>(size); 
             return w << static_cast<byte>(OP_PUSHDATA4) << uint64_little{size};
         }
         
-        writer write(writer w) const {
+        bytes_writer write(bytes_writer w) const {
             if (is_push_data(Op))return write_push_data(w, Op, Data.size());
             return w << static_cast<byte>(Op);
         }
@@ -368,11 +368,11 @@ inline std::ostream& operator<<(std::ostream& o, gigamonkey::bitcoin::script::in
 
 namespace gigamonkey::bitcoin::script {
     
-    inline writer write(writer w, instruction o) {
+    inline bytes_writer write(bytes_writer w, instruction o) {
         return o.write(w);
     }
     
-    inline writer write(writer w, program p) {
+    inline bytes_writer write(bytes_writer w, program p) {
         if (p.empty()) return w;
         return write(write(w, p.first()), p.rest());
     }

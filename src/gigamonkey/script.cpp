@@ -6,7 +6,7 @@
 namespace gigamonkey::bitcoin::script {
     
     struct writer {
-        gigamonkey::writer Writer;
+        bytes_writer Writer;
         writer operator<<(instruction o) const {
             return writer{write(Writer, o)};
         }
@@ -15,10 +15,10 @@ namespace gigamonkey::bitcoin::script {
             return writer{write(Writer, p)};
         }
         
-        writer(gigamonkey::writer w) : Writer{w.Writer} {}
+        writer(bytes_writer w) : Writer{w.Writer} {}
     };
     
-    reader read_push(reader r, instruction& rest) {
+    bytes_reader read_push(bytes_reader r, instruction& rest) {
         uint32 size;
         if (rest.Op <= OP_PUSHSIZE75) size = rest.Op;
         if (rest.Op == OP_PUSHDATA1) {
@@ -41,10 +41,10 @@ namespace gigamonkey::bitcoin::script {
     }
     
     struct reader {
-        gigamonkey::reader Reader;
+        bytes_reader Reader;
         reader operator>>(instruction& i) const {
             byte next;
-            gigamonkey::reader r = Reader >> next;
+            bytes_reader r = Reader >> next;
             i.Op = op{next};
             if (is_push_data(i.Op)) return read_push(r, i);
             return r;
@@ -54,21 +54,21 @@ namespace gigamonkey::bitcoin::script {
             return Reader.empty();
         }
         
-        reader(gigamonkey::reader r) : Reader{r} {}
-        reader(bytes_view b) : Reader{gigamonkey::reader{b}} {}
+        reader(bytes_reader r) : Reader{r} {}
+        reader(bytes_view b) : Reader{gigamonkey::reader(b)} {}
     };
     
     bytes compile(program p) {
         bytes compiled{};
         compiled.resize(length(p));
-        writer{compiled} << p;
+        writer{gigamonkey::writer(compiled)} << p;
         return compiled;
     }
     
     bytes compile(instruction i) {
         bytes compiled{};
         compiled.resize(length(i));
-        writer{compiled} << i;
+        writer{gigamonkey::writer(compiled)} << i;
         return compiled;
     }
     
@@ -81,15 +81,6 @@ namespace gigamonkey::bitcoin::script {
             p = p + i;
         }
         return p;
-    }
-    
-    result result::engine::run(program p) {
-        engine e{};
-        while (!(p.empty() || e.Halt)) {
-            e = e.operation(p.first());
-            p = p.rest();
-        }
-        return !e.valid() || e.Stack.empty() || N_bytes{e.Stack.first()} != 1 ? result{false, nullptr} : result{true, e.Sigops};
     }
     
 }

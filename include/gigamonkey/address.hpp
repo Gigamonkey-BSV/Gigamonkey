@@ -12,7 +12,7 @@ namespace gigamonkey::bitcoin {
     
     gigamonkey::checksum checksum(bytes_view);
     
-    inline writer write_checksum(writer w, bytes_view b) {
+    inline bytes_writer write_checksum(bytes_writer w, bytes_view b) {
         return w << b << checksum(b);
     }
     

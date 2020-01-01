@@ -55,7 +55,7 @@ namespace gigamonkey::bitcoin {
             Target{gigamonkey::header::target(x)}, 
             Nonce{gigamonkey::header::nonce(x)} {}
             
-        writer write(writer) const;
+        bytes_writer write(bytes_writer w) const;
         uint<80> write() const;
         
         digest<32, BigEndian> hash() const {
@@ -86,7 +86,7 @@ namespace gigamonkey::outpoint {
     slice<32> reference(slice<36>);
     gigamonkey::index index(slice<36>);
     
-    inline writer write(writer w, bitcoin::txid t, gigamonkey::index i) {
+    inline bytes_writer write(bytes_writer w, bitcoin::txid t, gigamonkey::index i) {
         return w << t << i;
     }
 }
@@ -100,7 +100,7 @@ namespace gigamonkey::bitcoin {
             return Reference.valid();
         }
         
-        writer write(writer w) const {
+        bytes_writer write(bytes_writer w) const {
             return gigamonkey::outpoint::write(w, Reference, Index);
         }
     };
@@ -112,7 +112,7 @@ namespace gigamonkey::input {
     bytes_view script(bytes_view);
     uint32_little sequence(bytes_view);
     
-    inline writer write(writer w, const bitcoin::outpoint& o, bytes_view script, uint32_little sequence) {
+    inline bytes_writer write(bytes_writer w, const bitcoin::outpoint& o, bytes_view script, uint32_little sequence) {
         return o.write(w) << script << sequence;
     }
 }
@@ -125,13 +125,13 @@ namespace gigamonkey::bitcoin {
         
         bool valid() const;
         
-        writer write(writer w) const {
+        bytes_writer write(bytes_writer w) const {
             return gigamonkey::input::write(w, Outpoint, Script, Sequence);
         }
     };
 }
 
-inline gigamonkey::writer operator<<(gigamonkey::writer w, const gigamonkey::bitcoin::input& in) {
+inline gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer w, const gigamonkey::bitcoin::input& in) {
     return in.write(w);
 }
 
@@ -140,8 +140,8 @@ namespace gigamonkey::output {
     satoshi value(bytes_view);
     bytes_view script(bytes_view);
     
-    inline writer write(writer w, satoshi value, bytes_view script) {
-        w << value << script;
+    inline bytes_writer write(bytes_writer w, satoshi value, bytes_view script) {
+        return w << value << script;
     }
 }
 
@@ -152,13 +152,13 @@ namespace gigamonkey::bitcoin {
         
         bool valid() const;
         
-        writer write(writer w) const {
+        bytes_writer write(bytes_writer w) const {
             return gigamonkey::output::write(w, Value, Script);
         }
     };
 }
 
-inline gigamonkey::writer operator<<(gigamonkey::writer w, const gigamonkey::bitcoin::output& out) {
+inline gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer w, const gigamonkey::bitcoin::output& out) {
     return out.write(w);
 }
 
@@ -171,7 +171,7 @@ namespace gigamonkey::transaction {
     bytes_view input(bytes_view, index);
     int32_little locktime(bytes_view);
     
-    writer write(writer w, int32_little version, list<bitcoin::input> in, list<bitcoin::output> out, int32_little locktime) {
+    bytes_writer write(bytes_writer w, int32_little version, list<bitcoin::input> in, list<bitcoin::output> out, int32_little locktime) {
         return write_list(write_list(w << version, in), out) << locktime;
     }
 }
@@ -183,7 +183,7 @@ namespace gigamonkey::bitcoin {
         list<output> Outputs;
         int32_little Locktime;
         
-        writer write(writer w) const {
+        bytes_writer write(bytes_writer w) const {
             return gigamonkey::transaction::write(w, Version, Inputs, Outputs, Locktime);
         }
         

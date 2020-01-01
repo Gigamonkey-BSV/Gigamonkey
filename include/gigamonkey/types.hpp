@@ -81,22 +81,35 @@ namespace gigamonkey {
     template <size_t size>
     using slice = data::slice<byte, size>;
     
-    using writer = data::writer<byte*>;
-    using reader = data::reader<byte*>;
+    using bytes_writer = data::writer<bytes::iterator>;
+    using bytes_reader = data::reader<const byte*>;
+    
+    using string_writer = data::writer<string::iterator>;
+    using string_reader = data::reader<const char*>;
+    
+    template <typename X>
+    inline data::reader<typename X::iterator> reader(const X& x) {
+        return {x.begin(), x.end()};
+    }
+    
+    template <typename X>
+    inline data::writer<typename X::iterator> writer(X& x) {
+        return {x.begin(), x.end()};
+    }
     
     template <typename ... P>
     inline bytes write(uint32 size, P... p) {
         return data::stream::write_bytes(size, p...);
     }
     
-    writer write_var_int(writer, uint64);
+    bytes_writer write_var_int(bytes_writer, uint64);
     
     template <typename X> 
-    writer write_list(writer w, list<X> l) {
-        return data::fold([](writer w, X x)->writer{return w << x;}, write_var_int(w, data::size(l)), l);
+    bytes_writer write_list(bytes_writer w, list<X> l) {
+        return data::fold([](bytes_writer w, X x)->bytes_writer{return w << x;}, write_var_int(w, data::size(l)), l);
     }
     
-    writer write_bytes(writer w, bytes_view b) {
+    bytes_writer write_data(bytes_writer w, bytes_view b) {
         return write_var_int(w, b.size()) << b;
     }
     
