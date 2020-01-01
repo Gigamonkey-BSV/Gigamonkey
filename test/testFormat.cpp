@@ -80,7 +80,7 @@ namespace gigamonkey::bitcoin {
             SecretWIF = secret(GetParam().secret_wif);
             SecretWIFUncompressed = secret(GetParam().secret_wif_uncompressed);
             PubkeyHex = pubkey(GetParam().pubkey_hex);
-            PubkeyHexUncompressed = uncompressed_pubkey(GetParam().pubkey_hex_uncompressed);
+            PubkeyHexUncompressed = pubkey(GetParam().pubkey_hex_uncompressed);
             AddressBase58=address(GetParam().addr_58);
         }
     
@@ -98,9 +98,8 @@ namespace gigamonkey::bitcoin {
             SecretWIF = secret(GetParam().secret_wif);
             SecretWIFUncompressed = secret(GetParam().secret_wif_uncompressed);
             PubkeyHex = pubkey(GetParam().pubkey_hex);
-            PubkeyHexUncompressed = uncompressed_pubkey(GetParam().pubkey_hex_uncompressed);
+            PubkeyHexUncompressed = pubkey(GetParam().pubkey_hex_uncompressed);
             AddressBase58=address(GetParam().addr_58);
-            AddressCashaddr = address(cashaddr::read(GetParam().cashaddr));
         }
     
     };

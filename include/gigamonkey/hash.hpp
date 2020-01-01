@@ -30,10 +30,14 @@ namespace gigamonkey {
         digest() : Digest{} {}
         digest(slice<32>);
         digest(const uint<size, e>& u) : Digest{u} {}
-        digest(const digest<size, Opposite>& d) : Digest{d.Digest} {}
+        digest(const uint<size, Opposite>& u) : Digest{u} {}
         
         operator bytes_view() const {
             return bytes_view{Digest.Array.data(), size};
+        }
+        
+        operator digest<size, Opposite>() const {
+            return digest<size, Opposite>{Digest};
         }
         
         // Zero represents invalid. 

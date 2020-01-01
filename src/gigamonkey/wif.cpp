@@ -7,8 +7,10 @@
 namespace gigamonkey::bitcoin {
     
     wif wif::read(string_view s) {
+        bytes data;
+        if (!base58::check_decode(data, s)) return wif{};
         wif w{};
-        reader r = reader{base58::check_decode(s)} >> &w.Prefix >> &w.Secret.Value;
+        reader r = reader{data} >> &w.Prefix >> &w.Secret.Value; 
         char suffix;
         w.Compressed = (!(r >> &suffix).valid()) || suffix == compressed_suffix();  
         return w;

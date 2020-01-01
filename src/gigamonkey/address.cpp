@@ -27,15 +27,10 @@ namespace gigamonkey::bitcoin::base58 {
     
     bool check_decode(bytes& b, string_view s) {
         static const char MustStartWith = '1';
-        char prefix;
-        reader r = reader{s} >> prefix;
-        if (prefix != MustStartWith) return false;
-        while(true) {
-        char next;
-            reader R = r >> next;
-            if (next != 1) break;
-            r == R;
-        }
-        return decode(b, r);
+        if (s.size() == 0) return false;
+        if (s[0] != MustStartWith) return false;
+        uint32 ones = 1;
+        while (s[ones] != MustStartWith) ones++;
+        return decode(b, s.substr(ones));
     }
 }
