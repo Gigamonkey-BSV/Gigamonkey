@@ -73,6 +73,8 @@ namespace gigamonkey::bitcoin {
         
         headers attach(const bitcoin::header& h) const;
         
+    private:
+        headers(ordered_list<chain> ch, map<digest<32, BigEndian>&, list<header>> h) : Chains{ch}, Headers{h} {}
     };
     
 }

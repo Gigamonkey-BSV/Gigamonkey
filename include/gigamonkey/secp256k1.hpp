@@ -191,7 +191,7 @@ namespace gigamonkey::secp256k1 {
         }
         
         bytes_writer write(bytes_writer w) const {
-            w << Value;
+            return w << Value;
         }
         
         string write_string() const {

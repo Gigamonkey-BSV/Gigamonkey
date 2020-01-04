@@ -123,10 +123,10 @@ inline std::ostream& operator<<(std::ostream& o, const gigamonkey::digest<size, 
     return o << digest<size, BigEndian>{s};
 }
 
-template <size_t size> 
-gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer, const gigamonkey::digest<size, gigamonkey::LittleEndian>& s);
+template <size_t size, boost::endian::order o> 
+gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer, const gigamonkey::digest<size, o>& s);
 
-template <size_t size> 
-gigamonkey::bytes_reader operator>>(gigamonkey::bytes_reader, gigamonkey::digest<size, gigamonkey::LittleEndian>& s);
+template <size_t size, boost::endian::order o> 
+gigamonkey::bytes_reader operator>>(gigamonkey::bytes_reader, gigamonkey::digest<size, o>& s);
 
 #endif
