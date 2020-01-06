@@ -136,7 +136,7 @@ namespace gigamonkey::work {
     };
     
     inline byte exponent(target t) {
-        t.exponent();
+        return t.exponent();
     }
     
     inline uint24_little digits(target t) {
@@ -144,11 +144,11 @@ namespace gigamonkey::work {
     }
     
     inline bool valid(target t) {
-        t.valid();
+        return t.valid();
     }
     
     inline digest expand(target t) {
-        t.expand();
+        return t.expand();
     }
     
     nonce work(order);

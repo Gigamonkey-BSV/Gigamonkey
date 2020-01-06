@@ -50,6 +50,14 @@ namespace gigamonkey::bitcoin {
         explicit address(const pubkey& pub, type p = main) : address{digest(hash160(pub)), p} {}
         
         explicit address(const secret& s, type p = main) : address{s.to_public(), p} {}
+        
+        bool operator==(const address& a) const {
+            return Prefix == a.Prefix && Digest == a.Digest;
+        }
+        
+        bool operator!=(const address& a) const {
+            return !operator==(a);
+        }
     
         static string write(char prefix, bytes_view b) {
             return base58::check_encode(gigamonkey::write(b.size() + 1, prefix, b));

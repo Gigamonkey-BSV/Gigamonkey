@@ -47,6 +47,10 @@ namespace gigamonkey::secp256k1 {
         }
         
         signature& operator=(const signature&);
+        bool operator==(const signature&) const ;
+        bool operator!=(const signature& s) const {
+            return !operator==(s);
+        }
         
         operator bytes_view() {
             return bytes_view{Data->data, Size};
@@ -104,6 +108,14 @@ namespace gigamonkey::secp256k1 {
         
         secret& operator=(const secret&);
         
+        bool operator==(const secret& s) const {
+            return Value == s.Value;
+        }
+        
+        bool operator!=(const secret& s) const {
+            return Value != s.Value;
+        }
+        
         signature sign(const digest& d) const {
             return sign(Value, d);
         }
@@ -145,6 +157,13 @@ namespace gigamonkey::secp256k1 {
         }
         
         pubkey& operator=(const pubkey&);
+        bool operator==(const pubkey& p) const {
+            return Value == p.Value;
+        }
+        
+        bool operator!=(const pubkey& p) const {
+            return Value != p.Value;
+        }
         
         bool verify(digest& d, const signature& s) const {
             return verify(Value, d, s);

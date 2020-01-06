@@ -123,6 +123,8 @@ namespace gigamonkey {
         bytes_writer write(bytes_writer w) const {
             return w << Timestamp;
         }
+        
+        static timestamp read(string_view);
     };
     
     bytes_writer write_var_int(bytes_writer, uint64);

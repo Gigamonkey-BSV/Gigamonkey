@@ -15,7 +15,7 @@ namespace gigamonkey::bitcoin::script {
         };
         
     public:
-        struct item {
+        struct item { // TODO need a new name for this. 
             bytes* Data;
             engine* Unevaluated;
             
@@ -28,6 +28,9 @@ namespace gigamonkey::bitcoin::script {
                 if (Data != nullptr) delete Data;
                 if (Unevaluated != nullptr) delete Unevaluated;
             }
+            
+            bool operator==(const item&) const;
+            bool operator!=(const item&) const;
             
         private:
             item(const engine& e) : Data{nullptr}, Unevaluated{new engine{e}} {}
@@ -45,7 +48,7 @@ namespace gigamonkey::bitcoin::script {
         }
         
         bool evaluate(bytes_view tx);
-        engine evaluate();
+        item evaluate();
     };
     
     inline engine::item run(program p) {

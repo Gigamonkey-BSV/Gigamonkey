@@ -166,7 +166,7 @@ namespace gigamonkey::bitcoin {
         EXPECT_FALSE(this->AddressBase58.valid()) << "Address in base 58 is valid";
     }
     
-    INSTANTIATE_TEST_SUITE_P(Stage1Tests,Stage1Test,testing::ValuesIn(test_dat));
-    INSTANTIATE_TEST_SUITE_P(Stage1InvalidTests,Stage1InvalidTest,testing::ValuesIn(invalid_test_dat));
+    INSTANTIATE_TEST_SUITE_P(Stage1Tests, FormatTest, testing::ValuesIn(test_dat));
+    INSTANTIATE_TEST_SUITE_P(Stage1InvalidTests, FormatInvalidTest, testing::ValuesIn(invalid_test_dat));
 
 }

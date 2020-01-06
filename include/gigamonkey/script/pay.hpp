@@ -9,18 +9,16 @@
 #include <gigamonkey/signature.hpp>
 #include "pattern.hpp"
 
-namespace gigamonkey::bitcoin {
+namespace gigamonkey::bitcoin::script {
     
     struct pay_to_pubkey {
         static script::pattern pattern(bytes& pubkey) {
-            using namespace script;
             return {alternatives{
                 push_size{secp256k1::CompressedPubkeySize, pubkey}, 
                 push_size{secp256k1::UncompressedPubkeySize, pubkey}}, OP_CHECKSIG};
         }
         
         static bytes script(bytes_view pubkey) {
-            using namespace script;
             return compile(program{pubkey, OP_CHECKSIG});
         }
         
@@ -39,19 +37,16 @@ namespace gigamonkey::bitcoin {
         }
         
         static bytes redeem(const signature& s) {
-            using namespace script;
             return compile(instruction::push_data(s));
         }
     };
     
     struct pay_to_address {
         static script::pattern pattern(bytes& address) {
-            using namespace script;
             return {OP_DUP, OP_HASH160, push_size{20, address}, OP_EQUALVERIFY, OP_CHECKSIG};
         }
         
         static bytes script(bytes_view a) {
-            using namespace script;
             return compile(program{OP_DUP, OP_HASH160, a, OP_EQUALVERIFY, OP_CHECKSIG});
         }
         
@@ -66,11 +61,13 @@ namespace gigamonkey::bitcoin {
         }
         
         pay_to_address(bytes_view script) : Address{} {
-            pattern(Address.Digest.Array).match(script);
+            bytes addr;
+            addr.resize(20);
+            pattern(addr).match(script);
+            std::copy(addr.begin(), addr.end(), Address.Digest.Array.begin());
         }
         
         static bytes redeem(const signature& s, const pubkey& p) {
-            using namespace script;
             return compile(program{} << instruction::push_data(s) << instruction::push_data(p));
         }
     };

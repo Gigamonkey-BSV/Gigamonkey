@@ -186,6 +186,7 @@ namespace gigamonkey::transaction {
     bytes_view output(bytes_view, index);
     bytes_view input(bytes_view, index);
     int32_little locktime(bytes_view);
+    bool coinbase(bytes_view);
     
     bytes_writer write(bytes_writer w, int32_little version, list<bitcoin::input> in, list<bitcoin::output> out, int32_little locktime) {
         return write_list(write_list(w << version, in), out) << locktime;
@@ -204,10 +205,16 @@ namespace gigamonkey::bitcoin {
         }
         
         bytes write() const;
+        
+        txid id() const;
+        
+        bool coinbase() const;
     };
+    
+    digest<32, BigEndian> merkle_root(list<transaction>);
 }
 
-namespace gigamonkey::block {
+namespace gigamonkey::timechain::block {
     bool valid(bytes_view);
     slice<80> header(bytes_view);
     index transactions(bytes_view);
@@ -218,6 +225,7 @@ namespace gigamonkey::bitcoin {
     struct block {
         header Header;
         list<transaction> Transactions;
+        bytes coinbase();
         bool valid() const;
     };
 }
