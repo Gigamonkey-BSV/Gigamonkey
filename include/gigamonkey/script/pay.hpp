@@ -50,7 +50,7 @@ namespace gigamonkey::bitcoin::script {
             return compile(program{OP_DUP, OP_HASH160, a, OP_EQUALVERIFY, OP_CHECKSIG});
         }
         
-        digest<20, LittleEndian> Address;
+        digest<20> Address;
         
         bool valid() const {
             return Address.valid();

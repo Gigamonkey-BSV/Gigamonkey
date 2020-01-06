@@ -8,10 +8,10 @@
 
 namespace gigamonkey::bitcoin {
     
-    using txid = gigamonkey::digest<sha256::Size, LittleEndian>;
+    using txid = gigamonkey::digest<sha256::Size>;
     
     inline txid id(bytes_view b) {
-        return txid(hash256(b));
+        return hash256(b);
     }
     
 }

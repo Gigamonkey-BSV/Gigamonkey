@@ -80,7 +80,7 @@ namespace gigamonkey::bitcoin {
         return sighash::has_fork_id(d) ? bch_spend_order(v, i, d) : btc_spend_order(v, i, d);
     }
     
-    inline digest<32, BigEndian> signature_hash(const vertex& v, index i, sighash::directive d) {
+    inline digest<32> signature_hash(const vertex& v, index i, sighash::directive d) {
         return signature_hash(spend_order(v, i, d));
     } 
     

@@ -10,11 +10,11 @@ namespace gigamonkey::work {
     
     using nonce = boost::endian::little_int64_t;
     
-    using digest = gigamonkey::digest<sha256::Size, BigEndian>;
+    using digest = gigamonkey::digest<sha256::Size>;
     
     integer<32, LittleEndian> difficulty_1_target{"0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"};
     
-    using difficulty = data::math::number::fraction<integer<32, LittleEndian>, uint<32, LittleEndian>>;
+    using difficulty = data::math::number::fraction<integer<sha256::Size, LittleEndian>, uint<sha256::Size, LittleEndian>>;
 
     struct target {
         uint32_little Encoded;
@@ -118,20 +118,32 @@ namespace gigamonkey::work {
             return Data == c.Data;
         }
         
+        static digest hash(slice<80> data) const {
+            return bitcoin::hash256(data);
+        }
+        
         digest hash() const {
-            return bitcoin::hash256(Data);
+            return hash(Data);
         }
         
         work::nonce nonce() const;
         
         work::content content() const;
         
-        work::target target() const {
+        static work::target target(slice<80> data) const {
             throw data::method::unimplemented{"work::candidate::target"};
         }
     
+        static bool valid(slice<80> data) const {
+            return hash(data) < target(data).expand();
+        }
+        
+        work::target target() const {
+            throw target(Data);
+        }
+    
         bool valid() const {
-            return hash() < target().expand();
+            return valid(Data);
         }
     };
     

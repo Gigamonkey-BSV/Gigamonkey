@@ -38,7 +38,7 @@ namespace gigamonkey::bitcoin {
         
         type Prefix;
         
-        using digest = gigamonkey::digest<20, LittleEndian>;
+        using digest = gigamonkey::digest<20>;
         
         digest Digest;
         

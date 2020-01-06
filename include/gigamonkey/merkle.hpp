@@ -5,11 +5,10 @@
 #define GIGAMONKEY_MERKLE
 
 #include "hash.hpp"
-#include "txid.hpp"
 
 namespace gigamonkey::merkle {
     
-    using digest = digest<32, BigEndian>;
+    using digest = digest<32>;
         
     inline digest concatinated(const digest& a, const digest& b) {
         return bitcoin::hash256(write(64, a, b));

@@ -31,6 +31,11 @@ namespace gigamonkey::secp256k1 {
     
     using coordinate = uint<SecretSize, LittleEndian>;
     
+    struct point {
+        coordinate X;
+        coordinate Y;
+    };
+    
     class secret;
     class pubkey;
     
@@ -80,9 +85,11 @@ namespace gigamonkey::secp256k1 {
             Data = s.Data;
             s.Data = nullptr;
         }
+        
+        secp256k1::point point() const;
     };
     
-    using digest = gigamonkey::digest<SecretSize, BigEndian>;
+    using digest = gigamonkey::digest<SecretSize>;
     
     class secret {
         static bool valid(bytes_view);
@@ -184,6 +191,10 @@ namespace gigamonkey::secp256k1 {
         coordinate x() const;
         
         coordinate y() const;
+        
+        secp256k1::point point() const {
+            return {x(), y()};
+        }
         
         pubkey compress() const {
             return compress(Value);

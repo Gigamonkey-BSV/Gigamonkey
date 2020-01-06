@@ -4,32 +4,38 @@
 #ifndef GIGAMONKEY_TIMECHAIN
 #define GIGAMONKEY_TIMECHAIN
 
-#include "types.hpp"
+#include "txid.hpp"
 #include "merkle.hpp"
 #include "work.hpp"
 
 namespace gigamonkey::bitcoin {
     struct timechain {
         virtual list<uint<80>> headers(uint64 since_height) const = 0;
-        virtual bytes transaction(const digest<32, BigEndian>&) const = 0;
-        virtual merkle::path merkle_path(const digest<32, BigEndian>&) const = 0;
+        virtual bytes transaction(const digest<32>&) const = 0;
+        virtual merkle::path merkle_path(const digest<32>&) const = 0;
         // next 3 should work for both header hash and merkle root.
-        virtual uint<80> header(const digest<32, BigEndian>&) const = 0; 
-        virtual list<txid> transactions(const digest<32, BigEndian>&) const = 0;
-        virtual bytes block(const digest<32, BigEndian>&) const = 0; 
+        virtual uint<80> header(const digest<32>&) const = 0; 
+        virtual list<txid> transactions(const digest<32>&) const = 0;
+        virtual bytes block(const digest<32>&) const = 0; 
     };
 }
 
 namespace gigamonkey::header {
-    bool valid(slice<80>);
     int32_little version(slice<80>);
     slice<32> previous(slice<80>);
     slice<32> merkle_root(slice<80>);
     gigamonkey::timestamp timestamp(slice<80>);
     work::target target(slice<80>);
     uint32_little nonce(slice<80>);
+    
+    inline digest<32> hash(slice<80> h) {
+        return work::candidate::hash(h);
+    }
+    
+    bool valid(slice<80> h);
+    
     inline bytes_writer write(bytes_writer w, 
-        int32_little version, digest<32, LittleEndian> previous, digest<32, LittleEndian> root,
+        int32_little version, digest<32> previous, digest<32> root,
         gigamonkey::timestamp time, work::target target, uint32_little nonce) {
         return w << version << previous << root << time << target << nonce;
     }
@@ -38,27 +44,29 @@ namespace gigamonkey::header {
 namespace gigamonkey::bitcoin {
     struct header {
         int32_little Version;
-        digest<32, LittleEndian> Previous;
-        digest<32, LittleEndian> MerkleRoot;
+        digest<32> Previous;
+        digest<32> MerkleRoot;
         timestamp Timestamp;
         work::target Target;
         uint32_little Nonce;
         
         header(
             int32_little v,
-            digest<32, LittleEndian> p,
-            digest<32, LittleEndian> mr,
-            uint32_little ts,
+            digest<32> p,
+            digest<32> mr,
+            timestamp ts,
             work::target t,
             uint32_little n) : Version{v}, Previous{p}, MerkleRoot{mr}, Timestamp{ts}, Target{t}, Nonce{n} {}
             
-        header(slice<80> x) : 
-            Version{gigamonkey::header::version(x)}, 
-            Previous{gigamonkey::header::previous(x)}, 
-            MerkleRoot{gigamonkey::header::merkle_root(x)}, 
-            Timestamp{gigamonkey::header::timestamp(x)}, 
-            Target{gigamonkey::header::target(x)}, 
-            Nonce{gigamonkey::header::nonce(x)} {}
+        static header read(slice<80> x) {
+            return header{
+                gigamonkey::header::version(x), 
+                digest<32>{gigamonkey::header::previous(x)}, 
+                digest<32>{gigamonkey::header::merkle_root(x)}, 
+                timestamp{gigamonkey::header::timestamp(x)}, 
+                work::target{gigamonkey::header::target(x)}, 
+                gigamonkey::header::nonce(x)};
+        }
             
         bytes_writer write(bytes_writer w) const {
             return gigamonkey::header::write(w, Version, Previous, MerkleRoot, Timestamp, Target, Nonce);
@@ -66,13 +74,11 @@ namespace gigamonkey::bitcoin {
         
         uint<80> write() const;
         
-        digest<32, BigEndian> hash() const {
+        digest<32> hash() const {
             return hash256(write());
         }
         
-        bool valid() const {
-            return Previous.valid() && MerkleRoot.valid() && Target.valid() && hash() < Target.expand();
-        }
+        bool valid() const;
         
         work::difficulty difficulty() const {
             return work::difficulty{Target.expand().Digest};
@@ -188,7 +194,11 @@ namespace gigamonkey::transaction {
     int32_little locktime(bytes_view);
     bool coinbase(bytes_view);
     
-    bytes_writer write(bytes_writer w, int32_little version, list<bitcoin::input> in, list<bitcoin::output> out, int32_little locktime) {
+    inline bitcoin::txid txid(bytes_view b) {
+        bitcoin::id(b);
+    }
+    
+    inline bytes_writer write(bytes_writer w, int32_little version, list<bitcoin::input> in, list<bitcoin::output> out, int32_little locktime) {
         return write_list(write_list(w << version, in), out) << locktime;
     }
 }
@@ -206,19 +216,20 @@ namespace gigamonkey::bitcoin {
         
         bytes write() const;
         
-        txid id() const;
+        txid id() const {
+            return gigamonkey::transaction::txid(write());
+        }
         
         bool coinbase() const;
     };
-    
-    digest<32, BigEndian> merkle_root(list<transaction>);
 }
 
-namespace gigamonkey::timechain::block {
+namespace gigamonkey::block {
     bool valid(bytes_view);
     slice<80> header(bytes_view);
-    index transactions(bytes_view);
-    bytes_view transaction(bytes_view, index);
+    list<bytes_view> transactions(bytes_view);
+    
+    digest<32> merkle_root(list<bytes_view>);
 }
 
 namespace gigamonkey::bitcoin { 
@@ -226,7 +237,10 @@ namespace gigamonkey::bitcoin {
         header Header;
         list<transaction> Transactions;
         bytes coinbase();
-        bool valid() const;
+        bytes write() const;
+        bool valid() const {
+            return gigamonkey::block::valid(write());
+        }
     };
 }
 

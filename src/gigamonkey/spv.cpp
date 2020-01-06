@@ -6,7 +6,7 @@
 namespace gigamonkey::bitcoin {
         
     headers headers::attach(const bitcoin::header& h) const {
-        auto d = digest<32, BigEndian>(h.Previous);
+        auto d = digest<32>(h.Previous);
         list<header> prev = Headers[d];
         if (data::empty(prev)) return {};
         ordered_list<chain> chains = Chains;
