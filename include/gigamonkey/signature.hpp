@@ -32,11 +32,18 @@ namespace gigamonkey::bitcoin {
         
     };
     
-    sighash::directive directive(sighash::type t, sighash::fork_id id, bool anyone_can_pay = false);
+    inline sighash::directive directive(sighash::type t, sighash::fork_id id, bool anyone_can_pay = false) {
+        throw data::method::unimplemented{"directive"};
+    }
     
     struct signature {
         bytes Data;
-        signature(const secp256k1::signature raw, sighash::directive);
+        
+        signature(const secp256k1::signature raw, sighash::directive d) {
+            Data.resize(65);
+            writer(Data) << raw << d;
+        } 
+        
         bool der() const;
         
         bitcoin::sighash::directive sighash() const {

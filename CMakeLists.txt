@@ -117,6 +117,7 @@ endif()
 add_subdirectory("${PROJECT_SOURCE_DIR}/extern/data/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/extern/bitcoin-sv/")
 add_library(gigamonkey STATIC 
+    src/gigamonkey/types.cpp
     src/gigamonkey/hash.cpp
     src/gigamonkey/secp256k1.cpp
     src/gigamonkey/merkle.cpp
@@ -124,8 +125,10 @@ add_library(gigamonkey STATIC
     src/gigamonkey/address.cpp
     src/gigamonkey/wif.cpp
     src/gigamonkey/spv.cpp
+    src/gigamonkey/timechain.cpp
     src/gigamonkey/script/pattern.cpp
     src/gigamonkey/script/op_return_data.cpp
+    src/gigamonkey/work.cpp
 #    src/bitcoin_sv/sv.cpp 
 )
 

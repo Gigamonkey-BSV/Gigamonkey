@@ -46,18 +46,27 @@ namespace gigamonkey::merkle {
             return build(pairwise_concatinate(l));
         }
         
-        static digest_tree build(queue<digest> l) {
-            return build(data::for_each([](const digest& d)->digest_tree{return {d};}, l));
+        static digest_tree build(queue<digest> q) {
+            return build(data::for_each([](const digest& d)->digest_tree{return {d};}, q));
         }
         
     public:
         uint32 Leaves;
         digest_tree Tree;
         
-        tree(queue<digest> l) : Leaves{data::size(l)}, Tree{build(l)} {}
+        tree(queue<digest> q) : Leaves{data::size(q)}, Tree{build(q)} {}
         
         merkle::path path(uint32 index);
+        
+        digest root() const {
+            if (Tree.empty()) return {};
+            return Tree.root();
+        }
     };
+    
+    inline digest root(queue<digest> q) {
+        return tree{q}.root();
+    }
     
 }
 

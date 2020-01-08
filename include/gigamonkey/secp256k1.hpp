@@ -41,49 +41,40 @@ namespace gigamonkey::secp256k1 {
     
     class signature {
         friend class secret;
-        secp256k1_ecdsa_signature* Data;
+        secp256k1_ecdsa_signature Data;
         
     public:
         constexpr static size_t Size = 64;
         
-        signature() : Data{new secp256k1_ecdsa_signature()} {}
-        ~signature() {
-            delete Data;
+        signature() : Data{} {}
+        
+        bool operator==(const signature& s) const {
+            for (int i = 0; i < Size; i ++) if (Data.data[i] != s.Data.data[i]) return false;
+            return true;
         }
         
-        signature& operator=(const signature&);
-        bool operator==(const signature&) const ;
         bool operator!=(const signature& s) const {
             return !operator==(s);
         }
         
-        operator bytes_view() {
-            return bytes_view{Data->data, Size};
+        operator bytes_view() const {
+            return bytes_view{Data.data, Size};
         }
         
         byte* begin() {
-            return Data->data;
+            return Data.data;
         }
         
         byte* end() {
-            return Data->data + Size;
+            return Data.data + Size;
         }
         
         const byte* begin() const {
-            return Data->data;
+            return Data.data;
         }
         
         const byte* end() const {
-            return Data->data + Size;
-        }
-        
-        signature(const signature& s) : signature{} {
-            std::copy_n(s.begin(), Size, begin());
-        }
-        
-        signature(signature&& s) {
-            Data = s.Data;
-            s.Data = nullptr;
+            return Data.data + Size;
         }
         
         secp256k1::point point() const;
@@ -107,13 +98,11 @@ namespace gigamonkey::secp256k1 {
         
         secret() : Value{0} {}
         secret(const coordinate& v) : Value{v} {}
-        secret(string_view s); // hexidecimal and wif accepted. 
+        explicit secret(string_view s); // hexidecimal and wif accepted. 
         
         bool valid() const {
             return valid(Value);
         }
-        
-        secret& operator=(const secret&);
         
         bool operator==(const secret& s) const {
             return Value == s.Value;
@@ -157,13 +146,12 @@ namespace gigamonkey::secp256k1 {
         
         pubkey() : Value{} {}
         pubkey(const N_bytes& v) : Value{v} {}
-        explicit pubkey(string_view s);
+        explicit pubkey(string_view s) : Value{s} {}
         
         bool valid() const {
             return valid(Value);
         }
         
-        pubkey& operator=(const pubkey&);
         bool operator==(const pubkey& p) const {
             return Value == p.Value;
         }

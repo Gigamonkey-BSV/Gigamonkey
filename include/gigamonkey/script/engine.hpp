@@ -20,17 +20,26 @@ namespace gigamonkey::bitcoin::script {
             engine* Unevaluated;
             
             item(bytes_view b) : Data{new bytes{b}}, Unevaluated{nullptr} {}
-            item(list<bytes_view>, program p);
+            item(list<bytes_view>, program p) {
+                throw data::method::unimplemented{"item{list<bytes_view>, program}"};
+            }
             
-            bytes evaluate(bytes_view tx) const;
+            bytes evaluate(bytes_view tx) const {
+                throw data::method::unimplemented{"item::evaluate(bytes_view)"};
+            }
             
             ~item() {
                 if (Data != nullptr) delete Data;
                 if (Unevaluated != nullptr) delete Unevaluated;
             }
             
-            bool operator==(const item&) const;
-            bool operator!=(const item&) const;
+            bool operator==(const item& i) const {
+                throw data::method::unimplemented{"item=="};
+            }
+            
+            bool operator!=(const item& i) const {
+                return !operator==(i);
+            }
             
         private:
             item(const engine& e) : Data{nullptr}, Unevaluated{new engine{e}} {}
@@ -41,14 +50,19 @@ namespace gigamonkey::bitcoin::script {
         list<bytes> AltStack;
         program Program;
         
-        engine(program);
+        engine(program) {
+            throw data::method::unimplemented{"engine{program}"};
+        }
         
         bool halted() const {
             return data::empty(Program);
         }
         
         bool evaluate(bytes_view tx);
-        item evaluate();
+        
+        item evaluate() const {
+            throw data::method::unimplemented{"engine::evaluate"};
+        }
     };
     
     inline engine::item run(program p) {

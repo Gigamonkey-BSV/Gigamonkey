@@ -26,6 +26,7 @@ namespace gigamonkey {
         digest() : Digest{} {}
         digest(slice<32>);
         digest(const uint<size, LittleEndian>& u) : Digest{u} {}
+        explicit digest(string_view s) : Digest{s} {}
         
         operator bytes_view() const {
             return bytes_view{Digest.Array.data(), size};
@@ -36,8 +37,6 @@ namespace gigamonkey {
         bool valid() const {
             return Digest != 0;
         }
-        
-        digest& operator=(const digest&);
         
         bool operator==(const digest& d) const {
             return Digest == d.Digest;

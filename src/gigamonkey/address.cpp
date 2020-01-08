@@ -4,9 +4,9 @@
 #include <gigamonkey/address.hpp>
 #include <data/encoding/base58.hpp>
 
-namespace gigamonkey::bitcoin::base58 {
+namespace gigamonkey::base58 {
     
-    inline bool decode(bytes& b, string_view s) {
+    bool decode(bytes& b, string_view s) {
         data::encoding::base58::string b58{s};
         if (!b58.valid()) return false;
         bytes decoded = bytes(b58);
@@ -32,5 +32,14 @@ namespace gigamonkey::bitcoin::base58 {
         uint32 ones = 1;
         while (s[ones] != MustStartWith) ones++;
         return decode(b, s.substr(ones));
+    }
+}
+
+namespace gigamonkey::bitcoin {
+   address::address(string_view s) {
+        if (s.size() > 35) return;
+        Prefix = type(s[0]);
+        if (!valid_prefix(Prefix)) return;
+        throw data::method::unimplemented{"address(string)"};
     }
 }

@@ -93,7 +93,7 @@ namespace gigamonkey::secp256k1 {
         signature sig;
         const auto context = Signing();
 
-        if (secp256k1_ecdsa_sign(context, sig.Data, d.Digest.Array.data(), sk.data(),
+        if (secp256k1_ecdsa_sign(context, &sig.Data, d.Digest.Array.data(), sk.data(),
             secp256k1_nonce_function_rfc6979, nullptr) != 1)
             return {};
 

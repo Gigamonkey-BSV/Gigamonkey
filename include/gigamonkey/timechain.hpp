@@ -21,24 +21,35 @@ namespace gigamonkey::bitcoin {
 }
 
 namespace gigamonkey::header {
-    int32_little version(slice<80>);
-    slice<32> previous(slice<80>);
-    slice<32> merkle_root(slice<80>);
-    gigamonkey::timestamp timestamp(slice<80>);
-    work::target target(slice<80>);
-    uint32_little nonce(slice<80>);
+    inline int32_little version(slice<80>) {
+        throw data::method::unimplemented{"header::version"};
+    }
+    
+    inline slice<32> previous(slice<80>) {
+        throw data::method::unimplemented{"header::previous"};
+    }
+    
+    inline slice<32> merkle_root(slice<80>) {
+        throw data::method::unimplemented{"header::merkle_root"};
+    }
+    
+    inline gigamonkey::timestamp timestamp(slice<80>) {
+        throw data::method::unimplemented{"header::timestamp"};
+    }
+    
+    inline work::target target(slice<80>) {
+        throw data::method::unimplemented{"header::target"};
+    }
+    
+    inline uint32_little nonce(slice<80>) {
+        throw data::method::unimplemented{"header::nonce"};
+    }
     
     inline digest<32> hash(slice<80> h) {
         return work::candidate::hash(h);
     }
     
     bool valid(slice<80> h);
-    
-    inline bytes_writer write(bytes_writer w, 
-        int32_little version, digest<32> previous, digest<32> root,
-        gigamonkey::timestamp time, work::target target, uint32_little nonce) {
-        return w << version << previous << root << time << target << nonce;
-    }
 }
 
 namespace gigamonkey::bitcoin {
@@ -49,6 +60,8 @@ namespace gigamonkey::bitcoin {
         timestamp Timestamp;
         work::target Target;
         uint32_little Nonce;
+        
+        header() : Version{}, Previous{}, MerkleRoot{}, Timestamp{}, Target{}, Nonce{} {}
         
         header(
             int32_little v,
@@ -67,10 +80,9 @@ namespace gigamonkey::bitcoin {
                 work::target{gigamonkey::header::target(x)}, 
                 gigamonkey::header::nonce(x)};
         }
-            
-        bytes_writer write(bytes_writer w) const {
-            return gigamonkey::header::write(w, Version, Previous, MerkleRoot, Timestamp, Target, Nonce);
-        }
+        
+        bytes_reader read(bytes_reader r);
+        bytes_writer write(bytes_writer w) const;
         
         uint<80> write() const;
         
@@ -95,18 +107,10 @@ namespace gigamonkey::bitcoin {
     };
 }
 
-inline gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer w, const gigamonkey::bitcoin::header& h) {
-    return h.write(w);
-}
-
 namespace gigamonkey::outpoint {
     bool valid(slice<36>);
     slice<32> reference(slice<36>);
     gigamonkey::index index(slice<36>);
-    
-    inline bytes_writer write(bytes_writer w, bitcoin::txid t, gigamonkey::index i) {
-        return w << t << i;
-    }
 }
 
 namespace gigamonkey::bitcoin {
@@ -118,14 +122,9 @@ namespace gigamonkey::bitcoin {
             return Reference.valid();
         }
         
-        bytes_writer write(bytes_writer w) const {
-            return gigamonkey::outpoint::write(w, Reference, Index);
-        }
+        bytes_writer write(bytes_writer w) const;
+        bytes_reader read(bytes_reader r);
     };
-}
-
-inline gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer w, const gigamonkey::bitcoin::outpoint& o) {
-    return o.write(w);
 }
 
 namespace gigamonkey::input {
@@ -133,10 +132,6 @@ namespace gigamonkey::input {
     slice<36> previous(bytes_view);
     bytes_view script(bytes_view);
     uint32_little sequence(bytes_view);
-    
-    inline bytes_writer write(bytes_writer w, const bitcoin::outpoint& o, bytes_view script, uint32_little sequence) {
-        return w << o << script << sequence;
-    }
 }
 
 namespace gigamonkey::bitcoin {
@@ -147,24 +142,19 @@ namespace gigamonkey::bitcoin {
         
         bool valid() const;
         
-        bytes_writer write(bytes_writer w) const {
-            return gigamonkey::input::write(w, Outpoint, Script, Sequence);
+        bytes_writer write(bytes_writer w) const;
+        bytes_reader read(bytes_reader r);
+        
+        size_t serialized_size() const {
+            return 40 + var_int_size(Script.size()) + Script.size();
         }
     };
-}
-
-inline gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer w, const gigamonkey::bitcoin::input& in) {
-    return in.write(w);
 }
 
 namespace gigamonkey::output {
     bool valid(bytes_view);
     satoshi value(bytes_view);
     bytes_view script(bytes_view);
-    
-    inline bytes_writer write(bytes_writer w, satoshi value, bytes_view script) {
-        return w << value << script;
-    }
 }
 
 namespace gigamonkey::bitcoin {
@@ -174,14 +164,13 @@ namespace gigamonkey::bitcoin {
         
         bool valid() const;
         
-        bytes_writer write(bytes_writer w) const {
-            return gigamonkey::output::write(w, Value, Script);
+        bytes_writer write(bytes_writer w) const;
+        bytes_reader read(bytes_reader r);
+        
+        size_t serialized_size() const {
+            return 8 + var_int_size(Script.size()) + Script.size();
         }
     };
-}
-
-inline gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer w, const gigamonkey::bitcoin::output& out) {
-    return out.write(w);
 }
 
 namespace gigamonkey::transaction {
@@ -197,23 +186,19 @@ namespace gigamonkey::transaction {
     inline bitcoin::txid txid(bytes_view b) {
         bitcoin::id(b);
     }
-    
-    inline bytes_writer write(bytes_writer w, int32_little version, list<bitcoin::input> in, list<bitcoin::output> out, int32_little locktime) {
-        return write_list(write_list(w << version, in), out) << locktime;
-    }
 }
 
 namespace gigamonkey::bitcoin {
     struct transaction {
         int32_little Version;
-        list<input> Inputs;
-        list<output> Outputs;
+        queue<input> Inputs;
+        queue<output> Outputs;
         int32_little Locktime;
         
-        bytes_writer write(bytes_writer w) const {
-            return gigamonkey::transaction::write(w, Version, Inputs, Outputs, Locktime);
-        }
+        bytes_writer write(bytes_writer w) const;
+        bytes_reader read(bytes_reader r);
         
+        static transaction read(bytes_view);
         bytes write() const;
         
         txid id() const {
@@ -221,27 +206,176 @@ namespace gigamonkey::bitcoin {
         }
         
         bool coinbase() const;
+        
+        size_t serialized_size() const {
+            return 8 + var_int_size(Inputs.size()) + var_int_size(Inputs.size()) + 
+                data::fold([](size_t size, const input& i)->size_t{
+                    return size + i.serialized_size();
+                }, 0, Inputs) + 
+                data::fold([](size_t size, const output& i)->size_t{
+                    return size + i.serialized_size();
+                }, 0, Outputs);
+        }
     };
 }
 
 namespace gigamonkey::block {
     bool valid(bytes_view);
     slice<80> header(bytes_view);
-    list<bytes_view> transactions(bytes_view);
+    queue<bytes_view> transactions(bytes_view);
     
-    digest<32> merkle_root(list<bytes_view>);
+    inline digest<32> merkle_root(queue<bytes_view> q) {
+        return merkle::root(for_each(bitcoin::id, q));
+    }
 }
 
 namespace gigamonkey::bitcoin { 
     struct block {
         header Header;
-        list<transaction> Transactions;
+        queue<transaction> Transactions;
+        
+        block() : Header{}, Transactions{} {}
+        
         bytes coinbase();
-        bytes write() const;
         bool valid() const {
             return gigamonkey::block::valid(write());
         }
+        
+        bytes_writer write(bytes_writer w) const;
+        bytes_reader read(bytes_reader r);
+        
+        static block read(bytes_view b);
+        bytes write() const;
+        
+        size_t serialized_size() const {
+            return 80 + var_int_size(Transactions.size()) + 
+            data::fold([](size_t size, transaction x)->size_t{
+                return size + x.serialized_size();
+            }, 0, Transactions);
+        }
     };
+}
+
+inline gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer w, const gigamonkey::bitcoin::header& h) {
+    return h.write(w);
+}
+
+inline gigamonkey::bytes_reader operator>>(gigamonkey::bytes_reader r,  gigamonkey::bitcoin::header& h) {
+    return h.read(r);
+}
+
+inline gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer w, const gigamonkey::bitcoin::outpoint& o) {
+    return o.write(w);
+}
+
+inline gigamonkey::bytes_reader operator>>(gigamonkey::bytes_reader r, gigamonkey::bitcoin::outpoint& o) {
+    return o.read(r);
+}
+
+inline gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer w, const gigamonkey::bitcoin::input& in) {
+    return in.write(w);
+}
+
+inline gigamonkey::bytes_reader operator<<(gigamonkey::bytes_reader r, gigamonkey::bitcoin::input& in) {
+    return in.read(r);
+}
+
+inline gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer w, const gigamonkey::bitcoin::output& out) {
+    return out.write(w);
+}
+
+inline gigamonkey::bytes_reader operator>>(gigamonkey::bytes_reader r, gigamonkey::bitcoin::output& out) {
+    return out.read(r);
+}
+
+inline gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer w, const gigamonkey::bitcoin::transaction& t) {
+    return t.write(w);
+}
+
+inline gigamonkey::bytes_reader operator>>(gigamonkey::bytes_reader r, gigamonkey::bitcoin::transaction& t) {
+    return t.read(r);
+}
+
+inline gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer w, const gigamonkey::bitcoin::block& b) {
+    return b.write(w);
+}
+
+inline gigamonkey::bytes_reader operator>>(gigamonkey::bytes_reader r, gigamonkey::bitcoin::block& b) {
+    return b.read(r);
+}
+
+namespace gigamonkey::bitcoin {
+    
+    inline bytes_writer header::write(bytes_writer w) const {
+        return w << Version << Previous << MerkleRoot << Timestamp << Target << Nonce;
+    }
+    
+    inline bytes_reader header::read(bytes_reader r) {
+        return r >> Version >> Previous >> MerkleRoot >> Timestamp >> Target >> Nonce;
+    }
+    
+    inline uint<80> header::write() const {
+        throw data::method::unimplemented{"write"};
+    }
+    
+    inline bytes_writer outpoint::write(bytes_writer w) const {
+        return w << Reference << Index;
+    }
+    
+    inline bytes_reader outpoint::read(bytes_reader r) {
+        return r >> Reference >> Index;
+    }
+    
+    inline bytes_writer input::write(bytes_writer w) const {
+        return write_data(w << Outpoint, Script) << Sequence;
+    }
+    
+    inline bytes_reader input::read(bytes_reader r) {
+        return read_data(r >> Outpoint, Script) >> Sequence;
+    }
+    
+    inline bytes_writer output::write(bytes_writer w) const {
+        return write_data(w << Value, Script);
+    }
+    
+    inline bytes_reader output::read(bytes_reader r) {
+        return read_data(r >> Value, Script);
+    }
+    
+    inline bytes_writer transaction::write(bytes_writer w) const {
+        return write_list(write_list(w << Version, Inputs), Outputs) << Locktime;
+    }
+    
+    inline bytes_reader transaction::read(bytes_reader r) {
+        return read_list(read_list(r >> Version, Inputs), Outputs) >> Locktime;
+    }
+    
+    inline transaction transaction::read(bytes_view b) {
+        transaction t;
+        reader(b) >> t;
+        return t;
+    }
+    
+    inline bytes_writer block::write(bytes_writer w) const {
+        throw data::method::unimplemented{"block::write"};
+    }
+    
+    inline bytes_reader block::read(bytes_reader r) {
+        throw data::method::unimplemented{"block::read"};
+    }
+    
+    inline block block::read(bytes_view b) {
+        block bl;
+        reader(b) >> bl;
+        return bl;
+    }
+    
+    inline bytes block::write() const {
+        bytes b;
+        b.resize(serialized_size());
+        write(writer(b));
+        return b;
+    }
 }
 
 #endif

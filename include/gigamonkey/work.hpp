@@ -12,14 +12,21 @@ namespace gigamonkey::work {
     
     using digest = gigamonkey::digest<sha256::Size>;
     
-    integer<32, LittleEndian> difficulty_1_target{"0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"};
+    inline integer<32, LittleEndian> difficulty_1_target() {
+        static integer<32, LittleEndian> Difficulty1Target = integer<32, LittleEndian>{"0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"};
+        return Difficulty1Target;
+    }
     
     using difficulty = data::math::number::fraction<integer<sha256::Size, LittleEndian>, uint<sha256::Size, LittleEndian>>;
 
     struct target {
         uint32_little Encoded;
         
-        static target encode(byte e, uint24_little v);
+        static target encode(byte e, uint24_little v) {
+            target t;
+            data::writer<byte*>(t.Encoded.data(), t.Encoded.data() + 4) << e << v;
+            return t;
+        }
         
         target() : Encoded{} {}
         target(uint32_little x) : Encoded{x} {}
@@ -75,7 +82,7 @@ namespace gigamonkey::work {
         } 
         
         work::difficulty difficulty() const {
-            return work::difficulty{difficulty_1_target, expand().Digest};
+            return work::difficulty{difficulty_1_target(), expand().Digest};
         }
     };
     
@@ -108,7 +115,12 @@ namespace gigamonkey::work {
     struct candidate {
         uint<80, LittleEndian> Data;
     
-        static data::uint<80> encode(order, nonce);
+        static uint<80, LittleEndian> encode(order o, nonce n) {
+            uint<80, LittleEndian> x;
+            throw data::method::unimplemented{"encode"};
+            /*writer(x) << data::greater_half(n) << o.Message << o.Target << data::lesser_half(n);
+            return x;*/
+        }
         
         candidate() : Data{} {}
         candidate(uint<80, LittleEndian> d) : Data{d} {}
@@ -118,7 +130,7 @@ namespace gigamonkey::work {
             return Data == c.Data;
         }
         
-        static digest hash(slice<80> data) const {
+        static digest hash(slice<80> data) {
             return bitcoin::hash256(data);
         }
         
@@ -130,11 +142,11 @@ namespace gigamonkey::work {
         
         work::content content() const;
         
-        static work::target target(slice<80> data) const {
+        static work::target target(slice<80> data) {
             throw data::method::unimplemented{"work::candidate::target"};
         }
     
-        static bool valid(slice<80> data) const {
+        static bool valid(slice<80> data) {
             return hash(data) < target(data).expand();
         }
         
@@ -169,6 +181,10 @@ namespace gigamonkey::work {
 
 inline gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer w, const gigamonkey::work::target& t) {
     return w << t.Encoded;
+}
+
+inline gigamonkey::bytes_reader operator>>(gigamonkey::bytes_reader r, gigamonkey::work::target& t) {
+    return r >> t.Encoded;
 }
 
 #endif

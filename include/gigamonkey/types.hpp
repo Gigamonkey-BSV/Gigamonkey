@@ -105,13 +105,12 @@ namespace gigamonkey {
     struct timestamp {
         int32_little Timestamp;
         
-        timestamp& operator=(const timestamp& t) {
-            Timestamp = t.Timestamp;
-            return *this;
-        }
+        timestamp(uint32_little t) : Timestamp{t} {}
+        timestamp(string_view s) : timestamp{read(s)} {}
+        timestamp() : Timestamp{} {}
         
-        bool operator==(const timestamp&) const;
-        bool operator!=(const timestamp&) const;
+        bool operator==(const timestamp& t) const;
+        bool operator!=(const timestamp& t) const;
         bool operator<(const timestamp&) const;
         bool operator>(const timestamp&) const;
         bool operator<=(const timestamp&) const;
@@ -129,14 +128,28 @@ namespace gigamonkey {
     
     bytes_writer write_var_int(bytes_writer, uint64);
     
+    bytes_reader read_var_int(bytes_reader, uint64&);
+    
+    size_t var_int_size(uint64);
+    
+    inline bytes_writer write_data(bytes_writer w, bytes_view b) {
+        return write_var_int(w, b.size()) << b;
+    }
+    
+    inline bytes_reader read_data(bytes_reader r, bytes& b) {
+        uint64 size;
+        r = read_var_int(r, size);
+        b.resize(size);
+        return r >> b;
+    }
+    
     template <typename X> 
-    bytes_writer write_list(bytes_writer w, list<X> l) {
+    inline bytes_writer write_list(bytes_writer w, queue<X> l) {
         return data::fold([](bytes_writer w, X x)->bytes_writer{return w << x;}, write_var_int(w, data::size(l)), l);
     }
     
-    bytes_writer write_data(bytes_writer w, bytes_view b) {
-        return write_var_int(w, b.size()) << b;
-    }
+    template <typename X> 
+    bytes_reader read_list(bytes_reader r, queue<X>& l);
     
     namespace bitcoin {
         
@@ -156,6 +169,36 @@ inline std::ostream& operator<<(std::ostream& o, const gigamonkey::timestamp& s)
 
 inline gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer w, const gigamonkey::timestamp& s) {
     return w << s.Timestamp;
+}
+
+inline gigamonkey::bytes_reader operator>>(gigamonkey::bytes_reader r, gigamonkey::timestamp& s) {
+    return r >> s.Timestamp;
+}
+
+namespace gigamonkey {
+    inline bool timestamp::operator==(const timestamp& t) const {
+        return Timestamp == t.Timestamp;
+    }
+    
+    inline bool timestamp::operator!=(const timestamp& t) const {
+        return Timestamp != t.Timestamp;
+    }
+    
+    inline bool timestamp::operator<(const timestamp& t) const {
+        return Timestamp < t.Timestamp;
+    }
+    
+    inline bool timestamp::operator>(const timestamp& t) const {
+        return Timestamp > t.Timestamp;
+    }
+    
+    inline bool timestamp::operator<=(const timestamp& t) const {
+        return Timestamp <= t.Timestamp;
+    }
+    
+    inline bool timestamp::operator>=(const timestamp& t) const {
+        return Timestamp >= t.Timestamp;
+    }
 }
 
 #endif

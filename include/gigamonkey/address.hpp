@@ -8,26 +8,26 @@
 #include "secp256k1.hpp"
 #include <data/encoding/base58.hpp>
 
+namespace gigamonkey::base58 {
+    
+    inline string encode(bytes_view b) {
+        return data::encoding::base58::write(b);
+    }
+    
+    inline bool decode(bytes&, string_view);
+    
+    string check_encode(bytes_view);
+    
+    bool check_decode(bytes&, string_view);
+    
+}
+
 namespace gigamonkey::bitcoin {
     
     gigamonkey::checksum checksum(bytes_view);
     
     inline bytes_writer write_checksum(bytes_writer w, bytes_view b) {
         return w << b << checksum(b);
-    }
-    
-    namespace base58 {
-    
-        inline string encode(bytes_view b) {
-            return data::encoding::base58::write(b);
-        }
-        
-        inline bool decode(bytes&, string_view);
-        
-        string check_encode(bytes_view);
-        
-        bool check_decode(bytes&, string_view);
-        
     }
     
     struct address {
