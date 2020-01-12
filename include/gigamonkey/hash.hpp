@@ -24,7 +24,7 @@ namespace gigamonkey {
         uint<size, LittleEndian> Digest; 
         
         digest() : Digest{} {}
-        digest(slice<32>);
+        digest(slice<32> s) : Digest{s} {}
         digest(const uint<size, LittleEndian>& u) : Digest{u} {}
         explicit digest(string_view s) : Digest{s} {}
         

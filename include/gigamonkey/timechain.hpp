@@ -21,29 +21,21 @@ namespace gigamonkey::bitcoin {
 }
 
 namespace gigamonkey::header {
-    inline int32_little version(slice<80>) {
-        throw data::method::unimplemented{"header::version"};
+    int32_little version(slice<80>);
+    
+    inline const digest<32> previous(slice<80> x) {
+        return digest<32>(x.range<4, 36>());
     }
     
-    inline const digest<32> previous(slice<80>) {
-        throw data::method::unimplemented{"header::previous"};
+    inline const digest<32> merkle_root(slice<80> x) {
+        return digest<32>(x.range<36, 68>());
     }
     
-    inline const digest<32> merkle_root(slice<80>) {
-        throw data::method::unimplemented{"header::merkle_root"};
-    }
+    gigamonkey::timestamp timestamp(slice<80>);
     
-    inline gigamonkey::timestamp timestamp(slice<80>) {
-        throw data::method::unimplemented{"header::timestamp"};
-    }
+    work::target target(slice<80>);
     
-    inline work::target target(slice<80>) {
-        throw data::method::unimplemented{"header::target"};
-    }
-    
-    inline uint32_little nonce(slice<80>) {
-        throw data::method::unimplemented{"header::nonce"};
-    }
+    uint32_little nonce(slice<80>);
     
     inline digest<32> hash(slice<80> h) {
         return work::candidate::hash(h);
@@ -186,7 +178,7 @@ namespace gigamonkey::transaction {
     bool coinbase(bytes_view);
     
     inline bitcoin::txid txid(bytes_view b) {
-        bitcoin::id(b);
+        return bitcoin::id(b);
     }
 }
 

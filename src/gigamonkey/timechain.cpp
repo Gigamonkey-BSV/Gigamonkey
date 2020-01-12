@@ -14,6 +14,33 @@ namespace gigamonkey {
 }
 
 namespace gigamonkey::header {
+    int32_little version(slice<80> x) {
+        int32_little version;
+        slice<4> v = x.range<0, 4>();
+        std::copy(v.begin(), v.end(), version.data());
+        return version;
+    }
+    
+    gigamonkey::timestamp timestamp(slice<80> x) {
+        gigamonkey::timestamp time;
+        slice<4> v = x.range<68, 72>();
+        std::copy(v.begin(), v.end(), time.Timestamp.data());
+        return time;
+    }
+    
+    work::target target(slice<80> x) {
+        work::target work;
+        slice<4> v = x.range<72, 76>();
+        std::copy(v.begin(), v.end(), work.Encoded.data());
+        return work;
+    }
+    
+    uint32_little nonce(slice<80> x) {
+        int32_little n;
+        slice<4> v = x.range<76, 80>();
+        std::copy(v.begin(), v.end(), n.data());
+        return n;
+    }
     
     bool valid(slice<80> h) {
         return header_valid(bitcoin::header::read(h)) && header_valid_work(h);

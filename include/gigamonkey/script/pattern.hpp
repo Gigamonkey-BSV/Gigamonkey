@@ -201,19 +201,19 @@ namespace gigamonkey::bitcoin::script {
         : pattern{x}, First{first}, Second{-1}, Directive{d} {}
         
     inline repeated::repeated(op x, uint32 first, uint32 second) 
-        : pattern{x}, First{first}, Second{second}, Directive{exactly} {}
+        : pattern{x}, First{first}, Second{static_cast<int>(second)}, Directive{exactly} {}
     inline repeated::repeated(instruction x, uint32 first, uint32 second)
-        : pattern{x}, First{first}, Second{second}, Directive{exactly} {}
+        : pattern{x}, First{first}, Second{static_cast<int>(second)}, Directive{exactly} {}
     inline repeated::repeated(push x, uint32 first, uint32 second)
-        : pattern{x}, First{first}, Second{second}, Directive{exactly} {}
+        : pattern{x}, First{first}, Second{static_cast<int>(second)}, Directive{exactly} {}
     inline repeated::repeated(optional x, uint32 first, uint32 second)
-        : pattern{x}, First{first}, Second{second}, Directive{exactly} {}
+        : pattern{x}, First{first}, Second{static_cast<int>(second)}, Directive{exactly} {}
     inline repeated::repeated(pattern x, uint32 first, uint32 second)
-        : pattern{x}, First{first}, Second{second}, Directive{exactly} {}
+        : pattern{x}, First{first}, Second{static_cast<int>(second)}, Directive{exactly} {}
     inline repeated::repeated(repeated x, uint32 first, uint32 second)
-        : pattern{x}, First{first}, Second{second}, Directive{exactly} {}
+        : pattern{x}, First{first}, Second{static_cast<int>(second)}, Directive{exactly} {}
     inline repeated::repeated(alternatives x, uint32 first, uint32 second)
-        : pattern{x}, First{first}, Second{second}, Directive{exactly} {}
+        : pattern{x}, First{first}, Second{static_cast<int>(second)}, Directive{exactly} {}
     
 }
 

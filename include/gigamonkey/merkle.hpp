@@ -22,9 +22,10 @@ namespace gigamonkey::merkle {
     public:
         
         uint32 Index;
-        list<digest> Hashes;
+        queue<digest> Hashes;
         
         path() : Index{0}, Hashes{} {}
+        path(uint32 i, queue<digest> q) : Index{i}, Hashes{q} {}
         
         static digest next(uint32 i, const digest& d, const digest& last) {
             return (i & 1) == 1 ? concatinated(last, d) : concatinated(d, last);
@@ -34,39 +35,54 @@ namespace gigamonkey::merkle {
             if (Hashes.empty()) return leaf == root;
             return path{Index >> 1, Hashes.rest()}.verify(root, next(Index, leaf, Hashes.first()));
         }
+        
+        explicit operator bytes();
+        
+        explicit path(bytes_view b);
     };
     
     class tree {
         using digest_tree = gigamonkey::tree<digest>;
-        static queue<digest_tree> pairwise_concatinate(queue<digest_tree> l);
         
-        static digest_tree build(queue<digest_tree> l) {
-            if (data::size(l) == 0) return {};
-            if (data::size(l) == 1) return l.first();
-            return build(pairwise_concatinate(l));
-        }
+        static digest_tree deserialize(bytes_view);
+        static bytes serialize(digest_tree);
         
-        static digest_tree build(queue<digest> q) {
-            return build(data::for_each([](const digest& d)->digest_tree{return {d};}, q));
-        }
+        struct incomplete {
+            queue<digest_tree> Trees;
+            ordered_list<uint32> Leaves;
+            
+            incomplete pairwise_concatinate() const;
+        };
+        
+        static map<digest&, path> paths(digest_tree);
+        
+        static digest_tree build(queue<digest> q, ordered_list<uint32> leaves);
+        
+        tree(digest_tree t, map<digest&, path> p) : Tree{t}, Paths{p} {}
+        tree(digest_tree t) : Tree{t}, Paths{paths(t)} {}
+        tree() : Tree{}, Paths{} {}
         
     public:
-        uint32 Leaves;
         digest_tree Tree;
+        map<digest&, path> Paths;
         
-        tree(queue<digest> q) : Leaves{data::size(q)}, Tree{build(q)} {}
+        tree(queue<digest> q,              // All txs in a block in order.
+             ordered_list<uint32> leaves   // all indicies of txs that we want to remember. 
+        ) : tree{build(q, leaves)} {}
         
-        merkle::path path(uint32 index);
+        tree add(path) const;
+        
+        tree remove(queue<digest>) const;
+        
+        tree remove(const digest& d) const {
+            return remove(queue<digest>{} << d);
+        }
         
         digest root() const {
             if (Tree.empty()) return {};
             return Tree.root();
         }
     };
-    
-    inline digest root(queue<digest> q) {
-        return tree{q}.root();
-    }
     
 }
 
