@@ -2,6 +2,7 @@
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/wif.hpp>
+#include <data/encoding/integer.hpp>
 
 namespace gigamonkey::secp256k1 {
     
@@ -31,24 +32,22 @@ namespace gigamonkey::secp256k1 {
         return secp256k1_ec_pubkey_parse(Verification(), &pubkey, pk.data(), pk.size());
     }
     
-    bool serialize(const secp256k1_context* context, N_bytes& p, const secp256k1_pubkey& pubkey) {
+    bool serialize(const secp256k1_context* context, bytes& p, const secp256k1_pubkey& pubkey) {
         auto size = p.size();
-        secp256k1_ec_pubkey_serialize(context, p.Value.data(), &size, &pubkey, 
+        secp256k1_ec_pubkey_serialize(context, p.data(), &size, &pubkey, 
             CompressedPubkeySize ? SECP256K1_EC_COMPRESSED : SECP256K1_EC_UNCOMPRESSED);
         return size == p.size();
     }
     
-    N_bytes secret::to_public_compressed(bytes_view sk) {
-        N_bytes p;
-        p.Value.resize(CompressedPubkeySize);
+    bytes secret::to_public_compressed(bytes_view sk) {
+        bytes p{CompressedPubkeySize};
         secp256k1_pubkey pubkey;
         auto context = Signing();
         return secp256k1_ec_pubkey_create(context, &pubkey, sk.data()) == 1 && serialize(context, p, pubkey) ? p : 0;
     }
     
-    N_bytes secret::to_public_uncompressed(bytes_view sk) {
-        N_bytes p;
-        p.Value.resize(UncompressedPubkeySize);
+    bytes secret::to_public_uncompressed(bytes_view sk) {
+        bytes p{UncompressedPubkeySize};
         secp256k1_pubkey pubkey;
         auto context = Signing();
         return secp256k1_ec_pubkey_create(context, &pubkey, sk.data()) == 1 && serialize(context, p, pubkey) ? p : 0;
@@ -58,18 +57,18 @@ namespace gigamonkey::secp256k1 {
         return secp256k1_ec_pubkey_parse(context, &out, pk.data(), pk.size()) == 1;
     }
     
-    N_bytes pubkey::compress(bytes_view pk) {
+    bytes pubkey::compress(bytes_view pk) {
         if (pk.size() == CompressedPubkeySize) return N_bytes{pk};
         secp256k1_pubkey pubkey;
-        N_bytes p;
+        bytes p;
         const auto context = Verification();
         return parse(context, pubkey, pk) && serialize(context, p, pubkey) ? p : 0;
     }
     
-    N_bytes pubkey::decompress(bytes_view pk) {
+    bytes pubkey::decompress(bytes_view pk) {
         if (pk.size() == UncompressedPubkeySize) return N_bytes{pk};
         secp256k1_pubkey pubkey;
-        N_bytes p;
+        bytes p;
         const auto context = Verification();
         return parse(context, pubkey, pk) && serialize(context, p, pubkey) ? p : 0;
     }
@@ -83,7 +82,7 @@ namespace gigamonkey::secp256k1 {
     coordinate pubkey::y() const {
         coordinate v{0}; 
         if (valid()) {
-            bytes_view decompressed = type() == uncompressed ? Value : decompress(Value.Value);
+            bytes_view decompressed = type() == uncompressed ? Value : decompress(Value);
             std::copy(decompressed.begin() + 33, decompressed.end(), v.begin());
         };
         return v;
@@ -93,7 +92,7 @@ namespace gigamonkey::secp256k1 {
         signature sig;
         const auto context = Signing();
 
-        if (secp256k1_ecdsa_sign(context, &sig.Data, d.Digest.Array.data(), sk.data(),
+        if (secp256k1_ecdsa_sign(context, &sig.Data, d.Digest.data(), sk.data(),
             secp256k1_nonce_function_rfc6979, nullptr) != 1)
             return {};
 
@@ -126,14 +125,13 @@ namespace gigamonkey::secp256k1 {
     
     coordinate secret::negate(const coordinate& sk) {
         coordinate out{sk};
-        return secp256k1_ec_privkey_negate(Verification(), out.Array.data()) == 1 ? out : 0;
+        return secp256k1_ec_privkey_negate(Verification(), out.data()) == 1 ? out : 0;
     }
     
-    N_bytes pubkey::negate(const N_bytes& pk) {
+    bytes pubkey::negate(const bytes& pk) {
         const auto context = Verification();
         secp256k1_pubkey pubkey;
-        N_bytes out{};
-        out.Value.resize(pk.size());
+        bytes out{bytes{pk.size()}};
         return parse(context, pubkey, pk) &&
             secp256k1_ec_pubkey_negate(context, &pubkey) == 1 &&
             serialize(context, out, pubkey) ? out : 0;
@@ -142,18 +140,18 @@ namespace gigamonkey::secp256k1 {
     coordinate secret::plus(const coordinate& sk_a, bytes_view sk_b) {
         const auto context = Verification();
         coordinate out{sk_a};
-        return secp256k1_ec_privkey_tweak_add(context, out.Array.data(),
+        return secp256k1_ec_privkey_tweak_add(context, out.data(),
             sk_b.data()) == 1;
     }
     
     coordinate secret::times(const coordinate& sk_a, bytes_view sk_b) {
         const auto context = Verification();
         coordinate out{sk_a};
-        return secp256k1_ec_privkey_tweak_mul(context, out.Array.data(),
+        return secp256k1_ec_privkey_tweak_mul(context, out.data(),
             sk_b.data()) == 1;
     }
     
-    N_bytes pubkey::plus_pubkey(const N_bytes& pk_a, bytes_view pk_b) {
+    bytes pubkey::plus_pubkey(const bytes& pk_a, bytes_view pk_b) {
         const auto context = Verification();
         secp256k1_pubkey pubkey;
         secp256k1_pubkey b;
@@ -161,28 +159,34 @@ namespace gigamonkey::secp256k1 {
         keys[0] = &b;
         if (!parse(context, b, pk_b)) return 0;
         
-        N_bytes out{};
-        out.Value.resize(pk_a.size());
+        bytes out{bytes{pk_a.size()}};
         return secp256k1_ec_pubkey_combine(context, &pubkey, keys, 1) == 1 && serialize(context, out, pubkey) ? out : 0;
     }
     
-    N_bytes pubkey::plus_secret(const N_bytes& pk, bytes_view sk) {
+    bytes pubkey::plus_secret(const bytes& pk, bytes_view sk) {
         const auto context = Verification();
-        N_bytes out{};
-        out.Value.resize(pk.size());
+        bytes out{bytes{pk.size()}};
         secp256k1_pubkey pubkey;
         return parse(context, pubkey, pk) &&
             secp256k1_ec_pubkey_tweak_add(context, &pubkey, sk.data()) == 1 &&
             serialize(context, out, pubkey) ? out : 0;
     }
     
-    N_bytes pubkey::times(const N_bytes& pk, bytes_view sk) {
+    bytes pubkey::times(const bytes& pk, bytes_view sk) {
         const auto context = Verification();
-        N_bytes out{pk};
+        bytes out{pk};
         secp256k1_pubkey pubkey;
         return parse(context, pubkey, pk) &&
             secp256k1_ec_pubkey_tweak_mul(context, &pubkey, sk.data()) == 1 &&
             serialize(context, out, pubkey) ? out : 0;
+    }
+    
+    inline std::ostream& operator<<(std::ostream& o, const gigamonkey::secp256k1::secret& s) {
+        return data::encoding::hexidecimal::write(o << "secret{", s.Value, LittleEndian) << "}";
+    }
+    
+    inline std::ostream& operator<<(std::ostream& o, const gigamonkey::secp256k1::pubkey& p) {
+        return data::encoding::hexidecimal::write(o << "pubkey{", p.Value, LittleEndian) << "}";
     }
     
 }

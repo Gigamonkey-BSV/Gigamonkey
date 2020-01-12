@@ -54,17 +54,17 @@ namespace gigamonkey {
     using uint64 = std::uint64_t;
     using int64 = std::uint64_t;
     
-    using bytes = std::basic_string<byte>;
+    using bytes = data::bytes;
     using bytes_view = std::basic_string_view<byte>;
     
     using string = std::string;
     using string_view = std::string_view;
     
     template <size_t size, boost::endian::order e> 
-    using uint = data::math::number::bounded<std::array<byte, size>, size, e, false>; 
+    using uint = data::math::number::bounded<size, e, false>; 
     
     template <size_t size, boost::endian::order e> 
-    using integer = data::math::number::bounded<std::array<byte, size>, size, e, true>;
+    using integer = data::math::number::bounded<size, e, true>;
     
     using N_bytes = data::math::number::N_bytes<LittleEndian>;
     using Z_bytes = data::math::number::Z_bytes<LittleEndian>;
@@ -139,7 +139,7 @@ namespace gigamonkey {
     inline bytes_reader read_data(bytes_reader r, bytes& b) {
         uint64 size;
         r = read_var_int(r, size);
-        b.resize(size);
+        b = bytes{size};
         return r >> b;
     }
     

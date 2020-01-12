@@ -29,7 +29,7 @@ namespace gigamonkey {
         explicit digest(string_view s) : Digest{s} {}
         
         operator bytes_view() const {
-            return bytes_view{Digest.Array.data(), size};
+            return bytes_view{Digest.data(), size};
         }
         
         // Zero represents invalid even though it is theoretically

@@ -33,7 +33,7 @@ namespace gigamonkey::bitcoin::script {
         }
         
         pay_to_pubkey(bytes_view script) : Pubkey{} {
-            pattern(Pubkey.Value.Value).match(script);
+            pattern(Pubkey.Value).match(script);
         }
         
         static bytes redeem(const signature& s) {
@@ -43,14 +43,14 @@ namespace gigamonkey::bitcoin::script {
     
     struct pay_to_address {
         static script::pattern pattern(bytes& address) {
-            return {OP_DUP, OP_HASH160, push_size{20, address}, OP_EQUALVERIFY, OP_CHECKSIG};
+            return {OP_DUP, OP_HASH160, push_size{ripemd160::Size, address}, OP_EQUALVERIFY, OP_CHECKSIG};
         }
         
         static bytes script(bytes_view a) {
             return compile(program{OP_DUP, OP_HASH160, a, OP_EQUALVERIFY, OP_CHECKSIG});
         }
         
-        digest<20> Address;
+        digest<ripemd160::Size> Address;
         
         bool valid() const {
             return Address.valid();
@@ -61,10 +61,9 @@ namespace gigamonkey::bitcoin::script {
         }
         
         pay_to_address(bytes_view script) : Address{} {
-            bytes addr;
-            addr.resize(20);
+            bytes addr{ripemd160::Size};
             pattern(addr).match(script);
-            std::copy(addr.begin(), addr.end(), Address.Digest.Array.begin());
+            std::copy(addr.begin(), addr.end(), Address.Digest.begin());
         }
         
         static bytes redeem(const signature& s, const pubkey& p) {

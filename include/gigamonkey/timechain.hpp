@@ -25,11 +25,11 @@ namespace gigamonkey::header {
         throw data::method::unimplemented{"header::version"};
     }
     
-    inline slice<32> previous(slice<80>) {
+    inline const digest<32> previous(slice<80>) {
         throw data::method::unimplemented{"header::previous"};
     }
     
-    inline slice<32> merkle_root(slice<80>) {
+    inline const digest<32> merkle_root(slice<80>) {
         throw data::method::unimplemented{"header::merkle_root"};
     }
     
@@ -109,7 +109,7 @@ namespace gigamonkey::bitcoin {
 
 namespace gigamonkey::outpoint {
     bool valid(slice<36>);
-    slice<32> reference(slice<36>);
+    const bitcoin::txid reference(slice<36>);
     gigamonkey::index index(slice<36>);
 }
 
@@ -181,6 +181,8 @@ namespace gigamonkey::transaction {
     bytes_view output(bytes_view, index);
     bytes_view input(bytes_view, index);
     int32_little locktime(bytes_view);
+    
+    // Whether this is a coinbase transaction. 
     bool coinbase(bytes_view);
     
     inline bitcoin::txid txid(bytes_view b) {
@@ -222,10 +224,10 @@ namespace gigamonkey::bitcoin {
 namespace gigamonkey::block {
     bool valid(bytes_view);
     slice<80> header(bytes_view);
-    queue<bytes_view> transactions(bytes_view);
+    vector<bytes_view> transactions(bytes_view);
     
-    inline digest<32> merkle_root(queue<bytes_view> q) {
-        return merkle::root(for_each(bitcoin::id, q));
+    inline digest<32> merkle_root(vector<bytes_view> q) {
+        throw data::method::unimplemented{"merkle_root"};
     }
 }
 
@@ -371,8 +373,7 @@ namespace gigamonkey::bitcoin {
     }
     
     inline bytes block::write() const {
-        bytes b;
-        b.resize(serialized_size());
+        bytes b{serialized_size()};
         write(writer(b));
         return b;
     }

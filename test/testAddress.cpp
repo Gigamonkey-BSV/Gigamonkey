@@ -19,7 +19,8 @@ namespace gigamonkey::bitcoin::script {
     TEST(AddressTest, TestAddresses) {
         
         std::string arbitrary{"It's not easy being green."};
-        bytes tx{arbitrary.begin(), arbitrary.end()};
+        bytes tx{arbitrary.size()};
+        std::copy(arbitrary.begin(), arbitrary.end(), tx.begin());
         
         secret key{"0x00000000000000000000000000000000000000000000000000000000000101a7"};
         

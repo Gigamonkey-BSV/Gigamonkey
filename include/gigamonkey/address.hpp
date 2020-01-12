@@ -38,7 +38,7 @@ namespace gigamonkey::bitcoin {
         
         type Prefix;
         
-        using digest = gigamonkey::digest<20>;
+        using digest = gigamonkey::digest<ripemd160::Size>;
         
         digest Digest;
         

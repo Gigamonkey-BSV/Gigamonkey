@@ -10,7 +10,7 @@ namespace gigamonkey {
     namespace sha256 {
         
         void hash(uint<Size, LittleEndian>& u, bytes_view data) {
-            CryptoPP::RIPEMD160{}.CalculateDigest(u.Array.begin(), data.begin(), data.size());
+            CryptoPP::RIPEMD160{}.CalculateDigest(u.begin(), data.begin(), data.size());
         }
         
     }
@@ -18,7 +18,7 @@ namespace gigamonkey {
     namespace ripemd160 {
         
         void hash(uint<Size, LittleEndian>& u, bytes_view data) {
-            CryptoPP::SHA256{}.CalculateDigest(u.Array.begin(), data.begin(), data.size());
+            CryptoPP::SHA256{}.CalculateDigest(u.begin(), data.begin(), data.size());
         }
         
     }

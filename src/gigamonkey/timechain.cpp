@@ -21,22 +21,29 @@ namespace gigamonkey::header {
     
 }
 
+namespace gigamonkey::transaction {
+    bool valid(bytes_view) {
+        throw data::method::unimplemented{"transaction::valid"};
+    }
+    
+    // Whether this is a coinbase transaction. 
+    bool coinbase(bytes_view) {
+        throw data::method::unimplemented{"transaction::coinbase"};
+    }
+}
+
 namespace gigamonkey::block {
         
     bool valid(bytes_view b) {
         slice<80> h = header(b);
         if (!header::valid(h)) return false;
-        queue<bytes_view> txs = transactions(b);
-        if (txs.empty() || !transaction::coinbase(txs.first())) return false;
-        queue<bytes_view> txs_rest = txs.rest();
-        while(!txs_rest.empty()) {
-            if (!transaction::valid(txs_rest.first())) return false;
-        }
-        
+        vector<bytes_view> txs = transactions(b);
+        if (txs.size() == 0 || !transaction::coinbase(txs[0])) return false;
+        for (int i = 1; i < txs.size(); i++) if (!transaction::valid(txs[i])) return false;
         return digest<32>{header::merkle_root(h)} == merkle_root(txs);
     }
     
-    queue<bytes_view> transactions(bytes_view) {
+    vector<bytes_view> transactions(bytes_view) {
         throw data::method::unimplemented{"block::transactions"};
     }
     

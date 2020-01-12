@@ -36,7 +36,7 @@ namespace gigamonkey::bitcoin::script {
             r = r >> x;
             size = x;
         }
-        rest.Data.resize(size);
+        rest.Data = bytes(size);
         return r >> rest.Data;
     }
     
@@ -59,15 +59,13 @@ namespace gigamonkey::bitcoin::script {
     };
     
     bytes compile(program p) {
-        bytes compiled{};
-        compiled.resize(length(p));
+        bytes compiled{length(p)};
         writer{gigamonkey::writer(compiled)} << p;
         return compiled;
     }
     
     bytes compile(instruction i) {
-        bytes compiled{};
-        compiled.resize(length(i));
+        bytes compiled{length(i)};
         writer{gigamonkey::writer(compiled)} << i;
         return compiled;
     }

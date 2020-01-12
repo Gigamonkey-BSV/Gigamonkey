@@ -84,8 +84,8 @@ namespace gigamonkey::secp256k1 {
     
     class secret {
         static bool valid(bytes_view);
-        static N_bytes to_public_compressed(bytes_view);
-        static N_bytes to_public_uncompressed(bytes_view);
+        static bytes to_public_compressed(bytes_view);
+        static bytes to_public_uncompressed(bytes_view);
         static signature sign(bytes_view, const digest&);
         static coordinate negate(const coordinate&);
         static coordinate plus(const coordinate&, bytes_view);
@@ -134,19 +134,19 @@ namespace gigamonkey::secp256k1 {
     class pubkey {
         static bool valid(bytes_view);
         static bool verify(bytes_view pubkey, digest&, const signature&);
-        static N_bytes compress(bytes_view);
-        static N_bytes decompress(bytes_view);
-        static N_bytes negate(const N_bytes&);
-        static N_bytes plus_pubkey(const N_bytes&, bytes_view);
-        static N_bytes plus_secret(const N_bytes&, bytes_view);
-        static N_bytes times(const N_bytes&, bytes_view);
+        static bytes compress(bytes_view);
+        static bytes decompress(bytes_view);
+        static bytes negate(const bytes&);
+        static bytes plus_pubkey(const bytes&, bytes_view);
+        static bytes plus_secret(const bytes&, bytes_view);
+        static bytes times(const bytes&, bytes_view);
         
     public:
-        N_bytes Value;
+        bytes Value;
         
         pubkey() : Value{} {}
-        pubkey(const N_bytes& v) : Value{v} {}
-        explicit pubkey(string_view s) : Value{s} {}
+        pubkey(const bytes& v) : Value{v} {}
+        explicit pubkey(string_view s) : Value{N_bytes{s}} {}
         
         bool valid() const {
             return valid(Value);
@@ -213,7 +213,7 @@ namespace gigamonkey::secp256k1 {
         }
         
         string write_string() const {
-            return data::encoding::hexidecimal::write(Value);
+            return data::encoding::hexidecimal::write(N_bytes{Value});
         }
     };
     
@@ -282,6 +282,14 @@ inline std::ostream& operator<<(std::ostream& o, const gigamonkey::secp256k1::se
 
 inline std::ostream& operator<<(std::ostream& o, const gigamonkey::secp256k1::pubkey& p) {
     return o << "pubkey{" << p.Value << "}";
+}
+
+inline gigamonkey::bytes_reader operator>>(gigamonkey::bytes_reader r, gigamonkey::secp256k1::secret& s) {
+    return r >> s.Value;
+}
+
+inline gigamonkey::bytes_reader operator>>(gigamonkey::bytes_reader r, gigamonkey::secp256k1::pubkey& p) {
+    return r >> p.Value;
 }
 
 #endif

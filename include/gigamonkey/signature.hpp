@@ -39,8 +39,7 @@ namespace gigamonkey::bitcoin {
     struct signature {
         bytes Data;
         
-        signature(const secp256k1::signature raw, sighash::directive d) {
-            Data.resize(65);
+        signature(const secp256k1::signature raw, sighash::directive d) : Data{65} {
             writer(Data) << raw << d;
         } 
         
