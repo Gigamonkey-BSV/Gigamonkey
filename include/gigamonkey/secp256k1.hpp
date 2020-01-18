@@ -84,8 +84,8 @@ namespace gigamonkey::secp256k1 {
     
     class secret {
         static bool valid(bytes_view);
-        static bytes to_public_compressed(bytes_view);
-        static bytes to_public_uncompressed(bytes_view);
+        static N_bytes to_public_compressed(bytes_view);
+        static N_bytes to_public_uncompressed(bytes_view);
         static signature sign(bytes_view, const digest&);
         static coordinate negate(const coordinate&);
         static coordinate plus(const coordinate&, bytes_view);
@@ -134,18 +134,18 @@ namespace gigamonkey::secp256k1 {
     class pubkey {
         static bool valid(bytes_view);
         static bool verify(bytes_view pubkey, digest&, const signature&);
-        static bytes compress(bytes_view);
-        static bytes decompress(bytes_view);
-        static bytes negate(const bytes&);
-        static bytes plus_pubkey(const bytes&, bytes_view);
-        static bytes plus_secret(const bytes&, bytes_view);
-        static bytes times(const bytes&, bytes_view);
+        static N_bytes compress(bytes_view);
+        static N_bytes decompress(bytes_view);
+        static N_bytes negate(const N_bytes&);
+        static N_bytes plus_pubkey(const N_bytes&, bytes_view);
+        static N_bytes plus_secret(const N_bytes&, bytes_view);
+        static N_bytes times(const N_bytes&, bytes_view);
         
     public:
-        bytes Value;
+        N_bytes Value;
         
         pubkey() : Value{} {}
-        pubkey(const bytes& v) : Value{v} {}
+        pubkey(const N_bytes& v) : Value{v} {}
         explicit pubkey(string_view s) : Value{N_bytes{s}} {}
         
         bool valid() const {
@@ -213,7 +213,9 @@ namespace gigamonkey::secp256k1 {
         }
         
         string write_string() const {
-            return data::encoding::hexidecimal::write(N_bytes{Value});
+            std::stringstream ss;
+            ss << std::hex << Value;
+            return ss.str();
         }
     };
     
