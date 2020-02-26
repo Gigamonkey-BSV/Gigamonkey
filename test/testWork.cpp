@@ -5,7 +5,7 @@
 #include <gigamonkey/work.hpp>
 #include "gtest/gtest.h"
 
-namespace gigamonkey::work {
+namespace Gigamonkey::work {
 
     // can result in stack smashing
     TEST(WorkTest, DISABLED_TestWork) {

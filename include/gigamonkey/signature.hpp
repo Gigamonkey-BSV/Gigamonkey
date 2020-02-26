@@ -8,7 +8,7 @@
 #include "hash.hpp"
 #include "timechain.hpp"
 
-namespace gigamonkey::bitcoin {
+namespace Gigamonkey::Bitcoin {
     
     namespace sighash {
         
@@ -40,12 +40,12 @@ namespace gigamonkey::bitcoin {
         bytes Data;
         
         signature(const secp256k1::signature raw, sighash::directive d) : Data{65} {
-            writer(Data) << raw << d;
+            bytes_writer(Data.begin(), Data.end()) << raw << d;
         } 
         
         bool der() const;
         
-        bitcoin::sighash::directive sighash() const {
+        Bitcoin::sighash::directive sighash() const {
             return Data[Data.size() - 1];
         }
         
@@ -63,7 +63,7 @@ namespace gigamonkey::bitcoin {
         uint<36> Outpoint;
         
         bool valid() const {
-            return gigamonkey::output::valid(Output) && gigamonkey::outpoint::valid(Outpoint);
+            return Gigamonkey::output::valid(Output) && Gigamonkey::outpoint::valid(slice<36>(Outpoint));
         }
     };
     
@@ -94,10 +94,10 @@ namespace gigamonkey::bitcoin {
         return signature{secp256k1::sign(s, signature_hash(v, i, x)), x};
     }
     
-    bool verify(vector<prevout> p, bytes_view tx, satoshi a, sighash::directive x, const secp256k1::secret& s);
+    bool verify(cross<prevout> p, bytes_view tx, satoshi a, sighash::directive x, const secp256k1::secret& s);
 }
 
-inline std::ostream& operator<<(std::ostream& o, const gigamonkey::bitcoin::signature& x) {
+inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::signature& x) {
     return o << "signature{" << data::encoding::hex::write(x.Data) << "}";
 }
 

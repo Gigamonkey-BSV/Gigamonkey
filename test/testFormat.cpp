@@ -7,7 +7,7 @@
 #include "gtest/gtest.h"
 #include <gigamonkey/wif.hpp>
 
-namespace gigamonkey::bitcoin {
+namespace Gigamonkey::Bitcoin {
     
     struct test_data {
         string secret_wif;
@@ -128,7 +128,7 @@ namespace gigamonkey::bitcoin {
     }
     
     TEST_P(FormatTest, GetAddressFromPublicKey) {
-        EXPECT_EQ(bitcoin::address{this->PubkeyHex}, this->AddressBase58) << "Can't get address from public key";
+        EXPECT_EQ(Bitcoin::address{this->PubkeyHex}, this->AddressBase58) << "Can't get address from public key";
     }
     
     TEST_P(FormatTest, WriteSecretWIF) {

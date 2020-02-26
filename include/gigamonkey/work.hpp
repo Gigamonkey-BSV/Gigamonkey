@@ -4,187 +4,160 @@
 #ifndef GIGAMONKEY_WORK
 #define GIGAMONKEY_WORK
 
-#include "hash.hpp"
+#include <gigamonkey/timechain.hpp>
+#include <primitives/block.h>
 
-namespace gigamonkey::work {
+namespace Gigamonkey::work {
     
-    using nonce = boost::endian::little_int64_t;
-    
-    using digest = gigamonkey::digest<sha256::Size>;
-    
-    inline integer<32, LittleEndian> difficulty_1_target() {
-        static integer<32, LittleEndian> Difficulty1Target = integer<32, LittleEndian>{"0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"};
-        return Difficulty1Target;
-    }
-    
-    using difficulty = data::math::number::fraction<integer<sha256::Size, LittleEndian>, uint<sha256::Size, LittleEndian>>;
-
-    struct target {
-        uint32_little Encoded;
+    struct string {
+        int32_little Version;
+        uint256 Digest;
+        uint256 MerkleRoot;
+        timestamp Timestamp;
+        target Target;
+        nonce Nonce;
         
-        static target encode(byte e, uint24_little v) {
-            target t;
-            data::writer<byte*>(t.Encoded.data(), t.Encoded.data() + 4) << e << v;
-            return t;
+        string(int32_little v, uint256 d, uint256 mp, timestamp ts, target tg, nonce n) : 
+            Version{v}, Digest{d}, MerkleRoot{mp}, Timestamp{ts}, Target{tg}, Nonce{n} {}
+            
+        static string read(const slice<80> x);
+        
+        explicit string(const slice<80> x);
+        
+        bytes write() const;
+        
+        uint256 hash() const {
+            return Bitcoin::hash256(write());
         }
         
-        target() : Encoded{} {}
-        target(uint32_little x) : Encoded{x} {}
-        target(byte e, uint24_little v) : Encoded{encode(e, v)} {}
-        
-        byte exponent() const {
-            return static_cast<byte>(Encoded & 0x000000ff);
+        static bool valid(const slice<80> x) {
+            return Bitcoin::hash256(x).Value < header::target(x).expand();
         }
         
-        uint24_little digits() const {
-            return uint24_little{Encoded >> 8};
+        bool valid() {
+            return hash() < Target.expand();
         }
         
-        bool valid() const {
-            byte e = exponent();
-            return e >= 3 && e <= 32 && digits() != 0;
-        }
+        explicit string(const CBlockHeader&);
         
-        digest expand() const{
-            return digest{uint<32, LittleEndian>{digits()} >> (exponent() - 3)};
-        }
-        
-        explicit operator uint32_little() const {
-            return Encoded;
-        }
-        
-        explicit operator digest() const {
-            return expand();
-        }
-        
-        bool operator==(target t) const {
-            return Encoded == t.Encoded;
-        } 
-        
-        bool operator!=(target t) const {
-            return Encoded != t.Encoded;
-        } 
-        
-        bool operator<(target t) const {
-            return expand() < t.expand();
-        } 
-        
-        bool operator<=(target t) const {
-            return expand() <= t.expand();
-        } 
-        
-        bool operator>(target t) const {
-            return expand() > t.expand();
-        } 
-        
-        bool operator>=(target t) const {
-            return expand() >= t.expand();
-        } 
+        explicit string(const Bitcoin::header&);
         
         work::difficulty difficulty() const {
-            return work::difficulty{difficulty_1_target(), expand().Digest};
+            return Target.difficulty();
+        }
+        
+        explicit operator CBlockHeader() const;
+    };
+    
+    struct solution {
+        timestamp Timestamp;
+        nonce Nonce;
+        bytes ExtraNonce;
+        
+        solution(timestamp t, nonce n, bytes b) : Timestamp{t}, Nonce{n}, ExtraNonce{b} {}
+        solution() : Timestamp{}, Nonce{}, ExtraNonce{} {};
+        
+        bool valid() const {
+            return Timestamp.valid();
+        }
+        
+        bool operator==(const solution& s) const {
+            return Timestamp == s.Timestamp && 
+                Nonce == s.Nonce && 
+                ExtraNonce == s.ExtraNonce;
+        }
+        
+        bool operator!=(const solution& s) const {
+            return !operator==(s);
         }
     };
     
-    const target Easy{32, 0xffffff}; 
-    const target Hard{3, 0x000001};
-    
-    const target SuccessHalf{32, 0x800000};
-    const target SuccessQuarter{32, 0x400000};
-    const target SuccessEighth{32, 0x200000};
-    const target SuccessSixteenth{32, 0x100000};
-    
-    const uint32 ContentSize = 68;
-    
-    using content = uint<ContentSize, LittleEndian>;
-    
-    struct order {
-        content Message;
+    struct puzzle {
+        int32_little Version;
+        uint256 Digest;
         target Target;
+        Merkle::path MerklePath;
+        bytes Header;
+        bytes Body;
+        
+        puzzle() : Version{}, Digest{}, Target{}, MerklePath{}, Header{}, Body{} {}
+        puzzle(int32_little v, uint256 d, target g, Merkle::path mp, bytes h, bytes b) : 
+            Version{v}, Digest{d}, Target{g}, MerklePath{mp}, Header{h}, Body{b} {}
         
         bool valid() const {
             return Target.valid();
         }
         
-        order(content m, target t) : Message{m}, Target{t} {}
-        order() : Message{}, Target{} {}
+        bytes cover_page(solution x) const {
+            return write(Header.size() + x.ExtraNonce.size() + Body.size(), Header, x.ExtraNonce, Body);
+        }
+            
+        work::string string(solution x) const {
+            return work::string{
+                Version, 
+                Digest, 
+                MerklePath.derive_root(Bitcoin::hash256(cover_page(x))), 
+                x.Timestamp, 
+                Target, 
+                x.Nonce
+            };
+        }
+        
+        bool check(solution x) const {
+            return string(x).valid();
+        }
+        
+        bool operator==(const puzzle& p) const {
+            return Version == p.Version && 
+                Digest == p.Digest && 
+                Target == p.Target && 
+                MerklePath == p.MerklePath && 
+                Header == p.Header && 
+                Body == p.Body;
+        }
+        
+        bool operator!=(const puzzle& p) const {
+            return !operator==(p);
+        }
+        
+        static solution cpu_solve(puzzle p, solution initial) {
+            uint256 target = p.Target.expand();
+            // This is for test purposes only. Therefore we do not
+            // accept difficulties that are above the ordinary minimum. 
+            if (p.Target.difficulty() > difficulty::minimum()) return {}; 
+            while(p.string(initial).hash() > target) initial.Nonce++;
+            return initial;
+        }
     };
     
-    bool satisfied(order, nonce);
-    
-    struct candidate {
-        uint<80, LittleEndian> Data;
-    
-        static uint<80, LittleEndian> encode(order o, nonce n) {
-            uint<80, LittleEndian> x;
-            throw data::method::unimplemented{"encode"};
-            /*writer(x) << data::greater_half(n) << o.Message << o.Target << data::lesser_half(n);
-            return x;*/
-        }
+    struct proof {
+        puzzle Puzzle;
+        solution Solution;
         
-        candidate() : Data{} {}
-        candidate(uint<80, LittleEndian> d) : Data{d} {}
-        candidate(order o, nonce n) : Data{encode(o, n)} {}
-        
-        bool operator==(const candidate& c) {
-            return Data == c.Data;
-        }
-        
-        static digest hash(slice<80> data) {
-            return bitcoin::hash256(data);
-        }
-        
-        digest hash() const {
-            return hash(Data);
-        }
-        
-        work::nonce nonce() const;
-        
-        work::content content() const;
-        
-        static work::target target(slice<80> data) {
-            throw data::method::unimplemented{"work::candidate::target"};
-        }
-    
-        static bool valid(slice<80> data) {
-            return hash(data) < target(data).expand();
-        }
-        
-        work::target target() const {
-            throw target(Data);
-        }
-    
         bool valid() const {
-            return valid(Data);
+            return string().valid();
+        }
+        
+        proof() : Puzzle{}, Solution{} {}
+        proof(puzzle p, solution x) : Puzzle{p}, Solution{x} {}
+        
+        bytes cover_page() const {
+            return Puzzle.cover_page(Solution);
+        }
+        
+        work::string string() const {
+            return Puzzle.string(Solution);
+        }
+        
+        bool operator==(const proof& p) const {
+            return Puzzle == p.Puzzle && Solution == p.Solution;
+        }
+        
+        bool operator!=(const proof& p) const {
+            return !operator==(p);
         }
     };
     
-    inline byte exponent(target t) {
-        return t.exponent();
-    }
-    
-    inline uint24_little digits(target t) {
-        return t.digits();
-    }
-    
-    inline bool valid(target t) {
-        return t.valid();
-    }
-    
-    inline digest expand(target t) {
-        return t.expand();
-    }
-    
-    nonce work(order);
-    
-}
-
-inline gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer w, const gigamonkey::work::target& t) {
-    return w << t.Encoded;
-}
-
-inline gigamonkey::bytes_reader operator>>(gigamonkey::bytes_reader r, gigamonkey::work::target& t) {
-    return r >> t.Encoded;
 }
 
 #endif

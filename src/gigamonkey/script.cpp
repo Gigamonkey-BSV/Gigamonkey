@@ -3,19 +3,41 @@
 
 #include <gigamonkey/script.hpp>
 
-namespace gigamonkey::bitcoin::script {
+namespace Gigamonkey::Bitcoin {
     
-    struct writer {
+    evaluated evaluate_script(script in, script out) {
+        throw data::method::unimplemented{"evaluate_script"}; // TODO
+    }
+    
+    // Inefficient: extra copying. 
+    instruction push_value(int z) {
+        data::math::number::Z_bytes<data::endian::little> zz{z};
+        bytes b(zz.size());
+        std::copy(zz.begin(), zz.end(), b.begin());
+        return instruction{b};
+    }
+    
+    // inefficient: copying. 
+    instruction push_hex(std::string str) {
+        data::encoding::hex::string hex{str};
+        if (!hex.valid()) return instruction{};
+        data::bytes b = data::bytes(hex);
+        bytes x(b.size());
+        std::copy(b.begin(), b.end(), x.begin());
+        return instruction{x};
+    }
+    
+    struct script_writer {
         bytes_writer Writer;
-        writer operator<<(instruction o) const {
-            return writer{write(Writer, o)};
+        script_writer operator<<(instruction o) const {
+            return script_writer{write(Writer, o)};
         }
         
-        writer operator<<(program p) const {
-            return writer{write(Writer, p)};
+        script_writer operator<<(program p) const {
+            return p.size() == 0 ? script_writer{Writer} : (script_writer{Writer}  << p.first() << p.rest());
         }
         
-        writer(bytes_writer w) : Writer{w.Writer} {}
+        script_writer(bytes_writer w) : Writer{w} {}
     };
     
     bytes_reader read_push(bytes_reader r, instruction& rest) {
@@ -36,16 +58,23 @@ namespace gigamonkey::bitcoin::script {
             r = r >> x;
             size = x;
         }
+        
+        // TODO inefficient because I copy data here for
+        // no reason other than not wanting to re-write
+        // some old types. 
         rest.Data = bytes(size);
-        return r >> rest.Data;
+        data::bytes bx{size};
+        r >> bx;
+        std::copy(bx.begin(), bx.end(), rest.Data.begin());
+        return r;
     }
     
-    struct reader {
+    struct script_reader {
         bytes_reader Reader;
-        reader operator>>(instruction& i) const {
+        script_reader operator>>(instruction& i) const {
             byte next;
             bytes_reader r = Reader >> next;
-            i.Op = op{next};
+            i.Op = static_cast<op>(next);
             if (is_push_data(i.Op)) return read_push(r, i);
             return r;
         }
@@ -54,25 +83,31 @@ namespace gigamonkey::bitcoin::script {
             return Reader.empty();
         }
         
-        reader(bytes_reader r) : Reader{r} {}
-        reader(bytes_view b) : Reader{gigamonkey::reader(b)} {}
+        script_reader(bytes_reader r) : Reader{r} {}
+        script_reader(bytes_view b) : Reader{b.data(), b.data() + b.size()} {}
     };
     
+    instruction instruction::read(bytes_view b) {
+        instruction i;
+        script_reader{b} >> i;
+        return i;
+    }
+    
     bytes compile(program p) {
-        bytes compiled{length(p)};
-        writer{gigamonkey::writer(compiled)} << p;
+        bytes compiled(length(p));
+        script_writer{bytes_writer{compiled.begin(), compiled.end()}} << p;
         return compiled;
     }
     
     bytes compile(instruction i) {
-        bytes compiled{length(i)};
-        writer{gigamonkey::writer(compiled)} << i;
+        bytes compiled(length(i));
+        script_writer{bytes_writer{compiled.begin(), compiled.end()}} << i;
         return compiled;
     }
     
     program decompile(bytes_view b) {
         program p{};
-        reader r{b};
+        script_reader r{bytes_reader{b.data(), b.data() + b.size()}};
         while(!r.empty()) {
             instruction i{};
             r = r >> i;
@@ -80,11 +115,102 @@ namespace gigamonkey::bitcoin::script {
         }
         return p;
     }
+        
+    bytes_view pattern::atom::scan(bytes_view p) const {
+        if (p.size() == 0) throw fail{};
+        if (p[0] != Instruction.Op) throw fail{};
+        uint32 size = next_instruction_size(p);
+        // mistake here
+        if (p.size() < size || Instruction != instruction::read(p.substr(0, size))) throw fail{};
+        return p.substr(size);
+    }
+    
+    bool push::match(const instruction& i) const {
+        switch (Type) {
+            case any : 
+                return is_push(i.Op);
+            case value : 
+                return is_push(i.Op) && Value == Z{data::math::number::Z_bytes<data::endian::little>{i.data()}};
+            case data : 
+                return is_push(i.Op) && Data == i.data();
+            case read : 
+                if (!is_push(i.Op)) return false;
+                Read = i.data();
+                return true;
+            default: 
+                return false;
+        }
+    }
+    
+    bytes_view push::scan(bytes_view p) const {
+        uint32 size = next_instruction_size(p);
+        if (!match(instruction::read(p.substr(0, size)))) throw fail{};
+        return p.substr(size);
+    }
+    
+    bool push_size::match(const instruction& i) const {
+        bytes Data = i.data();
+        if (Data.size() != Size) return false;
+        if (Reader) Read = Data;
+        return true;
+    }
+    
+    bytes_view push_size::scan(bytes_view p) const {
+        uint32 size = next_instruction_size(p);
+        if (!match(instruction::read(p.substr(0, size)))) throw fail{};
+        return p.substr(size);
+    }
+    
+    bytes_view pattern::sequence::scan(bytes_view p) const {
+        list<ptr<pattern>> patt = Patterns;
+        while (!data::empty(patt)) {
+            p = patt.first()->scan(p);
+            patt = patt.rest();
+        }
+        return p;
+    }
+        
+    bytes_view optional::scan(bytes_view p) const {
+        try {
+            return pattern::Pattern->scan(p);
+        } catch (fail) {
+            return p;
+        }
+    }
+    
+    bytes_view repeated::scan(bytes_view p) const {
+        ptr<pattern> patt = pattern::Pattern;
+        uint32 min = Second == -1 && Directive == or_less ? 0 : First;
+        int64 max = Second != -1 ? Second : Directive == or_more ? -1 : First;
+        uint32 matches = 0;
+        while (true) {
+            try {
+                p = patt->scan(p);
+                matches++;
+                if (matches == max) return p;
+            } catch (fail) {
+                if (matches < min) throw fail{};
+                return p;
+            }
+        }
+    }
+    
+    bytes_view alternatives::scan(bytes_view b) const {
+        list<ptr<pattern>> patt = Patterns;
+        while (!data::empty(patt)) {
+            try {
+                return patt.first()->scan(b);
+            } catch (fail) {
+                patt = patt.rest();
+            }
+        }
+        throw fail{};
+    };
     
 }
 
-std::ostream& operator<<(std::ostream& o, gigamonkey::bitcoin::script::op x) {
-    using namespace gigamonkey::bitcoin::script;
+std::ostream& write_op_code(std::ostream& o, Gigamonkey::Bitcoin::op x) {
+    using namespace Gigamonkey::Bitcoin;
     if (x == OP_FALSE) return o << "push_empty";
     if (is_push(x)) {
         switch(x) {
@@ -156,3 +282,7 @@ std::ostream& operator<<(std::ostream& o, gigamonkey::bitcoin::script::op x) {
     }
 }
 
+std::ostream& operator<<(std::ostream& o, Gigamonkey::Bitcoin::instruction i) {
+    if (!Gigamonkey::Bitcoin::is_push_data(i.Op)) return write_op_code(o, i.Op);
+    return write_op_code(o, i.Op) << "{" << data::encoding::hex::write(i.Data) << "}";
+}

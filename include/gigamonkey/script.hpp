@@ -8,240 +8,109 @@
 #define GIGAMONKEY_SCRIPT
 
 #include <boost/endian/conversion.hpp>
-#include "signature.hpp"
+#include <gigamonkey/signature.hpp>
+#include <gigamonkey/address.hpp>
 
-namespace gigamonkey::bitcoin::script {
-    enum op : byte {
-        // push value
-        OP_0 = 0x00,
-        OP_FALSE = OP_0,
-            
-        OP_PUSHSIZE1 = 0x01,
-        OP_PUSHSIZE2 = 0x02,
-        OP_PUSHSIZE3 = 0x03,
-        OP_PUSHSIZE4 = 0x04,
-        OP_PUSHSIZE5 = 0x05,
-        OP_PUSHSIZE6 = 0x06,
-        OP_PUSHSIZE7 = 0x07,
-        OP_PUSHSIZE8 = 0x08,
-        OP_PUSHSIZE9 = 0x09,
-        
-        OP_PUSHSIZE10 = 0x0a, 
-        OP_PUSHSIZE11 = 0x0b,
-        OP_PUSHSIZE12 = 0x0c,
-        OP_PUSHSIZE13 = 0x0d,
-        OP_PUSHSIZE14 = 0x0e,
-        OP_PUSHSIZE15 = 0x0f,
-        OP_PUSHSIZE16 = 0x10,
-        OP_PUSHSIZE17 = 0x11,
-        OP_PUSHSIZE18 = 0x12,
-        OP_PUSHSIZE19 = 0x13,
-        
-        OP_PUSHSIZE20 = 0x14,
-        OP_PUSHSIZE21 = 0x15,
-        OP_PUSHSIZE22 = 0x16,
-        OP_PUSHSIZE23 = 0x17,
-        OP_PUSHSIZE24 = 0x18,
-        OP_PUSHSIZE25 = 0x19,
-        OP_PUSHSIZE26 = 0x1a,
-        OP_PUSHSIZE27 = 0x1b,
-        OP_PUSHSIZE28 = 0x1c,
-        OP_PUSHSIZE29 = 0x1d,
-        
-        OP_PUSHSIZE30 = 0x1e,
-        OP_PUSHSIZE31 = 0x1f,
-        OP_PUSHSIZE32 = 0x20,
-        OP_PUSHSIZE33 = 0x21,
-        OP_PUSHSIZE34 = 0x22,
-        OP_PUSHSIZE35 = 0x23,
-        OP_PUSHSIZE36 = 0x24,
-        OP_PUSHSIZE37 = 0x25,
-        OP_PUSHSIZE38 = 0x26,
-        OP_PUSHSIZE39 = 0x27,
-        
-        OP_PUSHSIZE40 = 0x28,
-        OP_PUSHSIZE41 = 0x29,
-        OP_PUSHSIZE42 = 0x2a,
-        OP_PUSHSIZE43 = 0x2b,
-        OP_PUSHSIZE44 = 0x2c,
-        OP_PUSHSIZE45 = 0x2d,
-        OP_PUSHSIZE46 = 0x2e,
-        OP_PUSHSIZE47 = 0x2f,
-        OP_PUSHSIZE48 = 0x30,
-        OP_PUSHSIZE49 = 0x31,
-        
-        OP_PUSHSIZE50 = 0x32,
-        OP_PUSHSIZE51 = 0x33,
-        OP_PUSHSIZE52 = 0x34,
-        OP_PUSHSIZE53 = 0x35,
-        OP_PUSHSIZE54 = 0x36,
-        OP_PUSHSIZE55 = 0x37,
-        OP_PUSHSIZE56 = 0x38,
-        OP_PUSHSIZE57 = 0x39,
-        OP_PUSHSIZE58 = 0x3a,
-        OP_PUSHSIZE59 = 0x3b,
-        
-        OP_PUSHSIZE60 = 0x3c,
-        OP_PUSHSIZE61 = 0x3d,
-        OP_PUSHSIZE62 = 0x3e,
-        OP_PUSHSIZE63 = 0x3f,
-        OP_PUSHSIZE64 = 0x40,
-        OP_PUSHSIZE65 = 0x41,
-        OP_PUSHSIZE66 = 0x42,
-        OP_PUSHSIZE67 = 0x43,
-        OP_PUSHSIZE68 = 0x44,
-        OP_PUSHSIZE69 = 0x45,
-        
-        OP_PUSHSIZE70 = 0x46,
-        OP_PUSHSIZE71 = 0x47,
-        OP_PUSHSIZE72 = 0x48,
-        OP_PUSHSIZE73 = 0x49,
-        OP_PUSHSIZE74 = 0x4a,
-        OP_PUSHSIZE75 = 0x4b,
-        
-        OP_PUSHDATA1 = 0x4c,
-        OP_PUSHDATA2 = 0x4d,
-        OP_PUSHDATA4 = 0x4e,
-        OP_1NEGATE = 0x4f,
-        OP_RESERVED = 0x50,
-        OP_1 = 0x51,
-        OP_TRUE = OP_1,
-        OP_2 = 0x52,
-        OP_3 = 0x53,
-        OP_4 = 0x54,
-        OP_5 = 0x55,
-        OP_6 = 0x56,
-        OP_7 = 0x57,
-        OP_8 = 0x58,
-        OP_9 = 0x59,
-        OP_10 = 0x5a,
-        OP_11 = 0x5b,
-        OP_12 = 0x5c,
-        OP_13 = 0x5d,
-        OP_14 = 0x5e,
-        OP_15 = 0x5f,
-        OP_16 = 0x60,
+#include <script/script.h>
 
-        // control
-        OP_NOP = 0x61,
-        OP_VER = 0x62,
-        OP_IF = 0x63,
-        OP_NOTIF = 0x64,
-        OP_VERIF = 0x65,
-        OP_VERNOTIF = 0x66,
-        OP_ELSE = 0x67,
-        OP_ENDIF = 0x68,
-        OP_VERIFY = 0x69,
-        OP_RETURN = 0x6a,
-
-        // stack ops
-        OP_TOALTSTACK = 0x6b,
-        OP_FROMALTSTACK = 0x6c,
-        OP_2DROP = 0x6d,
-        OP_2DUP = 0x6e,
-        OP_3DUP = 0x6f,
-        OP_2OVER = 0x70,
-        OP_2ROT = 0x71,
-        OP_2SWAP = 0x72,
-        OP_IFDUP = 0x73,
-        OP_DEPTH = 0x74,
-        OP_DROP = 0x75,
-        OP_DUP = 0x76,
-        OP_NIP = 0x77,
-        OP_OVER = 0x78,
-        OP_PICK = 0x79,
-        OP_ROLL = 0x7a,
-        OP_ROT = 0x7b,
-        OP_SWAP = 0x7c,
-        OP_TUCK = 0x7d,
-
-        // splice ops
-        OP_CAT = 0x7e,
-        OP_SPLIT = 0x7f,   // after monolith upgrade (May 2018)
-        OP_NUM2BIN = 0x80, // after monolith upgrade (May 2018)
-        OP_BIN2NUM = 0x81, // after monolith upgrade (May 2018)
-        OP_SIZE = 0x82,
-            
-        // bit logic
-        OP_INVERT = 0x83,
-        OP_AND = 0x84,
-        OP_OR = 0x85,
-        OP_XOR = 0x86,
-        OP_EQUAL = 0x87,
-        OP_EQUALVERIFY = 0x88,
-        OP_RESERVED1 = 0x89,
-        OP_RESERVED2 = 0x8a,
-
-        // numeric
-        OP_1ADD = 0x8b,
-        OP_1SUB = 0x8c,
-        OP_2MUL = 0x8d,
-        OP_2DIV = 0x8e,
-        OP_NEGATE = 0x8f,
-        OP_ABS = 0x90,
-        OP_NOT = 0x91,
-        OP_0NOTEQUAL = 0x92,
-
-        OP_ADD = 0x93,
-        OP_SUB = 0x94,
-        OP_MUL = 0x95,
-        OP_DIV = 0x96,
-        OP_MOD = 0x97,
-        OP_LSHIFT = 0x98,
-        OP_RSHIFT = 0x99,
-
-        OP_BOOLAND = 0x9a,
-        OP_BOOLOR = 0x9b,
-        OP_NUMEQUAL = 0x9c,
-        OP_NUMEQUALVERIFY = 0x9d,
-        OP_NUMNOTEQUAL = 0x9e,
-        OP_LESSTHAN = 0x9f,
-        OP_GREATERTHAN = 0xa0,
-        OP_LESSTHANOREQUAL = 0xa1,
-        OP_GREATERTHANOREQUAL = 0xa2,
-        OP_MIN = 0xa3,
-        OP_MAX = 0xa4,
-
-        OP_WITHIN = 0xa5,
-
-        // crypto
-        OP_RIPEMD160 = 0xa6,
-        OP_SHA1 = 0xa7,
-        OP_SHA256 = 0xa8,
-        OP_HASH160 = 0xa9,
-        OP_HASH256 = 0xaa,
-        OP_CODESEPARATOR = 0xab,
-        OP_CHECKSIG = 0xac,
-        OP_CHECKSIGVERIFY = 0xad,
-        OP_CHECKMULTISIG = 0xae,
-        OP_CHECKMULTISIGVERIFY = 0xaf,
-
-        // expansion
-        OP_NOP1 = 0xb0,
-        OP_CHECKLOCKTIMEVERIFY = 0xb1,
-        OP_NOP2 = OP_CHECKLOCKTIMEVERIFY,
-        OP_CHECKSEQUENCEVERIFY = 0xb2,
-        OP_NOP3 = OP_CHECKSEQUENCEVERIFY,
-        OP_NOP4 = 0xb3,
-        OP_NOP5 = 0xb4,
-        OP_NOP6 = 0xb5,
-        OP_NOP7 = 0xb6,
-        OP_NOP8 = 0xb7,
-        OP_NOP9 = 0xb8,
-        OP_NOP10 = 0xb9,
-
-        // The first op_code value after all defined opcodes
-        FIRST_UNDEFINED_OP_VALUE,
-
-        // template matching params
-        OP_SMALLINTEGER = 0xfa,
-        OP_PUBKEYS = 0xfb,
-        OP_PUBKEYHASH = 0xfd,
-        OP_PUBKEY = 0xfe,
-
-        OP_INVALIDOPCODE = 0xff,
+namespace Gigamonkey::Bitcoin { 
+    
+    struct evaluated {
+        bool Valid;
+        bytes Return;
     };
     
+    // Test validity of a script. All signature operations succeed. 
+    evaluated evaluate_script(script in, script out);
+    
+    // Evaluate script with real signature operations. 
+    evaluated evaluate_script(script in, script out, bytes transaction);
+    
+    using op = opcodetype;
+    
+    const op OP_PUSHSIZE1 = op(0x01);
+    const op OP_PUSHSIZE2 = op(0x02);
+    const op OP_PUSHSIZE3 = op(0x03);
+    const op OP_PUSHSIZE4 = op(0x04);
+    const op OP_PUSHSIZE5 = op(0x05);
+    const op OP_PUSHSIZE6 = op(0x06);
+    const op OP_PUSHSIZE7 = op(0x07);
+    const op OP_PUSHSIZE8 = op(0x08);
+    const op OP_PUSHSIZE9 = op(0x09);
+    
+    const op OP_PUSHSIZE10 = op(0x0a); 
+    const op OP_PUSHSIZE11 = op(0x0b);
+    const op OP_PUSHSIZE12 = op(0x0c);
+    const op OP_PUSHSIZE13 = op(0x0d);
+    const op OP_PUSHSIZE14 = op(0x0e);
+    const op OP_PUSHSIZE15 = op(0x0f);
+    const op OP_PUSHSIZE16 = op(0x10);
+    const op OP_PUSHSIZE17 = op(0x11);
+    const op OP_PUSHSIZE18 = op(0x12);
+    const op OP_PUSHSIZE19 = op(0x13);
+    
+    const op OP_PUSHSIZE20 = op(0x14);
+    const op OP_PUSHSIZE21 = op(0x15);
+    const op OP_PUSHSIZE22 = op(0x16);
+    const op OP_PUSHSIZE23 = op(0x17);
+    const op OP_PUSHSIZE24 = op(0x18);
+    const op OP_PUSHSIZE25 = op(0x19);
+    const op OP_PUSHSIZE26 = op(0x1a);
+    const op OP_PUSHSIZE27 = op(0x1b);
+    const op OP_PUSHSIZE28 = op(0x1c);
+    const op OP_PUSHSIZE29 = op(0x1d);
+
+    const op OP_PUSHSIZE30 = op(0x1e);
+    const op OP_PUSHSIZE31 = op(0x1f);
+    const op OP_PUSHSIZE32 = op(0x20);
+    const op OP_PUSHSIZE33 = op(0x21);
+    const op OP_PUSHSIZE34 = op(0x22);
+    const op OP_PUSHSIZE35 = op(0x23);
+    const op OP_PUSHSIZE36 = op(0x24);
+    const op OP_PUSHSIZE37 = op(0x25);
+    const op OP_PUSHSIZE38 = op(0x26);
+    const op OP_PUSHSIZE39 = op(0x27);
+    
+    const op OP_PUSHSIZE40 = op(0x28);
+    const op OP_PUSHSIZE41 = op(0x29);
+    const op OP_PUSHSIZE42 = op(0x2a);
+    const op OP_PUSHSIZE43 = op(0x2b);
+    const op OP_PUSHSIZE44 = op(0x2c);
+    const op OP_PUSHSIZE45 = op(0x2d);
+    const op OP_PUSHSIZE46 = op(0x2e);
+    const op OP_PUSHSIZE47 = op(0x2f);
+    const op OP_PUSHSIZE48 = op(0x30);
+    const op OP_PUSHSIZE49 = op(0x31);
+    
+    const op OP_PUSHSIZE50 = op(0x32);
+    const op OP_PUSHSIZE51 = op(0x33);
+    const op OP_PUSHSIZE52 = op(0x34);
+    const op OP_PUSHSIZE53 = op(0x35);
+    const op OP_PUSHSIZE54 = op(0x36);
+    const op OP_PUSHSIZE55 = op(0x37);
+    const op OP_PUSHSIZE56 = op(0x38);
+    const op OP_PUSHSIZE57 = op(0x39);
+    const op OP_PUSHSIZE58 = op(0x3a);
+    const op OP_PUSHSIZE59 = op(0x3b);
+    
+    const op OP_PUSHSIZE60 = op(0x3c);
+    const op OP_PUSHSIZE61 = op(0x3d);
+    const op OP_PUSHSIZE62 = op(0x3e);
+    const op OP_PUSHSIZE63 = op(0x3f);
+    const op OP_PUSHSIZE64 = op(0x40);
+    const op OP_PUSHSIZE65 = op(0x41);
+    const op OP_PUSHSIZE66 = op(0x42);
+    const op OP_PUSHSIZE67 = op(0x43);
+    const op OP_PUSHSIZE68 = op(0x44);
+    const op OP_PUSHSIZE69 = op(0x45);
+    
+    const op OP_PUSHSIZE70 = op(0x46);
+    const op OP_PUSHSIZE71 = op(0x47);
+    const op OP_PUSHSIZE72 = op(0x48);
+    const op OP_PUSHSIZE73 = op(0x49);
+    const op OP_PUSHSIZE74 = op(0x4a);
+    const op OP_PUSHSIZE75 = op(0x4b);
+
     inline bool is_push(op o) {
         return o <= OP_16 && o != OP_RESERVED;
     }
@@ -257,6 +126,8 @@ namespace gigamonkey::bitcoin::script {
             o[0] == OP_PUSHDATA4 ? boost::endian::load_little_u32(&o[1]) + 5 : 1;
     }
     
+    // Representation of a Bitcoin script instruction, which is either an op code
+    // by itself or an op code for pushing data to the stack along with data. 
     struct instruction {
         op Op;
         bytes Data;
@@ -278,7 +149,7 @@ namespace gigamonkey::bitcoin::script {
             if (!is_push(Op)) return {};
             if (is_push_data(Op)) return Data;
             if (Op == OP_1NEGATE) return {OP_1NEGATE};
-            return {{static_cast<byte>(byte{Op} - byte{0x50})}};
+            return bytes{static_cast<byte>(Op - 0x50)};
         }
         
         bool valid() {
@@ -332,21 +203,37 @@ namespace gigamonkey::bitcoin::script {
             return instruction{o};
         }
         
-        static instruction push_data(bytes_view b) {
-            return instruction{b};
-        }
-        
         static instruction read(bytes_view b);
         
     };
     
-    using program = queue<instruction>;
+    inline instruction push_data(int32_little x) {
+        return instruction{bytes_view{x.data(), 4}};
+    }
     
-    bytes compile(program p);
+    inline instruction push_data(uint64_little x) {
+        return instruction{bytes_view{x.data(), 8}};
+    }
     
-    bytes compile(instruction i);
+    inline instruction push_data(bytes_view x) {
+        return instruction{x};
+    }
     
-    program decompile(bytes_view);
+    inline instruction push_data(pubkey p) {
+        return instruction{write(p.size(), p)};
+    }
+    
+    instruction push_value(int);
+    
+    instruction push_hex(std::string);
+    
+    using program = list<instruction>;
+    
+    bytes compile(program p); // TODO 
+    
+    bytes compile(instruction i); // TODO
+    
+    program decompile(bytes_view); // TODO
     
     inline size_t length(instruction o) {
         return o.length();
@@ -357,27 +244,324 @@ namespace gigamonkey::bitcoin::script {
         return length(p.first()) + length(p.rest());
     }
     
-}
-
-std::ostream& operator<<(std::ostream& o, gigamonkey::bitcoin::script::op);
-
-inline std::ostream& operator<<(std::ostream& o, gigamonkey::bitcoin::script::instruction i) {
-    if (!gigamonkey::bitcoin::script::is_push_data(i.Op)) return o << i.Op;
-    return o << i.Op << "{" << data::encoding::hex::write(i.Data) << "}";
-}
-
-namespace gigamonkey::bitcoin::script {
+    class push;
+    struct optional;
+    struct alternatives;
+    struct repeated;
     
-    inline bytes_writer write(bytes_writer w, instruction o) {
-        return o.write(w);
+    // for matching and scraping values.
+    struct pattern {
+        bool match(bytes_view b) const {
+            try {
+                bytes_view rest = scan(b); 
+                return rest.size() == 0;
+            } catch (fail) {
+                return false;
+            }
+        }
+        
+        // A pattern which matches a single op code or instruction. 
+        pattern(op);
+        pattern(instruction);
+        
+        // A pattern denoted as a sequence of other patterns. 
+        template <typename... P>
+        pattern(P...);
+        
+        struct fail {}; // Used to end out of a scan operation immediately. 
+        
+        virtual bytes_view scan(bytes_view p) const {
+            return Pattern->scan(p);
+        }
+        
+        struct sequence;
+    protected:
+        struct atom;
+        ptr<pattern> Pattern;
+        pattern() : Pattern{nullptr} {}
+        pattern(ptr<pattern> p) : Pattern{p} {};
+    };
+    
+    // A pattern that matches anything. 
+    struct any final : pattern {
+        any() {}
+        virtual bytes_view scan(bytes_view p) const final override {
+            if (p.size() == 0) throw fail{};
+            uint32 size = next_instruction_size(p);
+            if (p.size() < size) throw fail{};
+            return p.substr(size);
+        }
+    };
+    
+    // A pattern that represents a single instruction. 
+    struct pattern::atom final : pattern {
+        instruction Instruction;
+        atom(instruction i) : Instruction{i} {}
+        
+        virtual bytes_view scan(bytes_view p) const final override;
+    };
+    
+    // A pattern that represents a push instruction 
+    // and which has the ability to scrape values of
+    // push instructions as a pattern is being read. 
+    class push final : public pattern {
+        enum type : byte {any, value, data, read};
+        type Type;
+        Z Value;
+        bytes Data;
+        bytes& Read;
+        
+    public:
+        // match any push data.
+        push() : Type{any}, Value{0}, Data{}, Read{Data} {}
+        // match any push data of the given value
+        push(int64 v) : Type{value}, Value{v}, Data{}, Read{Data} {}
+        // match a push of the given data. 
+        push(bytes_view b) : Type{data}, Value{0}, Data{b}, Read{Data} {}
+        // match any push data and save the result.
+        push(bytes& r) : Type{read}, Value{0}, Data{}, Read{r} {}
+        
+        bool match(const instruction& i) const;
+        
+        virtual bytes_view scan(bytes_view p) const final override;
+        
+        operator instruction() const;
+    };
+    
+    class push_size final : public pattern {
+        bool Reader;
+        size_t Size;
+        bytes Data;
+        bytes& Read;
+        
+    public:
+        // match any push data of the given value
+        push_size(size_t s) : Reader{false}, Size{s}, Data{}, Read{Data} {}
+        // match any push data and save the result.
+        push_size(size_t s, bytes& r) : Reader{true}, Size{s}, Data{}, Read{r} {}
+        
+        bool match(const instruction& i) const;
+        
+        virtual bytes_view scan(bytes_view p) const final override;
+    };
+    
+    enum repeated_directive : byte {
+        exactly, or_more, or_less
+    };
+    
+    struct repeated final : public pattern {
+        int64 First;
+        int Second;
+        repeated_directive Directive;
+        
+        repeated(op, uint32 = 1, repeated_directive = or_more);
+        repeated(instruction, uint32 = 1, repeated_directive = or_more);
+        repeated(push, uint32 = 1, repeated_directive = or_more);
+        repeated(optional, uint32 = 1, repeated_directive = or_more);
+        repeated(pattern, uint32 = 1, repeated_directive = or_more);
+        repeated(repeated, uint32, repeated_directive = or_more);
+        repeated(alternatives, uint32 = 1, repeated_directive = or_more);
+        
+        repeated(op, uint32, uint32);
+        repeated(instruction, uint32, uint32);
+        repeated(push, uint32, uint32);
+        repeated(optional, uint32, uint32);
+        repeated(pattern, uint32, uint32);
+        repeated(repeated, uint32, uint32);
+        repeated(alternatives, uint32, uint32);
+        
+        virtual bytes_view scan(bytes_view p) const final override;
+    };
+    
+    struct optional final : pattern {
+        
+        optional(op o) : pattern{o} {}
+        optional(instruction i) : pattern{i} {}
+        optional(push p) : pattern{ptr<pattern>(std::make_shared<push>(p))} {}
+        optional(repeated p) : pattern{ptr<pattern>(std::make_shared<repeated>(p))} {}
+        optional(push_size p) : pattern{ptr<pattern>(std::make_shared<push_size>(p))} {}
+        optional(pattern p);
+        optional(alternatives);
+        
+        virtual bytes_view scan(bytes_view p) const final override;
+    };
+        
+    inline pattern::pattern(op o) : pattern{instruction{o}} {}
+    
+    inline pattern::pattern(instruction i) : Pattern{ptr<pattern>(std::make_shared<atom>(i))} {}
+    
+    struct pattern::sequence : public pattern {
+        list<ptr<pattern>> Patterns;
+        
+        template <typename... P>
+        sequence(P... p) : Patterns{make(p...)} {}
+        
+        virtual bytes_view scan(bytes_view p) const override;
+        
+    private:
+        
+        static ptr<pattern> construct(op p) {
+            return std::make_shared<atom>(p);
+        }
+        
+        static ptr<pattern> construct(instruction p) {
+            return std::make_shared<atom>(p);
+        }
+        
+        static ptr<pattern> construct(push p) {
+            return std::make_shared<push>(p);
+        }
+        
+        static ptr<pattern> construct(pattern p) {
+            return std::make_shared<pattern>(p);
+        }
+        
+        static ptr<pattern> construct(optional p) {
+            return std::make_shared<optional>(p);
+        }
+        
+        template <typename X> 
+        static list<ptr<pattern>> make(X x) {
+            return list<ptr<pattern>>{}.prepend(construct(x));
+        }
+        
+        template <typename X, typename... P>
+        static list<ptr<pattern>> make(X x, P... p) {
+            return make(p...).prepend(construct(x));
+        }
+    };
+    
+    struct alternatives final : pattern::sequence {
+    public:
+        template <typename... P>
+        alternatives(P... p) : sequence{p...} {}
+        
+        virtual bytes_view scan(bytes_view) const final override;
+    };
+    
+    // A pattern that matches a pubkey and grabs the value of that pubkey.
+    inline pattern pubkey_pattern(bytes& pubkey) {
+        return alternatives{push_size{33, pubkey}, push_size{65, pubkey}};
     }
     
-    inline bytes_writer write(bytes_writer w, program p) {
-        if (p.empty()) return w;
-        return write(write(w, p.first()), p.rest());
-    }
+    struct op_return_data {
+        static Bitcoin::pattern pattern() {
+            static Bitcoin::pattern Pattern{optional{OP_FALSE}, OP_RETURN, repeated{push{}, 0}};
+            return Pattern;
+        }
+        
+        static Gigamonkey::script script(list<bytes> push);
+        
+        list<bytes> Push;
+        bool Safe; // whether op_false is pushed before op_return
+        bool Valid;
+        
+        bytes script() const {
+            return script(Push);
+        };
+        
+        op_return_data(bytes_view);
+        op_return_data(list<bytes> p) : Push{p}, Safe{true}, Valid{true} {}
+    };
+    
+    struct pay_to_pubkey {
+        static Bitcoin::pattern pattern(bytes& pubkey) {
+            return {pubkey_pattern(pubkey), OP_CHECKSIG};
+        }
+        
+        static bytes script(pubkey p) {
+            return compile(program{push_data(p), OP_CHECKSIG});
+        }
+        
+        pubkey Pubkey;
+        
+        bool valid() const {
+            return Pubkey.valid();
+        }
+        
+        bytes script() const {
+            return script(Pubkey);
+        }
+        
+        pay_to_pubkey(bytes_view script) : Pubkey{} {
+            pubkey p;
+            if (!pattern(p.Value).match(script)) return;
+            Pubkey = p;
+        }
+        
+        static bytes redeem(const signature& s) {
+            return compile(push_data(s));
+        }
+    };
+    
+    struct pay_to_address {
+        static Bitcoin::pattern pattern(bytes& address) {
+            return {OP_DUP, OP_HASH160, push_size{20, address}, OP_EQUALVERIFY, OP_CHECKSIG};
+        }
+        
+        static bytes script(bytes_view a) {
+            return compile(program{OP_DUP, OP_HASH160, a, OP_EQUALVERIFY, OP_CHECKSIG});
+        }
+        
+        digest160 Address;
+        
+        bool valid() const {
+            return Address.valid();
+        }
+        
+        bytes script() const {
+            return script(Address);
+        }
+        
+        pay_to_address(bytes_view script) : Address{} {
+            bytes addr{20};
+            pattern(addr).match(script);
+            std::copy(addr.begin(), addr.end(), Address.Value.begin());
+        }
+        
+        static bytes redeem(const signature& s, const pubkey& p) {
+            return compile(program{} << push_data(s) << push_data(p));
+        }
+    };
+    
+    template <typename... P>
+    pattern::pattern(P... p) : Pattern{new sequence{p...}} {}
+    
+    inline repeated::repeated(op x, uint32 first, repeated_directive d) 
+        : pattern{x}, First{first}, Second{-1}, Directive{d} {}
+    inline repeated::repeated(instruction x, uint32 first, repeated_directive d) 
+        : pattern{x}, First{first}, Second{-1}, Directive{d} {}
+    inline repeated::repeated(push x, uint32 first, repeated_directive d) 
+        : pattern{x}, First{first}, Second{-1}, Directive{d} {}
+    inline repeated::repeated(optional x, uint32 first, repeated_directive d) 
+        : pattern{x}, First{first}, Second{-1}, Directive{d} {}
+    inline repeated::repeated(pattern x, uint32 first, repeated_directive d) 
+        : pattern{x}, First{first}, Second{-1}, Directive{d} {}
+    inline repeated::repeated(repeated x, uint32 first, repeated_directive d) 
+        : pattern{x}, First{first}, Second{-1}, Directive{d} {}
+    inline repeated::repeated(alternatives x, uint32 first, repeated_directive d) 
+        : pattern{x}, First{first}, Second{-1}, Directive{d} {}
+        
+    inline repeated::repeated(op x, uint32 first, uint32 second) 
+        : pattern{x}, First{first}, Second{static_cast<int>(second)}, Directive{exactly} {}
+    inline repeated::repeated(instruction x, uint32 first, uint32 second)
+        : pattern{x}, First{first}, Second{static_cast<int>(second)}, Directive{exactly} {}
+    inline repeated::repeated(push x, uint32 first, uint32 second)
+        : pattern{x}, First{first}, Second{static_cast<int>(second)}, Directive{exactly} {}
+    inline repeated::repeated(optional x, uint32 first, uint32 second)
+        : pattern{x}, First{first}, Second{static_cast<int>(second)}, Directive{exactly} {}
+    inline repeated::repeated(pattern x, uint32 first, uint32 second)
+        : pattern{x}, First{first}, Second{static_cast<int>(second)}, Directive{exactly} {}
+    inline repeated::repeated(repeated x, uint32 first, uint32 second)
+        : pattern{x}, First{first}, Second{static_cast<int>(second)}, Directive{exactly} {}
+    inline repeated::repeated(alternatives x, uint32 first, uint32 second)
+        : pattern{x}, First{first}, Second{static_cast<int>(second)}, Directive{exactly} {}
     
 }
+
+std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::instruction i);
+
+Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer, const Gigamonkey::Bitcoin::instruction i);
 
 #endif
 

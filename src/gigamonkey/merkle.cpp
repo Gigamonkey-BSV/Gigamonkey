@@ -3,12 +3,12 @@
 
 #include <gigamonkey/merkle.hpp>
 
-namespace gigamonkey::merkle {
+namespace Gigamonkey::Merkle {
         
     path::operator bytes() {
         bytes b(4 + 32 * Hashes.size());
-        auto w = writer(b) << uint32_little{Index};
-        queue<digest> h = Hashes;
+        auto w = bytes_writer(b.begin(), b.end()) << uint32_little{Index};
+        list<digest256> h = Hashes;
         while(!h.empty()) {
             w << h.first();
             h = h.rest();
@@ -45,7 +45,7 @@ namespace gigamonkey::merkle {
                 in++;
             }
             
-            Next.Trees << digest_tree{concatinated(left_in.root(), right_in.root()), left_out, right_out};
+            Next.Trees << digest_tree{hash_concatinated(left_in.root(), right_in.root()), left_out, right_out};
             if (keep_left || keep_right) Next.Leaves << out;
             out ++;
         }

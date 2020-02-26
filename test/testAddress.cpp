@@ -10,11 +10,11 @@
 #include <gigamonkey/spendable.hpp>
 #include <gigamonkey/address.hpp>
 #include <gigamonkey/signature.hpp>
-#include <gigamonkey/script/pay.hpp>
+#include <gigamonkey/script.hpp>
 #include <gigamonkey/script/engine.hpp>
 #include "gtest/gtest.h"
 
-namespace gigamonkey::bitcoin::script {
+namespace Gigamonkey::Bitcoin {
     
     TEST(AddressTest, TestAddresses) {
         

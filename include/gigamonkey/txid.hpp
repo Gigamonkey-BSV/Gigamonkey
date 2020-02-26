@@ -6,9 +6,9 @@
 
 #include "hash.hpp"
 
-namespace gigamonkey::bitcoin {
+namespace Gigamonkey::Bitcoin {
     
-    using txid = gigamonkey::digest<sha256::Size>;
+    using txid = digest<32>;
     
     inline txid id(bytes_view b) {
         return hash256(b);

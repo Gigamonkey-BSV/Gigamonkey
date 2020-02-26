@@ -6,79 +6,81 @@
 
 #include "hash.hpp"
 
-namespace gigamonkey::merkle {
-    
-    using digest = digest<32>;
+namespace Gigamonkey::Merkle {
         
-    inline digest concatinated(const digest& a, const digest& b) {
-        return bitcoin::hash256(write(64, a, b));
+    inline digest256 hash_concatinated(const digest256& a, const digest256& b) {
+        return Bitcoin::hash256(write(64, a, b));
     }
     
-    class tree;
-    
-    class path {
-        friend class tree;
-        path(uint32 i, list<digest> h) : Index{i}, Hashes{h} {}
-    public:
-        
+    struct path {
+        list<digest256> Hashes;
         uint32 Index;
-        queue<digest> Hashes;
         
-        path() : Index{0}, Hashes{} {}
-        path(uint32 i, queue<digest> q) : Index{i}, Hashes{q} {}
+        path() : Hashes{}, Index{} {}
+        path(list<digest256> p, uint32 i) : Hashes{p}, Index{i} {};
         
-        static digest next(uint32 i, const digest& d, const digest& last) {
-            return (i & 1) == 1 ? concatinated(last, d) : concatinated(d, last);
+        digest256 derive_root(digest256 leaf) const {
+            return Hashes.size() == 0 ? leaf : 
+               path{Hashes.rest(),  Index / 2}.derive_root(
+                   Index & 1 ? hash_concatinated(Hashes.first(), leaf) : hash_concatinated(leaf, Hashes.first()));
+        }
+    
+        bool check(digest256 merkle_root, digest256 leaf) const {
+            return merkle_root == derive_root(leaf);
         }
         
-        bool verify(const digest& root, const digest& leaf) {
-            if (Hashes.empty()) return leaf == root;
-            return path{Index >> 1, Hashes.rest()}.verify(root, next(Index, leaf, Hashes.first()));
+        bool operator==(const path& p) const {
+            return Hashes == p.Hashes && Index == p.Index;
         }
         
+        bool operator!=(const path& p) const {
+            return !operator==(p);
+        }
+        
+        // serialize and deserialize. 
         explicit operator bytes();
         
         explicit path(bytes_view b);
     };
     
     class tree {
-        using digest_tree = gigamonkey::tree<digest>;
+        using digest_tree = Gigamonkey::tree<digest256>;
         
         static digest_tree deserialize(bytes_view);
         static bytes serialize(digest_tree);
         
         struct incomplete {
-            queue<digest_tree> Trees;
+            list<digest_tree> Trees;
             ordered_list<uint32> Leaves;
             
             incomplete pairwise_concatinate() const;
         };
         
-        static map<digest&, path> paths(digest_tree);
+        static map<digest256&, path> paths(digest_tree);
         
-        static digest_tree build(queue<digest> q, ordered_list<uint32> leaves);
+        static digest_tree build(list<digest256> q, ordered_list<uint32> leaves);
         
-        tree(digest_tree t, map<digest&, path> p) : Tree{t}, Paths{p} {}
+        tree(digest_tree t, map<digest256&, path> p) : Tree{t}, Paths{p} {}
         tree(digest_tree t) : Tree{t}, Paths{paths(t)} {}
         tree() : Tree{}, Paths{} {}
         
     public:
         digest_tree Tree;
-        map<digest&, path> Paths;
+        map<digest256&, path> Paths;
         
-        tree(queue<digest> q,              // All txs in a block in order.
+        tree(list<digest256> q,              // All txs in a block in order.
              ordered_list<uint32> leaves   // all indicies of txs that we want to remember. 
         ) : tree{build(q, leaves)} {}
         
         tree add(path) const;
         
-        tree remove(queue<digest>) const;
+        tree remove(list<digest256>) const;
         
-        tree remove(const digest& d) const {
-            return remove(queue<digest>{} << d);
+        tree remove(const digest256& d) const {
+            return remove(list<digest256>{} << d);
         }
         
-        digest root() const {
+        digest256 root() const {
             if (Tree.empty()) return {};
             return Tree.root();
         }

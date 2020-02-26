@@ -6,89 +6,38 @@
 
 #include "types.hpp"
 
-namespace gigamonkey {
+#include "arith_uint256.h"
 
-    namespace sha256 {
-        const size_t Size = 32;
-        
-        void hash(uint<Size, LittleEndian>&, bytes_view);
-    }
-
-    namespace ripemd160 {
-        const size_t Size = 20;
-        
-        void hash(uint<Size, LittleEndian>&, bytes_view);
-    }
+namespace Gigamonkey {
     
-    template <size_t size> struct digest {
-        uint<size, LittleEndian> Digest; 
+    template <size_t size> struct digest : nonzero<uint<size>> {
         
-        digest() : Digest{} {}
-        digest(slice<32> s) : Digest{s} {}
-        digest(const uint<size, LittleEndian>& u) : Digest{u} {}
-        explicit digest(string_view s) : Digest{s} {}
+        digest() : nonzero<uint<size>>{} {}
+        
+        explicit digest(const uint<size>& u) : nonzero<uint<size>>{u} {}
+        explicit digest(string_view s) : nonzero<uint<size>>{uint<size>{s}} {}
+        explicit digest(const nonzero<uint32_little>& n) : nonzero<uint32_little>{n} {}
+        explicit digest(const slice<size>& x) : digest{uint<size>(x)} {}
+        explicit digest(const base_uint<size * 8>& b);
         
         operator bytes_view() const {
-            return bytes_view{Digest.data(), size};
+            return bytes_view(nonzero<uint<size>>::Value);
         }
         
-        // Zero represents invalid even though it is theoretically
-        // possible for a hash digest to come out all zeros. 
-        bool valid() const {
-            return Digest != 0;
-        }
-        
-        bool operator==(const digest& d) const {
-            return Digest == d.Digest;
-        }
-        
-        bool operator!=(const digest& d) const {
-            return Digest != d.Digest;
-        }
-        
-        bool operator<(const digest& d) const {
-            return Digest < d.Digest;
-        }
-        
-        bool operator<=(const digest& d) const {
-            return Digest <= d.Digest;
-        }
-        
-        bool operator>(const digest& d) const {
-            return Digest > d.Digest;
-        }
-        
-        bool operator>=(const digest& d) const {
-            return Digest >= d.Digest;
-        }
-        
+        explicit operator N() const;
     };
 
-    namespace bitcoin {
+    using digest160 = digest<20>;
+    using digest256 = digest<32>;
+    using digest512 = digest<64>;
     
-        inline digest<20> ripemd160(bytes_view b) {
-            digest<20> digest;
-            gigamonkey::ripemd160::hash(digest.Digest, b);
-            return digest;
-        }
-        
-        inline digest<32> sha256(bytes_view b) {
-            digest<32> digest;
-            gigamonkey::sha256::hash(digest.Digest, b);
-            return digest;
-        }
+    digest160 ripemd160(bytes_view b);
+    digest256 sha256(bytes_view b);
     
-        inline digest<32> double_sha256(bytes_view b) {
-            return sha256(sha256(b));
-        }
-        
-        inline digest<20> hash160(bytes_view b) {
-            return ripemd160(sha256(b));
-        }
-        
-        inline digest<32> hash256(bytes_view b) {
-            return double_sha256(b);
-        }
+    namespace Bitcoin {
+    
+        digest160 hash160(bytes_view b);
+        digest256 hash256(bytes_view b);
         
         inline digest<20> address_hash(bytes_view b) {
             return hash160(b);
@@ -97,20 +46,20 @@ namespace gigamonkey {
         inline digest<32> signature_hash(bytes_view b) {
             return hash256(b);
         }
-        
+    
     }
     
 }
 
 template <size_t size> 
-inline std::ostream& operator<<(std::ostream& o, const gigamonkey::digest<size>& s) {
+inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::digest<size>& s) {
     return o << "digest{" << s.Digest << "}";
 }
 
 template <size_t size> 
-gigamonkey::bytes_writer operator<<(gigamonkey::bytes_writer, const gigamonkey::digest<size>& s);
+Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer, const Gigamonkey::digest<size>& s);
 
 template <size_t size> 
-gigamonkey::bytes_reader operator>>(gigamonkey::bytes_reader, gigamonkey::digest<size>& s);
+Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader, Gigamonkey::digest<size>& s);
 
 #endif

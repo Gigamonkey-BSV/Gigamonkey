@@ -7,7 +7,7 @@
 #include "signature.hpp"
 #include "spendable.hpp"
 
-namespace gigamonkey::bitcoin {
+namespace Gigamonkey::Bitcoin {
     
     struct funds {
         queue<spendable> Entries;

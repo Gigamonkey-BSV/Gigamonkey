@@ -5,13 +5,13 @@
 #include <gigamonkey/address.hpp>
 #include <gigamonkey/txid.hpp>
 
-namespace gigamonkey::bitcoin {
+namespace Gigamonkey::Bitcoin {
     
     wif wif::read(string_view s) {
         bytes data;
         if (!base58::check_decode(data, s)) return wif{};
         wif w{};
-        bytes_reader r = reader(bytes_view{data}) >> w.Prefix >> w.Secret; 
+        bytes_reader r = bytes_reader(data.data(), data.data() + data.size()) >> w.Prefix >> w.Secret; 
         if (!r.empty()) {
             char suffix;
             r >> suffix;
@@ -24,7 +24,7 @@ namespace gigamonkey::bitcoin {
     
     string wif::write(char prefix, const secret& s, bool compressed) {
         bytes data{compressed ? CompressedSize : UncompressedSize};
-        bytes_writer w = writer(data) << prefix << s.Value; 
+        bytes_writer w = bytes_writer(data.begin(), data.end()) << prefix << s.Value; 
         if (compressed) w << CompressedSuffix;
         return base58::check_encode(data);
     }

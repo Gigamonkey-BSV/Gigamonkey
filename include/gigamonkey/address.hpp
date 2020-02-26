@@ -8,7 +8,7 @@
 #include "secp256k1.hpp"
 #include <data/encoding/base58.hpp>
 
-namespace gigamonkey::base58 {
+namespace Gigamonkey::base58 {
     
     inline string encode(bytes_view b) {
         return data::encoding::base58::write(b);
@@ -22,9 +22,9 @@ namespace gigamonkey::base58 {
     
 }
 
-namespace gigamonkey::bitcoin {
+namespace Gigamonkey::Bitcoin {
     
-    gigamonkey::checksum checksum(bytes_view);
+    Gigamonkey::checksum checksum(bytes_view);
     
     inline bytes_writer write_checksum(bytes_writer w, bytes_view b) {
         return w << b << checksum(b);
@@ -38,7 +38,7 @@ namespace gigamonkey::bitcoin {
         
         type Prefix;
         
-        using digest = gigamonkey::digest<ripemd160::Size>;
+        using digest = Gigamonkey::digest<20>;
         
         digest Digest;
         
@@ -60,7 +60,7 @@ namespace gigamonkey::bitcoin {
         }
     
         static string write(char prefix, bytes_view b) {
-            return base58::check_encode(gigamonkey::write(b.size() + 1, prefix, b));
+            return base58::check_encode(Gigamonkey::write(b.size() + 1, prefix, b));
         }
         
         string write() const {
@@ -86,7 +86,7 @@ namespace gigamonkey::bitcoin {
     
 }
 
-inline std::ostream& operator<<(std::ostream& o, gigamonkey::bitcoin::address& a) {
+inline std::ostream& operator<<(std::ostream& o, Gigamonkey::Bitcoin::address& a) {
     return o << std::string(a);
 }
 

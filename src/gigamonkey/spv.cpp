@@ -3,9 +3,9 @@
 
 #include <gigamonkey/spv.hpp>
 
-namespace gigamonkey::bitcoin {
+namespace Gigamonkey::Bitcoin {
         
-    headers headers::attach(const bitcoin::header& h) const {
+    headers headers::attach(const Bitcoin::header& h) const {
         auto d = digest<32>(h.Previous);
         list<header> prev = Headers[d];
         if (data::empty(prev)) return {};

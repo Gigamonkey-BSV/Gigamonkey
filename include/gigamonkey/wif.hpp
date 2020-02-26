@@ -6,7 +6,7 @@
 
 #include "secp256k1.hpp"
 
-namespace gigamonkey::bitcoin {
+namespace Gigamonkey::Bitcoin {
     
     struct wif {
         char Prefix;

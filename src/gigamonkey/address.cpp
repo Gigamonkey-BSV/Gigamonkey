@@ -4,7 +4,7 @@
 #include <gigamonkey/address.hpp>
 #include <data/encoding/base58.hpp>
 
-namespace gigamonkey::base58 {
+namespace Gigamonkey::base58 {
     
     bool decode(bytes& b, string_view s) {
         data::encoding::base58::string b58{s};
@@ -35,7 +35,7 @@ namespace gigamonkey::base58 {
     }
 }
 
-namespace gigamonkey::bitcoin {
+namespace Gigamonkey::Bitcoin {
    address::address(string_view s) {
         if (s.size() > 35) return;
         Prefix = type(s[0]);

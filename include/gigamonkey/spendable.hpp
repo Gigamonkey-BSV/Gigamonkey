@@ -6,26 +6,26 @@
 
 #include "signature.hpp"
 #include "timechain.hpp"
-#include <gigamonkey/script/pay.hpp>
+#include <gigamonkey/script.hpp>
 
-namespace gigamonkey::bitcoin {
+namespace Gigamonkey::Bitcoin {
     
     struct redeemer {
         virtual bytes redeem(const vertex& v, index i, sighash::directive d) const = 0;
     };
     
-    struct pay_to_pubkey final : redeemer {
+    struct redeem_pay_to_pubkey final : redeemer {
         secret Secret;
         virtual bytes redeem(const vertex& v, index i, sighash::directive d) const override {
-            return script::pay_to_pubkey::redeem(sign(v, i, d, Secret));
+            return pay_to_pubkey::redeem(sign(v, i, d, Secret));
         }
     };
     
-    struct pay_to_address final : redeemer {
+    struct redeem_pay_to_address final : redeemer {
         secret Secret;
         pubkey Pubkey;
         virtual bytes redeem(const vertex& v, index i, sighash::directive d) const override {
-            return script::pay_to_address::redeem(sign(v, i, d, Secret), Pubkey);
+            return pay_to_address::redeem(sign(v, i, d, Secret), Pubkey);
         }
     };
     
@@ -38,7 +38,7 @@ namespace gigamonkey::bitcoin {
         ptr<redeemer> Redeemer;
         
         satoshi value() const {
-            return gigamonkey::output::value(Prevout.Output);
+            return Gigamonkey::output::value(Prevout.Output);
         }
         
         bool valid() const {

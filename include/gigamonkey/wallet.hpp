@@ -6,7 +6,7 @@
 
 #include "redeem.hpp"
 
-namespace gigamonkey::bitcoin {
+namespace Gigamonkey::Bitcoin {
     
     using fee_calculator = satoshi (*)(uint32 size, uint32 sigops);
     
@@ -54,7 +54,7 @@ namespace gigamonkey::bitcoin {
         wallet Remainder;
         
         bool valid() const {
-            return gigamonkey::transaction::valid(Transaction) && Remainder.valid();
+            return Gigamonkey::transaction::valid(Transaction) && Remainder.valid();
         }
         
         spent(bytes t, wallet w) : Transaction{t}, Remainder{w} {}

@@ -6,7 +6,7 @@
 #include <crypto++/ripemd.h>
 
 namespace gigamonkey {
-
+/*
     namespace sha256 {
         
         void hash(uint<Size, LittleEndian>& u, bytes_view data) {
@@ -22,6 +22,6 @@ namespace gigamonkey {
         }
         
     }
-    
+    */
 }
 

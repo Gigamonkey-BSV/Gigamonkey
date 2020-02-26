@@ -4,7 +4,7 @@
 #include <gigamonkey/wif.hpp>
 #include <data/encoding/integer.hpp>
 
-namespace gigamonkey::secp256k1 {
+namespace Gigamonkey::secp256k1 {
     
     class context {
         mutable secp256k1_context* Context;
@@ -92,14 +92,14 @@ namespace gigamonkey::secp256k1 {
         signature sig;
         const auto context = Signing();
 
-        if (secp256k1_ecdsa_sign(context, &sig.Data, d.Digest.data(), sk.data(),
+        if (secp256k1_ecdsa_sign(context, &sig.Data, d.Value.data(), sk.data(),
             secp256k1_nonce_function_rfc6979, nullptr) != 1)
             return {};
 
         return sig;
     }
     
-    secret::secret(string_view x) : secret{bitcoin::wif::read(x).Secret} {
+    secret::secret(string_view x) : secret{Bitcoin::wif::read(x).Secret} {
         if (!valid()) try {
             Value = coordinate{x};
         } catch (std::invalid_argument) {}
@@ -181,11 +181,11 @@ namespace gigamonkey::secp256k1 {
             serialize(context, out, pubkey) ? out : 0;
     }
     
-    inline std::ostream& operator<<(std::ostream& o, const gigamonkey::secp256k1::secret& s) {
+    inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::secp256k1::secret& s) {
         return data::encoding::hexidecimal::write(o << "secret{", s.Value, LittleEndian) << "}";
     }
     
-    inline std::ostream& operator<<(std::ostream& o, const gigamonkey::secp256k1::pubkey& p) {
+    inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::secp256k1::pubkey& p) {
         return data::encoding::hexidecimal::write(o << "pubkey{", p.Value, LittleEndian) << "}";
     }
     
