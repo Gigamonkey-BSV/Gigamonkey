@@ -1,7 +1,7 @@
 // Copyright (c) 2019 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#include <gigamonkey/work.hpp>
+#include <gigamonkey/work/proof.hpp>
 #include <gigamonkey/hash.hpp>
 
 namespace Gigamonkey::work {
@@ -27,31 +27,6 @@ namespace Gigamonkey::work {
                            (nWord > 0xffff && nSize > 32))) return 0;
         
         return digest256(expanded).Value;
-    }
-    
-    uint256 satoshi_uint256_to_uint256(::uint256 x) {
-        uint256 y;
-        std::copy(x.begin(), x.end(), y.begin());
-        return y;
-    }
-    
-    string::string(const CBlockHeader& b) : 
-        Version{int32_little{b.nVersion}}, 
-        Digest{satoshi_uint256_to_uint256(b.hashPrevBlock)}, 
-        MerkleRoot{satoshi_uint256_to_uint256(b.hashMerkleRoot)}, 
-        Timestamp{uint32_little{b.nTime}}, 
-        Target{uint32_little{b.nBits}}, 
-        Nonce{b.nNonce} {};
-        
-    string::operator CBlockHeader() const {
-        CBlockHeader h;
-        h.nVersion = Version;
-        h.nTime = Timestamp.Value;
-        h.nBits = Target;
-        h.nNonce = Nonce;
-        std::copy(Digest.begin(), Digest.end(), h.hashPrevBlock.begin());
-        std::copy(MerkleRoot.begin(), MerkleRoot.end(), h.hashMerkleRoot.begin());
-        return h;
     }
         
     bytes string::write() const {

@@ -7,6 +7,7 @@
 #include <gigamonkey/txid.hpp>
 #include <gigamonkey/merkle.hpp>
 #include <gigamonkey/work/target.hpp>
+#include "primitives/block.h"
 
 namespace Gigamonkey::Bitcoin {
     struct timechain {
@@ -72,6 +73,10 @@ namespace Gigamonkey::Bitcoin {
                 work::target{Gigamonkey::header::target(x)}, 
                 Gigamonkey::header::nonce(x)};
         }
+        
+        explicit header(const CBlockHeader&);
+        
+        explicit operator CBlockHeader() const;
         
         bytes_reader read(bytes_reader r);
         bytes_writer write(bytes_writer w) const;

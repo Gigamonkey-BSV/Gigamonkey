@@ -1,7 +1,7 @@
 // Copyright (c) 2019 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#include <gigamonkey/work.hpp>
+#include <gigamonkey/work/proof.hpp>
 
 namespace Gigamonkey {
     bool header_valid_work(slice<80> h) {
@@ -81,6 +81,31 @@ namespace Gigamonkey::block {
 }
 
 namespace Gigamonkey::Bitcoin {
+    
+    Gigamonkey::uint256 satoshi_uint256_to_uint256(::uint256 x) {
+        Gigamonkey::uint256 y;
+        std::copy(x.begin(), x.end(), y.begin());
+        return y;
+    }
+    
+    header::header(const CBlockHeader& b) : 
+        Version{int32_little{b.nVersion}}, 
+        Previous{satoshi_uint256_to_uint256(b.hashPrevBlock)}, 
+        MerkleRoot{satoshi_uint256_to_uint256(b.hashMerkleRoot)}, 
+        Timestamp{uint32_little{b.nTime}}, 
+        Target{uint32_little{b.nBits}}, 
+        Nonce{b.nNonce} {};
+        
+    header::operator CBlockHeader() const {
+        CBlockHeader h;
+        h.nVersion = Version;
+        h.nTime = Timestamp.Value;
+        h.nBits = Target;
+        h.nNonce = Nonce;
+        std::copy(Previous.Value.begin(), Previous.Value.end(), h.hashPrevBlock.begin());
+        std::copy(MerkleRoot.Value.begin(), MerkleRoot.Value.end(), h.hashMerkleRoot.begin());
+        return h;
+    }
     
     bytes_writer write_var_int(bytes_writer, uint64) {
         throw data::method::unimplemented{"write_var_int"};
