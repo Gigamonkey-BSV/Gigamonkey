@@ -3,7 +3,6 @@
 
 #include <gigamonkey/timechain.hpp>
 #include "gtest/gtest.h"
-#include <gigamonkey/timechain.hpp>
 
 namespace Gigamonkey::Bitcoin {
 

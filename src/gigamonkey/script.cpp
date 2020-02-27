@@ -140,7 +140,6 @@ namespace Gigamonkey::Bitcoin {
         if (p.size() == 0) throw fail{};
         if (p[0] != Instruction.Op) throw fail{};
         uint32 size = next_instruction_size(p);
-        // mistake here
         if (p.size() < size || Instruction != instruction::read(p.substr(0, size))) throw fail{};
         return p.substr(size);
     }
@@ -176,6 +175,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     bytes_view push::scan(bytes_view p) const {
+        if (p.size() == 0) throw fail{};
         uint32 size = next_instruction_size(p);
         if (size == 0) throw fail{};
         if (!match(instruction::read(p.substr(0, size)))) throw fail{};
@@ -190,6 +190,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     bytes_view push_size::scan(bytes_view p) const {
+        if (p.size() == 0) throw fail{};
         uint32 size = next_instruction_size(p);
         if (!match(instruction::read(p.substr(0, size)))) throw fail{};
         return p.substr(size);

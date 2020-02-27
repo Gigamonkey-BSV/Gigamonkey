@@ -67,7 +67,6 @@ namespace Gigamonkey {
         explicit digest(const uint<size>& u) : nonzero<uint<size>>{u} {}
         explicit digest(string_view s) : nonzero<uint<size>>{uint<size>{s}} {}
         explicit digest(const slice<size>& x) : digest{uint<size>(x)} {}
-        explicit digest(const base_uint<size * 8>& b);
         
         operator bytes_view() const {
             return bytes_view(nonzero<uint<size>>::Value);
