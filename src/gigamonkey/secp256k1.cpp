@@ -181,12 +181,4 @@ namespace Gigamonkey::secp256k1 {
             serialize(context, out, pubkey) ? out : 0;
     }
     
-    inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::secp256k1::secret& s) {
-        return data::encoding::hexidecimal::write(o << "secret{", s.Value, LittleEndian) << "}";
-    }
-    
-    inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::secp256k1::pubkey& p) {
-        return data::encoding::hexidecimal::write(o << "pubkey{", p.Value, LittleEndian) << "}";
-    }
-    
 }

@@ -12,6 +12,12 @@ namespace Gigamonkey::Merkle {
         return Bitcoin::hash256(write(64, a, b));
     }
     
+    using leaves = list<digest256>;
+    
+    leaves round(leaves l);
+    
+    digest256 root(list<digest256> l);
+    
     struct path {
         list<digest256> Hashes;
         uint32 Index;

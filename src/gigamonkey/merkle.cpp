@@ -4,6 +4,22 @@
 #include <gigamonkey/merkle.hpp>
 
 namespace Gigamonkey::Merkle {
+    
+    leaves round(leaves l) {
+        leaves r{};
+        while(l.size() >= 2) {
+            r = r << hash_concatinated(l.first(), l.rest().first());
+            l = l.rest().rest();
+        }
+        if (l.size() == 1) r = r << hash_concatinated(l.first(), l.first());
+        return r;
+    }
+    
+    digest256 root(list<digest256> l) {
+        if (l.size() == 0) return digest256();
+        while (l.size() > 1) l = round(l); 
+        return l.first();
+    }
         
     path::operator bytes() {
         bytes b(4 + 32 * Hashes.size());

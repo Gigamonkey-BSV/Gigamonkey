@@ -14,35 +14,35 @@ namespace Gigamonkey {
 }
 
 namespace Gigamonkey::header {
-    int32_little version(slice<80> x) {
+    int32_little version(const slice<80> x) {
         int32_little version;
         slice<4> v = x.range<0, 4>();
         std::copy(v.begin(), v.end(), version.data());
         return version;
     }
     
-    Gigamonkey::timestamp timestamp(slice<80> x) {
+    Gigamonkey::timestamp timestamp(const slice<80> x) {
         Gigamonkey::timestamp time;
         slice<4> v = x.range<68, 72>();
         std::copy(v.begin(), v.end(), time.data());
         return time;
     }
     
-    work::target target(slice<80> x) {
+    work::target target(const slice<80> x) {
         work::target work;
         slice<4> v = x.range<72, 76>();
         std::copy(v.begin(), v.end(), work.data());
         return work;
     }
     
-    uint32_little nonce(slice<80> x) {
+    uint32_little nonce(const slice<80> x) {
         uint32_little n;
         slice<4> v = x.range<76, 80>();
         std::copy(v.begin(), v.end(), n.data());
         return n;
     }
     
-    bool valid(slice<80> h) {
+    bool valid(const slice<80> h) {
         return header_valid(Bitcoin::header::read(h)) && header_valid_work(h);
     }
     
@@ -60,23 +60,50 @@ namespace Gigamonkey::transaction {
 }
 
 namespace Gigamonkey::block {
+    struct tx_reader {
+        bytes_view Next;
+        bytes_reader Rest;
+        
+        bool valid() const;
+    };
+    
+    tx_reader read_next_tx(bytes_reader);
+    /*
+    digest256 merkle_root(bytes_view block) {
+        Merkle::leaves l{};
+        bytes_view txs{transactions(block)};
+        bytes_reader reading{txs.begin(), txs.end()};
+        while(!reading.eof()) {
+            tx_reader next = read_next_tx(reading);
+            l = l << Bitcoin::hash256(next.Next);
+            reading = next.Rest;
+        }
+        return Merkle::root(l);
+    }*/
+    
     /*
     bool valid(bytes_view b) {
+        // TODO check magic number
         slice<80> h = header(b);
         if (!header::valid(h)) return false;
-        cross<bytes_view> txs = transactions(b);
-        if (txs.size() == 0 || !transaction::coinbase(txs[0])) return false;
-        for (int i = 1; i < txs.size(); i++) if (!transaction::valid(txs[i])) return false;
-        return digest<32>{header::merkle_root(h)} == merkle_root(txs);
-    }
-    */
-    cross<bytes_view> transactions(bytes_view) {
-        throw data::method::unimplemented{"block::transactions"};
+        cross<uint64> tx_indices = transactions(b);
+        if (tx_indices.size() == 0 || !transaction::coinbase(txs[0])) return false;
+        for (int i = 1; i < tx_indices.size(); i++) if (!transaction::valid(txs[i])) return false;
+        return header::merkle_root(h) == merkle_root(txs);
+    }*/
+    /*
+    cross<uint64> transactions(bytes_view b) {
+        bytes_view after_header{b.substr(80)};
+        bytes_reader txs = bytes_reader{after_header.begin(), after_header.end()};
+        uint64 num_txs;
+        txs = Bitcoin::read_var_int(txs, num_txs);
+        // TODO
     }
     
-    slice<80> header(bytes_view) {
-        throw data::method::unimplemented{"block::header"};
-    }
+    /* TODO
+    const slice<80> header(bytes_view b) {
+        return data::slice<byte>{b}.range<8, 88>();
+    }*/
     
 }
 

@@ -24,25 +24,19 @@ namespace Gigamonkey::Bitcoin {
 namespace Gigamonkey::header {
     int32_little version(slice<80>);
     
-    inline const digest<32> previous(slice<80> x) {
-        return digest<32>(x.range<4, 36>());
-    }
+    const digest256 previous(const slice<80> x);
     
-    inline const digest<32> merkle_root(slice<80> x) {
-        return digest<32>(x.range<36, 68>());
-    }
+    const digest256 merkle_root(const slice<80> x);
     
-    Gigamonkey::timestamp timestamp(slice<80>);
+    Gigamonkey::timestamp timestamp(const slice<80>);
     
-    work::target target(slice<80>);
+    work::target target(const slice<80>);
     
-    uint32_little nonce(slice<80>);
+    uint32_little nonce(const slice<80>);
     
-    inline digest<32> hash(slice<80> h) {
-        return Bitcoin::hash256(h);
-    }
+    digest256 hash(const slice<80> h);
     
-    bool valid(slice<80> h);
+    bool valid(const slice<80> h);
 }
 
 namespace Gigamonkey::Bitcoin {
@@ -204,12 +198,10 @@ namespace Gigamonkey::Bitcoin {
 
 namespace Gigamonkey::block {
     bool valid(bytes_view);
-    slice<80> header(bytes_view);
-    cross<bytes_view> transactions(bytes_view);
+    const slice<80> header(bytes_view);
+    bytes_view transactions(bytes_view);
     
-    inline digest<32> merkle_root(cross<bytes_view> q) {
-        throw data::method::unimplemented{"merkle_root"};
-    }
+    digest<32> merkle_root(bytes_view);
 }
 
 namespace Gigamonkey::Bitcoin { 
@@ -280,6 +272,20 @@ inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gig
 
 inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::Bitcoin::block& b) {
     return b.read(r);
+}
+
+namespace Gigamonkey::header {    
+    inline const digest<32> previous(const slice<80> x) {
+        return digest<32>(x.range<4, 36>());
+    }
+    
+    inline const digest<32> merkle_root(const slice<80> x) {
+        return digest<32>(x.range<36, 68>());
+    }
+    
+    inline digest<32> hash(const slice<80> h) {
+        return Bitcoin::hash256(h);
+    }
 }
 
 namespace Gigamonkey::Bitcoin {

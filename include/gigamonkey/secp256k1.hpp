@@ -288,8 +288,12 @@ inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::secp256k1::pu
     return o << "pubkey{" << p.Value << "}";
 }
 
-Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer, const Gigamonkey::secp256k1::secret&);
+inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::secp256k1::secret& x) {
+    return w << x.Value;
+}
 
-Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader, Gigamonkey::secp256k1::secret&);
+inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::secp256k1::secret& x) {
+    return r >> x.Value;
+}
 
 #endif
