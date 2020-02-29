@@ -2,32 +2,32 @@
 // Copyright (c) 2019 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#include <gigamonkey/work.hpp>
+#include <gigamonkey/work/proof.hpp>
 #include "gtest/gtest.h"
 
 namespace Gigamonkey::work {
     
     template <typename X, typename f, typename Y, typename Z>
     tensor<X, 2> outer(f fun, Y y, Z z) {
-        tensor<X, 2> x{{y.size(), z.size()}};
+        tensor<X, 2> x{{static_cast<unsigned int>(y.size()), static_cast<unsigned int>(y.size())}};
         for (int i = 0; i < y.size(); i++) 
             for (int j = 0; j < z.size();j++) x[i][j] = f(y[i], z[i]);
     }
     
     template <typename X, typename f, typename Y>
     tensor<X, 2> for_each(f fun, Y y) {
-        tensor<X, 2> x{y.dimension<0>(), y.dimension<1>()};
-        for (int i = 0; i < y.dimension<0>(); i++) 
-            for (int j = 0; j < y.dimension<1>();j++) x[i][j] = f(y[i][i]);
+        tensor<X, 2> x{{y.template dimension<0>(), y.template dimension<1>()}};
+        for (int i = 0; i < y.template dimension<0>(); i++) 
+            for (int j = 0; j < y.template dimension<1>();j++) x[i][j] = f(y[i][i]);
     }
     
     template <typename f, typename X, typename Y>
     bool test_valid(f fun, X x, Y y) {
-        if (x.dimension<0>() != y.dimension<0>() || x.dimension<1>() != y.dimension<1>()) return false;
-        for (int i = 0; i < x.dimension<0>(); i++) 
-            for (int j = 0; j < x.dimension<1>(); j++) 
-                for (int k = 0; k < y.dimension<0>(); k++) 
-                    for (int l = 0; l < y.dimension<1>(); l++) {
+        if (x.template dimension<0>() != y.template dimension<0>() || x.template dimension<1>() != y.template dimension<1>()) return false;
+        for (int i = 0; i < x.template dimension<0>(); i++) 
+            for (int j = 0; j < x.template dimension<1>(); j++) 
+                for (int k = 0; k < y.template dimension<0>(); k++) 
+                    for (int l = 0; l < y.template dimension<1>(); l++) {
                         bool result = f(x[i][j], y[k][l]);
                         if ((i == k && j == l && !result) || 
                             ((i != k || j != l) && result)) return false;
@@ -36,7 +36,6 @@ namespace Gigamonkey::work {
         return true;
     }
 
-    // can result in stack smashing
     TEST(WorkTest, TestWork) {
         
         const target minimum_target{31, 0xffffff};

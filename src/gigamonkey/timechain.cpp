@@ -73,7 +73,7 @@ namespace Gigamonkey::block {
         Merkle::leaves l{};
         bytes_view txs{transactions(block)};
         bytes_reader reading{txs.begin(), txs.end()};
-        while(reading.Begin != reading.End) {
+        while(reading.Reader.Begin != reading.Reader.End) {
             tx_reader next = read_next_tx(reading);
             l = l << Bitcoin::hash256(next.Next);
             reading = next.Rest;

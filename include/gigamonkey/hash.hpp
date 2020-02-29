@@ -41,6 +41,9 @@ namespace Gigamonkey {
     
         digest160 hash160(bytes_view b);
         digest256 hash256(bytes_view b);
+    
+        digest160 hash160(string_view b);
+        digest256 hash256(string_view b);
         
         inline digest<20> address_hash(bytes_view b) {
             return hash160(b);

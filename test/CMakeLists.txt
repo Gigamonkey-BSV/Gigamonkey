@@ -11,7 +11,7 @@ ADD_EXECUTABLE(testGigamonkey
 testFormat.cpp 
 testAddress.cpp
 testExpandCompact.cpp
-testWork.cpp 
+#testWork.cpp 
 #testGenesis.cpp 
 testLib.cpp )
 target_include_directories(testGigamonkey PUBLIC .)

@@ -11,7 +11,6 @@
 #include <gigamonkey/address.hpp>
 #include <gigamonkey/signature.hpp>
 #include <gigamonkey/script.hpp>
-#include <gigamonkey/script/engine.hpp>
 #include "gtest/gtest.h"
 
 namespace Gigamonkey::Bitcoin {
@@ -57,21 +56,21 @@ namespace Gigamonkey::Bitcoin {
         
         bytes redeem_p2pkh_uncompressed = pay_to_address::redeem(x, pubkey_uncompressed);
         
-        EXPECT_TRUE(evaluate_script(script_p2pk_compressed, redeem_p2pk));
-        EXPECT_TRUE(evaluate_script(script_p2pkh_compressed, redeem_p2pkh_compressed));
+        EXPECT_TRUE(evaluate_script(script_p2pk_compressed, redeem_p2pk).Valid);
+        EXPECT_TRUE(evaluate_script(script_p2pkh_compressed, redeem_p2pkh_compressed).Valid);
         
-        EXPECT_TRUE(evaluate_script(script_p2pk_uncompressed, redeem_p2pk));
-        EXPECT_TRUE(evaluate_script(script_p2pkh_uncompressed, redeem_p2pkh_uncompressed));
+        EXPECT_TRUE(evaluate_script(script_p2pk_uncompressed, redeem_p2pk).Valid);
+        EXPECT_TRUE(evaluate_script(script_p2pkh_uncompressed, redeem_p2pkh_uncompressed).Valid);
         
-        EXPECT_FALSE(evaluate_script(script_p2pk_compressed, redeem_p2pkh_compressed));
-        EXPECT_FALSE(evaluate_script(script_p2pkh_compressed, redeem_p2pk));
+        EXPECT_FALSE(evaluate_script(script_p2pk_compressed, redeem_p2pkh_compressed).Valid);
+        EXPECT_FALSE(evaluate_script(script_p2pkh_compressed, redeem_p2pk).Valid);
         
-        EXPECT_FALSE(evaluate_script(script_p2pk_uncompressed, redeem_p2pkh_uncompressed));
-        EXPECT_FALSE(evaluate_script(script_p2pkh_uncompressed, redeem_p2pk));
+        EXPECT_FALSE(evaluate_script(script_p2pk_uncompressed, redeem_p2pkh_uncompressed).Valid);
+        EXPECT_FALSE(evaluate_script(script_p2pkh_uncompressed, redeem_p2pk).Valid);
         
-        EXPECT_FALSE(evaluate_script(script_p2pkh_compressed, redeem_p2pkh_uncompressed));
+        EXPECT_FALSE(evaluate_script(script_p2pkh_compressed, redeem_p2pkh_uncompressed).Valid);
         
-        EXPECT_FALSE(evaluate_script(script_p2pkh_uncompressed, redeem_p2pkh_compressed));
+        EXPECT_FALSE(evaluate_script(script_p2pkh_uncompressed, redeem_p2pkh_compressed).Valid);
     }
 
 }

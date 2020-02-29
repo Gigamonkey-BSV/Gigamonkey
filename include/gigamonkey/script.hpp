@@ -18,6 +18,14 @@ namespace Gigamonkey::Bitcoin {
     struct evaluated {
         bool Valid;
         bytes Return;
+        
+        bool operator==(const evaluated e) const {
+            return Valid == e.Valid && Return == e.Return;
+        }
+        
+        bool operator!=(const evaluated e) const {
+            return !operator==(e);
+        }
     };
     
     // Test validity of a script. All signature operations succeed. 
@@ -561,7 +569,9 @@ namespace Gigamonkey::Bitcoin {
 
 std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::instruction i);
 
-Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer, const Gigamonkey::Bitcoin::instruction i);
+inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::Bitcoin::instruction i) {
+    return i.write(w);
+}
 
 #endif
 
