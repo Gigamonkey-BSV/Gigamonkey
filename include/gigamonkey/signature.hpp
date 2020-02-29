@@ -39,6 +39,7 @@ namespace Gigamonkey::Bitcoin {
     struct signature {
         bytes Data;
         
+        signature() : Data{} {}
         signature(const secp256k1::signature raw, sighash::directive d) : Data{65} {
             bytes_writer(Data.begin(), Data.end()) << raw << d;
         } 
@@ -55,6 +56,14 @@ namespace Gigamonkey::Bitcoin {
         
         operator bytes_view() const {
             return Data;
+        }
+        
+        bool operator==(const signature& s) {
+            return Data == s.Data;
+        }
+        
+        bool operator!=(const signature& s) {
+            return Data != s.Data;
         }
     };
     

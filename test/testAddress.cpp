@@ -57,21 +57,21 @@ namespace Gigamonkey::Bitcoin {
         
         bytes redeem_p2pkh_uncompressed = pay_to_address::redeem(x, pubkey_uncompressed);
         
-        engine::item p2pk_compressed_expected = engine::item{{x, pubkey_compressed}, {OP_CHECKSIG}};
-        engine::item p2pk_uncompressed_expected = engine::item{{x, pubkey_uncompressed}, {OP_CHECKSIG}};
-        engine::item p2pkh_compressed_expected = engine::item{{x, pubkey_compressed}, {OP_CHECKSIG}};
-        engine::item p2pkh_uncompressed_expected = engine::item{{x, pubkey_uncompressed}, {OP_CHECKSIG}};
+        EXPECT_TRUE(evaluate_script(script_p2pk_compressed, redeem_p2pk));
+        EXPECT_TRUE(evaluate_script(script_p2pkh_compressed, redeem_p2pkh_compressed));
         
-        engine::item p2pk_compressed_result = run(script_p2pk_compressed, redeem_p2pk);
-        engine::item p2pk_uncompressed_result = run(script_p2pk_uncompressed, redeem_p2pk);
-        engine::item p2pkh_compressed_result = run(script_p2pkh_compressed, redeem_p2pkh_compressed);
-        engine::item p2pkh_uncompressed_result = run(script_p2pkh_uncompressed, redeem_p2pkh_uncompressed);
+        EXPECT_TRUE(evaluate_script(script_p2pk_uncompressed, redeem_p2pk));
+        EXPECT_TRUE(evaluate_script(script_p2pkh_uncompressed, redeem_p2pkh_uncompressed));
         
-        EXPECT_EQ(p2pk_compressed_expected, p2pk_compressed_result);
-        EXPECT_EQ(p2pk_uncompressed_expected, p2pk_uncompressed_result);
-        EXPECT_EQ(p2pkh_compressed_expected, p2pkh_compressed_result);
-        EXPECT_EQ(p2pkh_uncompressed_expected, p2pkh_uncompressed_result);
+        EXPECT_FALSE(evaluate_script(script_p2pk_compressed, redeem_p2pkh_compressed));
+        EXPECT_FALSE(evaluate_script(script_p2pkh_compressed, redeem_p2pk));
         
+        EXPECT_FALSE(evaluate_script(script_p2pk_uncompressed, redeem_p2pkh_uncompressed));
+        EXPECT_FALSE(evaluate_script(script_p2pkh_uncompressed, redeem_p2pk));
+        
+        EXPECT_FALSE(evaluate_script(script_p2pkh_compressed, redeem_p2pkh_uncompressed));
+        
+        EXPECT_FALSE(evaluate_script(script_p2pkh_uncompressed, redeem_p2pkh_compressed));
     }
 
 }

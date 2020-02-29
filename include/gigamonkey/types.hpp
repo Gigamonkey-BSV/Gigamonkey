@@ -45,9 +45,10 @@ namespace Gigamonkey {
     
     using script = bytes;
     
-    // negative satoshis make sense for accounting
-    // but not for serialization. 
-    struct satoshi : data::math::nonnegative<int64> {};
+    // in the protocol, satoshi amounts are written as uint64_littles. 
+    // However, we need to be able to think in terms of negative amounts
+    // for accounting purposes. 
+    using satoshi = int64;
     
     using nonce = uint32_little;
     
@@ -107,10 +108,15 @@ namespace Gigamonkey {
     
 }
 
-inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::satoshi& s) {
-    return w << data::int64_little(s.Value);
+inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const int64_t& s) {
+    return w << data::int64_little(s);
 }
 
-Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader w, const Gigamonkey::satoshi& s);
+inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, int64_t& s) {
+    Gigamonkey::uint64_little x;
+    r = r >> x;
+    s = static_cast<int64_t>(uint64_t(x));
+    return r;
+}
 
 #endif

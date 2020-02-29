@@ -4,11 +4,14 @@
 #include <gigamonkey/work/proof.hpp>
 #include <gigamonkey/hash.hpp>
 
+#include "arith_uint256.h"
+
 namespace Gigamonkey::work {
     
     // copied from arith_uint256.cpp and therefore probably works. 
-    uint256 expand_compact(uint32_little compact) {
-        base_uint<256> expanded;
+    uint256 expand_compact(uint32_little c) {
+        uint32 compact = c;
+        uint256 expanded;
         int nSize = compact >> 24;
         uint32_t nWord = compact & 0x007fffff;
         if (nSize <= 3) {
@@ -26,7 +29,7 @@ namespace Gigamonkey::work {
         if (nWord != 0 && ((nSize > 34) || (nWord > 0xff && nSize > 33) ||
                            (nWord > 0xffff && nSize > 32))) return 0;
         
-        return digest256(expanded).Value;
+        return expanded;
     }
         
     bytes string::write() const {

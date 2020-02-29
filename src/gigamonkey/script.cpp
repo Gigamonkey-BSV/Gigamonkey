@@ -5,10 +5,6 @@
 
 namespace Gigamonkey::Bitcoin {
     
-    evaluated evaluate_script(script in, script out) {
-        throw data::method::unimplemented{"evaluate_script"}; // TODO
-    }
-    
     // Inefficient: extra copying. 
     instruction push_value(int z) {
         data::math::number::Z_bytes<data::endian::little> zz{z};

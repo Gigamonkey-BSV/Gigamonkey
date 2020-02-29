@@ -47,6 +47,8 @@ inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gig
     return w << s.Value;
 }
 
-Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader w, Gigamonkey::timestamp& s);
+inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::timestamp& s) {
+    return r >> s.Value;
+}
 
 #endif 

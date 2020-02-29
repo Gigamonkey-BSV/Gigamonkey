@@ -68,18 +68,18 @@ namespace Gigamonkey::block {
     };
     
     tx_reader read_next_tx(bytes_reader);
-    /*
+    
     digest256 merkle_root(bytes_view block) {
         Merkle::leaves l{};
         bytes_view txs{transactions(block)};
         bytes_reader reading{txs.begin(), txs.end()};
-        while(!reading.eof()) {
+        while(reading.Begin != reading.End) {
             tx_reader next = read_next_tx(reading);
             l = l << Bitcoin::hash256(next.Next);
             reading = next.Rest;
         }
         return Merkle::root(l);
-    }*/
+    }
     
     /*
     bool valid(bytes_view b) {

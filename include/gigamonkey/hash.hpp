@@ -34,6 +34,9 @@ namespace Gigamonkey {
     digest160 ripemd160(bytes_view b);
     digest256 sha256(bytes_view b);
     
+    digest160 ripemd160(string_view b);
+    digest256 sha256(string_view b);
+    
     namespace Bitcoin {
     
         digest160 hash160(bytes_view b);
@@ -57,9 +60,13 @@ inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::digest<size>&
 }
 
 template <size_t size> 
-Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer, const Gigamonkey::digest<size>& s);
+inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::digest<size>& s) {
+    return w << s.Value;
+}
 
 template <size_t size> 
-Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader, Gigamonkey::digest<size>& s);
+inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::digest<size>& s) {
+    return r >> s.Value;
+}
 
 #endif
