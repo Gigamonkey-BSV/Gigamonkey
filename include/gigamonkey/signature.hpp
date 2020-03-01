@@ -58,11 +58,11 @@ namespace Gigamonkey::Bitcoin {
             return Data;
         }
         
-        bool operator==(const signature& s) {
+        bool operator==(const signature& s) const {
             return Data == s.Data;
         }
         
-        bool operator!=(const signature& s) {
+        bool operator!=(const signature& s) const {
             return Data != s.Data;
         }
     };

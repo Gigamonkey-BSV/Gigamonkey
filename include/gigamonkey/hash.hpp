@@ -10,18 +10,20 @@
 
 namespace Gigamonkey {
     
-    template <unsigned int size> struct uint : base_uint<size * 8> {
+    template <unsigned int size, unsigned int bits = 8 * size> struct uint : base_uint<bits> {
         uint(uint64); // TODO
         uint() : uint(0) {}
         
         uint(slice<size>);
         
+        explicit uint(string_view hex);
+        
         byte* begin() {
-            return (byte*)base_uint<size * 8>::pn;
+            return (byte*)base_uint<bits>::pn;
         }
         
         byte* end() {
-            return begin() + base_uint<size * 8>::WIDTH;
+            return begin() + base_uint<bits>::WIDTH;
         }
         
         const byte* begin() const {
@@ -29,7 +31,7 @@ namespace Gigamonkey {
         }
         
         const byte* end() const {
-            return begin() + base_uint<size * 8>::WIDTH;
+            return begin() + base_uint<bits>::WIDTH;
         }
         
         byte* data() {
@@ -45,7 +47,7 @@ namespace Gigamonkey {
         operator const slice<size>() const;
         
         operator bytes_view() const {
-            return bytes_view{data(), base_uint<size * 8>::WIDTH};
+            return bytes_view{data(), base_uint<bits>::WIDTH};
         }
         
         operator N() const;
@@ -53,11 +55,8 @@ namespace Gigamonkey {
     
     using uint256 = uint<32>;
     using uint160 = uint<20>;
-}
-
-namespace Gigamonkey {
     
-    template <size_t size> struct digest : nonzero<uint<size>> {
+    template <unsigned int size> struct digest : nonzero<uint<size>> {
         
         digest() : nonzero<uint<size>>{} {}
         
@@ -109,14 +108,61 @@ inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::digest<size>&
     return o << "digest{" << s.Digest << "}";
 }
 
-template <size_t size> 
+template <unsigned int size, unsigned int bits> 
+inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::uint<size, bits>& s) {
+    return w << data::bytes_view(s);
+}
+
+template <unsigned int size, unsigned int bits>
+inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::uint<size, bits>& s) {
+    data::bytes b(size);
+    r >> b;
+    std::copy(b.begin(), b.end(), s.begin());
+    return r;
+}
+
+template <unsigned int size> 
 inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::digest<size>& s) {
     return w << s.Value;
 }
 
-template <size_t size> 
-inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::digest<size>& s);/* {
+template <unsigned int size> 
+inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::digest<size>& s) {
     return r >> s.Value;
-}*/
+}
+
+namespace Gigamonkey {
+    
+    template <unsigned int size, unsigned int bits>
+    uint<size, bits>::uint(uint64 u) {
+        uint64_little x = u;
+        if (size < 8) {
+            std::copy(x.begin() + 8 - size, x.end(), begin());
+        } else {
+            for (auto x = begin(); x != end() - 8; x++) *x = 0;
+            std::copy(x.begin(), x.end(), begin() + size - 8);
+        }
+    }
+
+    template <unsigned int size, unsigned int bits>
+    inline uint<size, bits>::uint(slice<size> x) {
+        std::copy(x.begin(), x.end(), begin());
+    }
+    
+    template <unsigned int size, unsigned int bits>
+    inline uint<size, bits>::operator N() const {
+        data::math::number::bounded<false, data::endian::little, size> n{};
+        std::copy(begin(), end(), n.begin());
+        return N{n};
+    }
+    
+    
+    template <unsigned int size, unsigned int bits>
+    inline uint<size, bits>::uint(string_view hex) : uint(0) {
+        bytes b(data::encoding::hexidecimal::read(hex, endian::little));
+        if (b.size() == size) std::copy(b.begin(), b.end(), begin());
+    }
+
+}
 
 #endif

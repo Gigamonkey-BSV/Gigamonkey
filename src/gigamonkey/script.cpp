@@ -59,7 +59,7 @@ namespace Gigamonkey::Bitcoin {
         // no reason other than not wanting to re-write
         // some old types. 
         rest.Data = bytes(size);
-        data::bytes bx{size};
+        data::bytes bx(size);
         r >> bx;
         std::copy(bx.begin(), bx.end(), rest.Data.begin());
         return r;

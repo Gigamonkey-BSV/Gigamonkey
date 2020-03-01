@@ -60,7 +60,7 @@ namespace Gigamonkey::secp256k1 {
         }
         
         operator bytes_view() const {
-            return bytes_view{Data.data, Size};
+            return bytes_view(Data.data, 64);
         }
         
         byte* begin() {
@@ -133,6 +133,7 @@ namespace Gigamonkey::secp256k1 {
         }
     };
     
+        
     class pubkey {
         static bool valid(bytes_view);
         static bool verify(bytes_view pubkey, digest&, const signature&);
@@ -148,7 +149,9 @@ namespace Gigamonkey::secp256k1 {
         
         pubkey() : Value{} {}
         explicit pubkey(bytes_view v) : Value{v} {}
-        explicit pubkey(string_view s);
+        
+        explicit pubkey(string_view s) : Value{encoding::hexidecimal::read(s, endian::little)} {}
+        
         //explicit pubkey(const CPubKey&);
         
         bool valid() const {
@@ -215,11 +218,9 @@ namespace Gigamonkey::secp256k1 {
             return w << Value;
         }
         
-        string write_string() const;/* {
-            std::stringstream ss;
-            ss << std::hex << Value;
-            return ss.str();
-        }*/
+        string write_string() const {
+            return encoding::hexidecimal::write(Value, endian::little);
+        }
     };
     
     inline bool valid(const secret& s) {
@@ -285,16 +286,20 @@ inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::secp256k1::se
     return o << "secret{" << s.Value << "}";
 }
 
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::secp256k1::pubkey& p);/* {
-    return o << "pubkey{" << p.Value << "}";
-}*/
+inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::secp256k1::pubkey& p) {
+    return o << "pubkey{" << data::encoding::hexidecimal::write(p.Value, data::endian::little) << "}";
+}
+
+inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::secp256k1::signature& p) {
+    return o << "pubkey{" << data::encoding::hexidecimal::write(data::bytes_view(p), data::endian::little) << "}";
+}
 
 inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::secp256k1::secret& x) {
     return w << x.Value;
 }
 
-inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::secp256k1::secret& x);/* {
+inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::secp256k1::secret& x) {
     return r >> x.Value;
-}*/
+}
 
 #endif

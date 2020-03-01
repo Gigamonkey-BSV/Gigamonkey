@@ -8,33 +8,13 @@
 namespace Gigamonkey::work {
     
     template <typename X, typename f, typename Y, typename Z>
-    tensor<X, 2> outer(f fun, Y y, Z z) {
-        tensor<X, 2> x{{static_cast<unsigned int>(y.size()), static_cast<unsigned int>(y.size())}};
-        for (int i = 0; i < y.size(); i++) 
-            for (int j = 0; j < z.size();j++) x[i][j] = f(y[i], z[i]);
-    }
+    list<list<X>> outer(f fun, list<X> y, list<Z> z);
     
     template <typename X, typename f, typename Y>
-    tensor<X, 2> for_each(f fun, Y y) {
-        tensor<X, 2> x{{y.template dimension<0>(), y.template dimension<1>()}};
-        for (int i = 0; i < y.template dimension<0>(); i++) 
-            for (int j = 0; j < y.template dimension<1>();j++) x[i][j] = f(y[i][i]);
-    }
+    list<list<X>> for_each(f fun, list<list<Y>> y);
     
     template <typename f, typename X, typename Y>
-    bool test_valid(f fun, X x, Y y) {
-        if (x.template dimension<0>() != y.template dimension<0>() || x.template dimension<1>() != y.template dimension<1>()) return false;
-        for (int i = 0; i < x.template dimension<0>(); i++) 
-            for (int j = 0; j < x.template dimension<1>(); j++) 
-                for (int k = 0; k < y.template dimension<0>(); k++) 
-                    for (int l = 0; l < y.template dimension<1>(); l++) {
-                        bool result = f(x[i][j], y[k][l]);
-                        if ((i == k && j == l && !result) || 
-                            ((i != k || j != l) && result)) return false;
-                    }
-
-        return true;
-    }
+    bool test_valid(f fun, X x, Y y); 
 
     TEST(WorkTest, TestWork) {
         
@@ -43,7 +23,7 @@ namespace Gigamonkey::work {
         std::string message1{"Capitalists can spend more energy than socialists."};
         std::string message2{"If you can't transform energy, why should anyone listen to you?"};
         
-        const cross<std::string> messages{message1, message2};
+        const list<std::string> messages{message1, message2};
         
         const target target_half = SuccessHalf;
         const target target_quarter = SuccessQuarter;
@@ -51,7 +31,7 @@ namespace Gigamonkey::work {
         const target target_sixteenth = SuccessSixteenth;
         const target target_thirty_second = minimum_target;
         
-        const cross<target> targets{
+        const list<target> targets{
             target_half,
             target_quarter,
             target_eighth,
@@ -63,7 +43,7 @@ namespace Gigamonkey::work {
                 Merkle::path{}, bytes{}, bytestring(m));
         };
         
-        const tensor<puzzle, 2> puzzles = outer<puzzle>(to_puzzle, messages, targets);
+        const list<list<puzzle> puzzles = outer<puzzle>(to_puzzle, messages, targets);
                 
         solution initial;
         

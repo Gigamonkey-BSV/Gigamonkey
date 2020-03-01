@@ -303,7 +303,7 @@ namespace Gigamonkey::Bitcoin {
     inline bytes_reader read_data(bytes_reader r, bytes& b) {
         uint64 size;
         r = read_var_int(r, size);
-        b = bytes{size};
+        b = bytes(size);
         return r >> b;
     }
     
@@ -389,7 +389,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     inline bytes block::write() const {
-        bytes b{serialized_size()};
+        bytes b(serialized_size());
         write(bytes_writer(b.begin(), b.end()));
         return b;
     }

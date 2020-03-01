@@ -91,7 +91,7 @@ namespace Gigamonkey {
     }
     
     template <typename ... P> inline bytes write(size_t size, P... p) {
-        bytes x{size};
+        bytes x(size);
         write(bytes_writer{x.begin(), x.end()}, p...);
         return x;
     }
