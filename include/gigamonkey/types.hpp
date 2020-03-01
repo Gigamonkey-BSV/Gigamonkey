@@ -10,16 +10,6 @@
 
 #include <data/stream.hpp>
 
-#include <boost/endian/arithmetic.hpp>
-
-#include <data/math/number/bounded/bounded.hpp>
-
-#include <data/math/number/bytes/N.hpp>
-#include <data/math/number/bytes/Z.hpp>
-
-#include <data/math/number/gmp/N.hpp>
-#include <data/math/number/gmp/Z.hpp>
-
 #include <data/data.hpp>
 
 inline bool implies(bool a, bool b) {
@@ -74,12 +64,12 @@ namespace Gigamonkey {
             return data::math::nonzero<X>::operator>=(n.Value);
         }
     };
-    
+    /*
     template <size_t size>
     using uint = data::uint<size>;
     
     using N_bytes = data::N_bytes<LittleEndian>;
-    using Z_bytes = data::Z_bytes<LittleEndian>;
+    using Z_bytes = data::Z_bytes<LittleEndian>;*/
     
     template <size_t size>
     using slice = data::slice<byte, size>;

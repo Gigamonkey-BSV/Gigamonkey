@@ -32,22 +32,22 @@ namespace Gigamonkey::secp256k1 {
         return secp256k1_ec_pubkey_parse(Verification(), &pubkey, pk.data(), pk.size());
     }
     
-    bool serialize(const secp256k1_context* context, N_bytes& p, const secp256k1_pubkey& pubkey) {
+    bool serialize(const secp256k1_context* context, bytes& p, const secp256k1_pubkey& pubkey) {
         auto size = p.size();
         secp256k1_ec_pubkey_serialize(context, p.data(), &size, &pubkey, 
             CompressedPubkeySize ? SECP256K1_EC_COMPRESSED : SECP256K1_EC_UNCOMPRESSED);
         return size == p.size();
     }
     
-    N_bytes secret::to_public_compressed(bytes_view sk) {
-        N_bytes p = N_bytes::zero(CompressedPubkeySize);
+    bytes secret::to_public_compressed(bytes_view sk) {
+        bytes p = bytes::zero(CompressedPubkeySize);
         secp256k1_pubkey pubkey;
         auto context = Signing();
         return secp256k1_ec_pubkey_create(context, &pubkey, sk.data()) == 1 && serialize(context, p, pubkey) ? p : 0;
     }
     
-    N_bytes secret::to_public_uncompressed(bytes_view sk) {
-        N_bytes p = N_bytes::zero(UncompressedPubkeySize);
+    bytes secret::to_public_uncompressed(bytes_view sk) {
+        bytes p = bytes::zero(UncompressedPubkeySize);
         secp256k1_pubkey pubkey;
         auto context = Signing();
         return secp256k1_ec_pubkey_create(context, &pubkey, sk.data()) == 1 && serialize(context, p, pubkey) ? p : 0;
@@ -57,18 +57,18 @@ namespace Gigamonkey::secp256k1 {
         return secp256k1_ec_pubkey_parse(context, &out, pk.data(), pk.size()) == 1;
     }
     
-    N_bytes pubkey::compress(bytes_view pk) {
+    bytes pubkey::compress(bytes_view pk) {
         if (pk.size() == CompressedPubkeySize) return N_bytes{pk};
         secp256k1_pubkey pubkey;
-        N_bytes p;
+        bytes p;
         const auto context = Verification();
         return parse(context, pubkey, pk) && serialize(context, p, pubkey) ? p : 0;
     }
     
-    N_bytes pubkey::decompress(bytes_view pk) {
+    bytes pubkey::decompress(bytes_view pk) {
         if (pk.size() == UncompressedPubkeySize) return N_bytes{pk};
         secp256k1_pubkey pubkey;
-        N_bytes p;
+        bytes p;
         const auto context = Verification();
         return parse(context, pubkey, pk) && serialize(context, p, pubkey) ? p : 0;
     }
@@ -128,10 +128,10 @@ namespace Gigamonkey::secp256k1 {
         return secp256k1_ec_privkey_negate(Verification(), out.data()) == 1 ? out : 0;
     }
     
-    N_bytes pubkey::negate(const N_bytes& pk) {
+    bytes pubkey::negate(const bytes& pk) {
         const auto context = Verification();
         secp256k1_pubkey pubkey;
-        N_bytes out = N_bytes::zero(pk.size());
+        bytes out = bytes::zero(pk.size());
         return parse(context, pubkey, pk) &&
             secp256k1_ec_pubkey_negate(context, &pubkey) == 1 &&
             serialize(context, out, pubkey) ? out : 0;
@@ -151,7 +151,7 @@ namespace Gigamonkey::secp256k1 {
             sk_b.data()) == 1;
     }
     
-    N_bytes pubkey::plus_pubkey(const N_bytes& pk_a, bytes_view pk_b) {
+    bytes pubkey::plus_pubkey(const bytes& pk_a, bytes_view pk_b) {
         const auto context = Verification();
         secp256k1_pubkey pubkey;
         secp256k1_pubkey b;
@@ -159,22 +159,22 @@ namespace Gigamonkey::secp256k1 {
         keys[0] = &b;
         if (!parse(context, b, pk_b)) return 0;
         
-        N_bytes out = N_bytes(pk_a.size());
+        bytes out = bytes(pk_a.size());
         return secp256k1_ec_pubkey_combine(context, &pubkey, keys, 1) == 1 && serialize(context, out, pubkey) ? out : 0;
     }
     
-    N_bytes pubkey::plus_secret(const N_bytes& pk, bytes_view sk) {
+    bytes pubkey::plus_secret(const bytes& pk, bytes_view sk) {
         const auto context = Verification();
-        N_bytes out = N_bytes(pk.size());
+        bytes out = bytes(pk.size());
         secp256k1_pubkey pubkey;
         return parse(context, pubkey, pk) &&
             secp256k1_ec_pubkey_tweak_add(context, &pubkey, sk.data()) == 1 &&
             serialize(context, out, pubkey) ? out : 0;
     }
     
-    N_bytes pubkey::times(const N_bytes& pk, bytes_view sk) {
+    bytes pubkey::times(const bytes& pk, bytes_view sk) {
         const auto context = Verification();
-        N_bytes out{pk};
+        bytes out{pk};
         secp256k1_pubkey pubkey;
         return parse(context, pubkey, pk) &&
             secp256k1_ec_pubkey_tweak_mul(context, &pubkey, sk.data()) == 1 &&

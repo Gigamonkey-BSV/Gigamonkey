@@ -10,6 +10,53 @@
 
 namespace Gigamonkey {
     
+    template <unsigned int size> struct uint : base_uint<size * 8> {
+        uint(uint64); // TODO
+        uint() : uint(0) {}
+        
+        uint(slice<size>);
+        
+        byte* begin() {
+            return (byte*)base_uint<size * 8>::pn;
+        }
+        
+        byte* end() {
+            return begin() + base_uint<size * 8>::WIDTH;
+        }
+        
+        const byte* begin() const {
+            return (byte*)this->pn;
+        }
+        
+        const byte* end() const {
+            return begin() + base_uint<size * 8>::WIDTH;
+        }
+        
+        byte* data() {
+            return begin();
+        }
+        
+        const byte* data() const {
+            return begin();
+        }
+        
+        operator slice<size>();
+        
+        operator const slice<size>() const;
+        
+        operator bytes_view() const {
+            return bytes_view{data(), base_uint<size * 8>::WIDTH};
+        }
+        
+        operator N() const;
+    };
+    
+    using uint256 = uint<32>;
+    using uint160 = uint<20>;
+}
+
+namespace Gigamonkey {
+    
     template <size_t size> struct digest : nonzero<uint<size>> {
         
         digest() : nonzero<uint<size>>{} {}
@@ -68,8 +115,8 @@ inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gig
 }
 
 template <size_t size> 
-inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::digest<size>& s) {
+inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::digest<size>& s);/* {
     return r >> s.Value;
-}
+}*/
 
 #endif

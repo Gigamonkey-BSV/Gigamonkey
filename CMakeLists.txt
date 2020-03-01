@@ -119,9 +119,9 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/extern/bitcoin-sv/")
 add_library(gigamonkey STATIC 
     src/bitcoin_sv/hash.cpp
     src/bitcoin_sv/script.cpp
-    src/gigamonkey/secp256k1.cpp
+    #src/gigamonkey/secp256k1.cpp
     src/gigamonkey/merkle.cpp
-    src/gigamonkey/script.cpp
+    #src/gigamonkey/script.cpp
     src/gigamonkey/address.cpp
     src/gigamonkey/wif.cpp
     #src/gigamonkey/spv.cpp
