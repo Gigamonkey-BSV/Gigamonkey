@@ -221,6 +221,10 @@ namespace Gigamonkey::secp256k1 {
         string write_string() const {
             return encoding::hexidecimal::write(Value, endian::little);
         }
+        
+        digest160 address() const {
+            return Bitcoin::hash160(*this);
+        }
     };
     
     inline bool valid(const secret& s) {

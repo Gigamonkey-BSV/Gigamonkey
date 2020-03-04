@@ -16,12 +16,18 @@ namespace Gigamonkey::work {
         target Target;
         nonce Nonce;
         
+        string() : Version(0), Digest(0), MerkleRoot(0), Timestamp(), Target(0), Nonce(0) {}
         string(int32_little v, uint256 d, uint256 mp, timestamp ts, target tg, nonce n) : 
             Version{v}, Digest{d}, MerkleRoot{mp}, Timestamp{ts}, Target{tg}, Nonce{n} {}
-            
-        static string read(const slice<80> x);
         
-        explicit string(const slice<80> x);
+        static string read(const slice<80> x) {
+            bytes_reader b{x.begin(), x.end()};
+            string z;
+            b >> z.Version >> z.Digest >> z.MerkleRoot >> z.Timestamp >> z.Target >> z.Nonce;
+            return z;
+        }
+        
+        explicit string(const slice<80> x) : string(read(x)) {}
         
         bytes write() const;
         
@@ -44,6 +50,19 @@ namespace Gigamonkey::work {
         }
         
         explicit operator CBlockHeader() const;
+        
+        bool operator==(const string& x) const {
+            return Version == x.Version && 
+                Digest == x.Digest && 
+                MerkleRoot == x.MerkleRoot && 
+                Timestamp == x.Timestamp && 
+                Target == x.Target && 
+                Nonce == x.Nonce;
+        }
+        
+        bool operator!=(const string& x) const {
+            return !operator==(x);
+        }
     };
     
 }

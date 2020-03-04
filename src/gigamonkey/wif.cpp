@@ -23,7 +23,7 @@ namespace Gigamonkey::Bitcoin {
     
     
     string wif::write(char prefix, const secret& s, bool compressed) {
-        bytes data{compressed ? CompressedSize : UncompressedSize};
+        bytes data(compressed ? CompressedSize : UncompressedSize);
         bytes_writer w = bytes_writer(data.begin(), data.end()) << prefix << s.Value; 
         if (compressed) w << CompressedSuffix;
         return base58::check_encode(data);

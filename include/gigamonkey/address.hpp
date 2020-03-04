@@ -47,7 +47,7 @@ namespace Gigamonkey::Bitcoin {
         
         explicit address(string_view s);
         
-        explicit address(const pubkey& pub, type p = main) : address{digest(hash160(pub)), p} {}
+        explicit address(const pubkey& pub, type p = main) : address{pub.address(), p} {}
         
         explicit address(const secret& s, type p = main) : address{s.to_public(), p} {}
         

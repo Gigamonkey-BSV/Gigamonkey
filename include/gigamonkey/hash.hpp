@@ -11,7 +11,7 @@
 namespace Gigamonkey {
     
     template <unsigned int size, unsigned int bits = 8 * size> struct uint : base_uint<bits> {
-        uint(uint64); // TODO
+        uint(uint64 u) : base_uint<bits>(u) {}
         uint() : uint(0) {}
         
         uint(slice<size>);
@@ -23,7 +23,7 @@ namespace Gigamonkey {
         }
         
         byte* end() {
-            return begin() + base_uint<bits>::WIDTH;
+            return begin() + size;
         }
         
         const byte* begin() const {
@@ -31,7 +31,7 @@ namespace Gigamonkey {
         }
         
         const byte* end() const {
-            return begin() + base_uint<bits>::WIDTH;
+            return begin() + size;
         }
         
         byte* data() {
@@ -42,12 +42,16 @@ namespace Gigamonkey {
             return begin();
         }
         
-        operator slice<size>();
-        
-        operator const slice<size>() const;
-        
         operator bytes_view() const {
-            return bytes_view{data(), base_uint<bits>::WIDTH};
+            return bytes_view{data(), size};
+        }
+        
+        operator slice<size>() {
+            return slice<size>(data());
+        }
+        
+        operator const slice<size>() const {
+            return slice<size>(const_cast<byte*>(data()));
         }
         
         operator N() const;
@@ -132,17 +136,6 @@ inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonke
 }
 
 namespace Gigamonkey {
-    
-    template <unsigned int size, unsigned int bits>
-    uint<size, bits>::uint(uint64 u) {
-        uint64_little x = u;
-        if (size < 8) {
-            std::copy(x.begin() + 8 - size, x.end(), begin());
-        } else {
-            for (auto x = begin(); x != end() - 8; x++) *x = 0;
-            std::copy(x.begin(), x.end(), begin() + size - 8);
-        }
-    }
 
     template <unsigned int size, unsigned int bits>
     inline uint<size, bits>::uint(slice<size> x) {

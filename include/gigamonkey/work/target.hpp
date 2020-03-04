@@ -12,12 +12,12 @@ namespace Gigamonkey::work {
     using uint256 = Gigamonkey::uint256;
     
     struct difficulty : Q {
-        explicit difficulty(const Q&);
+        explicit difficulty(const Q& q) : Q(q) {}
         explicit difficulty(const uint256& u);
         explicit operator double() const;
         
         static Q minimum() {
-            static Q Minimum{Z{"0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"}};
+            static difficulty Minimum{Z{"0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"}};
             return Minimum;
         }
     };

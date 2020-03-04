@@ -8,13 +8,58 @@
 namespace Gigamonkey::work {
     
     template <typename X, typename f, typename Y, typename Z>
-    list<list<X>> outer(f fun, list<X> y, list<Z> z);
+    list<X> outer(f fun, list<Y> y, list<Z> z) {
+        list<X> x{};
+        while (!y.empty()) {
+            list<Z> zz = z;
+            while (!zz.empty()) {
+                x = x << fun(y.first(), zz.first());
+                zz = zz.rest();
+            }
+            y = y.rest();
+        }
+        return x;
+    }
     
     template <typename X, typename f, typename Y>
-    list<list<X>> for_each(f fun, list<list<Y>> y);
+    list<X> for_each(f fun, list<Y> y) {
+        list<X> x{};
+        while (!y.empty()) {
+            x = x << fun(y.first());
+            y = y.rest();
+        }
+        return x;
+    }
     
     template <typename f, typename X, typename Y>
-    bool test_valid(f fun, X x, Y y); 
+    bool dot_cross(f foo, list<X> x, list<Y> y) {
+        if (x.size() != y.size()) return false;
+        if (x.size() == 0) return true;
+        list<X> input = x;
+        list<Y> expected = y;
+        while (!input.empty()) {
+            list<Y> expected_rest = expected;
+            X in = input.first();
+            Y ex = expected_rest.first();
+            
+            if(!foo(in, ex)) return false;
+            
+            expected_rest = expected_rest.rest();
+            
+            while(!expected.empty()) {
+                in = input.first();
+                ex = expected_rest.first();
+                
+                if(foo(in, ex)) return false;
+                expected_rest = expected_rest.rest();
+            }
+            
+            expected = expected.rest();
+            input = input.rest();
+        }
+        
+        return true;
+    }
 
     TEST(WorkTest, TestWork) {
         
@@ -23,7 +68,7 @@ namespace Gigamonkey::work {
         std::string message1{"Capitalists can spend more energy than socialists."};
         std::string message2{"If you can't transform energy, why should anyone listen to you?"};
         
-        const list<std::string> messages{message1, message2};
+        auto messages = list<std::string>{} << message1 << message2;
         
         const target target_half = SuccessHalf;
         const target target_quarter = SuccessQuarter;
@@ -31,19 +76,19 @@ namespace Gigamonkey::work {
         const target target_sixteenth = SuccessSixteenth;
         const target target_thirty_second = minimum_target;
         
-        const list<target> targets{
-            target_half,
-            target_quarter,
-            target_eighth,
-            target_sixteenth,
-            target_thirty_second}; 
+        auto targets = list<target>{} << 
+            target_half << 
+            target_quarter << 
+            target_eighth << 
+            target_sixteenth << 
+            target_thirty_second; 
             
         auto to_puzzle = [](std::string m, target t) -> puzzle {
             return puzzle(1, Bitcoin::hash256(m), t, 
-                Merkle::path{}, bytes{}, bytestring(m));
+                Merkle::path{}, bytes{}, bytes(m));
         };
         
-        const list<list<puzzle> puzzles = outer<puzzle>(to_puzzle, messages, targets);
+        auto puzzles = outer<puzzle>(to_puzzle, messages, targets);
                 
         solution initial;
         
@@ -51,13 +96,13 @@ namespace Gigamonkey::work {
             return puzzle::cpu_solve(p, initial);
         };
         
-        const tensor<solution, 2> solutions = for_each<solution>(solve_puzzle, puzzles); 
+        auto solutions = for_each<solution>(solve_puzzle, puzzles); 
         
-        auto check_solution = [](puzzle p, solution x) -> bool {
+        auto expect_solution_valid = [](puzzle p, solution x) -> bool {
             return proof(p, x).valid();
-        }
+        };
         
-        EXPECT_TRUE(test_valid(check_solution, puzzles, solutions));
+        EXPECT_TRUE(dot_cross(expect_solution_valid, puzzles, solutions));
         
     }
 

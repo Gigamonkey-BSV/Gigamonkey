@@ -68,6 +68,8 @@ namespace Gigamonkey::Bitcoin {
                 Gigamonkey::header::nonce(x)};
         }
         
+        header(slice<80> x) : header(read(x)) {}
+        
         explicit header(const CBlockHeader&);
         
         explicit operator CBlockHeader() const;
