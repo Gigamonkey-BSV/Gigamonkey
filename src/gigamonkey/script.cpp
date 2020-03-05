@@ -30,7 +30,7 @@ namespace Gigamonkey::Bitcoin {
         }
         
         script_writer operator<<(program p) const {
-            return p.size() == 0 ? script_writer{Writer} : (script_writer{Writer}  << p.first() << p.rest());
+            return p.size() == 0 ? script_writer{Writer} : (script_writer{Writer} << p.first() << p.rest());
         }
         
         script_writer(bytes_writer w) : Writer{w} {}
@@ -107,11 +107,11 @@ namespace Gigamonkey::Bitcoin {
         while(!r.empty()) {
             instruction i{};
             r = r >> i;
-            p = p + i;
+            p = p << i;
         }
         return p;
     }
-        
+    
     bytes_view pattern::atom::scan(bytes_view p) const {
         if (p.size() == 0) throw fail{};
         if (p[0] != Instruction.Op) throw fail{};
@@ -119,6 +119,12 @@ namespace Gigamonkey::Bitcoin {
         // mistake here
         if (p.size() < size || Instruction != instruction::read(p.substr(0, size))) throw fail{};
         return p.substr(size);
+    }
+    
+    bytes_view pattern::string::scan(bytes_view p) const {
+        if (p.size() < Program.size()) throw fail{};
+        for (int i = 0; i < Program.size(); i++) if (p[i] != Program[i]) throw fail{};
+        return p.substr(Program.size());
     }
     
     bool push::match(const instruction& i) const {
@@ -223,6 +229,8 @@ std::ostream& write_op_code(std::ostream& o, Gigamonkey::Bitcoin::op x) {
         case OP_CHECKSIGVERIFY: return o << "checksig_verify";
         case OP_EQUALVERIFY: return o << "equal_verify";
         
+        case OP_HASH256: return o << "hash256";
+        
         case OP_1NEGATE: return o << "push_-1";
         
         case OP_RESERVED: return o << "reserved";
@@ -274,6 +282,11 @@ std::ostream& write_op_code(std::ostream& o, Gigamonkey::Bitcoin::op x) {
         case OP_ROT: return o << "rot";
         case OP_SWAP: return o << "swap";
         case OP_TUCK: return o << "tuck";
+        
+        case OP_SIZE: return o << "size";
+        case OP_CAT: return o << "cat";
+        case OP_SPLIT: return o << "split";
+        case OP_LESSTHAN : return o << "less";
         
     }
 }

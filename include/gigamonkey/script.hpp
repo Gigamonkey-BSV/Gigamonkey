@@ -127,12 +127,7 @@ namespace Gigamonkey::Bitcoin {
         return o <= OP_PUSHDATA4;
     }
     
-    inline uint32 next_instruction_size(bytes_view o) {
-        return o[0] <= OP_PUSHSIZE75 ? o[0] + 1 : 
-            o[0] == OP_PUSHDATA1 ? o[1] + 2 : 
-            o[0] == OP_PUSHDATA2 ? boost::endian::load_little_u16(&o[1]) + 3 : 
-            o[0] == OP_PUSHDATA4 ? boost::endian::load_little_u32(&o[1]) + 5 : 1;
-    }
+    uint32 next_instruction_size(bytes_view o);
     
     // Representation of a Bitcoin script instruction, which is either an op code
     // by itself or an op code for pushing data to the stack along with data. 
@@ -195,24 +190,25 @@ namespace Gigamonkey::Bitcoin {
             return !operator==(o);
         }
         
-        static bytes_writer write_push_data(bytes_writer w, op Push, size_t size) {
-            if (Push <= OP_PUSHSIZE75) return w << static_cast<byte>(Push);
-            if (Push == OP_PUSHDATA1) return w << static_cast<byte>(OP_PUSHDATA1) << static_cast<byte>(size); 
-            if (Push == OP_PUSHDATA2) return w << static_cast<byte>(OP_PUSHDATA2) << static_cast<uint32_little>(size); 
-            return w << static_cast<byte>(OP_PUSHDATA4) << uint64_little{size};
+        bytes_writer write(bytes_writer w) const {
+            return is_push_data(Op) ? 
+                write_push_data(w, Op, Data.size()) << Data : 
+                w << static_cast<byte>(Op);
         }
         
-        bytes_writer write(bytes_writer w) const {
-            if (is_push_data(Op))return write_push_data(w, Op, Data.size());
-            return w << static_cast<byte>(Op);
-        }
-    
         static instruction op_code(op o) {
             return instruction{o};
         }
         
         static instruction read(bytes_view b);
         
+    private:
+        static bytes_writer write_push_data(bytes_writer w, op Push, size_t size) {
+            if (Push <= OP_PUSHSIZE75) return w << static_cast<byte>(Push);
+            if (Push == OP_PUSHDATA1) return w << static_cast<byte>(OP_PUSHDATA1) << static_cast<byte>(size); 
+            if (Push == OP_PUSHDATA2) return w << static_cast<byte>(OP_PUSHDATA2) << static_cast<uint16_little>(size); 
+            return w << static_cast<byte>(OP_PUSHDATA2) << static_cast<uint32_little>(size);
+        }
     };
     
     inline instruction push_data(int32_little x) {
@@ -269,24 +265,33 @@ namespace Gigamonkey::Bitcoin {
         }
         
         // A pattern which matches a single op code or instruction. 
-        pattern(op);
-        pattern(instruction);
+        explicit pattern(op);
+        explicit pattern(instruction);
+        
+        // A pattern which matches a given program. 
+        explicit pattern(program);
+        
+        // A pattern which matches an empty string.
+        pattern() : Pattern{nullptr} {}
         
         // A pattern denoted as a sequence of other patterns. 
-        template <typename... P>
-        pattern(P...);
+        template <typename X, typename Y, typename... P>
+        pattern(X, Y, P...);
         
         struct fail {}; // Used to end out of a scan operation immediately. 
         
         virtual bytes_view scan(bytes_view p) const {
+            if (Pattern == nullptr) return p;
             return Pattern->scan(p);
         }
+        
+        virtual ~pattern() {}
         
         struct sequence;
     protected:
         struct atom;
+        struct string;
         ptr<pattern> Pattern;
-        pattern() : Pattern{nullptr} {}
         pattern(ptr<pattern> p) : Pattern{p} {};
     };
     
@@ -305,6 +310,14 @@ namespace Gigamonkey::Bitcoin {
     struct pattern::atom final : pattern {
         instruction Instruction;
         atom(instruction i) : Instruction{i} {}
+        
+        virtual bytes_view scan(bytes_view p) const final override;
+    };
+    
+    // A pattern that represents a single instruction. 
+    struct pattern::string final : pattern {
+        bytes Program;
+        string(program p) : Program{compile(p)} {}
         
         virtual bytes_view scan(bytes_view p) const final override;
     };
@@ -346,7 +359,7 @@ namespace Gigamonkey::Bitcoin {
         // match any push data of the given value
         push_size(size_t s) : Reader{false}, Size{s}, Data{}, Read{Data} {}
         // match any push data and save the result.
-        push_size(size_t s, bytes& r) : Reader{true}, Size{s}, Data{}, Read{r} {}
+        push_size(size_t s, bytes& r) : Reader(true), Size(s), Data(), Read(r) {}
         
         bool match(const instruction& i) const;
         
@@ -398,11 +411,13 @@ namespace Gigamonkey::Bitcoin {
     
     inline pattern::pattern(instruction i) : Pattern{ptr<pattern>(std::make_shared<atom>(i))} {}
     
+    inline pattern::pattern(program p) : Pattern{ptr<pattern>(std::make_shared<string>(p))} {}
+    
     struct pattern::sequence : public pattern {
         list<ptr<pattern>> Patterns;
         
         template <typename... P>
-        sequence(P... p) : Patterns{make(p...)} {}
+        sequence(P... p) : Patterns(make(p...)) {}
         
         virtual bytes_view scan(bytes_view p) const override;
         
@@ -416,16 +431,24 @@ namespace Gigamonkey::Bitcoin {
             return std::make_shared<atom>(p);
         }
         
+        static ptr<pattern> construct(program p) {
+            return std::make_shared<string>(p);
+        }
+        
         static ptr<pattern> construct(push p) {
             return std::make_shared<push>(p);
         }
         
-        static ptr<pattern> construct(pattern p) {
-            return std::make_shared<pattern>(p);
+        static ptr<pattern> construct(push_size p) {
+            return std::make_shared<push_size>(p);
         }
         
         static ptr<pattern> construct(optional p) {
             return std::make_shared<optional>(p);
+        }
+        
+        static ptr<pattern> construct(pattern p) {
+            return std::make_shared<pattern>(p);
         }
         
         template <typename X> 
@@ -531,9 +554,8 @@ namespace Gigamonkey::Bitcoin {
             return compile(program{} << push_data(s) << push_data(p));
         }
     };
-    
-    template <typename... P>
-    pattern::pattern(P... p) : Pattern{new sequence{p...}} {}
+    template <typename X, typename Y, typename... P>
+    pattern::pattern(X x, Y y, P... p) : Pattern(std::make_shared<sequence>(x, y, p...)) {}
     
     inline repeated::repeated(op x, uint32 first, repeated_directive d) 
         : pattern{x}, First{first}, Second{-1}, Directive{d} {}
@@ -573,5 +595,5 @@ inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gig
     return i.write(w);
 }
 
-#endif
+#endif 
 

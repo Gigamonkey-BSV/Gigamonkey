@@ -109,4 +109,24 @@ inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonke
     return r;
 }
 
+template <typename X> 
+std::ostream& operator<<(std::ostream& o, const data::list<X> s) {
+    o << "[";
+    if (!s.empty()) {
+        data::list<X> x = s;
+        o << x.first();
+        x = x.rest();
+        while (!x.empty()) {
+            o << ", ";
+            o << x.first();
+            x = x.rest();
+        }
+    }
+    return o << "]";
+}
+
+inline std::ostream& operator<<(std::ostream& o, const data::bytes& s) {
+    return o << data::encoding::hexidecimal::write(data::bytes_view(s), data::endian::little); 
+}
+
 #endif
