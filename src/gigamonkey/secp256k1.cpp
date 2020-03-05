@@ -101,7 +101,7 @@ namespace Gigamonkey::secp256k1 {
     
     secret::secret(string_view x) : secret{Bitcoin::wif::read(x).Secret} {
         if (!valid()) try {
-            Value = coordinate{x};
+            Value = coordinate(x);
         } catch (std::invalid_argument) {}
     }
     

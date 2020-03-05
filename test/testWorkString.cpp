@@ -9,7 +9,8 @@ namespace Gigamonkey::Bitcoin {
 
     // can result in stack smashing
     TEST(WorkStringTest, TestWorkSTring) {
-        uint<80> genesis_header(std::string{} + 
+        
+        std::string genesis_header_hex_string = std::string{"0x"} + 
             // version
             "01000000" + 
             // prev block
@@ -21,7 +22,17 @@ namespace Gigamonkey::Bitcoin {
             // bits
             "FFFF001D" + 
             // nonce 
-            "1DAC2B7C");
+            "1DAC2B7C";
+        
+        uint<80> genesis_header(genesis_header_hex_string);
+        
+        EXPECT_EQ(data::encoding::hexidecimal::write(genesis_header, endian::little), genesis_header_hex_string);
+        
+        digest256 header_hash = hash256(genesis_header);
+        
+        std::cout << "Hash of genesis header " << genesis_header_hex_string << " calculated as " << header_hash << std::endl;
+        
+        EXPECT_EQ(hash256(genesis_header), digest256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
         
         work::string work_string(genesis_header); 
         

@@ -6,7 +6,7 @@
 namespace Gigamonkey::Bitcoin {
     
     digest256 hash256(bytes_view b) {
-        ::uint256 u = ::Hash(b.begin(), b.end());
+        ::uint256 u{::Hash(b.begin(), b.end())};
         Gigamonkey::uint256 x;
         std::copy(u.begin(), u.end(), x.begin());
         return digest256{x};

@@ -12,13 +12,16 @@
 #include <gigamonkey/signature.hpp>
 #include <gigamonkey/script.hpp>
 #include "gtest/gtest.h"
+#include <iostream>
 
 namespace Gigamonkey::Bitcoin {
     
     TEST(AddressTest, TestAddresses) {
         
+        std::cout << "Begin address test. " << std::endl;
+        
         std::string arbitrary{"It's not easy being green."};
-        bytes tx{arbitrary.size()};
+        bytes tx(arbitrary);
         std::copy(arbitrary.begin(), arbitrary.end(), tx.begin());
         
         secret key{"0x00000000000000000000000000000000000000000000000000000000000101a7"};
