@@ -39,11 +39,11 @@ namespace Gigamonkey::work {
         target(byte e, uint24_little v) : target{encode(e, v)} {}
         
         byte exponent() const {
-            return static_cast<byte>(static_cast<uint32_little>(*this) & 0x000000ff);
+            return static_cast<byte>(static_cast<uint32_little>(*this) >> 24);
         }
         
         uint24_little digits() const {
-            return uint24_little{static_cast<uint32_little>(*this) >> 8};
+            return uint24_little{static_cast<uint32_little>(*this) & 0x00FFFFFF};
         }
         
         bool valid() const {
