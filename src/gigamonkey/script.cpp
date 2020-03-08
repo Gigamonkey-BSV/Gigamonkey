@@ -83,6 +83,25 @@ namespace Gigamonkey::Bitcoin {
         script_reader(bytes_view b) : Reader{b.data(), b.data() + b.size()} {}
     };
     
+    // We already know that o has size at least 1. 
+    uint32 next_instruction_size(bytes_view o) {
+        opcodetype op = opcodetype(o[0]);
+        if (op == OP_INVALIDOPCODE) return 0;
+        if (!is_push_data(opcodetype(op))) return 1;
+        if (op <= OP_PUSHSIZE75) return (op + 1);
+        if (op == OP_PUSHDATA1) {
+            if (o.size() < 2) return 0;
+            return o[1] + 2;
+        }
+        if (op == OP_PUSHDATA2) {
+            if (o.size() < 3) return 0;
+            return boost::endian::load_little_u16(&o[1]) + 3;
+        }
+        // otherwise it's OP_PUSHDATA4
+        if (o.size() < 5) return 0;
+        return boost::endian::load_little_u32(&o[1]) + 5;
+    }
+    
     instruction instruction::read(bytes_view b) {
         instruction i;
         script_reader{b} >> i;
@@ -125,6 +144,13 @@ namespace Gigamonkey::Bitcoin {
         if (p.size() < Program.size()) throw fail{};
         for (int i = 0; i < Program.size(); i++) if (p[i] != Program[i]) throw fail{};
         return p.substr(Program.size());
+    }
+    
+    bytes_view any::scan(bytes_view p) const {
+        if (p.size() == 0) throw fail{};
+        uint32 size = next_instruction_size(p);
+        if (p.size() < size) throw fail{};
+        return p.substr(size);
     }
     
     bool push::match(const instruction& i) const {

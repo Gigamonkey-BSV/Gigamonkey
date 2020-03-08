@@ -127,8 +127,6 @@ namespace Gigamonkey::Bitcoin {
         return o <= OP_PUSHDATA4;
     }
     
-    uint32 next_instruction_size(bytes_view o);
-    
     // Representation of a Bitcoin script instruction, which is either an op code
     // by itself or an op code for pushing data to the stack along with data. 
     struct instruction {
@@ -298,12 +296,7 @@ namespace Gigamonkey::Bitcoin {
     // A pattern that matches anything. 
     struct any final : pattern {
         any() {}
-        virtual bytes_view scan(bytes_view p) const final override {
-            if (p.size() == 0) throw fail{};
-            uint32 size = next_instruction_size(p);
-            if (p.size() < size) throw fail{};
-            return p.substr(size);
-        }
+        virtual bytes_view scan(bytes_view p) const final override;
     };
     
     // A pattern that represents a single instruction. 
