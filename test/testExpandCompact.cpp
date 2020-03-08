@@ -43,18 +43,26 @@ namespace Gigamonkey::work {
     TEST(ExpandCompactTest, TestExpandCompact) {
         
         auto tests = list<test_case>{} << 
-            test_case{target{0x03, 0xabcdef}, 
+            test_case{target{2, 0xabcdef}, 
+                std::string{"0x000000000000000000000000000000000000000000000000000000000000abcd"}} << 
+            test_case{target{3, 0xabcdef}, 
                 std::string{"0x0000000000000000000000000000000000000000000000000000000000abcdef"}} << 
-            test_case{target{0x04, 0xabcdef}, 
+            test_case{target{4, 0xabcdef}, 
                 std::string{"0x00000000000000000000000000000000000000000000000000000000abcdef00"}} << 
-            test_case{target{0x05, 0xabcdef}, 
+            test_case{target{5, 0xabcdef}, 
                 std::string{"0x000000000000000000000000000000000000000000000000000000abcdef0000"}} << 
-            test_case{target{0x20, 0xabcdef}, 
+            test_case{target{32, 0xabcdef}, 
                 std::string{"0xabcdef0000000000000000000000000000000000000000000000000000000000"}} <<
-            test_case{target{0x21, 0xabcdef}, 
+            test_case{target{33, 0xabcdef}, 
                 std::string{"0xcdef000000000000000000000000000000000000000000000000000000000000"}} <<
-            test_case{target{0x22, 0xabcdef}, 
-                std::string{"0xef00000000000000000000000000000000000000000000000000000000000000"}};
+            test_case{SuccessHalf, 
+                std::string{"0x8000000000000000000000000000000000000000000000000000000000000000"}} <<
+            test_case{SuccessQuarter, 
+                std::string{"0x4000000000000000000000000000000000000000000000000000000000000000"}} <<
+            test_case{SuccessEighth, 
+                std::string{"0x2000000000000000000000000000000000000000000000000000000000000000"}} <<
+            test_case{SuccessSixteenth, 
+                std::string{"0x1000000000000000000000000000000000000000000000000000000000000000"}};
                 
         EXPECT_TRUE(check(tests));
     }
