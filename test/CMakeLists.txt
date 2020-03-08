@@ -10,8 +10,10 @@ endif()
 ADD_EXECUTABLE(testGigamonkey  
 testFormat.cpp 
 testAddress.cpp
+testDifficulty.cpp
 testExpandCompact.cpp
-#testWork.cpp 
+testWorkString.cpp
+testWork.cpp 
 #testGenesis.cpp 
 testLib.cpp )
 target_include_directories(testGigamonkey PUBLIC .)

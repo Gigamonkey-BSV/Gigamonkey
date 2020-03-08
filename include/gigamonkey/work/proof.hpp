@@ -78,15 +78,6 @@ namespace Gigamonkey::work {
         bool operator!=(const puzzle& p) const {
             return !operator==(p);
         }
-        
-        static solution cpu_solve(puzzle p, solution initial) {
-            uint256 target = p.Target.expand();
-            // This is for test purposes only. Therefore we do not
-            // accept difficulties that are above the ordinary minimum. 
-            if (p.Target.difficulty() > difficulty::minimum()) return {}; 
-            while(p.string(initial).hash() > target) initial.Nonce++;
-            return initial;
-        }
     };
     
     struct proof {
@@ -116,6 +107,15 @@ namespace Gigamonkey::work {
             return !operator==(p);
         }
     };
+    
+    inline proof cpu_solve(puzzle p, solution initial) {
+        uint256 target = p.Target.expand();
+        // This is for test purposes only. Therefore we do not
+        // accept difficulties that are above the ordinary minimum. 
+        if (p.Target.difficulty() > difficulty::minimum()) return {}; 
+        while(p.string(initial).hash() > target) initial.Nonce++;
+        return proof{p, initial};
+    }
     
 }
 

@@ -17,7 +17,7 @@ namespace Gigamonkey::Bitcoin {
     instruction push_hex(std::string str) {
         data::encoding::hex::string hex{str};
         if (!hex.valid()) return instruction{};
-        data::bytes b = data::bytes(hex);
+        data::bytes b = data::bytes_view(hex);
         bytes x(b.size());
         std::copy(b.begin(), b.end(), x.begin());
         return instruction{x};

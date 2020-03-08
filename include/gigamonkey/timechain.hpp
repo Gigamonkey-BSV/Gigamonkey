@@ -96,6 +96,15 @@ namespace Gigamonkey::Bitcoin {
     };
 }
 
+inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::header& h) {
+    return o << "header{Version : " << h.Version <<
+        ", Previous : " << h.Previous << 
+        ", MerkleRoot : " << h.MerkleRoot << 
+        ", Timestamp : " << h.Timestamp << 
+        ", Target : " << h.Target << 
+        ", Nonce : " << h.Nonce << "}";
+}
+
 namespace Gigamonkey::outpoint {
     bool valid(slice<36>);
     const Bitcoin::txid reference(slice<36>);
@@ -114,6 +123,10 @@ namespace Gigamonkey::Bitcoin {
         bytes_writer write(bytes_writer w) const;
         bytes_reader read(bytes_reader r);
     };
+}
+
+inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::outpoint& p) {
+    return o << "outpoint{Reference : " << p.Reference << ", Index : " << p.Index << "}";
 }
 
 namespace Gigamonkey::input {
@@ -138,6 +151,10 @@ namespace Gigamonkey::Bitcoin {
     };
 }
 
+inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::input& p) {
+    return o << "input{Outpoint : " << p.Outpoint << ", Script : " << p.Script << ", Sequence : " << p.Sequence << "}";
+}
+
 namespace Gigamonkey::output {
     bool valid(bytes_view);
     satoshi value(bytes_view);
@@ -156,6 +173,10 @@ namespace Gigamonkey::Bitcoin {
         
         size_t serialized_size() const;
     };
+}
+
+inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::output& p) {
+    return o << "output{Value : " << p.Value << ", Script : " << p.Script << "}";
 }
 
 namespace Gigamonkey::transaction {

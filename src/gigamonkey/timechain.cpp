@@ -68,7 +68,7 @@ namespace Gigamonkey::block {
     };
     
     tx_reader read_next_tx(bytes_reader);
-    
+    /*
     digest256 merkle_root(bytes_view block) {
         Merkle::leaves l{};
         bytes_view txs{transactions(block)};
@@ -79,7 +79,7 @@ namespace Gigamonkey::block {
             reading = next.Rest;
         }
         return Merkle::root(l);
-    }
+    }*/
     
     /*
     bool valid(bytes_view b) {

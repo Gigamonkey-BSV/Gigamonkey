@@ -30,8 +30,10 @@ namespace Gigamonkey {
             return bytes_view(data(), 4);
         }
         
-        string_writer write(string_writer) const;
-        string write() const;
+        string write() const {
+            // TODO it would be better if we wrote an actual date. 
+            return encoding::hexidecimal::write(operator bytes_view(), data::endian::little);
+        }
         
         bytes_writer write(bytes_writer w) const {
             return w << nonzero<uint32_little>::Value;

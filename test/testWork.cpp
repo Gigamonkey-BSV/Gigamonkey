@@ -22,16 +22,6 @@ namespace Gigamonkey::work {
         return x;
     }
     
-    template <typename X, typename f, typename Y>
-    list<X> for_each(f fun, list<Y> y) {
-        list<X> x{};
-        while (!y.empty()) {
-            x = x << fun(y.first());
-            y = y.rest();
-        }
-        return x;
-    }
-    
     template <typename f, typename X, typename Y>
     bool dot_cross(f foo, list<X> x, list<Y> y) {
         if (x.size() != y.size()) return false;
@@ -39,20 +29,19 @@ namespace Gigamonkey::work {
         list<X> input = x;
         list<Y> expected = y;
         while (!input.empty()) {
-            list<Y> expected_rest = expected;
+            list<Y> uuu = expected;
             X in = input.first();
-            Y ex = expected_rest.first();
+            Y ex = uuu.first();
             
             if(!foo(in, ex)) return false;
             
-            expected_rest = expected_rest.rest();
-            
-            while(!expected.empty()) {
-                in = input.first();
-                ex = expected_rest.first();
+            uuu = uuu.rest();
+        
+            while(!uuu.empty()) {
+                ex = uuu.first();
                 
                 if(foo(in, ex)) return false;
-                expected_rest = expected_rest.rest();
+                uuu = uuu.rest();
             }
             
             expected = expected.rest();
@@ -65,8 +54,6 @@ namespace Gigamonkey::work {
     TEST(WorkTest, TestWork) {
         
         std::cout << "begin work test." << std::endl;
-        /*
-        const target minimum_target{31, 0xffffff};
         
         std::string message1{"Capitalists can spend more energy than socialists."};
         std::string message2{"If you can't transform energy, why should anyone listen to you?"};
@@ -77,7 +64,7 @@ namespace Gigamonkey::work {
         const target target_quarter = SuccessQuarter;
         const target target_eighth = SuccessEighth;
         const target target_sixteenth = SuccessSixteenth;
-        const target target_thirty_second = minimum_target;
+        const target target_thirty_second{31, 0xffffff};
         
         auto targets = list<target>{} << 
             target_half << 
@@ -85,27 +72,25 @@ namespace Gigamonkey::work {
             target_eighth << 
             target_sixteenth << 
             target_thirty_second; 
-            
-        auto to_puzzle = [](std::string m, target t) -> puzzle {
+        
+        auto puzzles = outer<puzzle>([](std::string m, target t) -> puzzle {
             return puzzle(1, Bitcoin::hash256(m), t, 
                 Merkle::path{}, bytes{}, bytes(m));
-        };
+        }, messages, targets);
         
-        auto puzzles = outer<puzzle>(to_puzzle, messages, targets);
-                
-        solution initial;
+        solution initial(timestamp(1), 0, 4843);
         
-        auto solve_puzzle = [initial](puzzle p) -> solution {
-            return puzzle::cpu_solve(p, initial);
-        };
+        auto proofs = data::for_each([initial](puzzle p) -> proof {
+            return cpu_solve(p, initial);
+        }, puzzles); 
         
-        auto solutions = for_each<solution>(solve_puzzle, puzzles); 
-        
-        auto expect_solution_valid = [](puzzle p, solution x) -> bool {
+        EXPECT_TRUE(dot_cross([](puzzle p, solution x) -> bool {
             return proof(p, x).valid();
-        };
-        
-        EXPECT_TRUE(dot_cross(expect_solution_valid, puzzles, solutions));*/
+        }, data::for_each([](proof p) -> puzzle {
+            return p.Puzzle;
+        }, proofs), data::for_each([](proof p) -> solution {
+            return p.Solution;
+        }, proofs)));
         
     }
 

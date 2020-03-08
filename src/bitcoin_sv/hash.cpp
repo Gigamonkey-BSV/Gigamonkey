@@ -6,31 +6,23 @@
 namespace Gigamonkey::Bitcoin {
     
     digest256 hash256(bytes_view b) {
-        ::uint256 u{::Hash(b.begin(), b.end())};
-        Gigamonkey::uint256 x;
-        std::copy(u.begin(), u.end(), x.begin());
-        return digest256{x};
+        digest256 result;
+        CHash256().Write(b.data(), b.size()).Finalize(result.Value.data());
+        return result;
     } 
     
     digest160 hash160(bytes_view b) {
-        ::uint160 u = ::Hash160(b.begin(), b.end());
-        Gigamonkey::uint160 x;
-        std::copy(u.begin(), u.end(), x.begin());
-        return digest160{x};
+        digest160 result;
+        CHash160().Write(b.data(), b.size()).Finalize(result.Value.data());
+        return result;
     }
 
     digest256 hash256(string_view b) {
-        ::uint256 u = ::Hash(b.begin(), b.end());
-        Gigamonkey::uint256 x;
-        std::copy(u.begin(), u.end(), x.begin());
-        return digest256{x};
+        return hash256(bytes_view((byte*)b.data(), b.size()));
     }
     
     digest160 hash160(string_view b) {
-        ::uint160 u = ::Hash160(b.begin(), b.end());
-        Gigamonkey::uint160 x;
-        std::copy(u.begin(), u.end(), x.begin());
-        return digest160{x};
+        return hash160(bytes_view((byte*)b.data(), b.size()));
     }
     
 }

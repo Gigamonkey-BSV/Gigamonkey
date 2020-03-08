@@ -9,7 +9,7 @@ namespace Gigamonkey::base58 {
     bool decode(bytes& b, string_view s) {
         data::encoding::base58::string b58{s};
         if (!b58.valid()) return false;
-        bytes decoded = bytes(b58);
+        bytes decoded = bytes_view(b58);
         int leading_zeros = decoded.size() - b.size();
         if (leading_zeros < 0) return false;
         for (index x = 0; x < leading_zeros; x++) b[x] = 0x00;
@@ -22,7 +22,9 @@ namespace Gigamonkey::base58 {
         for (index x = 0; x <= b.size() && b[x] == 0; x++) leading_zeros++;
         string b58 = encode(b.substr(leading_zeros));
         string ones(leading_zeros, '1');
-        return data::stream::write_string(leading_zeros + b58.size(), ones, b58);
+        std::stringstream ss;
+        ss << ones << b58;
+        return ss.str();
     }
     
     bool check_decode(bytes& b, string_view s) {

@@ -20,17 +20,13 @@ namespace Gigamonkey::Bitcoin {
         
         std::cout << "Begin address test. " << std::endl;
         
-        std::string arbitrary{"It's not easy being green."};
-        bytes tx(arbitrary);
-        std::copy(arbitrary.begin(), arbitrary.end(), tx.begin());
+        signature arbitrary{bytes("It's not easy being green.")};
         
         secret key{"0x00000000000000000000000000000000000000000000000000000000000101a7"};
         
         std::cout << "using key " << key << " for testing addresses" << std::endl;
         
         EXPECT_TRUE(key.valid());
-        
-        signature x{key.sign(hash256(tx)), directive(sighash::all, 1)};
         
         pubkey pubkey_compressed = key.to_public().compress();
         pubkey pubkey_uncompressed = key.to_public().decompress();
@@ -44,7 +40,7 @@ namespace Gigamonkey::Bitcoin {
         bytes script_p2pk_compressed = pay_to_pubkey::script(pubkey_compressed);
         bytes script_p2pk_uncompressed = pay_to_pubkey::script(pubkey_uncompressed);
         
-        bytes redeem_p2pk = pay_to_pubkey::redeem(x);
+        bytes redeem_p2pk = pay_to_pubkey::redeem(arbitrary);
         
         address address_compressed{pubkey_compressed};
         address address_uncompressed{pubkey_uncompressed};
@@ -55,9 +51,9 @@ namespace Gigamonkey::Bitcoin {
         bytes script_p2pkh_compressed = pay_to_address::script(address_compressed.Digest);
         bytes script_p2pkh_uncompressed = pay_to_address::script(address_uncompressed.Digest);
         
-        bytes redeem_p2pkh_compressed = pay_to_address::redeem(x, pubkey_compressed);
+        bytes redeem_p2pkh_compressed = pay_to_address::redeem(arbitrary, pubkey_compressed);
         
-        bytes redeem_p2pkh_uncompressed = pay_to_address::redeem(x, pubkey_uncompressed);
+        bytes redeem_p2pkh_uncompressed = pay_to_address::redeem(arbitrary, pubkey_uncompressed);
         
         EXPECT_TRUE(evaluate_script(script_p2pk_compressed, redeem_p2pk).Valid);
         EXPECT_TRUE(evaluate_script(script_p2pkh_compressed, redeem_p2pkh_compressed).Valid);

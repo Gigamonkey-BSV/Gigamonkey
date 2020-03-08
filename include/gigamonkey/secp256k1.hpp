@@ -50,41 +50,23 @@ namespace Gigamonkey::secp256k1 {
         
         signature() : Data{} {}
         
-        bool operator==(const signature& s) const {
-            for (int i = 0; i < Size; i ++) if (Data.data[i] != s.Data.data[i]) return false;
-            return true;
-        }
+        bool operator==(const signature& s) const;
+        bool operator!=(const signature& s) const;
         
-        bool operator!=(const signature& s) const {
-            return !operator==(s);
-        }
+        operator bytes_view() const;
         
-        operator bytes_view() const {
-            return bytes_view(Data.data, 64);
-        }
+        byte* begin();
+        byte* end();
         
-        byte* begin() {
-            return Data.data;
-        }
-        
-        byte* end() {
-            return Data.data + Size;
-        }
-        
-        const byte* begin() const {
-            return Data.data;
-        }
-        
-        const byte* end() const {
-            return Data.data + Size;
-        }
+        const byte* begin() const;
+        const byte* end() const;
         
         secp256k1::point point() const;
     };
     
     using digest = Gigamonkey::digest<SecretSize>;
     
-    class secret {
+    class secret : public nonzero<coordinate> {
         static bool valid(bytes_view);
         static bytes to_public_compressed(bytes_view);
         static bytes to_public_uncompressed(bytes_view);
@@ -96,41 +78,25 @@ namespace Gigamonkey::secp256k1 {
     public:
         constexpr static size_t Size = 32;
         
-        coordinate Value;
-        
-        secret() : Value{0} {}
-        explicit secret(const coordinate& v) : Value{v} {}
+        secret() : nonzero<coordinate>{} {}
+        explicit secret(const coordinate& v) : nonzero<coordinate>{v} {}
         explicit secret(string_view s); // hexidecimal and wif accepted. 
         
-        bool valid() const {
-            return valid(Value);
-        }
+        bool valid() const;
         
-        bool operator==(const secret& s) const {
-            return Value == s.Value;
-        }
+        bool operator==(const secret& s) const;
         
-        bool operator!=(const secret& s) const {
-            return Value != s.Value;
-        }
+        bool operator!=(const secret& s) const;
         
-        signature sign(const digest& d) const {
-            return sign(Value, d);
-        }
+        signature sign(const digest& d) const;
         
         pubkey to_public() const;
         
-        secret operator-() const {
-            return secret{negate(Value)};
-        }
+        secret operator-() const;
         
-        secret operator+(const secret& s) const {
-            return secret{plus(Value, s.Value)};
-        }
+        secret operator+(const secret& s) const;
         
-        secret operator*(const secret& s) const {
-            return secret{times(Value, s.Value)};
-        }
+        secret operator*(const secret& s) const;
     };
     
         
@@ -154,77 +120,43 @@ namespace Gigamonkey::secp256k1 {
         
         //explicit pubkey(const CPubKey&);
         
-        bool valid() const {
-            return valid(Value);
-        }
+        bool valid() const;
         
-        bool operator==(const pubkey& p) const {
-            return Value == p.Value;
-        }
+        bool operator==(const pubkey& p) const;
         
-        bool operator!=(const pubkey& p) const {
-            return Value != p.Value;
-        }
+        bool operator!=(const pubkey& p) const;
         
-        bool verify(digest& d, const signature& s) const {
-            return verify(Value, d, s);
-        }
+        bool verify(digest& d, const signature& s) const;
         
-        size_t size() const {
-            return Value.size();
-        }
+        size_t size() const;
         
-        pubkey_type type() const {
-            return size() == 0 ? invalid : pubkey_type{Value[0]};
-        }
+        pubkey_type type() const;
         
-        operator bytes_view() const {
-            return Value;
-        }
+        operator bytes_view() const;
         
         coordinate x() const;
         
         coordinate y() const;
         
-        secp256k1::point point() const {
-            return {x(), y()};
-        }
+        secp256k1::point point() const;
         
-        pubkey compress() const {
-            return pubkey(compress(Value));
-        }
+        pubkey compress() const;
         
-        pubkey decompress() const {
-            return pubkey(decompress(Value));
-        }
+        pubkey decompress() const;
         
-        pubkey operator-() const {
-            return pubkey(negate(Value));
-        }
+        pubkey operator-() const;
         
-        pubkey operator+(const pubkey& p) const {
-            return pubkey{plus_pubkey(Value, p.Value)};
-        }
+        pubkey operator+(const pubkey& p) const;
         
-        pubkey operator+(const secret& s) const {
-            return pubkey{plus_secret(Value, s.Value)};
-        }
+        pubkey operator+(const secret& s) const;
         
-        pubkey operator*(const secret& s) const {
-            return pubkey{times(Value, s.Value)};
-        }
+        pubkey operator*(const secret& s) const;
         
-        bytes_writer write(bytes_writer w) const {
-            return w << Value;
-        }
+        bytes_writer write(bytes_writer w) const;
         
-        string write_string() const {
-            return encoding::hexidecimal::write(Value, endian::little);
-        }
+        string write_string() const;
         
-        digest160 address() const {
-            return Bitcoin::hash160(*this);
-        }
+        digest160 address() const;
     };
     
     inline bool valid(const secret& s) {
@@ -233,10 +165,6 @@ namespace Gigamonkey::secp256k1 {
     
     inline signature sign(const secret& s, const digest& d) {
         return s.sign(d);
-    }
-    
-    inline pubkey secret::to_public() const {
-        return pubkey{to_public_compressed(bytes_view(Value))};
     }
     
     inline secret negate(const secret& s) {
@@ -304,6 +232,138 @@ inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gig
 
 inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::secp256k1::secret& x) {
     return r >> x.Value;
+}
+
+namespace Gigamonkey::secp256k1 {
+    
+    inline bool signature::operator==(const signature& s) const {
+        for (int i = 0; i < Size; i ++) if (Data.data[i] != s.Data.data[i]) return false;
+        return true;
+    }
+    
+    inline bool signature::operator!=(const signature& s) const {
+        return !operator==(s);
+    }
+    
+    inline signature::operator bytes_view() const {
+        return bytes_view(Data.data, 64);
+    }
+    
+    inline byte* signature::begin() {
+        return Data.data;
+    }
+    
+    inline byte* signature::end() {
+        return Data.data + Size;
+    }
+    
+    inline const byte* signature::begin() const {
+        return Data.data;
+    }
+    
+    inline const byte* signature::end() const {
+        return Data.data + Size;
+    }
+        
+    inline bool secret::valid() const {
+        return valid(Value);
+    }
+    
+    inline bool secret::operator==(const secret& s) const {
+        return Value == s.Value;
+    }
+    
+    inline bool secret::operator!=(const secret& s) const {
+        return Value != s.Value;
+    }
+    
+    inline signature secret::sign(const digest& d) const {
+        return sign(Value, d);
+    }
+    
+    inline pubkey secret::to_public() const {
+        return pubkey{to_public_compressed(bytes_view(Value))};
+    }
+    
+    inline secret secret::operator-() const {
+        return secret{negate(Value)};
+    }
+    
+    inline secret secret::operator+(const secret& s) const {
+        return secret{plus(Value, s.Value)};
+    }
+    
+    inline secret secret::operator*(const secret& s) const {
+        return secret{times(Value, s.Value)};
+    }
+        
+    inline bool pubkey::valid() const {
+        return valid(Value);
+    }
+    
+    inline bool pubkey::operator==(const pubkey& p) const {
+        return Value == p.Value;
+    }
+    
+    inline bool pubkey::operator!=(const pubkey& p) const {
+        return Value != p.Value;
+    }
+    
+    inline bool pubkey::verify(digest& d, const signature& s) const {
+        return verify(Value, d, s);
+    }
+    
+    inline size_t pubkey::size() const {
+        return Value.size();
+    }
+    
+    inline pubkey_type pubkey::type() const {
+        return size() == 0 ? invalid : pubkey_type{Value[0]};
+    }
+    
+    inline pubkey::operator bytes_view() const {
+        return Value;
+    }
+    
+    inline point pubkey::point() const {
+        return {x(), y()};
+    }
+    
+    inline pubkey pubkey::compress() const {
+        return pubkey(compress(Value));
+    }
+    
+    inline pubkey pubkey::decompress() const {
+        return pubkey(decompress(Value));
+    }
+    
+    inline pubkey pubkey::operator-() const {
+        return pubkey(negate(Value));
+    }
+    
+    inline pubkey pubkey::operator+(const pubkey& p) const {
+        return pubkey{plus_pubkey(Value, p.Value)};
+    }
+    
+    inline pubkey pubkey::operator+(const secret& s) const {
+        return pubkey{plus_secret(Value, s.Value)};
+    }
+    
+    inline pubkey pubkey::operator*(const secret& s) const {
+        return pubkey{times(Value, s.Value)};
+    }
+    
+    inline bytes_writer pubkey::write(bytes_writer w) const {
+        return w << Value;
+    }
+    
+    inline string pubkey::write_string() const {
+        return encoding::hexidecimal::write(Value, endian::little);
+    }
+    
+    inline digest160 pubkey::address() const {
+        return Bitcoin::hash160(*this);
+    }
 }
 
 #endif

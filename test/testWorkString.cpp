@@ -10,7 +10,7 @@ namespace Gigamonkey::Bitcoin {
     // can result in stack smashing
     TEST(WorkStringTest, TestWorkSTring) {
         
-        std::string genesis_header_hex_string = std::string{"0x"} + 
+        std::string genesis_header_string = std::string{} + 
             // version
             "01000000" + 
             // prev block
@@ -24,25 +24,37 @@ namespace Gigamonkey::Bitcoin {
             // nonce 
             "1DAC2B7C";
         
-        uint<80> genesis_header(genesis_header_hex_string);
+        encoding::hex::string genesis_header_hex(genesis_header_string);
         
-        EXPECT_EQ(data::encoding::hexidecimal::write(genesis_header, endian::little), genesis_header_hex_string);
+        ASSERT_TRUE(genesis_header_hex.valid());
         
-        digest256 header_hash = hash256(genesis_header);
+        bytes genesis_header_bytes = bytes_view(genesis_header_hex);
         
-        std::cout << "Hash of genesis header " << genesis_header_hex_string << " calculated as " << header_hash << std::endl;
+        digest256 genesis_hash = hash256(genesis_header_bytes);
         
-        EXPECT_EQ(hash256(genesis_header), digest256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
+        std::cout << "Hash of genesis header " << genesis_header_string << " calculated as " << genesis_hash << std::endl;
         
-        work::string work_string(genesis_header); 
+        EXPECT_EQ(genesis_hash, digest256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
+        
+        work::string work_string{slice<80>(genesis_header_bytes.data())}; 
+        
+        Bitcoin::header header(slice<80>(genesis_header_bytes.data()));
+        
+        std::cout << "work_string reconstructed as " << work_string << std::endl;
+        
+        std::cout << "Hash of work_string calculated as " << work_string.hash() << std::endl;
+        
+        std::cout << "header reconstructed as " << header << std::endl;
+        
+        std::cout << "Hash of header calculated as " << header.hash() << std::endl;
         
         EXPECT_TRUE(work_string.valid());
         
         EXPECT_EQ(work_string.hash(), digest256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
         
-        work::string header(genesis_header);
-        
         EXPECT_TRUE(header.valid());
+        
+        EXPECT_EQ(header.hash(), digest256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
         
         EXPECT_EQ(work_string, work::string(header));
     }

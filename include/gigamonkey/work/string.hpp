@@ -43,7 +43,8 @@ namespace Gigamonkey::work {
             return hash() < Target.expand();
         }
         
-        explicit string(const Bitcoin::header&);
+        explicit string(const Bitcoin::header& h) : 
+            Version(h.Version), Digest(h.Previous), MerkleRoot(h.MerkleRoot), Timestamp(h.Timestamp), Target(h.Target), Nonce(h.Nonce) {}
         
         work::difficulty difficulty() const {
             return Target.difficulty();
@@ -65,6 +66,10 @@ namespace Gigamonkey::work {
         }
     };
     
+}
+
+inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::string& work_string) {
+    return o << "work_string{" << data::encoding::hex::write(work_string.write()) << "}";
 }
 
 #endif

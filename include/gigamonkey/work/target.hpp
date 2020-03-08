@@ -11,18 +11,42 @@
 namespace Gigamonkey::work {
     using uint256 = Gigamonkey::uint256;
     
+    struct target;
+    
     struct difficulty : Q {
         explicit difficulty(const Q& q) : Q(q) {}
-        explicit difficulty(const uint256& u);
+        explicit difficulty(const Z& z) : Q(z) {}
         explicit operator double() const;
+        explicit difficulty(target t);
         
-        static Q minimum() {
-            static difficulty Minimum{Z{"0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"}};
-            return Minimum;
+        static difficulty minimum() {
+            return difficulty(1);
         }
+        
+        difficulty operator+(const difficulty& x) const {
+            return difficulty(Q::operator+(x));
+        }
+        
+        difficulty operator-(const difficulty& x) const {
+            return difficulty(Q::operator-(x));
+        }
+        
+        difficulty operator*(const difficulty& x) const {
+            return difficulty(Q::operator*(x));
+        }
+        
+        difficulty operator/(const difficulty& x) const {
+            return difficulty(Q::operator/(x));
+        }
+        
+    private:
+        static Z scale() {
+            static Z Scale("0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+            return Scale;
+        }
+        
+        explicit difficulty(const Z& z, const N& n) : Q(z, n) {}
     };
-    
-    inline difficulty::difficulty(const uint256& u) : difficulty{minimum() / N{u}} {}
     
     uint256 expand_compact(uint32_little);
     
@@ -56,7 +80,7 @@ namespace Gigamonkey::work {
         }
         
         work::difficulty difficulty() const {
-            return work::difficulty(expand());
+            return work::difficulty(*this);
         };
         
         operator bytes_view() const {
@@ -68,6 +92,8 @@ namespace Gigamonkey::work {
     const target SuccessQuarter{32, 0x400000};
     const target SuccessEighth{32, 0x200000};
     const target SuccessSixteenth{32, 0x100000};
+    
+    inline difficulty::difficulty(target t) : difficulty(scale(), N(t.expand())) {}
 
 }
 
