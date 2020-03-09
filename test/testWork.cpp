@@ -47,7 +47,6 @@ namespace Gigamonkey::work {
         
         auto puzzles = outer<puzzle>([](std::string m, target t) -> puzzle {
             digest256 message_hash = sha256(m);
-            std::cout << "Work test: calculated hash as " << message_hash << std::endl;
             return puzzle(1, message_hash, t, 
                 Merkle::path{}, bytes{}, bytes(m));
         }, messages, targets);

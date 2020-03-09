@@ -15,12 +15,12 @@ namespace Gigamonkey::work {
     
     struct difficulty : Q {
         explicit difficulty(const Q& q) : Q(q) {}
-        explicit difficulty(const Z& z) : difficulty(static_cast<Q>(minimum()) * z) {}
+        explicit difficulty(const Z& z) : Q(z) {}
         explicit operator double() const;
         explicit difficulty(target t);
         
         static difficulty minimum() {
-            return difficulty(scale(), 1);
+            return difficulty(1);
         }
         
         difficulty operator+(const difficulty& x) const {

@@ -8,14 +8,16 @@ namespace Gigamonkey::work {
 
     TEST(DifficultyTest, TestDifficulty) {
         
-        EXPECT_TRUE(SuccessHalf.difficulty().valid());
+        difficulty success_half = SuccessHalf.difficulty();
+        
+        EXPECT_TRUE(success_half.valid());
         EXPECT_TRUE(SuccessQuarter.difficulty().valid());
         EXPECT_TRUE(SuccessEighth.difficulty().valid());
         EXPECT_TRUE(SuccessSixteenth.difficulty().valid());
         EXPECT_TRUE(difficulty::minimum().valid());
-        //EXPECT_TRUE(difficulty(1).valid());
-        //EXPECT_TRUE(difficulty(2).valid());
-        //EXPECT_TRUE((difficulty(3) / difficulty(2)).valid());
+        EXPECT_TRUE(difficulty(1).valid());
+        EXPECT_TRUE(difficulty(2).valid());
+        EXPECT_TRUE((difficulty(3) / difficulty(2)).valid());
         
         EXPECT_LT(SuccessHalf.difficulty(), SuccessQuarter.difficulty());
         EXPECT_GT(SuccessQuarter.difficulty(), SuccessHalf.difficulty());
@@ -46,7 +48,7 @@ namespace Gigamonkey::work {
         
         EXPECT_LT(SuccessSixteenth.difficulty(), difficulty::minimum());
         EXPECT_GT(difficulty::minimum(), SuccessSixteenth.difficulty());
-        /*
+        
         EXPECT_EQ(difficulty(1), difficulty::minimum());
         
         EXPECT_LT(difficulty(1), difficulty(2));
@@ -56,7 +58,7 @@ namespace Gigamonkey::work {
         EXPECT_GT(difficulty(3) / difficulty(2), difficulty(1));
         
         EXPECT_LT(difficulty(3) / difficulty(2), difficulty(2));
-        EXPECT_GT(difficulty(2), difficulty(3) / difficulty(2));*/
+        EXPECT_GT(difficulty(2), difficulty(3) / difficulty(2));
         
     }
 

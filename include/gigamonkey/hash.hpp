@@ -147,12 +147,18 @@ namespace Gigamonkey {
     }
     
     template <size_t size, unsigned int bits>
-    inline uint<size, bits>::operator N() const {
-        data::math::number::bounded<false, data::endian::little, size> n{};
-        std::copy(begin(), end(), n.begin());
-        return N{n};
+    uint<size, bits>::operator N() const {
+        N n(0);
+        int width = size / 4;
+        int i;
+        for (i = width - 1; i > 0; i--) {
+            uint32 step = boost::endian::load_little_u32(data() + 4 * i);
+            n += step;
+            n <<= 32;
+        }
+        n += uint64(boost::endian::load_little_u32(data()));
+        return n;
     }
-    
     
     template <size_t size, unsigned int bits>
     inline uint<size, bits>::uint(string_view hex) : uint(0) {
