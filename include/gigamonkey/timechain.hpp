@@ -68,7 +68,7 @@ namespace Gigamonkey::Bitcoin {
                 Gigamonkey::header::nonce(x)};
         }
         
-        header(slice<80> x) : header(read(x)) {}
+        explicit header(slice<80> x) : header(read(x)) {}
         
         explicit header(const CBlockHeader&);
         
@@ -348,7 +348,10 @@ namespace Gigamonkey::Bitcoin {
     }
     
     inline uint<80> header::write() const {
-        throw data::method::unimplemented{"write"};
+        uint<80> x; // inefficient: unnecessary copy. 
+        bytes b = Gigamonkey::write(80, Version, Previous, MerkleRoot, Target, Timestamp, Nonce);
+        std::copy(b.begin(), b.end(), x.data());
+        return x;
     }
     
     inline bytes_writer outpoint::write(bytes_writer w) const {

@@ -32,8 +32,11 @@ namespace Gigamonkey::work {
         return expanded;
     }
         
-    bytes string::write() const {
-        return Gigamonkey::write(80, Version, Digest, MerkleRoot, Target, Timestamp, Nonce);
+    uint<80> string::write() const {
+        uint<80> x; // inefficient: unnecessary copy. 
+        bytes b = Gigamonkey::write(80, Version, Digest, MerkleRoot, Target, Timestamp, Nonce);
+        std::copy(b.begin(), b.end(), x.data());
+        return x;
     }
     
 }

@@ -20,16 +20,19 @@ namespace Gigamonkey::work {
         string(int32_little v, uint256 d, uint256 mp, timestamp ts, target tg, nonce n) : 
             Version{v}, Digest{d}, MerkleRoot{mp}, Timestamp{ts}, Target{tg}, Nonce{n} {}
         
-        static string read(const slice<80> x) {
-            bytes_reader b{x.begin(), x.end()};
-            string z;
-            b >> z.Version >> z.Digest >> z.MerkleRoot >> z.Timestamp >> z.Target >> z.Nonce;
-            return z;
+        static string read(slice<80> x) {
+            return string{
+                Gigamonkey::header::version(x), 
+                uint<32>{Gigamonkey::header::previous(x)}, 
+                uint<32>{Gigamonkey::header::merkle_root(x)}, 
+                timestamp{Gigamonkey::header::timestamp(x)}, 
+                work::target{Gigamonkey::header::target(x)}, 
+                Gigamonkey::header::nonce(x)};
         }
         
-        explicit string(const slice<80> x) : string(read(x)) {}
+        explicit string(slice<80> x) : string(read(x)) {}
         
-        bytes write() const;
+        uint<80> write() const;
         
         uint256 hash() const {
             return Bitcoin::hash256(write());

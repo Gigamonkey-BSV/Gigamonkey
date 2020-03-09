@@ -13,7 +13,7 @@ namespace Gigamonkey::work {
         EXPECT_TRUE(SuccessEighth.difficulty().valid());
         EXPECT_TRUE(SuccessSixteenth.difficulty().valid());
         EXPECT_TRUE(difficulty::minimum().valid());
-        EXPECT_TRUE(difficulty(1).valid());
+        //EXPECT_TRUE(difficulty(1).valid());
         //EXPECT_TRUE(difficulty(2).valid());
         //EXPECT_TRUE((difficulty(3) / difficulty(2)).valid());
         
