@@ -32,11 +32,7 @@ namespace Gigamonkey::Bitcoin {
         
         digest256 genesis_hash = hash256(genesis_header_bytes);
         
-        std::cout << "Hash of genesis header " << genesis_header_string << " calculated as " << genesis_hash << std::endl;
-        
         EXPECT_EQ(genesis_hash, digest256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
-        
-        std::cout << "Now to read in string as work_string " << bytes(slice<80>(genesis_header_bytes.data())) << std::endl;
         
         work::string work_string{slice<80>(genesis_header_bytes.data())}; 
         
@@ -44,31 +40,19 @@ namespace Gigamonkey::Bitcoin {
         
         EXPECT_EQ(work_string, work::string(header));
         
-        std::cout << "work_string reconstructed as " << work_string << std::endl;
-        
-        std::cout << "header reconstructed as " << header << std::endl;
-        
         uint<80> work_string_written = work_string.write();
         
         uint<80> header_written = header.write();
         
-        std::cout << "work_string written as " << work_string_written << std::endl;
-        
-        std::cout << "header written as " << header_written << std::endl;
-        
         EXPECT_EQ(work_string_written, header_written);
-        
-        std::cout << "Hash of work_string calculated as " << work_string.hash() << std::endl;
-        
-        std::cout << "Hash of header calculated as " << header.hash() << std::endl;
-        
-        EXPECT_TRUE(work_string.valid());
-        
-        EXPECT_TRUE(header.valid());
         
         EXPECT_EQ(work_string.hash(), digest256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
         
         EXPECT_EQ(header.hash(), digest256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
+        
+        EXPECT_TRUE(work_string.valid());
+        
+        EXPECT_TRUE(header.valid());
         
     }
 

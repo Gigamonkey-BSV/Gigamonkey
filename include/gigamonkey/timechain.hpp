@@ -349,7 +349,7 @@ namespace Gigamonkey::Bitcoin {
     
     inline uint<80> header::write() const {
         uint<80> x; // inefficient: unnecessary copy. 
-        bytes b = Gigamonkey::write(80, Version, Previous, MerkleRoot, Target, Timestamp, Nonce);
+        bytes b = Gigamonkey::write(80, Version, Previous, MerkleRoot, Timestamp, Target, Nonce);
         std::copy(b.begin(), b.end(), x.data());
         return x;
     }
