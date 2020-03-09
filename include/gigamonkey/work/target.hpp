@@ -15,12 +15,12 @@ namespace Gigamonkey::work {
     
     struct difficulty : Q {
         explicit difficulty(const Q& q) : Q(q) {}
-        explicit difficulty(const Z& z) : Q(z) {}
+        explicit difficulty(const Z& z) : difficulty(static_cast<Q>(minimum()) * z) {}
         explicit operator double() const;
         explicit difficulty(target t);
         
         static difficulty minimum() {
-            return difficulty(1);
+            return difficulty(scale(), 1);
         }
         
         difficulty operator+(const difficulty& x) const {
@@ -71,8 +71,7 @@ namespace Gigamonkey::work {
         }
         
         bool valid() const {
-            byte e = exponent();
-            return e >= 3 && e <= 32 && digits() != 0;
+            return expand() != 0;
         }
         
         uint256 expand() const {
@@ -88,7 +87,7 @@ namespace Gigamonkey::work {
         }
     };
     
-    const target SuccessHalf{32, 0x800000};
+    const target SuccessHalf{33, 0x8000};
     const target SuccessQuarter{32, 0x400000};
     const target SuccessEighth{32, 0x200000};
     const target SuccessSixteenth{32, 0x100000};

@@ -113,7 +113,14 @@ namespace Gigamonkey::work {
         // This is for test purposes only. Therefore we do not
         // accept difficulties that are above the ordinary minimum. 
         if (p.Target.difficulty() > difficulty::minimum()) return {}; 
-        while(p.string(initial).hash() > target) initial.Nonce++;
+        //while(p.string(initial).hash() >= target) initial.Nonce++;
+        while (true) {
+            uint256 hash = p.string(initial).hash();
+            if (hash < target) {
+                break;
+            } 
+            initial.Nonce++;
+        }
         return proof{p, initial};
     }
     

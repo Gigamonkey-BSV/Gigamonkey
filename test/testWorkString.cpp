@@ -36,6 +36,8 @@ namespace Gigamonkey::Bitcoin {
         
         EXPECT_EQ(genesis_hash, digest256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
         
+        std::cout << "Now to read in string as work_string " << bytes(slice<80>(genesis_header_bytes.data())) << std::endl;
+        
         work::string work_string{slice<80>(genesis_header_bytes.data())}; 
         
         Bitcoin::header header(slice<80>(genesis_header_bytes.data()));

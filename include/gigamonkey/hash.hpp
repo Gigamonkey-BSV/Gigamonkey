@@ -57,8 +57,8 @@ namespace Gigamonkey {
         operator N() const;
     };
     
-    using uint256 = uint<32>;
     using uint160 = uint<20>;
+    using uint256 = uint<32>;
     
     template <size_t size> struct digest : nonzero<uint<size>> {
         
@@ -94,11 +94,11 @@ namespace Gigamonkey {
         digest160 hash160(string_view b);
         digest256 hash256(string_view b);
         
-        inline digest<20> address_hash(bytes_view b) {
+        inline digest160 address_hash(bytes_view b) {
             return hash160(b);
         }
         
-        inline digest<32> signature_hash(bytes_view b) {
+        inline digest256 signature_hash(bytes_view b) {
             return hash256(b);
         }
     

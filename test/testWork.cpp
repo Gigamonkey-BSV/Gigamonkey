@@ -3,6 +3,7 @@
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/work/proof.hpp>
+#include "dot_cross.hpp"
 #include "gtest/gtest.h"
 #include <iostream>
 
@@ -20,35 +21,6 @@ namespace Gigamonkey::work {
             y = y.rest();
         }
         return x;
-    }
-    
-    template <typename f, typename X, typename Y>
-    bool dot_cross(f foo, list<X> x, list<Y> y) {
-        if (x.size() != y.size()) return false;
-        if (x.size() == 0) return true;
-        list<X> input = x;
-        list<Y> expected = y;
-        while (!input.empty()) {
-            list<Y> uuu = expected;
-            X in = input.first();
-            Y ex = uuu.first();
-            
-            if(!foo(in, ex)) return false;
-            
-            uuu = uuu.rest();
-        
-            while(!uuu.empty()) {
-                ex = uuu.first();
-                
-                if(foo(in, ex)) return false;
-                uuu = uuu.rest();
-            }
-            
-            expected = expected.rest();
-            input = input.rest();
-        }
-        
-        return true;
     }
 
     TEST(WorkTest, TestWork) {
@@ -74,7 +46,9 @@ namespace Gigamonkey::work {
             target_thirty_second; 
         
         auto puzzles = outer<puzzle>([](std::string m, target t) -> puzzle {
-            return puzzle(1, Bitcoin::hash256(m), t, 
+            digest256 message_hash = sha256(m);
+            std::cout << "Work test: calculated hash as " << message_hash << std::endl;
+            return puzzle(1, message_hash, t, 
                 Merkle::path{}, bytes{}, bytes(m));
         }, messages, targets);
         

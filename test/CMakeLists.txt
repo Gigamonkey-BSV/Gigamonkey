@@ -10,8 +10,8 @@ endif()
 ADD_EXECUTABLE(testGigamonkey  
 testFormat.cpp 
 testAddress.cpp
-testDifficulty.cpp
 testExpandCompact.cpp
+testDifficulty.cpp
 testWorkString.cpp
 testWork.cpp 
 #testGenesis.cpp 
