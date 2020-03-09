@@ -125,8 +125,4 @@ std::ostream& operator<<(std::ostream& o, const data::list<X> s) {
     return o << "]";
 }
 
-inline std::ostream& operator<<(std::ostream& o, const data::bytes& s) {
-    return o << data::encoding::hexidecimal::write(data::bytes_view(s), data::endian::little); 
-}
-
 #endif
