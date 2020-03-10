@@ -110,20 +110,27 @@ namespace Gigamonkey::work {
     
     inline proof cpu_solve(puzzle p, solution initial) {
         uint256 target = p.Target.expand();
+        if (target == 0) return {};
         // This is for test purposes only. Therefore we do not
         // accept difficulties that are above the ordinary minimum. 
         if (p.Target.difficulty() > difficulty::minimum()) return {}; 
-        //while(p.string(initial).hash() >= target) initial.Nonce++;
-        while (true) {
-            uint256 hash = p.string(initial).hash();
-            if (hash < target) {
-                break;
-            } 
-            initial.Nonce++;
-        }
+        while(p.string(initial).hash() >= target) initial.Nonce++;
         return proof{p, initial};
     }
     
+}
+
+inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::solution& p) {
+    return o << "solution{Timestamp: " << p.Timestamp << ", Nonce: " << p.Nonce << ", ExtraNonce: " << p.ExtraNonce << "}";
+}
+
+inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::puzzle& p) {
+    return o << "puzzle{Version: " << p.Version << ", Digest: " << p.Digest << ", Target: " << 
+        p.Target << ", MerklePath" << p.MerklePath << ", Header: " << p.Header << ", Body: " << p.Body << "}";
+}
+
+inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::proof& p) {
+    return o << "proof{Puzzle: " << p.Puzzle << ", Solution: " << p.Solution << "}";
 }
 
 #endif

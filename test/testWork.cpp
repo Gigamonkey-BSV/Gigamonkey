@@ -22,28 +22,29 @@ namespace Gigamonkey::work {
         }
         return x;
     }
-
+    
     TEST(WorkTest, TestWork) {
-        
-        std::cout << "begin work test." << std::endl;
         
         std::string message1{"Capitalists can spend more energy than socialists."};
         std::string message2{"If you can't transform energy, why should anyone listen to you?"};
         
         auto messages = list<std::string>{} << message1 << message2;
         
-        const target target_half = SuccessHalf;
-        const target target_quarter = SuccessQuarter;
-        const target target_eighth = SuccessEighth;
-        const target target_sixteenth = SuccessSixteenth;
-        const target target_thirty_second{31, 0xffffff};
+        const target target_2 = SuccessHalf;
+        const target target_4 = SuccessQuarter;
+        const target target_8 = SuccessEighth;
+        const target target_16 = SuccessSixteenth;
+        const target target_32{32, 0x080000};
+        const target target_64{32, 0x040000};
+        const target target_128{32, 0x020000};
+        const target target_256{32, 0x010000};
         
         auto targets = list<target>{} << 
-            target_half << 
-            target_quarter << 
-            target_eighth << 
-            target_sixteenth << 
-            target_thirty_second; 
+            target_16 << 
+            target_32 << 
+            target_64 << 
+            target_128 << 
+            target_256; 
         
         auto puzzles = outer<puzzle>([](std::string m, target t) -> puzzle {
             digest256 message_hash = sha256(m);
@@ -51,14 +52,15 @@ namespace Gigamonkey::work {
                 Merkle::path{}, bytes{}, bytes(m));
         }, messages, targets);
         
-        solution initial(timestamp(1), 0, 4843);
+        byte extra_nonce = 0;
         
-        auto proofs = data::for_each([initial](puzzle p) -> proof {
-            return cpu_solve(p, initial);
+        auto proofs = data::for_each([&extra_nonce](puzzle p) -> proof {
+            return cpu_solve(p, solution(timestamp(1), 0, bytes{0xab, 0xcd, 0xef, extra_nonce++}));
         }, puzzles); 
         
         EXPECT_TRUE(dot_cross([](puzzle p, solution x) -> bool {
-            return proof(p, x).valid();
+            bool success = proof{p, x}.valid();
+            return success;
         }, data::for_each([](proof p) -> puzzle {
             return p.Puzzle;
         }, proofs), data::for_each([](proof p) -> solution {

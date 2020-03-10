@@ -94,4 +94,8 @@ namespace Gigamonkey::Merkle {
     
 }
 
+inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Merkle::path& p) {
+    return o << "path{Index: " << p.Index << ", Hashes: " << p.Hashes << "}";
+}
+
 #endif

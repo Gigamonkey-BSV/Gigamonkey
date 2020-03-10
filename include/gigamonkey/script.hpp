@@ -12,15 +12,23 @@
 #include <gigamonkey/address.hpp>
 
 #include <script/script.h>
+#include <script/script_error.h>
 
 namespace Gigamonkey::Bitcoin { 
     
     struct evaluated {
-        bool Valid;
-        bytes Return;
+        ScriptError Error;
+        bool Return;
+        
+        evaluated() : Error{SCRIPT_ERR_OK}, Return{false} {}
+        evaluated(ScriptError err) : Error{err}, Return{false} {}
+        
+        bool valid() const {
+            return Error == SCRIPT_ERR_OK;
+        }
         
         bool operator==(const evaluated e) const {
-            return Valid == e.Valid && Return == e.Return;
+            return Error == e.Error && Return == e.Return;
         }
         
         bool operator!=(const evaluated e) const {
@@ -32,7 +40,7 @@ namespace Gigamonkey::Bitcoin {
     evaluated evaluate_script(script in, script out);
     
     // Evaluate script with real signature operations. 
-    evaluated evaluate_script(script in, script out, bytes transaction);
+    evaluated evaluate_script(script in, script out, bytes transaction, uint32 index, satoshi amount);
     
     using op = opcodetype;
     
