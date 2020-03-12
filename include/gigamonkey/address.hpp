@@ -10,30 +10,52 @@
 
 namespace Gigamonkey::base58 {
     
-    inline string encode(bytes_view b) {
-        return data::encoding::base58::write(b);
-    }
-    
-    inline bool decode(bytes&, string_view);
-    
-    string check_encode(bytes_view);
-    
-    bool check_decode(bytes&, string_view);
+    struct check {
+        bytes Data;
+        
+        bool valid() const {
+            return Data.size() > 0;
+        }
+        
+        byte version() const {
+            if (!valid()) return 0;
+            return Data[0];
+        }
+        
+        bytes_view payload() const {
+            if (!valid()) return {};
+            return bytes_view(Data).substr(1);
+        }
+        
+        static check decode(string_view);
+        std::string encode() const;
+        
+        check(byte version, bytes data) : Data{write(data.size() + 1, version, data)} {}
+        check(string_view s) : check{decode(s)} {}
+        
+    private:
+        check() : Data{} {};
+        check(bytes p) : Data{p} {}
+    };
     
 }
 
 namespace Gigamonkey::Bitcoin {
     
-    Gigamonkey::checksum checksum(bytes_view);
+    Gigamonkey::checksum checksum(bytes_view b);
     
-    inline bytes_writer write_checksum(bytes_writer w, bytes_view b) {
-        return w << b << checksum(b);
+    inline bytes append_checksum(bytes_view b) {
+        bytes checked(b.size() + 4);
+        bytes_writer(checked.begin(), checked.end()) << b << checksum(b);
+        return checked;
     }
     
+    bytes_view remove_checksum(bytes_view b);
+    
     struct address {
-        enum type : char {
-            main = '1', 
-            test = 'n'
+        enum type : byte {
+            main = 0x00, 
+            test = 0x6F
         };
         
         type Prefix;
@@ -43,13 +65,11 @@ namespace Gigamonkey::Bitcoin {
         digest Digest;
         
         address() : Prefix{}, Digest{} {}
-        address(const digest& d, char p) : Prefix{p}, Digest{d} {}
+        address(const digest& d, byte p) : Prefix{p}, Digest{d} {}
         
         explicit address(string_view s);
         
         explicit address(const pubkey& pub, type p = main) : address{pub.address(), p} {}
-        
-        explicit address(const secret& s, type p = main) : address{s.to_public(), p} {}
         
         bool operator==(const address& a) const {
             return Prefix == a.Prefix && Digest == a.Digest;
@@ -59,8 +79,8 @@ namespace Gigamonkey::Bitcoin {
             return !operator==(a);
         }
     
-        static string write(char prefix, bytes_view b) {
-            return base58::check_encode(Gigamonkey::write(b.size() + 1, prefix, b));
+        static string write(char prefix, const digest& d) {
+            return base58::check{byte(prefix), bytes_view{d}}.encode();
         }
         
         string write() const {

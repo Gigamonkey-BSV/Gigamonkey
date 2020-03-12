@@ -8,25 +8,30 @@
 namespace Gigamonkey::Bitcoin {
     
     wif wif::read(string_view s) {
-        bytes data;
-        if (!base58::check_decode(data, s)) return wif{};
+        base58::check b58(s);
+        if (!b58.valid()) return wif{};
         wif w{};
-        bytes_reader r = bytes_reader(data.data(), data.data() + data.size()) >> w.Prefix >> w.Secret; 
-        if (!r.empty()) {
-            char suffix;
+        if (b58.Data.size() == 33) {
+            w.Compressed = false;
+        } else if (b58.Data.size() == 34) {
+            w.Compressed = true;
+        } else return {};
+        bytes_reader r = bytes_reader(b58.Data.data(), b58.Data.data() + b58.Data.size()) >> w.Prefix >> w.Secret; 
+        
+        if (w.Compressed) {
+            byte suffix;
             r >> suffix;
             if (suffix != CompressedSuffix) return wif{};
-            w.Compressed = true;
-        } else w.Compressed = false;
+        } 
+        
         return w;
     }
     
-    
-    string wif::write(char prefix, const secret& s, bool compressed) {
-        bytes data(compressed ? CompressedSize : UncompressedSize);
-        bytes_writer w = bytes_writer(data.begin(), data.end()) << prefix << s.Value; 
+    string wif::write(byte prefix, const secret& s, bool compressed) {
+        bytes data(compressed ? CompressedSize - 1: UncompressedSize - 1);
+        bytes_writer w = bytes_writer(data.begin(), data.end()) << s.Value; 
         if (compressed) w << CompressedSuffix;
-        return base58::check_encode(data);
+        return base58::check{prefix, data}.encode();
     }
     
 }

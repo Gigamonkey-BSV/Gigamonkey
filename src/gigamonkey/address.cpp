@@ -6,42 +6,52 @@
 
 namespace Gigamonkey::base58 {
     
-    bool decode(bytes& b, string_view s) {
-        data::encoding::base58::string b58{s};
-        if (!b58.valid()) return false;
-        bytes decoded = bytes_view(b58);
-        int leading_zeros = decoded.size() - b.size();
-        if (leading_zeros < 0) return false;
-        for (index x = 0; x < leading_zeros; x++) b[x] = 0x00;
-        std::copy(decoded.begin(), decoded.end(), b.begin() + leading_zeros);
-        return true;
-    }
-    
-    string check_encode(bytes_view b) {
+    string check::encode() const {
+        bytes data = Bitcoin::append_checksum(Data);
         size_t leading_zeros = 0;
-        for (index x = 0; x <= b.size() && b[x] == 0; x++) leading_zeros++;
-        string b58 = encode(b.substr(leading_zeros));
+        while (leading_zeros < data.size() && data[leading_zeros] == 0) leading_zeros++;
+        string b58 = data::encoding::base58::write(bytes_view(data).substr(leading_zeros));
         string ones(leading_zeros, '1');
         std::stringstream ss;
         ss << ones << b58;
         return ss.str();
     }
     
-    bool check_decode(bytes& b, string_view s) {
-        static const char MustStartWith = '1';
-        if (s.size() == 0) return false;
-        if (s[0] != MustStartWith) return false;
-        uint32 ones = 1;
-        while (s[ones] != MustStartWith) ones++;
-        return decode(b, s.substr(ones));
+    check check::decode(string_view s) {
+        size_t leading_ones = 0;
+        while(leading_ones < s.size() && s[leading_ones] == '1') leading_ones++;
+        encoding::base58::string b58(s.substr(leading_ones));
+        if (!b58.valid()) return {};
+        bytes_view decoded = bytes_view(b58);
+        return {Bitcoin::remove_checksum(write(leading_ones + decoded.size(), bytes(leading_ones, 0x00), decoded))};
     }
 }
 
 namespace Gigamonkey::Bitcoin {
-   address::address(string_view s) {
-        if (s.size() > 35) return;
-        Prefix = type(s[0]);
+    
+    Gigamonkey::checksum checksum(bytes_view b) {
+        Gigamonkey::checksum x;
+        digest256 digest = hash256(b);
+        std::copy(digest.Value.begin(), digest.Value.begin() + 4, x.begin());
+        return x;
+    }
+    
+    bytes_view remove_checksum(bytes_view b) {
+        if (b.size() < 4) return {};
+        Gigamonkey::checksum x;
+        std::copy(b.end() - 4, b.end(), x.begin());
+        bytes_view without = b.substr(0, b.size() - 4);
+        if (x != checksum(without)) return {};
+        return without;
+    }
+    
+   address::address(string_view s) : address{} {
+        if (s.size() > 35 || s.size() < 5) return;
+        base58::check b58(s);
+        if (!b58.valid()) return;
+        Prefix = type(b58.version());
         if (!valid_prefix(Prefix)) return;
-        throw data::method::unimplemented{"address(string)"};
+        if (b58.payload().size() > 20) return;
+        std::copy(b58.payload().begin(), b58.payload().end(), Digest.Value.begin());
     }
 }

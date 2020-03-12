@@ -116,7 +116,10 @@ namespace Gigamonkey::secp256k1 {
         pubkey() : Value{} {}
         explicit pubkey(bytes_view v) : Value{v} {}
         
-        explicit pubkey(string_view s) : Value{encoding::hexidecimal::read(s, endian::little)} {}
+        explicit pubkey(string_view s) : Value{} {
+            encoding::hex::string hex(s);
+            if (hex.valid()) Value = bytes_view(hex);
+        }
         
         //explicit pubkey(const CPubKey&);
         
@@ -358,7 +361,7 @@ namespace Gigamonkey::secp256k1 {
     }
     
     inline string pubkey::write_string() const {
-        return encoding::hexidecimal::write(Value, endian::little);
+        return encoding::hex::write(Value);
     }
     
     inline digest160 pubkey::address() const {
