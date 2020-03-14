@@ -5,6 +5,7 @@
 #define GIGAMONKEY_SPENDABLE
 
 #include "signature.hpp"
+#include "wif.hpp"
 #include "timechain.hpp"
 #include <gigamonkey/script.hpp>
 
@@ -17,7 +18,7 @@ namespace Gigamonkey::Bitcoin {
     struct redeem_pay_to_pubkey final : redeemer {
         secret Secret;
         virtual bytes redeem(const vertex& v, index i, sighash::directive d) const override {
-            return pay_to_pubkey::redeem(sign(v, i, d, Secret));
+            return pay_to_pubkey::redeem(sign(v, i, d, Secret.Secret));
         }
     };
     
@@ -25,7 +26,7 @@ namespace Gigamonkey::Bitcoin {
         secret Secret;
         pubkey Pubkey;
         virtual bytes redeem(const vertex& v, index i, sighash::directive d) const override {
-            return pay_to_address::redeem(sign(v, i, d, Secret), Pubkey);
+            return pay_to_address::redeem(sign(v, i, d, Secret.Secret), Pubkey);
         }
     };
     

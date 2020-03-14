@@ -65,11 +65,11 @@ namespace Gigamonkey::Bitcoin {
         digest Digest;
         
         address() : Prefix{}, Digest{} {}
-        address(const digest& d, byte p) : Prefix{p}, Digest{d} {}
+        address(type p, const digest& d) : Prefix{p}, Digest{d} {}
         
         explicit address(string_view s);
         
-        explicit address(const pubkey& pub, type p = main) : address{pub.address(), p} {}
+        address(type p, const pubkey& pub) : address{p, pub.hash()} {}
         
         bool operator==(const address& a) const {
             return Prefix == a.Prefix && Digest == a.Digest;

@@ -11,7 +11,7 @@ namespace Gigamonkey::Bitcoin {
     
     TEST(FormatTest, TestWIF) {
         std::string wiki_wif = "5HueCGU8rMjxEXxiPuD5BDku4MkFqeZyd4dZ1jvhTVqvbTLvyTJ";
-        EXPECT_TRUE(wif{wiki_wif}.write() == wiki_wif);
+        EXPECT_TRUE(secret{wiki_wif}.write() == wiki_wif);
     }
     
     TEST(FormatTest, TestAddress) {
@@ -42,8 +42,8 @@ namespace Gigamonkey::Bitcoin {
     
     struct test_case {
         test_data Data;
-        wif SecretWIFCompressed;
-        wif SecretWIFUncompressed;
+        secret SecretWIFCompressed;
+        secret SecretWIFUncompressed;
         pubkey PubkeyHexCompressed;
         pubkey PubkeyHexUncompressed;
         address AddressBase58;

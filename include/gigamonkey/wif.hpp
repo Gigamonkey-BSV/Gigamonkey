@@ -9,14 +9,16 @@
 
 namespace Gigamonkey::Bitcoin {
     
-    struct wif {
-        byte Prefix;
-        secret Secret;
+    struct secret {
+        
+        enum type : byte {
+            main = 0x80, 
+            test = 0xef
+        };
+        
+        type Prefix;
+        secp256k1::secret Secret;
         bool Compressed;
-        
-        constexpr static byte MainNet = 0x80; 
-        
-        constexpr static byte TestNet = 0xef;
         
         constexpr static byte CompressedSuffix = 0x01;
         
@@ -25,7 +27,7 @@ namespace Gigamonkey::Bitcoin {
         }
         
         bool valid() const {
-            return Secret.valid() && (Prefix == MainNet || Prefix == TestNet);
+            return Secret.valid() && (Prefix == main || Prefix == test);
         }
         
         // why is wif compressed bigger than wif uncompressed? 
@@ -36,26 +38,30 @@ namespace Gigamonkey::Bitcoin {
         constexpr static size_t UncompressedSize{33};
         
     private:
-        wif() : Prefix{0}, Secret{}, Compressed{false} {}
+        secret() : Prefix{0}, Secret{}, Compressed{false} {}
+        
+        static Bitcoin::address::type to_address_type(type t) {
+            return t == main ? Bitcoin::address::main : Bitcoin::address::test;
+        }
         
     public:
-        wif(byte p, secret s, bool c = true) : Prefix{p}, Secret{s}, Compressed{c} {}
+        secret(type p, secp256k1::secret s, bool c = true) : Prefix{p}, Secret{s}, Compressed{c} {}
         
-        static wif read(string_view s);
+        static secret read(string_view s);
         
-        wif(string_view s) : wif{read(s)} {}
+        secret(string_view s) : secret{read(s)} {}
         
-        static string write(byte, const secret&, bool compressed = true);
+        static string write(byte, const secp256k1::secret&, bool compressed = true);
         
         string write() const {
             return write(Prefix, Secret, Compressed);
         }
         
-        bool operator==(const wif& w) const {
+        bool operator==(const secret& w) const {
             return Prefix == w.Prefix && Secret == w.Secret && Compressed == w.Compressed;
         }
         
-        bool operator!=(const wif& w) const {
+        bool operator!=(const secret& w) const {
             return !operator==(w);
         }
         
@@ -65,7 +71,7 @@ namespace Gigamonkey::Bitcoin {
         }
         
         Bitcoin::address address() const {
-            return {to_public().address(), Prefix};
+            return {to_address_type(Prefix), to_public()};
         }
         
     };

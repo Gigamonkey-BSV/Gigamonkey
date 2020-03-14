@@ -80,7 +80,6 @@ namespace Gigamonkey::secp256k1 {
         
         secret() : nonzero<coordinate>{} {}
         explicit secret(const coordinate& v) : nonzero<coordinate>{v} {}
-        explicit secret(string_view s); // hexidecimal and wif accepted. 
         
         bool valid() const;
         
@@ -159,7 +158,7 @@ namespace Gigamonkey::secp256k1 {
         
         string write_string() const;
         
-        digest160 address() const;
+        digest160 hash() const;
     };
     
     inline bool valid(const secret& s) {
@@ -213,7 +212,6 @@ namespace Gigamonkey::secp256k1 {
 }
 
 namespace Gigamonkey::Bitcoin {
-    using secret = secp256k1::secret;
     using pubkey = secp256k1::pubkey;
 }
 
@@ -364,7 +362,7 @@ namespace Gigamonkey::secp256k1 {
         return encoding::hex::write(Value);
     }
     
-    inline digest160 pubkey::address() const {
+    inline digest160 pubkey::hash() const {
         return Bitcoin::hash160(*this);
     }
 }

@@ -40,7 +40,7 @@ namespace Gigamonkey::Bitcoin {
         bytes Data;
         
         signature() : Data{} {}
-        signature(const bytes& data) : Data{data} {}
+        explicit signature(const bytes& data) : Data{data} {}
         signature(const secp256k1::signature raw, sighash::directive d) : Data{65} {
             bytes_writer(Data.begin(), Data.end()) << raw << d;
         } 
