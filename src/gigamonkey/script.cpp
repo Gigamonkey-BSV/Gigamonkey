@@ -80,7 +80,7 @@ namespace Gigamonkey::Bitcoin {
         // some old types. 
         rest.Data = bytes(size);
         data::bytes bx(size);
-        r >> bx;
+        r = r >> bx;
         std::copy(bx.begin(), bx.end(), rest.Data.begin());
         return r;
     }
@@ -173,6 +173,7 @@ namespace Gigamonkey::Bitcoin {
     
     bytes_view push::scan(bytes_view p) const {
         uint32 size = next_instruction_size(p);
+        if (size == 0) throw fail{};
         if (!match(instruction::read(p.substr(0, size)))) throw fail{};
         return p.substr(size);
     }

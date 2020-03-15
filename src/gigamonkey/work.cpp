@@ -39,5 +39,13 @@ namespace Gigamonkey::work {
         return x;
     }
     
+    difficulty::operator double() const {
+        throw method::unimplemented{"difficulty::operator double"};
+    }
+    
+    target::target(work::difficulty) {
+        throw method::unimplemented{"target{difficulty}"};
+    }
+    
 }
 

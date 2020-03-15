@@ -32,30 +32,28 @@ namespace Gigamonkey::work {
     };
     
     struct puzzle {
-        int32_little Version;
+        int32_little Category;
         uint256 Digest;
         target Target;
         Merkle::path MerklePath;
         bytes Header;
         bytes Body;
         
-        puzzle() : Version{}, Digest{}, Target{}, MerklePath{}, Header{}, Body{} {}
+        puzzle() : Category{}, Digest{}, Target{}, MerklePath{}, Header{}, Body{} {}
         puzzle(int32_little v, uint256 d, target g, Merkle::path mp, bytes h, bytes b) : 
-            Version{v}, Digest{d}, Target{g}, MerklePath{mp}, Header{h}, Body{b} {}
+            Category{v}, Digest{d}, Target{g}, MerklePath{mp}, Header{h}, Body{b} {}
         
         bool valid() const {
             return Target.valid();
         }
         
-        bytes cover_page(solution x) const {
-            return write(Header.size() + x.ExtraNonce.size() + Body.size(), Header, x.ExtraNonce, Body);
-        }
+        bytes meta(solution x) const;
             
         work::string string(solution x) const {
             return work::string{
-                Version, 
+                Category, 
                 Digest, 
-                MerklePath.derive_root(Bitcoin::hash256(cover_page(x))), 
+                MerklePath.derive_root(Bitcoin::hash256(meta(x))), 
                 x.Timestamp, 
                 Target, 
                 x.Nonce
@@ -67,7 +65,7 @@ namespace Gigamonkey::work {
         }
         
         bool operator==(const puzzle& p) const {
-            return Version == p.Version && 
+            return Category == p.Category && 
                 Digest == p.Digest && 
                 Target == p.Target && 
                 MerklePath == p.MerklePath && 
@@ -84,15 +82,13 @@ namespace Gigamonkey::work {
         puzzle Puzzle;
         solution Solution;
         
-        bool valid() const {
-            return string().valid();
-        }
+        bool valid() const;
         
         proof() : Puzzle{}, Solution{} {}
         proof(puzzle p, solution x) : Puzzle{p}, Solution{x} {}
         
-        bytes cover_page() const {
-            return Puzzle.cover_page(Solution);
+        bytes meta() const {
+            return Puzzle.meta(Solution);
         }
         
         work::string string() const {
@@ -125,12 +121,23 @@ inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::solutio
 }
 
 inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::puzzle& p) {
-    return o << "puzzle{Version: " << p.Version << ", Digest: " << p.Digest << ", Target: " << 
+    return o << "puzzle{Category: " << p.Category << ", Digest: " << p.Digest << ", Target: " << 
         p.Target << ", MerklePath" << p.MerklePath << ", Header: " << p.Header << ", Body: " << p.Body << "}";
 }
 
 inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::proof& p) {
     return o << "proof{Puzzle: " << p.Puzzle << ", Solution: " << p.Solution << "}";
+}
+
+namespace Gigamonkey::work {
+    
+    inline bool proof::valid() const {
+        return string().valid();
+    }
+        
+    inline bytes puzzle::meta(solution x) const {
+        return write(Header.size() + x.ExtraNonce.size() + Body.size(), Header, x.ExtraNonce, Body);
+    }
 }
 
 #endif

@@ -16,8 +16,9 @@ namespace Gigamonkey::work {
     struct difficulty : Q {
         explicit difficulty(const Q& q) : Q(q) {}
         explicit difficulty(const Z& z) : Q(z) {}
-        explicit operator double() const;
         explicit difficulty(target t);
+        //explicit difficulty(double);
+        explicit operator double() const;
         
         static difficulty minimum() {
             return difficulty(1);
@@ -61,6 +62,7 @@ namespace Gigamonkey::work {
         target() : uint32_little{0} {}
         explicit target(uint32_little i) : uint32_little{i} {}
         target(byte e, uint24_little v) : target{encode(e, v)} {}
+        explicit target(work::difficulty);
         
         byte exponent() const {
             return static_cast<byte>(static_cast<uint32_little>(*this) >> 24);
@@ -81,6 +83,10 @@ namespace Gigamonkey::work {
         work::difficulty difficulty() const {
             return work::difficulty(*this);
         };
+        
+        explicit operator work::difficulty() const {
+            return difficulty();
+        }
         
         operator bytes_view() const {
             return bytes_view{uint32_little::data(), 4};

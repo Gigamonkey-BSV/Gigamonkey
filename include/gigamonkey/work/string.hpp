@@ -42,9 +42,7 @@ namespace Gigamonkey::work {
             return Bitcoin::hash256(x).Value < header::target(x).expand();
         }
         
-        bool valid() {
-            return hash() < Target.expand();
-        }
+        bool valid() const;
         
         explicit string(const Bitcoin::header& h) : 
             Version(h.Version), Digest(h.Previous), MerkleRoot(h.MerkleRoot), Timestamp(h.Timestamp), Target(h.Target), Nonce(h.Nonce) {}
@@ -73,6 +71,12 @@ namespace Gigamonkey::work {
 
 inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::string& work_string) {
     return o << "work_string{" << data::encoding::hex::write(work_string.write()) << "}";
+}
+
+namespace Gigamonkey::work {
+    inline bool string::valid() const {
+        return hash() < Target.expand();
+    }
 }
 
 #endif

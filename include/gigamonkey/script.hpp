@@ -221,6 +221,10 @@ namespace Gigamonkey::Bitcoin {
         return instruction{bytes_view{x.data(), 4}};
     }
     
+    inline instruction push_data(uint32_little x) {
+        return instruction{bytes_view{x.data(), 4}};
+    }
+    
     inline instruction push_data(uint64_little x) {
         return instruction{bytes_view{x.data(), 8}};
     }
@@ -281,8 +285,8 @@ namespace Gigamonkey::Bitcoin {
         pattern() : Pattern{nullptr} {}
         
         // A pattern denoted as a sequence of other patterns. 
-        template <typename X, typename Y, typename... P>
-        pattern(X, Y, P...);
+        template <typename X, typename... P>
+        pattern(X, P...);
         
         struct fail {}; // Used to end out of a scan operation immediately. 
         
@@ -298,7 +302,7 @@ namespace Gigamonkey::Bitcoin {
         struct atom;
         struct string;
         ptr<pattern> Pattern;
-        pattern(ptr<pattern> p) : Pattern{p} {};
+        explicit pattern(ptr<pattern> p) : Pattern{p} {};
     };
     
     // A pattern that matches anything. 
@@ -424,43 +428,20 @@ namespace Gigamonkey::Bitcoin {
         
     private:
         
-        static ptr<pattern> construct(op p) {
-            return std::make_shared<atom>(p);
-        }
-        
-        static ptr<pattern> construct(instruction p) {
-            return std::make_shared<atom>(p);
-        }
-        
-        static ptr<pattern> construct(program p) {
-            return std::make_shared<string>(p);
-        }
-        
-        static ptr<pattern> construct(push p) {
-            return std::make_shared<push>(p);
-        }
-        
-        static ptr<pattern> construct(push_size p) {
-            return std::make_shared<push_size>(p);
-        }
-        
-        static ptr<pattern> construct(optional p) {
-            return std::make_shared<optional>(p);
-        }
-        
-        static ptr<pattern> construct(pattern p) {
-            return std::make_shared<pattern>(p);
-        }
+        static ptr<pattern> construct(op p);
+        static ptr<pattern> construct(instruction p);
+        static ptr<pattern> construct(program p);
+        static ptr<pattern> construct(push p);
+        static ptr<pattern> construct(push_size p);
+        static ptr<pattern> construct(alternatives p);
+        static ptr<pattern> construct(optional p);
+        static ptr<pattern> construct(pattern p);
         
         template <typename X> 
-        static list<ptr<pattern>> make(X x) {
-            return list<ptr<pattern>>{}.prepend(construct(x));
-        }
+        static list<ptr<pattern>> make(X x);
         
         template <typename X, typename... P>
-        static list<ptr<pattern>> make(X x, P... p) {
-            return make(p...).prepend(construct(x));
-        }
+        static list<ptr<pattern>> make(X x, P... p);
     };
     
     struct alternatives final : pattern::sequence {
@@ -473,7 +454,7 @@ namespace Gigamonkey::Bitcoin {
     
     // A pattern that matches a pubkey and grabs the value of that pubkey.
     inline pattern pubkey_pattern(bytes& pubkey) {
-        return alternatives{push_size{33, pubkey}, push_size{65, pubkey}};
+        return pattern{alternatives{push_size{33, pubkey}, push_size{65, pubkey}}};
     }
     
     struct op_return_data {
@@ -555,8 +536,19 @@ namespace Gigamonkey::Bitcoin {
             return compile(program{} << push_data(s) << push_data(p));
         }
     };
-    template <typename X, typename Y, typename... P>
-    pattern::pattern(X x, Y y, P... p) : Pattern(std::make_shared<sequence>(x, y, p...)) {}
+    
+}
+
+std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::instruction i);
+
+inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::Bitcoin::instruction i) {
+    return i.write(w);
+}
+
+namespace Gigamonkey::Bitcoin { 
+    
+    template <typename X, typename... P>
+    pattern::pattern(X x, P... p) : Pattern(std::make_shared<sequence>(x, p...)) {}
     
     inline repeated::repeated(op x, uint32 first, repeated_directive d) 
         : pattern{x}, First{first}, Second{-1}, Directive{d} {}
@@ -572,7 +564,7 @@ namespace Gigamonkey::Bitcoin {
         : pattern{x}, First{first}, Second{-1}, Directive{d} {}
     inline repeated::repeated(alternatives x, uint32 first, repeated_directive d) 
         : pattern{x}, First{first}, Second{-1}, Directive{d} {}
-        
+    
     inline repeated::repeated(op x, uint32 first, uint32 second) 
         : pattern{x}, First{first}, Second{static_cast<int>(second)}, Directive{exactly} {}
     inline repeated::repeated(instruction x, uint32 first, uint32 second)
@@ -588,12 +580,48 @@ namespace Gigamonkey::Bitcoin {
     inline repeated::repeated(alternatives x, uint32 first, uint32 second)
         : pattern{x}, First{first}, Second{static_cast<int>(second)}, Directive{exactly} {}
     
-}
-
-std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::instruction i);
-
-inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::Bitcoin::instruction i) {
-    return i.write(w);
+    inline ptr<pattern> pattern::sequence::construct(op p) {
+        return std::make_shared<atom>(p);
+    }
+    
+    inline ptr<pattern> pattern::sequence::construct(instruction p) {
+        return std::make_shared<atom>(p);
+    }
+    
+    inline ptr<pattern> pattern::sequence::construct(program p) {
+        return std::make_shared<string>(p);
+    }
+    
+    inline ptr<pattern> pattern::sequence::construct(push p) {
+        return std::make_shared<push>(p);
+    }
+    
+    inline ptr<pattern> pattern::sequence::construct(push_size p) {
+        return std::make_shared<push_size>(p);
+    }
+    
+    inline ptr<pattern> pattern::sequence::construct(alternatives p) {
+        return std::make_shared<alternatives>(p);
+    }
+    
+    inline ptr<pattern> pattern::sequence::construct(optional p) {
+        return std::make_shared<optional>(p);
+    }
+    
+    inline ptr<pattern> pattern::sequence::construct(pattern p) {
+        return std::make_shared<pattern>(p);
+    }
+    
+    template <typename X> 
+    inline list<ptr<pattern>> pattern::sequence::make(X x) {
+        return list<ptr<pattern>>{}.prepend(construct(x));
+    }
+    
+    template <typename X, typename... P>
+    inline list<ptr<pattern>> pattern::sequence::make(X x, P... p) {
+        return make(p...).prepend(construct(x));
+    }
+    
 }
 
 #endif 
