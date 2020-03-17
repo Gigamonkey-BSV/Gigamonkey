@@ -3,37 +3,55 @@
 
 #include <gigamonkey/script.hpp>
 #include "script/interpreter.h"
-#include "script_config.h"
+#include "taskcancellation.h"
+#include "streams.h"
+#include "config.h"
 #include "policy/policy.h"
 
+// not in use but required by config.h dependency
+bool fRequireStandard = true;
+
 namespace Gigamonkey::Bitcoin {
-    /*
+    
     evaluated evaluate_script(script in, script out, const BaseSignatureChecker& checker) {
         evaluated Response;
         std::optional<bool> response = VerifyScript(
-            {}, // Config. I don't know what this is. 
-            true, // Specifices that we use consensus rules rather than our policy rules. 
-            {}, // CCancellationToken. I don't know what this is. 
+            GlobalConfig::GetConfig(), // Config. 
+            false, // true for consensus rules, false for policy rules.  
+            task::CCancellationSource::Make()->GetToken(), 
             CScript(out.begin(), out.end()), 
             CScript(in.begin(), in.end()), 
             StandardScriptVerifyFlags(true, true), // Flags. I don't know what these should be. 
             checker, 
-            Response.Error);
+            &Response.Error);
         if (response.has_value()) {
             Response.Return = *response;
         } 
         return Response;
-    }*/
-    
-    evaluated evaluate_script(script in, script out) {
-        throw data::method::unimplemented{"evaluate_script"};
-        //return evaluate_script(in, out, /* Need test signature checker. */);
     }
     
-    evaluated evaluate_script(script in, script out, bytes_view transaction, uint32 index, satoshi amount) {
-        throw data::method::unimplemented{"evaluate_script"};
-        //CTransaction tx(transaction);
-        //return evaluate_script(in, out, TransactionSignatureChecker(tx), index, amount);
+    class DummySignatureChecker : public BaseSignatureChecker {
+    public:
+        DummySignatureChecker() {}
+
+        bool CheckSig(const std::vector<uint8_t> &scriptSig,
+                    const std::vector<uint8_t> &vchPubKey,
+                    const CScript &scriptCode, bool enabledSighashForkid) const override {
+            return true;
+        }
+    };
+    
+    evaluated evaluate_script(script in, script out) {
+        return evaluate_script(in, out, DummySignatureChecker{});
+    }
+    
+    evaluated evaluate_script(script in, script out, const bytes& transaction, uint32 index, satoshi amount) {
+        // transaction needs to be made into some stream but I don't know what that is. It's a
+        // template parameter in this constructor. 
+        CDataStream stream{static_cast<const std::vector<uint8_t>&>(transaction), SER_NETWORK, PROTOCOL_VERSION};
+        CTransaction tx{deserialize, stream}; 
+        int64_t am = amount;
+        return evaluate_script(in, out, TransactionSignatureChecker(&tx, index, Amount(am)));
     }
 
 }

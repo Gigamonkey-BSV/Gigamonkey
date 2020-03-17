@@ -55,21 +55,21 @@ namespace Gigamonkey::Bitcoin {
         
         bytes redeem_p2pkh_uncompressed = pay_to_address::redeem(arbitrary, pubkey_uncompressed);
         
-        EXPECT_TRUE(evaluate_script(script_p2pk_compressed, redeem_p2pk).Valid);
-        EXPECT_TRUE(evaluate_script(script_p2pkh_compressed, redeem_p2pkh_compressed).Valid);
+        EXPECT_TRUE(evaluate_script(script_p2pk_compressed, redeem_p2pk).valid());
+        EXPECT_TRUE(evaluate_script(script_p2pkh_compressed, redeem_p2pkh_compressed).valid());
         
-        EXPECT_TRUE(evaluate_script(script_p2pk_uncompressed, redeem_p2pk).Valid);
-        EXPECT_TRUE(evaluate_script(script_p2pkh_uncompressed, redeem_p2pkh_uncompressed).Valid);
+        EXPECT_TRUE(evaluate_script(script_p2pk_uncompressed, redeem_p2pk).valid());
+        EXPECT_TRUE(evaluate_script(script_p2pkh_uncompressed, redeem_p2pkh_uncompressed).valid());
         
-        EXPECT_FALSE(evaluate_script(script_p2pk_compressed, redeem_p2pkh_compressed).Valid);
-        EXPECT_FALSE(evaluate_script(script_p2pkh_compressed, redeem_p2pk).Valid);
+        EXPECT_FALSE(evaluate_script(script_p2pk_compressed, redeem_p2pkh_compressed).valid());
+        EXPECT_FALSE(evaluate_script(script_p2pkh_compressed, redeem_p2pk).valid());
         
-        EXPECT_FALSE(evaluate_script(script_p2pk_uncompressed, redeem_p2pkh_uncompressed).Valid);
-        EXPECT_FALSE(evaluate_script(script_p2pkh_uncompressed, redeem_p2pk).Valid);
+        EXPECT_FALSE(evaluate_script(script_p2pk_uncompressed, redeem_p2pkh_uncompressed).valid());
+        EXPECT_FALSE(evaluate_script(script_p2pkh_uncompressed, redeem_p2pk).valid());
         
-        EXPECT_FALSE(evaluate_script(script_p2pkh_compressed, redeem_p2pkh_uncompressed).Valid);
+        EXPECT_FALSE(evaluate_script(script_p2pkh_compressed, redeem_p2pkh_uncompressed).valid());
         
-        EXPECT_FALSE(evaluate_script(script_p2pkh_uncompressed, redeem_p2pkh_compressed).Valid);
+        EXPECT_FALSE(evaluate_script(script_p2pkh_uncompressed, redeem_p2pkh_compressed).valid());
     }
 
 }
