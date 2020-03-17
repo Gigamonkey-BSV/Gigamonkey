@@ -22,26 +22,16 @@ namespace Gigamonkey::Merkle {
         list<digest256> Hashes;
         uint32 Index;
         
-        path() : Hashes{}, Index{} {}
-        path(list<digest256> p, uint32 i) : Hashes{p}, Index{i} {};
+        path();
+        path(list<digest256> p, uint32 i);
         
-        digest256 derive_root(digest256 leaf) const {
-            return Hashes.size() == 0 ? leaf : 
-               path{Hashes.rest(),  Index / 2}.derive_root(
-                   Index & 1 ? hash_concatinated(Hashes.first(), leaf) : hash_concatinated(leaf, Hashes.first()));
-        }
+        digest256 derive_root(digest256 leaf) const;
     
-        bool check(digest256 merkle_root, digest256 leaf) const {
-            return merkle_root == derive_root(leaf);
-        }
+        bool check(digest256 merkle_root, digest256 leaf) const;
         
-        bool operator==(const path& p) const {
-            return Hashes == p.Hashes && Index == p.Index;
-        }
+        bool operator==(const path& p) const;
         
-        bool operator!=(const path& p) const {
-            return !operator==(p);
-        }
+        bool operator!=(const path& p) const;
         
         // serialize and deserialize. 
         explicit operator bytes();
@@ -96,6 +86,30 @@ namespace Gigamonkey::Merkle {
 
 inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Merkle::path& p) {
     return o << "path{Index: " << p.Index << ", Hashes: " << p.Hashes << "}";
+}
+
+namespace Gigamonkey::Merkle {
+    
+    inline path::path() : Hashes{}, Index{} {}
+    inline path::path(list<digest256> p, uint32 i) : Hashes{p}, Index{i} {};
+    
+    inline digest256 path::derive_root(digest256 leaf) const {
+        return Hashes.size() == 0 ? leaf : 
+            path{Hashes.rest(),  Index / 2}.derive_root(
+                Index & 1 ? hash_concatinated(Hashes.first(), leaf) : hash_concatinated(leaf, Hashes.first()));
+    }
+    
+    inline bool path::check(digest256 merkle_root, digest256 leaf) const {
+        return merkle_root == derive_root(leaf);
+    }
+    
+    inline bool path::operator==(const path& p) const {
+        return Hashes == p.Hashes && Index == p.Index;
+    }
+    
+    inline bool path::operator!=(const path& p) const {
+        return !operator==(p);
+    }
 }
 
 #endif

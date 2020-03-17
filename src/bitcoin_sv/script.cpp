@@ -13,14 +13,14 @@ bool fRequireStandard = true;
 
 namespace Gigamonkey::Bitcoin {
     
-    evaluated evaluate_script(script in, script out, const BaseSignatureChecker& checker) {
+    evaluated evaluate_script(const script& unlock, const script& lock, const BaseSignatureChecker& checker) {
         evaluated Response;
         std::optional<bool> response = VerifyScript(
             GlobalConfig::GetConfig(), // Config. 
             false, // true for consensus rules, false for policy rules.  
             task::CCancellationSource::Make()->GetToken(), 
-            CScript(out.begin(), out.end()), 
-            CScript(in.begin(), in.end()), 
+            CScript(lock.begin(), lock.end()), 
+            CScript(unlock.begin(), unlock.end()), 
             StandardScriptVerifyFlags(true, true), // Flags. I don't know what these should be. 
             checker, 
             &Response.Error);
@@ -41,17 +41,16 @@ namespace Gigamonkey::Bitcoin {
         }
     };
     
-    evaluated evaluate_script(script in, script out) {
-        return evaluate_script(in, out, DummySignatureChecker{});
+    evaluated evaluate_script(const script& unlock, const script& lock) {
+        return evaluate_script(unlock, lock, DummySignatureChecker{});
     }
     
-    evaluated evaluate_script(script in, script out, const bytes& transaction, uint32 index, satoshi amount) {
+    evaluated evaluate_script(const script& unlock, const script& lock, const input_index& transaction) {
         // transaction needs to be made into some stream but I don't know what that is. It's a
         // template parameter in this constructor. 
-        CDataStream stream{static_cast<const std::vector<uint8_t>&>(transaction), SER_NETWORK, PROTOCOL_VERSION};
+        CDataStream stream{static_cast<const std::vector<uint8_t>&>(transaction.Transaction), SER_NETWORK, PROTOCOL_VERSION};
         CTransaction tx{deserialize, stream}; 
-        int64_t am = amount;
-        return evaluate_script(in, out, TransactionSignatureChecker(&tx, index, Amount(am)));
+        return evaluate_script(lock, unlock, TransactionSignatureChecker(&tx, transaction.Index, Amount(int64(transaction.Amount))));
     }
 
 }

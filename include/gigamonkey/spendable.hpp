@@ -4,47 +4,29 @@
 #ifndef GIGAMONKEY_SPENDABLE
 #define GIGAMONKEY_SPENDABLE
 
-#include "signature.hpp"
-#include "wif.hpp"
+#include "redeem.hpp"
 #include "timechain.hpp"
 #include <gigamonkey/script.hpp>
 
 namespace Gigamonkey::Bitcoin {
     
-    struct redeemer {
-        virtual bytes redeem(const vertex& v, index i, sighash::directive d) const = 0;
-    };
-    
     struct redeem_pay_to_pubkey final : redeemer {
         secret Secret;
-        virtual bytes redeem(const vertex& v, index i, sighash::directive d) const override {
-            return pay_to_pubkey::redeem(sign(v, i, d, Secret.Secret));
+        virtual bytes redeem(const input_index& tx, sighash::directive d) const override {
+            return pay_to_pubkey::redeem(Secret.sign(tx, d));
         }
     };
     
     struct redeem_pay_to_address final : redeemer {
         secret Secret;
         pubkey Pubkey;
-        virtual bytes redeem(const vertex& v, index i, sighash::directive d) const override {
-            return pay_to_address::redeem(sign(v, i, d, Secret.Secret), Pubkey);
+        virtual bytes redeem(const input_index& tx, sighash::directive d) const override {
+            return pay_to_address::redeem(Secret.sign(tx, d), Pubkey);
         }
     };
     
     struct change {
         virtual ptr<redeemer> operator++(int) const = 0;
-    };
-    
-    struct spendable {
-        prevout Prevout;
-        ptr<redeemer> Redeemer;
-        
-        satoshi value() const {
-            return Gigamonkey::output::value(Prevout.Output);
-        }
-        
-        bool valid() const {
-            return Prevout.valid() && Redeemer != nullptr;
-        } 
     };
     
 }

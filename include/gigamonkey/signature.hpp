@@ -68,26 +68,17 @@ namespace Gigamonkey::Bitcoin {
         }
     };
     
-    struct prevout {
-        bytes Output;
-        uint<36> Outpoint;
-        
-        bool valid() const {
-            return Gigamonkey::output::valid(Output) && Gigamonkey::outpoint::valid(slice<36>(Outpoint));
-        }
+    struct input_index {
+        bytes Transaction;
+        index Index;
+        satoshi Amount;
     };
     
-    struct vertex {
-        list<prevout> Prevout;
-        int32_little Version;
-        list<output> Outputs;
-        uint32_little Locktime;
-        
-        vertex(list<prevout> p, int32_little v, list<output> o, uint32_little l) : Prevout{p}, Version{v}, Outputs{o}, Locktime{l} {}
-    private:
-        // Put cached data here.
-    };
+    signature sign(const input_index&, sighash::directive, const secp256k1::secret&);
     
+    bool verify(signature, const input_index&, sighash::directive, const pubkey&);
+    
+    /*
     bytes btc_spend_order(const vertex& v, index i, sighash::directive d);
     
     bytes bch_spend_order(const vertex& v, index i, sighash::directive d);
@@ -104,7 +95,7 @@ namespace Gigamonkey::Bitcoin {
         return signature{secp256k1::sign(s, signature_hash(v, i, x)), x};
     }
     
-    bool verify(cross<prevout> p, bytes_view tx, satoshi a, sighash::directive x, const secp256k1::secret& s);
+    bool verify(cross<prevout> p, bytes_view tx, satoshi a, sighash::directive x, const secp256k1::secret& s);*/
 }
 
 inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::signature& x) {

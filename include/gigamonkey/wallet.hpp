@@ -35,7 +35,7 @@ namespace Gigamonkey::Bitcoin {
         wallet(spend_policy policy, funds f, change* c) : Policy{policy}, Funds{f}, Change{c} {}
         
         bool valid() const {
-            return Funds.valid() && Change != nullptr && Policy != unset;
+            return data::valid(Funds) && Change != nullptr && Policy != unset;
         }
         
         bool value() const {

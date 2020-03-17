@@ -60,7 +60,7 @@ namespace Gigamonkey::secp256k1 {
     bytes pubkey::compress(bytes_view pk) {
         if (pk.size() == CompressedPubkeySize) return bytes{pk};
         secp256k1_pubkey pubkey;
-        bytes p;
+        bytes p(CompressedPubkeySize);
         const auto context = Verification();
         return parse(context, pubkey, pk) && serialize(context, p, pubkey) ? p : 0;
     }
@@ -68,7 +68,7 @@ namespace Gigamonkey::secp256k1 {
     bytes pubkey::decompress(bytes_view pk) {
         if (pk.size() == UncompressedPubkeySize) return bytes{pk};
         secp256k1_pubkey pubkey;
-        bytes p;
+        bytes p(UncompressedPubkeySize);
         const auto context = Verification();
         return parse(context, pubkey, pk) && serialize(context, p, pubkey) ? p : 0;
     }

@@ -37,10 +37,10 @@ namespace Gigamonkey::Bitcoin {
     };
     
     // Test validity of a script. All signature operations succeed. 
-    evaluated evaluate_script(script in, script out);
+    evaluated evaluate_script(const script& unlock, const script& lock);
     
     // Evaluate script with real signature operations. 
-    evaluated evaluate_script(script in, script out, bytes transaction, uint32 index, satoshi amount);
+    evaluated evaluate_script(const script& unlock, const script& lock, const input_index& tx);
     
     using op = opcodetype;
     

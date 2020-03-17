@@ -161,6 +161,34 @@ namespace Gigamonkey::secp256k1 {
         digest160 hash() const;
     };
     
+}
+
+namespace Gigamonkey::Bitcoin {
+    using pubkey = secp256k1::pubkey;
+}
+
+inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::secp256k1::secret& s) {
+    return o << "secret{" << s.Value << "}";
+}
+
+inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::secp256k1::pubkey& p) {
+    return o << "pubkey{" << data::encoding::hexidecimal::write(p.Value, data::endian::little) << "}";
+}
+
+inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::secp256k1::signature& p) {
+    return o << "pubkey{" << data::encoding::hexidecimal::write(data::bytes_view(p), data::endian::little) << "}";
+}
+
+inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::secp256k1::secret& x) {
+    return w << x.Value;
+}
+
+inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::secp256k1::secret& x) {
+    return r >> x.Value;
+}
+
+namespace Gigamonkey::secp256k1 {
+    
     inline bool valid(const secret& s) {
         return s.valid();
     }
@@ -208,34 +236,6 @@ namespace Gigamonkey::secp256k1 {
     inline pubkey times(const pubkey& a, const secret& b) {
         return a * b;
     }
-    
-}
-
-namespace Gigamonkey::Bitcoin {
-    using pubkey = secp256k1::pubkey;
-}
-
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::secp256k1::secret& s) {
-    return o << "secret{" << s.Value << "}";
-}
-
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::secp256k1::pubkey& p) {
-    return o << "pubkey{" << data::encoding::hexidecimal::write(p.Value, data::endian::little) << "}";
-}
-
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::secp256k1::signature& p) {
-    return o << "pubkey{" << data::encoding::hexidecimal::write(data::bytes_view(p), data::endian::little) << "}";
-}
-
-inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::secp256k1::secret& x) {
-    return w << x.Value;
-}
-
-inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::secp256k1::secret& x) {
-    return r >> x.Value;
-}
-
-namespace Gigamonkey::secp256k1 {
     
     inline bool signature::operator==(const signature& s) const {
         for (int i = 0; i < Size; i ++) if (Data.data[i] != s.Data.data[i]) return false;
