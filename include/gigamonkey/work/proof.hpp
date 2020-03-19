@@ -80,7 +80,7 @@ inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::solutio
 
 inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::puzzle& p) {
     return o << "puzzle{Category: " << p.Category << ", Digest: " << p.Digest << ", Target: " << 
-        p.Target << ", MerklePath" << p.MerklePath << ", Header: " << p.Header << ", Body: " << p.Body << "}";
+        p.Target << ", MerklePath: " << p.MerklePath << ", Header: " << p.Header << ", Body: " << p.Body << "}";
 }
 
 inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::proof& p) {
@@ -160,7 +160,7 @@ namespace Gigamonkey::work {
     inline string proof::string() const {
         return Puzzle.string(Solution);
     }
-    
+     
     inline bool proof::operator==(const proof& p) const {
         return Puzzle == p.Puzzle && Solution == p.Solution;
     }

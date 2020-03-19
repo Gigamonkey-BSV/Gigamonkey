@@ -27,9 +27,13 @@ namespace Gigamonkey::Bitcoin {
     
     // Inefficient: extra copying. 
     instruction push_value(int z) {
-        data::math::number::Z_bytes<data::endian::little> zz{z};
-        bytes b(zz.size());
-        std::copy(zz.begin(), zz.end(), b.begin());
+        if (z == 0) return OP_FALSE;
+        if (z == -1) return OP_1NEGATE;
+        if (z > 0 && z <= 16) return opcodetype(0x50 + z);
+        if (z < 0 || z > 127) throw method::unimplemented{"push_value"};
+        data::math::number::N_bytes<data::endian::little> zz{static_cast<uint64>(z)};
+        bytes b(1);
+        std::copy(zz.begin(), zz.begin() + 1, b.begin());
         return instruction{b};
     }
     
@@ -247,6 +251,24 @@ std::ostream& write_op_code(std::ostream& o, Gigamonkey::Bitcoin::op x) {
             case OP_PUSHDATA1 : return o << "push_data_1";
             case OP_PUSHDATA2 : return o << "push_data_2";
             case OP_PUSHDATA4 : return o << "push_data_4";
+            case OP_FALSE : return o << "(0)";
+            case OP_1NEGATE: return o << "(-1)";
+            case OP_1: return o << "(1)";
+            case OP_2: return o << "(2)";
+            case OP_3: return o << "(3)";
+            case OP_4: return o << "(4)";
+            case OP_5: return o << "(5)";
+            case OP_6: return o << "(6)";
+            case OP_7: return o << "(7)";
+            case OP_8: return o << "(8)";
+            case OP_9: return o << "(9)";
+            case OP_10: return o << "(10)";
+            case OP_11: return o << "(11)";
+            case OP_12: return o << "(12)";
+            case OP_13: return o << "(13)";
+            case OP_14: return o << "(14)";
+            case OP_15: return o << "(15)";
+            case OP_16: return o << "(16)";
             default : return o << "push_size_" << int{x};
         }
     }
@@ -259,26 +281,7 @@ std::ostream& write_op_code(std::ostream& o, Gigamonkey::Bitcoin::op x) {
         
         case OP_HASH256: return o << "hash256";
         
-        case OP_1NEGATE: return o << "push_-1";
-        
         case OP_RESERVED: return o << "reserved";
-        
-        case OP_1: return o << "push_true";
-        case OP_2: return o << "push_2";
-        case OP_3: return o << "push_3";
-        case OP_4: return o << "push_4";
-        case OP_5: return o << "push_5";
-        case OP_6: return o << "push_6";
-        case OP_7: return o << "push_7";
-        case OP_8: return o << "push_8";
-        case OP_9: return o << "push_9";
-        case OP_10: return o << "push_10";
-        case OP_11: return o << "push_11";
-        case OP_12: return o << "push_12";
-        case OP_13: return o << "push_13";
-        case OP_14: return o << "push_14";
-        case OP_15: return o << "push_15";
-        case OP_16: return o << "push_16";
         
         case OP_NOP: return o << "nop";
         case OP_VER: return o << "ver";
@@ -314,7 +317,19 @@ std::ostream& write_op_code(std::ostream& o, Gigamonkey::Bitcoin::op x) {
         case OP_SIZE: return o << "size";
         case OP_CAT: return o << "cat";
         case OP_SPLIT: return o << "split";
+        
         case OP_LESSTHAN : return o << "less";
+        case OP_GREATERTHAN : return o << "greater";
+        case OP_LESSTHANOREQUAL : return o << "less_equal";
+        case OP_GREATERTHANOREQUAL : return o << "greater_equal";
+        case OP_WITHIN : return o << "within";
+        
+        case OP_SUB : return o << "subtract";
+        case OP_ADD : return o << "add";
+        case OP_MUL : return o << "mul";
+        
+        case OP_RSHIFT : return o << "rshift";
+        case OP_LSHIFT : return o << "lshift";
         
     }
 }

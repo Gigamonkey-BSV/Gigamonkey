@@ -19,8 +19,8 @@ namespace Gigamonkey::Bitcoin {
             GlobalConfig::GetConfig(), // Config. 
             false, // true for consensus rules, false for policy rules.  
             task::CCancellationSource::Make()->GetToken(), 
-            CScript(lock.begin(), lock.end()), 
             CScript(unlock.begin(), unlock.end()), 
+            CScript(lock.begin(), lock.end()), 
             StandardScriptVerifyFlags(true, true), // Flags. I don't know what these should be. 
             checker, 
             &Response.Error);
