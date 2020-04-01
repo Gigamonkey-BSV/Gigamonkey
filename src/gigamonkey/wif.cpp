@@ -16,7 +16,7 @@ namespace Gigamonkey::Bitcoin {
         } else if (b58.Data.size() == 34) {
             w.Compressed = true;
         } else return {};
-        bytes_reader r = bytes_reader(b58.Data.data(), b58.Data.data() + b58.Data.size()) >> (byte&)(w.Prefix) >> w.Secret; 
+        bytes_reader r = (bytes_reader(b58.Data.data(), b58.Data.data() + b58.Data.size()) >> (byte&)(w.Prefix) >> w.Secret); 
         
         if (w.Compressed) {
             byte suffix;

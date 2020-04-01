@@ -123,9 +123,9 @@ inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gig
 template <size_t size, unsigned int bits>
 inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::uint<size, bits>& s) {
     data::bytes b(size);
-    r >> b;
+    Gigamonkey::bytes_reader rx = r >> b;
     std::copy(b.begin(), b.end(), s.begin());
-    return r;
+    return rx;
 }
 
 template <size_t size> 

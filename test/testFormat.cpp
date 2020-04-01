@@ -19,7 +19,6 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_TRUE(address{addr}.write() == addr);
     }
     
-    
     struct test_data {
         string SecretWIFCompressed;
         string SecretWIFUncompressed;
@@ -38,39 +37,50 @@ namespace Gigamonkey::Bitcoin {
             PubkeyHexCompressed{pubkey_hex_compressed}, 
             PubkeyHexUncompressed{pubkey_hex_uncompressed}, 
             AddressBase58{address_base_58} {}
+        
+        bool operator==(const test_data& t) const {
+            return SecretWIFCompressed == t.SecretWIFCompressed && 
+                SecretWIFUncompressed == t.SecretWIFUncompressed && 
+                PubkeyHexCompressed == t.PubkeyHexCompressed && 
+                PubkeyHexUncompressed == t.PubkeyHexUncompressed &&
+                AddressBase58 == t.AddressBase58;
+        }
     };
     
     struct test_case {
-        test_data Data;
         secret SecretWIFCompressed;
         secret SecretWIFUncompressed;
         pubkey PubkeyHexCompressed;
         pubkey PubkeyHexUncompressed;
         address AddressBase58;
         
-        test_case(test_data data) : Data{data}, 
+        test_case(test_data data) : 
                 SecretWIFCompressed{data.SecretWIFCompressed}, 
                 SecretWIFUncompressed{data.SecretWIFUncompressed},
                 PubkeyHexCompressed{data.PubkeyHexCompressed}, 
                 PubkeyHexUncompressed{data.PubkeyHexUncompressed},
                 AddressBase58{data.AddressBase58} {}
+                
+        test_data write() const {
+            return test_data{SecretWIFCompressed.write(), 
+                SecretWIFUncompressed.write(), 
+                PubkeyHexCompressed.write_string(),
+                PubkeyHexUncompressed.write_string(), 
+                AddressBase58.write()
+            };
+        }
                                 
         bool valid() const {
             
             return SecretWIFCompressed.valid() && SecretWIFUncompressed.valid() && 
+                SecretWIFCompressed.Secret == SecretWIFUncompressed.Secret &&
                 PubkeyHexCompressed.valid() && PubkeyHexUncompressed.valid() && 
                 AddressBase58.valid() && 
-                SecretWIFCompressed == SecretWIFUncompressed &&
                 PubkeyHexCompressed == PubkeyHexUncompressed.compress() &&
                 PubkeyHexCompressed.decompress() == PubkeyHexUncompressed && 
                 SecretWIFCompressed.to_public() == PubkeyHexCompressed && 
                 SecretWIFUncompressed.to_public() == PubkeyHexUncompressed && 
-                SecretWIFCompressed.address() == AddressBase58 && 
-                SecretWIFUncompressed.write() == Data.SecretWIFUncompressed && 
-                SecretWIFCompressed.write() == Data.SecretWIFCompressed && 
-                PubkeyHexCompressed.write_string() == Data.PubkeyHexCompressed && 
-                PubkeyHexUncompressed.write_string() == Data.PubkeyHexUncompressed && 
-                AddressBase58.write() == Data.AddressBase58;
+                SecretWIFCompressed.address() == AddressBase58;
             
         }
     };
@@ -111,15 +121,17 @@ namespace Gigamonkey::Bitcoin {
                         "043EA79C33BC2100835ACA4C0E06A896014D94AD5216F54C44A3A94E1C8B39B1B1F252B4B35D4CA96B8C6D7601A75D36F06BDB333B0E4F0C13C5E4004E49C5FE2A",
                         "1DKsEVtWQ6QGWBQ32fVDuCYQasxaCApdqm");
         
-        list<bool> success = data::for_each([](test_case t) -> bool {
+        list<bool> success = data::for_each([](test_data t) -> bool {
             bool b;
-            EXPECT_TRUE(b = t.valid());
+            test_case x{t};
+            EXPECT_TRUE(b = x.valid());
+            EXPECT_TRUE(x.write() == t);
             return b;
         }, positive_tests);
         
-        list<bool> failure = data::for_each([](test_case t) -> bool {
+        list<bool> failure = data::for_each([](test_data t) -> bool {
             bool b;
-            EXPECT_FALSE(b = t.valid());
+            EXPECT_FALSE(b = test_case{t}.valid());
             return b;
         }, negative_tests);
         
