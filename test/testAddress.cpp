@@ -34,6 +34,9 @@ namespace Gigamonkey::Bitcoin {
         pubkey pubkey_compressed = key.to_public().compress();
         pubkey pubkey_uncompressed = key.to_public().decompress();
         
+        EXPECT_TRUE(pubkey_compressed.valid());
+        EXPECT_TRUE(pubkey_uncompressed.valid());
+        
         EXPECT_EQ(pubkey_compressed, pubkey_uncompressed.compress());
         EXPECT_EQ(pubkey_uncompressed, pubkey_compressed.decompress());
         

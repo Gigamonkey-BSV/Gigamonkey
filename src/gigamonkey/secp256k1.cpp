@@ -35,7 +35,7 @@ namespace Gigamonkey::secp256k1 {
     bool serialize(const secp256k1_context* context, bytes& p, const secp256k1_pubkey& pubkey) {
         auto size = p.size();
         secp256k1_ec_pubkey_serialize(context, p.data(), &size, &pubkey, 
-            CompressedPubkeySize ? SECP256K1_EC_COMPRESSED : SECP256K1_EC_UNCOMPRESSED);
+            size == CompressedPubkeySize ? SECP256K1_EC_COMPRESSED : SECP256K1_EC_UNCOMPRESSED);
         return size == p.size();
     }
     

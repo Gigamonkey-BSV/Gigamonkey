@@ -109,6 +109,10 @@ namespace Gigamonkey::secp256k1 {
         static bytes plus_secret(const bytes&, bytes_view);
         static bytes times(const bytes&, bytes_view);
         
+        static bool valid_size(size_t size) {
+            return size == CompressedPubkeySize || size == UncompressedPubkeySize;
+        }
+        
     public:
         bytes Value;
         
@@ -267,7 +271,7 @@ namespace Gigamonkey::secp256k1 {
     }
         
     inline bool secret::valid() const {
-        return valid(Value);
+        return Value.size() > 0 && valid(Value);
     }
     
     inline bool secret::operator==(const secret& s) const {
@@ -299,7 +303,7 @@ namespace Gigamonkey::secp256k1 {
     }
         
     inline bool pubkey::valid() const {
-        return valid(Value);
+        return valid_size(Value.size()) && valid(Value);
     }
     
     inline bool pubkey::operator==(const pubkey& p) const {

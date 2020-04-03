@@ -78,8 +78,8 @@ namespace Gigamonkey::Bitcoin {
                 AddressBase58.valid() && 
                 PubkeyHexCompressed == PubkeyHexUncompressed.compress() &&
                 PubkeyHexCompressed.decompress() == PubkeyHexUncompressed && 
-                SecretWIFCompressed.to_public() == PubkeyHexCompressed && 
-                SecretWIFUncompressed.to_public() == PubkeyHexUncompressed && 
+                SecretWIFCompressed.to_public().compress() == PubkeyHexCompressed && 
+                SecretWIFUncompressed.to_public().decompress() == PubkeyHexUncompressed && 
                 SecretWIFCompressed.address() == AddressBase58;
             
         }
