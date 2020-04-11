@@ -2,6 +2,7 @@
 #include <gigamonkey/script.hpp>
 #include <gigamonkey/address.hpp>
 #include <gigamonkey/wif.hpp>
+#include <gigamonkey/stratum/stratum.hpp>
 
 #include "gtest/gtest.h"
 

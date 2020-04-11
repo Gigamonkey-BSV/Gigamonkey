@@ -45,7 +45,7 @@ namespace Gigamonkey::Bitcoin {
         bytes Data;
         
         signature() : Data{} {}
-        explicit signature(const bytes& data) : Data{data} {}
+        explicit signature(const bytes_view data) : Data{data} {}
         signature(const secp256k1::signature raw, sighash::directive d) : Data{65} {
             bytes_writer(Data.begin(), Data.end()) << raw << d;
         } 
@@ -56,9 +56,7 @@ namespace Gigamonkey::Bitcoin {
             return Data[Data.size() - 1];
         }
         
-        secp256k1::signature raw() const {
-            return {bytes_view{Data}.substr(0, Data.size() - 1)};
-        }
+        secp256k1::signature raw() const;
         
         operator bytes_view() const {
             return Data;

@@ -52,17 +52,17 @@ namespace Gigamonkey::Merkle {
             incomplete pairwise_concatinate() const;
         };
         
-        static map<digest256&, path> paths(digest_tree);
+        static data::map<digest256&, path> paths(digest_tree);
         
         static digest_tree build(list<digest256> q, ordered_list<uint32> leaves);
         
-        tree(digest_tree t, map<digest256&, path> p) : Tree{t}, Paths{p} {}
+        tree(digest_tree t, data::map<digest256&, path> p) : Tree{t}, Paths{p} {}
         tree(digest_tree t) : Tree{t}, Paths{paths(t)} {}
         tree() : Tree{}, Paths{} {}
         
     public:
         digest_tree Tree;
-        map<digest256&, path> Paths;
+        data::map<digest256&, path> Paths;
         
         tree(list<digest256> q,              // All txs in a block in order.
              ordered_list<uint32> leaves   // all indicies of txs that we want to remember. 
