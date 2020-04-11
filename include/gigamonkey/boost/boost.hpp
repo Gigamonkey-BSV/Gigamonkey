@@ -4,6 +4,7 @@
 #include <gigamonkey/script.hpp>
 #include <gigamonkey/address.hpp>
 #include <gigamonkey/signature.hpp>
+#include <gigamonkey/work/proof.hpp>
 #include <data/encoding/halves.hpp>
 
 namespace Gigamonkey {
@@ -71,7 +72,7 @@ namespace Gigamonkey {
             
             script write() const; 
             
-            digest256 index() {
+            digest256 hash() const {
                 return valid() ? Bitcoin::hash256(write()) : digest256{};
             }
             
@@ -102,8 +103,8 @@ namespace Gigamonkey {
                 return read(x).valid();
             }
             
-            static uint256 index(script x) {
-                return read(x).index();
+            static uint256 hash(script x) {
+                return read(x).hash();
             }
             
             static int32_little version(script x) {

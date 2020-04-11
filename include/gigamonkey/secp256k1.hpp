@@ -101,7 +101,7 @@ namespace Gigamonkey::secp256k1 {
         
     class pubkey {
         static bool valid(bytes_view);
-        static bool verify(bytes_view pubkey, digest&, const signature&);
+        static bool verify(bytes_view pubkey, const digest&, const signature&);
         static bytes compress(bytes_view);
         static bytes decompress(bytes_view);
         static bytes negate(const bytes&);
@@ -132,7 +132,7 @@ namespace Gigamonkey::secp256k1 {
         
         bool operator!=(const pubkey& p) const;
         
-        bool verify(digest& d, const signature& s) const;
+        bool verify(const digest& d, const signature& s) const;
         
         size_t size() const;
         
@@ -217,7 +217,7 @@ namespace Gigamonkey::secp256k1 {
         return p.valid();
     }
     
-    inline bool verify(const pubkey& p, digest& d, const signature& s) {
+    inline bool verify(const pubkey& p, const digest& d, const signature& s) {
         return p.verify(d, s);
     }
     
@@ -314,7 +314,7 @@ namespace Gigamonkey::secp256k1 {
         return Value != p.Value;
     }
     
-    inline bool pubkey::verify(digest& d, const signature& s) const {
+    inline bool pubkey::verify(const digest& d, const signature& s) const {
         return verify(Value, d, s);
     }
     

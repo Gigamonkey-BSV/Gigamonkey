@@ -34,6 +34,16 @@ namespace Gigamonkey::Bitcoin {
         // Put cached data here.
     };
     
+    digest<32> signature_hash(const vertex& v, index i, sighash::directive d);
+    
+    inline signature sign(const vertex& v, index i, sighash::directive d, const secp256k1::secret& s) {
+        return signature{secp256k1::sign(s, signature_hash(v, i, d)), d};
+    }
+    
+    inline bool verify(const signature& x, const vertex& v, index i, sighash::directive d, const secp256k1::pubkey& p) {
+        return secp256k1::verify(p, signature_hash(v, i, d), x.raw());
+    }
+    
     struct redeemer {
         virtual bytes redeem(const input_index& tx, sighash::directive d) const = 0;
     };

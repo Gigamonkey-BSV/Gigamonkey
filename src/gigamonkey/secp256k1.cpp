@@ -110,7 +110,7 @@ namespace Gigamonkey::secp256k1 {
         return secp256k1_ecdsa_verify(context, &normal, hash.data(), &point) == 1;
     }
     
-    bool pubkey::verify(bytes_view pk, digest& d, const signature& s) {
+    bool pubkey::verify(bytes_view pk, const digest& d, const signature& s) {
         secp256k1_pubkey pubkey;
         const auto context = Verification();
         return parse(context, pubkey, pk) &&

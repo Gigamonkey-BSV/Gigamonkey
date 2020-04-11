@@ -12,28 +12,33 @@ namespace Gigamonkey::Bitcoin {
     
     namespace sighash {
         
-        using directive = uint32_little;
-        using fork_id = byte;
+        using directive = byte;
     
         enum type : byte {
             unsupported = 0,
             all = 1,
             none = 2,
-            single = 3
+            single = 3,
+            fork_id = 0x40,
+            anyone_can_pay = 0x80
         };
         
-        type base(directive);
-        bool anyone_can_pay(directive);
-        fork_id fork(directive);
+        inline type base(directive d) {
+            return type(uint32(d) & 0x1f);
+        }
+        
+        inline bool is_anyone_can_pay(directive d) {
+            return (uint32(d) & anyone_can_pay) != 0;
+        }
         
         inline bool has_fork_id(directive d) {
-            return fork(d) != 0;
+            return (uint32(d) & fork_id) != 0;
         }
         
     };
     
-    inline sighash::directive directive(sighash::type t, sighash::fork_id id, bool anyone_can_pay = false) {
-        throw data::method::unimplemented{"directive"};
+    inline sighash::directive directive(sighash::type t, bool fork_id = true, bool anyone_can_pay = false) {
+        return sighash::directive(t + sighash::fork_id * fork_id + sighash::anyone_can_pay * anyone_can_pay);
     }
     
     struct signature {
@@ -51,8 +56,8 @@ namespace Gigamonkey::Bitcoin {
             return Data[Data.size() - 1];
         }
         
-        bytes_view raw() const {
-            return bytes_view{Data}.substr(0, Data.size() - 1);
+        secp256k1::signature raw() const {
+            return {bytes_view{Data}.substr(0, Data.size() - 1)};
         }
         
         operator bytes_view() const {
@@ -77,25 +82,6 @@ namespace Gigamonkey::Bitcoin {
     signature sign(const input_index&, sighash::directive, const secp256k1::secret&);
     
     bool verify(signature, const input_index&, sighash::directive, const pubkey&);
-    
-    /*
-    bytes btc_spend_order(const vertex& v, index i, sighash::directive d);
-    
-    bytes bch_spend_order(const vertex& v, index i, sighash::directive d);
-    
-    inline bytes spend_order(const vertex& v, index i, sighash::directive d) {
-        return sighash::has_fork_id(d) ? bch_spend_order(v, i, d) : btc_spend_order(v, i, d);
-    }
-    
-    inline digest<32> signature_hash(const vertex& v, index i, sighash::directive d) {
-        return signature_hash(spend_order(v, i, d));
-    } 
-    
-    inline signature sign(const vertex& v, index i, sighash::directive x, const secp256k1::secret& s) {
-        return signature{secp256k1::sign(s, signature_hash(v, i, x)), x};
-    }
-    
-    bool verify(cross<prevout> p, bytes_view tx, satoshi a, sighash::directive x, const secp256k1::secret& s);*/
 }
 
 inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::signature& x) {
