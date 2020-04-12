@@ -60,8 +60,9 @@ namespace Gigamonkey::work {
         }
         
         target() : uint32_little{0} {}
-        explicit target(uint32_little i) : uint32_little{i} {}
         target(byte e, uint24_little v) : target{encode(e, v)} {}
+        explicit target(uint32_little i) : uint32_little{i} {}
+        explicit target(uint32 i) : uint32_little{i} {}
         explicit target(work::difficulty);
         
         byte exponent() const {
