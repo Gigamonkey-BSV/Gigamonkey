@@ -24,43 +24,49 @@ namespace Gigamonkey::Bitcoin {
         pubkey Pubkey;
     };
     
+    struct paymail {
+        string Name;
+        string Host;
+    };
+    
+    struct to_paymail {
+        satoshi Value;
+        paymail Paymail;
+    };
+    
+    struct funds {
+        list<spendable> Entries;
+        satoshi Value;
+        bool Valid;
+        
+        funds() : Entries{}, Value{0}, Valid{true} {}
+        funds(list<spendable> e, satoshi a, bool v) : Entries{e}, Value{a}, Valid{v} {}
+        
+        funds insert(spendable s) const {
+            return {Entries << s, Value + s.Prevout.Output.Value, Valid && s.valid()};
+        }
+    };
+    
+    struct keysource {
+        virtual secret next() = 0;
+    };
+    
     struct wallet {
-        enum spend_policy {unset, all, fifo, random};
+        enum spend_policy {all, fifo, random};
         
         spend_policy Policy;
         funds Funds;
-        change* Change;
+        keysource& Change;
         
-        wallet() : Policy{unset}, Funds{}, Change{nullptr} {}
-        wallet(spend_policy policy, funds f, change* c) : Policy{policy}, Funds{f}, Change{c} {}
-        
-        bool valid() const {
-            return data::valid(Funds) && Change != nullptr && Policy != unset;
-        }
+        wallet(spend_policy policy, funds f, keysource& c) : Policy{policy}, Funds{f}, Change{c} {}
         
         bool value() const {
             return Funds.Value;
         }
         
-        struct spent;
-        
-        // payments can be outputs, to_address, or to_pubkey
+        // payments can be outputs, to_address, to_pubkey, or to_paymail. 
         template <typename ... X> 
-        spent spend(X ... payments) const;
-    };
-    
-    struct wallet::spent {
-        bytes Transaction;
-        wallet Remainder;
-        
-        bool valid() const {
-            return Gigamonkey::transaction::valid(Transaction) && Remainder.valid();
-        }
-        
-        spent(bytes t, wallet w) : Transaction{t}, Remainder{w} {}
-        friend struct wallet;
-    private :
-        spent() : Transaction{}, Remainder{} {}
+        bytes spend(X ... payments);
     };
     
 }

@@ -6,72 +6,52 @@
 
 #include "timechain.hpp"
 #include "wif.hpp"
-#include "spendable.hpp"
 
 namespace Gigamonkey::Bitcoin {
     
+    struct redeemer {
+        // create a redeem script. 
+        virtual bytes redeem(const input_index& tx, sighash::directive d) const = 0;
+    };
+    
     struct prevout {
-        bytes Output;
-        uint<36> Outpoint;
+        output Output;
+        outpoint Outpoint;
         
         bool valid() const {
-            return Gigamonkey::output::valid(Output) && Gigamonkey::outpoint::valid(slice<36>(Outpoint));
+            return Output.valid() && Outpoint.valid();
         }
     };
     
+    struct spendable {
+        prevout Prevout;
+        redeemer& Redeemer;
+        
+        bool valid() const {
+            return Prevout.valid();
+        } 
+    };
+    
+    transaction redeem(list<spendable> prev, list<output> out, uint32_little locktime);
+    
+    inline transaction redeem(list<spendable> prev, list<output> out) {
+        return redeem(prev, out, 0);
+    }
+    
+    // TODO this can go in the cpp file. 
     struct vertex {
-        list<prevout> Prevout;
+        list<spendable> Prevout;
         int32_little Version;
         list<output> Outputs;
         uint32_little Locktime;
         
-        vertex(list<prevout> p, int32_little v, list<output> o, uint32_little l) : 
+        vertex(list<spendable> p, int32_little v, list<output> o, uint32_little l) : 
             Prevout{p}, Version{v}, Outputs{o}, Locktime{l} {}
         
         input_index operator[](index i) const;
         
     private:
         // Put cached data here.
-    };
-    
-    digest<32> signature_hash(const vertex& v, index i, sighash::directive d);
-    
-    inline signature sign(const vertex& v, index i, sighash::directive d, const secp256k1::secret& s) {
-        return signature{secp256k1::sign(s, signature_hash(v, i, d)), d};
-    }
-    
-    inline bool verify(const signature& x, const vertex& v, index i, sighash::directive d, const secp256k1::pubkey& p) {
-        return secp256k1::verify(p, signature_hash(v, i, d), x.raw());
-    }
-    
-    struct redeemer {
-        virtual bytes redeem(const input_index& tx, sighash::directive d) const = 0;
-    };
-    
-    struct spendable {
-        prevout Prevout;
-        ptr<redeemer> Redeemer;
-        
-        satoshi value() const {
-            return Gigamonkey::output::value(Prevout.Output);
-        }
-        
-        bool valid() const {
-            return Prevout.valid() && Redeemer != nullptr;
-        } 
-    };
-    
-    struct funds {
-        list<spendable> Entries;
-        satoshi Value;
-        bool Valid;
-        
-        funds() : Entries{}, Value{0}, Valid{true} {}
-        funds(list<spendable> e, satoshi a, bool v) : Entries{e}, Value{a}, Valid{v} {}
-        
-        funds insert(spendable s) const {
-            return {Entries << s, Value + s.value(), Valid && s.valid()};
-        }
     };
     /*
     inline bytes redeem(funds f, int32_little version, list<output> outputs, uint32_little locktime, sighash::directive d) {

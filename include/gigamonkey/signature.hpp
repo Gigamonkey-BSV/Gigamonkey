@@ -72,14 +72,24 @@ namespace Gigamonkey::Bitcoin {
     };
     
     struct input_index {
+        output Output;
         bytes Transaction;
         index Index;
-        satoshi Amount;
     };
     
-    signature sign(const input_index&, sighash::directive, const secp256k1::secret&);
+    digest<32> signature_hash(const input_index& v, sighash::directive d);
     
-    bool verify(signature, const input_index&, sighash::directive, const pubkey&);
+    signature sign(const digest<32>&, const secp256k1::secret&);
+    
+    bool verify(const signature&, const digest<32>&, const pubkey&);
+    
+    inline signature sign(const input_index& i, sighash::directive d, const secp256k1::secret& s) {
+        return sign(signature_hash(i, d), s);
+    }
+    
+    inline bool verify(const signature& x, const input_index& i, sighash::directive d, const pubkey& p) {
+        return verify(x, signature_hash(i, d), p);
+    }
 }
 
 inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::signature& x) {

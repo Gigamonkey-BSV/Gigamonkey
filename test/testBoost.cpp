@@ -127,7 +127,7 @@ namespace Gigamonkey::Boost {
                 uint32_little n1, 
                 uint64_little n2) { 
                 Bitcoin::secret s(Bitcoin::secret::main, secp256k1::secret(secp256k1::coordinate(key)));
-                uint160 address = s.address().Digest;
+                digest160 address = s.address().Digest;
                 
                 return test_case(
                     job(type, 1, content, target, tag, user_nonce, data, address), 

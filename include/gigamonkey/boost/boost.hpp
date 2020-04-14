@@ -3,8 +3,8 @@
 
 #include <gigamonkey/script.hpp>
 #include <gigamonkey/address.hpp>
-#include <gigamonkey/signature.hpp>
 #include <gigamonkey/work/proof.hpp>
+#include <gigamonkey/redeem.hpp>
 #include <data/encoding/halves.hpp>
 
 namespace Gigamonkey {
@@ -23,7 +23,7 @@ namespace Gigamonkey {
             bytes Tag;
             uint32_little UserNonce;
             bytes AdditionalData;
-            uint160 MinerAddress;
+            digest160 MinerAddress;
             
             output_script() : Type{Boost::invalid}, 
                 Category{}, Content{}, Target{}, 
@@ -38,7 +38,7 @@ namespace Gigamonkey {
                 bytes tag, 
                 uint32_little user_nonce, 
                 bytes data, 
-                uint160 miner_address) : 
+                digest160 miner_address) : 
                 output_script{from_data(type, category, content, target, tag, user_nonce, data, miner_address)} {}
             
             static output_script bounty(
@@ -60,7 +60,7 @@ namespace Gigamonkey {
                 bytes_view tag, 
                 uint32_little user_nonce, 
                 bytes_view data, 
-                uint160 miner_address) {
+                digest160 miner_address) {
                 return output_script{category, 
                     content, target, tag, user_nonce, data, 
                     miner_address}; 
@@ -131,7 +131,7 @@ namespace Gigamonkey {
                 return read(x).AdditionalData;
             }
             
-            static uint160 miner_address(script x) {
+            static digest160 miner_address(script x) {
                 return read(x).MinerAddress;
             }
             
@@ -158,7 +158,7 @@ namespace Gigamonkey {
                 bytes_view tag, 
                 uint32_little user_nonce, 
                 bytes_view data,
-                uint160 miner_address) : Type{Boost::contract}, 
+                digest160 miner_address) : Type{Boost::contract}, 
                 Category{category},
                 Content{content}, 
                 Target{target}, 
@@ -175,7 +175,7 @@ namespace Gigamonkey {
                 bytes tag, 
                 uint32_little user_nonce, 
                 bytes data, 
-                uint160 miner_address) {
+                digest160 miner_address) {
                 if (type == Boost::invalid) return {};
                 if (type == Boost::bounty) return output_script::bounty(category, content, target, tag, user_nonce, data);
                 return output_script::contract(category, content, target, tag, user_nonce, data, miner_address);
@@ -191,7 +191,7 @@ namespace Gigamonkey {
             Gigamonkey::timestamp Timestamp;
             uint64_little ExtraNonce2;
             uint32_little ExtraNonce1;
-            uint160 MinerAddress;
+            digest160 MinerAddress;
             
         private:
             input_script(
@@ -201,7 +201,7 @@ namespace Gigamonkey {
                 Gigamonkey::timestamp timestamp,
                 uint64_little extra_nonce_2,
                 uint32_little extra_nonce_1,
-                uint160 miner_address) : Type{Boost::bounty}, 
+                digest160 miner_address) : Type{Boost::bounty}, 
                 Signature{signature}, 
                 Pubkey{pubkey}, 
                 Nonce{nonce},
@@ -242,7 +242,7 @@ namespace Gigamonkey {
                 Gigamonkey::timestamp timestamp,
                 uint64_little extra_nonce_2,
                 uint32_little extra_nonce_1, 
-                uint160 miner_address) {
+                digest160 miner_address) {
                 return input_script{signature, pubkey, nonce, timestamp, extra_nonce_2, extra_nonce_1, miner_address};
             }
             
@@ -300,7 +300,7 @@ namespace Gigamonkey {
                 return read(x).Nonce;
             }
             
-            static uint160 miner_address(script x) {
+            static digest160 miner_address(script x) {
                 return read(x).MinerAddress;
             }
             
@@ -322,7 +322,7 @@ namespace Gigamonkey {
             job() : Type{invalid}, Puzzle{} {}
             job(type t, work::puzzle p) : Type{t}, Puzzle{p} {}
             
-            job(Boost::output_script x, uint160 addr) : job(make(x, addr)) {}
+            job(Boost::output_script x, digest160 addr) : job(make(x, addr)) {}
             
             job(Boost::type type, 
                 int32_little category, 
@@ -331,7 +331,7 @@ namespace Gigamonkey {
                 bytes tag, 
                 uint32_little user_nonce, 
                 bytes data, 
-                uint160 miner_address) : 
+                digest160 miner_address) : 
                 job(make(type, category, content, target, tag, user_nonce, data, miner_address)) {}
             
             bool operator==(const job& j) const {
@@ -344,7 +344,7 @@ namespace Gigamonkey {
             
             Boost::output_script output_script() const; 
             
-            uint160 miner_address() const;
+            digest160 miner_address() const;
 
         private:
             static job make(Boost::type type, 
@@ -354,14 +354,14 @@ namespace Gigamonkey {
                 bytes tag, 
                 uint32_little user_nonce, 
                 bytes data, 
-                uint160 miner_address) {
+                digest160 miner_address) {
                 if (type == invalid) return {};
                 return job{type, work::puzzle{version, content, target, Merkle::path{}, 
                 write(tag.size() + 20, tag, miner_address), 
                 write(data.size() + 4, user_nonce, data)}};
             }
             
-            static job make(Boost::output_script x, uint160 miner_address) {
+            static job make(Boost::output_script x, digest160 miner_address) {
                 if (x.Type == invalid || (x.Type == contract && x.MinerAddress != miner_address)) return {};
                 return make(x.Type, x.Category, x.Content, x.Target, x.Tag, 
                     x.UserNonce, x.AdditionalData, miner_address);
@@ -373,6 +373,17 @@ namespace Gigamonkey {
                 work::proof{job{out, out.Type == bounty ? in.MinerAddress : out.MinerAddress}.Puzzle, 
                     work::solution{in.Timestamp, in.Nonce, write(12, in.ExtraNonce1, in.ExtraNonce2)}};
         }
+    
+        struct redeem_boost final : Bitcoin::redeemer {
+            Bitcoin::secret Secret;
+            Bitcoin::pubkey Pubkey;
+            work::solution Solution;
+            bytes redeem(const Bitcoin::input_index& tx, Bitcoin::sighash::directive d) const override {
+                output_script o = output_script::read(tx.Output.Script);
+                if (!o.valid()) return false;
+                return input_script{Secret.sign(tx, d), Pubkey, Solution, o.Type}.write();
+            }
+        };
         
     }
     

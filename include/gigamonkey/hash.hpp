@@ -73,6 +73,22 @@ namespace Gigamonkey {
         }
         
         explicit operator N() const;
+        
+        byte* begin() {
+            return nonzero<uint<size>>::Value.begin();
+        }
+        
+        byte* end() {
+            return nonzero<uint<size>>::Value.end();
+        }
+        
+        const byte* begin() const {
+            return nonzero<uint<size>>::Value.begin();
+        }
+        
+        const byte* end() const {
+            return nonzero<uint<size>>::Value.end();
+        }
     };
 
     using digest160 = digest<20>;

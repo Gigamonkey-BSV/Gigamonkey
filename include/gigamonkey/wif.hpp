@@ -33,6 +33,7 @@ namespace Gigamonkey::Bitcoin {
         constexpr static size_t CompressedSize{34};
         constexpr static size_t UncompressedSize{33};
         
+        secret();
         secret(type p, secp256k1::secret s, bool c = true);
         
         static secret read(string_view s);
@@ -54,8 +55,6 @@ namespace Gigamonkey::Bitcoin {
         signature sign(const input_index& tx, sighash::directive d) const;
         
     private:
-        secret();
-        
         static Bitcoin::address::type to_address_type(type t);
     };
         

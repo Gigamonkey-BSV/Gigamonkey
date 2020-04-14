@@ -4,15 +4,15 @@
 #ifndef GIGAMONKEY_SPENDABLE
 #define GIGAMONKEY_SPENDABLE
 
-#include "redeem.hpp"
 #include "timechain.hpp"
 #include <gigamonkey/script.hpp>
+#include "redeem.hpp"
 
 namespace Gigamonkey::Bitcoin {
     
     struct redeem_pay_to_pubkey final : redeemer {
         secret Secret;
-        virtual bytes redeem(const input_index& tx, sighash::directive d) const override {
+        bytes redeem(const input_index& tx, sighash::directive d) const override {
             return pay_to_pubkey::redeem(Secret.sign(tx, d));
         }
     };
@@ -20,7 +20,7 @@ namespace Gigamonkey::Bitcoin {
     struct redeem_pay_to_address final : redeemer {
         secret Secret;
         pubkey Pubkey;
-        virtual bytes redeem(const input_index& tx, sighash::directive d) const override {
+        bytes redeem(const input_index& tx, sighash::directive d) const override {
             return pay_to_address::redeem(Secret.sign(tx, d), Pubkey);
         }
     };

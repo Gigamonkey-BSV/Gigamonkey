@@ -210,7 +210,7 @@ namespace Gigamonkey::Boost {
         return compile(boost_output_script);
     }
     
-    work::puzzle puzzle(Boost::output_script o, uint160 miner) { 
+    work::puzzle puzzle(Boost::output_script o, digest160 miner) { 
         if (o.Type == Boost::invalid || (o.Type == Boost::contract && o.MinerAddress != miner)) return {};
         
         return work::puzzle{
@@ -224,10 +224,10 @@ namespace Gigamonkey::Boost {
         return x <= y && y <= z;
     }
     
-    uint160 job::miner_address() const {
+    digest160 job::miner_address() const {
         size_t puzzle_header_size = Puzzle.Header.size();
-        if (puzzle_header_size < 20) return 0;
-        uint160 x;
+        if (puzzle_header_size < 20) return {};
+        digest160 x;
         std::copy(Puzzle.Header.end() - 20, 
                   Puzzle.Header.end(), 
                   x.begin());
@@ -276,7 +276,7 @@ namespace Gigamonkey::Boost {
         
         Boost::output_script out{Type, Puzzle.Category, Puzzle.Digest, Puzzle.Target, 
             bytes(tag_size), 0, bytes(puzzle_body_size - 4), 
-            Type == contract ? miner_address() : uint160{}};
+            Type == contract ? miner_address() : digest160{}};
         
         std::copy(Puzzle.Header.begin(), Puzzle.Header.begin() + tag_size, out.Tag.begin());
         std::copy(Puzzle.Body.begin(), Puzzle.Body.begin() + 4, out.UserNonce.begin());

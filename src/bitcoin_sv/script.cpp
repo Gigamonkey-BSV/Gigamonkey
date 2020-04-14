@@ -50,7 +50,7 @@ namespace Gigamonkey::Bitcoin {
         // template parameter in this constructor. 
         CDataStream stream{static_cast<const std::vector<uint8_t>&>(transaction.Transaction), SER_NETWORK, PROTOCOL_VERSION};
         CTransaction tx{deserialize, stream}; 
-        return evaluate_script(lock, unlock, TransactionSignatureChecker(&tx, transaction.Index, Amount(int64(transaction.Amount))));
+        return evaluate_script(lock, unlock, TransactionSignatureChecker(&tx, transaction.Index, Amount(int64(transaction.Output.Value))));
     }
 
 }
