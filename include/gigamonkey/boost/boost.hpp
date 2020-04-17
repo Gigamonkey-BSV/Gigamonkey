@@ -232,7 +232,11 @@ namespace Gigamonkey {
                 return Type != Boost::invalid;
             }
             
-            script write() const; 
+            Bitcoin::program program() const; 
+            
+            script write() const {
+                return Bitcoin::compile(program());
+            }
             
             // construct a Boost bounty input script. 
             static input_script bounty(
@@ -373,15 +377,16 @@ namespace Gigamonkey {
                 work::proof{job{out, out.Type == bounty ? in.MinerAddress : out.MinerAddress}.Puzzle, 
                     work::solution{in.Timestamp, in.Nonce, write(12, in.ExtraNonce1, in.ExtraNonce2)}};
         }
-    
-        struct redeem_boost final : Bitcoin::redeemer {
+        
+        struct redeem_boost final : Bitcoin::redeemable {
             Bitcoin::secret Secret;
             Bitcoin::pubkey Pubkey;
             work::solution Solution;
-            bytes redeem(const Bitcoin::input_index& tx, Bitcoin::sighash::directive d) const override {
-                output_script o = output_script::read(tx.Output.Script);
-                if (!o.valid()) return false;
-                return input_script{Secret.sign(tx, d), Pubkey, Solution, o.Type}.write();
+            type Type;
+            Bitcoin::redemption::incomplete redeem(Bitcoin::sighash::directive d) const override {
+                Bitcoin::program p = input_script{Bitcoin::signature{}, Pubkey, Solution, Type}.program();
+                if (p.empty()) return {};
+                return {Bitcoin::redemption::element{&Secret, d}, compile(p.rest())};
             }
         };
         

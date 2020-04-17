@@ -41,6 +41,8 @@ namespace Gigamonkey::Bitcoin {
         return sighash::directive(t + sighash::fork_id * fork_id + sighash::anyone_can_pay * anyone_can_pay);
     }
     
+    constexpr uint32 DerSignatureExpectedSize{72};
+    
     struct signature {
         bytes Data;
         

@@ -512,8 +512,8 @@ namespace Gigamonkey::Bitcoin {
             return {OP_DUP, OP_HASH160, push_size{20, address}, OP_EQUALVERIFY, OP_CHECKSIG};
         }
         
-        static bytes script(bytes_view a) {
-            return compile(program{OP_DUP, OP_HASH160, a, OP_EQUALVERIFY, OP_CHECKSIG});
+        static bytes script(const digest160& a) {
+            return compile(program{OP_DUP, OP_HASH160, bytes_view(a), OP_EQUALVERIFY, OP_CHECKSIG});
         }
         
         digest160 Address;

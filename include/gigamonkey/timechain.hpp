@@ -203,6 +203,16 @@ namespace Gigamonkey::Bitcoin {
         list<output> Outputs;
         int32_little Locktime;
         
+        transaction(int32_little v, list<input> i,  list<output> o, int32_little t) : 
+            Version{v}, Inputs{i}, Outputs{o}, Locktime{t} {}
+        
+        transaction(list<input> i, list<output> o, int32_little t) : 
+            transaction{int32_little{2}, i, o, t} {}
+            
+        transaction() : Version{}, Inputs{}, Outputs{}, Locktime{} {};
+        
+        bool valid() const;
+        
         bytes_writer write(bytes_writer w) const;
         bytes_reader read(bytes_reader r);
         
@@ -384,6 +394,16 @@ namespace Gigamonkey::Bitcoin {
     
     inline size_t output::serialized_size() const {
         return 8 + var_int_size(Script.size()) + Script.size();
+    }
+    
+    inline bool transaction::valid() const {
+        return Inputs.size() > 0 && Outputs.size() > 0 && 
+            fold([](bool b, input i) -> bool {
+                return b && i.valid();
+            }, true, Inputs) && 
+            fold([](bool b, output o) -> bool {
+                return b && o.valid();
+            }, true, Outputs);
     }
     
     inline bytes_writer transaction::write(bytes_writer w) const {

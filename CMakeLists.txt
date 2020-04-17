@@ -128,6 +128,7 @@ add_library(gigamonkey STATIC
     #src/gigamonkey/spv.cpp
     src/gigamonkey/timechain.cpp
     src/gigamonkey/work.cpp
+    src/gigamonkey/redeem.cpp
     src/gigamonkey/schema/hd.cpp
     src/gigamonkey/stratum/stratum.cpp
     src/gigamonkey/boost/boost.cpp

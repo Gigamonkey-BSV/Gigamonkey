@@ -5,13 +5,47 @@
 #define GIGAMONKEY_REDEEM
 
 #include "timechain.hpp"
+#include "script.hpp"
 #include "wif.hpp"
+
+namespace Gigamonkey::Bitcoin::redemption {
+    
+    class element {
+        const secret* Secret;
+        sighash::directive Directive;
+        bytes Script;
+        
+    public:
+        element(const secret* s, sighash::directive d) : Secret{s}, Directive{d}, Script{} {}
+        element(const bytes& s) : Secret{nullptr}, Script{s} {}
+        
+        bool valid() const {
+            return (Secret == nullptr) || (Script.size() == 0);
+        }
+        
+        bytes redeem(const input_index& tx, bool dummy_signature = false) const {
+            return Secret == nullptr ? Script : 
+                compile(Bitcoin::program{} << push_data(dummy_signature ? signature{} : Secret->sign(tx, Directive)));
+        };
+        
+        uint32 expected_size() const {
+            return Secret == nullptr ? Script.size() : DerSignatureExpectedSize;
+        };
+    };
+    
+    using incomplete = list<element>;
+    
+    bytes redeem(incomplete x, const input_index& tx, bool dummy_signature = false);
+    
+    uint32 expected_size(incomplete x);
+}
 
 namespace Gigamonkey::Bitcoin {
     
-    struct redeemer {
+    struct redeemable {
         // create a redeem script. 
-        virtual bytes redeem(const input_index& tx, sighash::directive d) const = 0;
+        virtual redemption::incomplete redeem(sighash::directive) const = 0;
+        virtual uint32 expected_size() const = 0;
     };
     
     struct prevout {
@@ -24,44 +58,23 @@ namespace Gigamonkey::Bitcoin {
     };
     
     struct spendable {
+        redeemable& Redeemer;
         prevout Prevout;
-        redeemer& Redeemer;
+        uint32_little Sequence;
         
         bool valid() const {
             return Prevout.valid();
         } 
+        
+        spendable(redeemable& r, prevout p, int32_little s = 0) : Redeemer{r}, Prevout{p}, Sequence{s} {}
     };
     
-    transaction redeem(list<spendable> prev, list<output> out, uint32_little locktime);
+    transaction redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out, int32_little locktime);
     
-    inline transaction redeem(list<spendable> prev, list<output> out) {
+    inline transaction redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out) {
         return redeem(prev, out, 0);
     }
     
-    // TODO this can go in the cpp file. 
-    struct vertex {
-        list<spendable> Prevout;
-        int32_little Version;
-        list<output> Outputs;
-        uint32_little Locktime;
-        
-        vertex(list<spendable> p, int32_little v, list<output> o, uint32_little l) : 
-            Prevout{p}, Version{v}, Outputs{o}, Locktime{l} {}
-        
-        input_index operator[](index i) const;
-        
-    private:
-        // Put cached data here.
-    };
-    /*
-    inline bytes redeem(funds f, int32_little version, list<output> outputs, uint32_little locktime, sighash::directive d) {
-        const vertex v{data::for_each([](const spendable& s) -> prevout {
-            return s.Prevout;
-        }, f.Entries), version, outputs, locktime};
-        return transaction{version, 
-            data::for_each([&v](uint32 i, const spendable& s) -> bytes {
-            s.redeem(v, i, d)}, f.Entries), outputs, locktime}.write();
-    }*/
 }
 
 #endif

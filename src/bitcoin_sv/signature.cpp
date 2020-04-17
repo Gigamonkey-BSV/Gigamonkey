@@ -23,8 +23,7 @@ namespace Gigamonkey::Bitcoin {
         return CPubKey{p.Value.begin(), p.Value.end()}.Verify(hash, static_cast<const std::vector<uint8_t> &>(x.Data));
     }
 
-    digest<32> Bitcoin::signature_hash(const input_index &v, sighash::directive d) {
-
+    digest<32> signature_hash(const input_index &v, sighash::directive d) {
         CScript script(v.Output.Script.begin(),v.Output.Script.end());
         CDataStream stream{static_cast<const std::vector<uint8_t>&>(v.Transaction), SER_NETWORK, PROTOCOL_VERSION};
         CTransaction tx{deserialize, stream};

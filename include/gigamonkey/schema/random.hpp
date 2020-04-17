@@ -9,11 +9,25 @@
 
 namespace Gigamonkey::Bitcoin {
     
-    struct random_keysource : keysource {
-        secret next() override {
-            secret x{};
-            GetStrongRandBytes(x.Secret.Value.data(), 32);
+    struct random_keysource final : keysource {
+        secret First;
+        
+        static secret get() {
+            secret x;
+            do {
+                GetStrongRandBytes(x.Secret.Value.data(), 32);
+            } while (!x.valid());
             return x;
+        } 
+        
+        random_keysource() : First{get()} {}
+        
+        secret first() const override {
+            return First;
+        }
+        
+        ptr<keysource> rest() const override {
+            return std::make_shared<random_keysource>();
         }
     };
 

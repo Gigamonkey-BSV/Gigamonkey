@@ -96,6 +96,15 @@ namespace Gigamonkey {
         return x;
     }
     
+    template <typename X>  
+    inline bytes_writer write(bytes_writer b, list<X> ls) {
+        while(!ls.empty()) {
+            b = b << ls.first();
+            ls = ls.rest();
+        }
+        return b;
+    }
+    
 }
 
 inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::satoshi& s) {

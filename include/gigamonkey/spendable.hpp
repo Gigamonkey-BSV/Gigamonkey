@@ -10,23 +10,68 @@
 
 namespace Gigamonkey::Bitcoin {
     
-    struct redeem_pay_to_pubkey final : redeemer {
-        secret Secret;
-        bytes redeem(const input_index& tx, sighash::directive d) const override {
-            return pay_to_pubkey::redeem(Secret.sign(tx, d));
-        }
+    struct keysource {
+        virtual secret first() const = 0;
+        virtual ptr<keysource> rest() const = 0;
     };
     
-    struct redeem_pay_to_address final : redeemer {
+    struct output_pattern {
+        struct change {
+            bytes OutputScript;
+            ptr<redeemable> Redeemer;
+            ptr<keysource> Keys;
+        };
+        
+        virtual change create(ptr<keysource>) const = 0;
+    };
+    
+    struct redeem_pay_to_pubkey final : redeemable {
+        secret Secret;
+        
+        redeem_pay_to_pubkey(const secret& s) : Secret{s} {}
+        
+        redemption::incomplete 
+        redeem(sighash::directive d) const override {
+            return {redemption::element{&Secret, d}};
+        }
+        
+        uint32 expected_size() const override {
+            return DerSignatureExpectedSize + 1;
+        };
+    };
+    
+    struct redeem_pay_to_address final : redeemable {
         secret Secret;
         pubkey Pubkey;
-        bytes redeem(const input_index& tx, sighash::directive d) const override {
-            return pay_to_address::redeem(Secret.sign(tx, d), Pubkey);
+        
+        redeem_pay_to_address(const secret& s, const pubkey& p) : Secret{s}, Pubkey{p} {}
+        
+        redemption::incomplete 
+        redeem(sighash::directive d) const override {
+            return {redemption::element{&Secret, d}, compile(program{} << push_data(Pubkey))};
+        }
+        
+        uint32 expected_size() const override {
+            return DerSignatureExpectedSize + Pubkey.size() + 2;
+        };
+    };
+    
+    struct pay_to_pubkey_pattern final : output_pattern {
+        change create(ptr<keysource> k) const {
+            secret s = k->first();
+            return change{pay_to_pubkey::script(s.to_public()),
+                std::make_shared<redeem_pay_to_pubkey>(s), 
+                k->rest()};
         }
     };
     
-    struct change {
-        virtual ptr<redeemer> operator++(int) const = 0;
+    struct pay_to_address_pattern final : output_pattern {
+        change create(ptr<keysource> k) const {
+            secret s = k->first();
+            return change{pay_to_address::script(s.address().Digest), 
+                std::make_shared<redeem_pay_to_address>(s, s.to_public()),
+                k->rest()};
+        }
     };
     
 }

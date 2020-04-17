@@ -155,10 +155,10 @@ namespace Gigamonkey::Boost {
         return x;
     }
     
-    script input_script::write() const {
+    Bitcoin::program input_script::program() const {
         using namespace Bitcoin;
         if (Type == Boost::invalid) return {};
-        program p{
+        Bitcoin::program p{
             push_data(bytes_view(Signature)), 
             push_data(Pubkey),
             push_data(Nonce),
@@ -166,7 +166,7 @@ namespace Gigamonkey::Boost {
             push_data(ExtraNonce2),
             push_data(ExtraNonce1)};
         if (Type == Boost::bounty) p = p << push_data(MinerAddress);
-        return compile(p);
+        return p;
     }
     
     script output_script::write() const {

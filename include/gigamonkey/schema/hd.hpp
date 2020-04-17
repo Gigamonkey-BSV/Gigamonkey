@@ -70,30 +70,39 @@ namespace Gigamonkey::Bitcoin::hd {
         constexpr uint32 coin_type_testnet = 0x80000001;
         
         inline secret derive(const secret& s, uint32 account, bool change, uint32 index, bool testnet = false) {
-            return bip32::derive(s, {purpose, testnet ? coin_type_testnet : coin_type_BSV, account, uint32(change), index});
+            return bip32::derive(s, 
+                list<uint32>{purpose, testnet ? coin_type_testnet : coin_type_BSV, account, uint32(change), index});
         }
         
         inline pubkey derive(const pubkey& p, uint32 account, bool change, uint32 index, bool testnet = false) {
-            return bip32::derive(p, {purpose, testnet ? coin_type_testnet : coin_type_BSV, account, uint32(change), index});
+            return bip32::derive(p, 
+                list<uint32>{purpose, testnet ? coin_type_testnet : coin_type_BSV, account, uint32(change), index});
         }
     
     }
     
-    struct keysource : Bitcoin::keysource {
+    struct keysource final : Bitcoin::keysource {
         uint32 Index;
-        bip32::secret Secret;
-        bool Compressed;
-        Bitcoin::secret::type Type;
+        bip32::secret HDSecret;
+        Bitcoin::secret Secret;
         
-        secret next() override {
-            Index++;
-            return {Type, bip32::derive(Secret, Index).Secret};
-        }
+        keysource(uint32 i, 
+                const bip32::secret& s, 
+                bool compressed = true, 
+                Bitcoin::secret::type prefix = Bitcoin::secret::main) : 
+            Index{i}, HDSecret{s}, Secret{prefix, bip32::derive(HDSecret, Index).Secret} {}
         
         keysource(const bip32::secret& s, 
                 bool compressed = true, 
-                Bitcoin::secret::type type = Bitcoin::secret::main) : 
-            Index{0}, Secret{s}, Compressed{compressed}, Type{type} {}
+                Bitcoin::secret::type prefix = Bitcoin::secret::main) : keysource{1, s, compressed, prefix} {}
+        
+        secret first() const override {
+            return Secret;
+        }
+        
+        ptr<Bitcoin::keysource> rest() const override {
+            return std::make_shared<keysource>(Index + 1, HDSecret, Secret.Compressed, Secret.Prefix);
+        }
     };
     
     namespace bip39 {
