@@ -46,13 +46,13 @@ namespace Gigamonkey::Bitcoin {
     struct signature {
         bytes Data;
         
-        signature() : Data{} {}
+        signature();
         explicit signature(const bytes_view data) : Data{data} {}
         signature(const secp256k1::signature raw, sighash::directive d) : Data{65} {
             bytes_writer(Data.begin(), Data.end()) << raw << d;
         } 
         
-        bool der() const;
+        bool DER() const;
         
         Bitcoin::sighash::directive sighash() const {
             return Data[Data.size() - 1];
@@ -96,6 +96,20 @@ namespace Gigamonkey::Bitcoin {
 
 inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::signature& x) {
     return o << "signature{" << data::encoding::hex::write(x.Data) << "}";
+}
+
+namespace Gigamonkey::Bitcoin {
+    inline signature::signature() : Data(72) {
+        Data[0] = 0x30;
+        Data[1] = 69;
+        Data[2] = 0x02;
+        Data[3] = 33;
+        Data[4] = 0x01;
+        Data[37] = 0x02;
+        Data[38] = 32;
+        Data[39] = 0x01;
+        Data[71] = byte(directive(sighash::all));
+    }
 }
 
 #endif

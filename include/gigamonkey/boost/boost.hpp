@@ -400,4 +400,3 @@ std::ostream& operator<<(std::ostream& o, const Gigamonkey::Boost::input_script 
 
 #endif
 
-

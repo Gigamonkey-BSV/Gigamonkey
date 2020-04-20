@@ -195,7 +195,7 @@ namespace Gigamonkey::Boost {
             
             if (!dot_cross([](bytes_view in, bytes_view out) {
                     return Bitcoin::evaluate_script(in, out).valid();
-                }, serialized_input_scripts, serialized_output_scripts)) 
+                }, serialized_input_scripts.rest(), serialized_output_scripts.rest())) 
                 return {"Boost scripts are not valid."};
             
             return {};
@@ -228,7 +228,7 @@ namespace Gigamonkey::Boost {
             
             const bytes AdditionalData{std::string{"contextual information aka metadata"}};
             
-            Bitcoin::signature Signature{bytes(65)}; // Don't need a real signature. 
+            Bitcoin::signature Signature{}; // Don't need a real signature. 
              
             Stratum::worker Worker{WorkerName, 303};
             
@@ -388,8 +388,6 @@ namespace Gigamonkey::Boost {
 namespace Gigamonkey {
 
     TEST(BoostTest, TestBoost) {
-        
-        std::cout << "Boost Test setup" << std::endl;
 
         const digest256 ContentsA = sha256(std::string{} + 
             "Capitalists will always be able to expend more energy that socialists.");
