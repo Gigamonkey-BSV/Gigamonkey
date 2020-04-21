@@ -229,14 +229,6 @@ namespace Gigamonkey::Bitcoin {
     };
 }
 
-namespace Gigamonkey::block {
-    bool valid(bytes_view);
-    const slice<80> header(bytes_view);
-    bytes_view transactions(bytes_view);
-    
-    digest<32> merkle_root(bytes_view);
-}
-
 namespace Gigamonkey::Bitcoin { 
     struct block {
         header Header;
@@ -246,7 +238,13 @@ namespace Gigamonkey::Bitcoin {
         
         bytes coinbase();
         bool valid() const {
-            return Gigamonkey::block::valid(write());
+            if (!Header.valid()) return false;
+            list<transaction> txs = Transactions;
+            while(!txs.empty()) {
+                if (!txs.first().valid()) return false;
+                txs = txs.rest();
+            }
+            return true;
         }
         
         bytes_writer write(bytes_writer w) const;
@@ -257,6 +255,23 @@ namespace Gigamonkey::Bitcoin {
         
         size_t serialized_size() const;
     };
+}
+
+namespace Gigamonkey::block {
+    inline bool valid(bytes_view b) {
+        return Bitcoin::block::read(b).valid();
+    }
+    
+    const slice<80> header(bytes_view);
+    cross<bytes_view> transactions(bytes_view);
+    
+    inline digest<32> merkle_root(cross<bytes_view> txs) {
+        list<digest256> leaves{};
+        for (bytes_view b : txs) {
+            leaves = leaves << Bitcoin::hash256(b);
+        }
+        return Merkle::tree(leaves).root();
+    }
 }
 
 inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::Bitcoin::header& h) {

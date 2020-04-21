@@ -2,6 +2,7 @@
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/work/proof.hpp>
+#include <gigamonkey/script.hpp>
 
 namespace Gigamonkey {
     bool header_valid_work(slice<80> h) {
@@ -67,6 +68,11 @@ namespace Gigamonkey::block {
         bool valid() const;
     };
     
+    cross<bytes_view> transactions(bytes_view b) {
+        bytes_view after_header{b.substr(80)};
+        throw method::unimplemented{"block::transactions"};
+    }
+    
     tx_reader read_next_tx(bytes_reader);
     /*
     digest256 merkle_root(bytes_view block) {
@@ -91,14 +97,6 @@ namespace Gigamonkey::block {
         for (int i = 1; i < tx_indices.size(); i++) if (!transaction::valid(txs[i])) return false;
         return header::merkle_root(h) == merkle_root(txs);
     }*/
-    /*
-    cross<uint64> transactions(bytes_view b) {
-        bytes_view after_header{b.substr(80)};
-        bytes_reader txs = bytes_reader{after_header.begin(), after_header.end()};
-        uint64 num_txs;
-        txs = Bitcoin::read_var_int(txs, num_txs);
-        // TODO
-    }
     
     /* TODO
     const slice<80> header(bytes_view b) {
@@ -150,6 +148,14 @@ namespace Gigamonkey::Bitcoin {
         return header_valid_work(write()) && header_valid(*this);
     }
     
+    bool input::valid() const {
+        return Outpoint.valid() && decompile(Script) != program{};
+    }
+    
+    bool output::valid() const {
+        return Value < 2100000000000000 && decompile(Script) != program{};
+    }
+    
     size_t transaction::serialized_size() const {
         return 8 + var_int_size(Inputs.size()) + var_int_size(Inputs.size()) + 
             data::fold([](size_t size, const input& i)->size_t{
@@ -159,7 +165,7 @@ namespace Gigamonkey::Bitcoin {
                 return size + i.serialized_size();
             }, 0, Outputs);
     }
-        
+    
     size_t block::serialized_size() const {
         return 80 + var_int_size(Transactions.size()) + 
         data::fold([](size_t size, transaction x)->size_t{

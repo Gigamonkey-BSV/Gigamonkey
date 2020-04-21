@@ -66,7 +66,7 @@ namespace Gigamonkey::Bitcoin {
             return Prevout.valid();
         } 
         
-        spendable(redeemable& r, prevout p, int32_little s = 0) : Redeemer{r}, Prevout{p}, Sequence{s} {}
+        spendable(redeemable& r, prevout p, uint32_little s = 0) : Redeemer{r}, Prevout{p}, Sequence{s} {}
     };
     
     transaction redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out, int32_little locktime);

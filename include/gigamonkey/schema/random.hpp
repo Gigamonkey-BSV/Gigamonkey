@@ -4,31 +4,28 @@
 #ifndef GIGAMONKEY_SCHEMA_RANDOM
 #define GIGAMONKEY_SCHEMA_RANDOM
 
-#include <gigamonkey/wallet.hpp>
-#include <random.h>
+#include <gigamonkey/spendable.hpp>
 
 namespace Gigamonkey::Bitcoin {
     
     struct random_keysource final : keysource {
         secret First;
         
-        static secret get() {
-            secret x;
-            do {
-                GetStrongRandBytes(x.Secret.Value.data(), 32);
-            } while (!x.valid());
-            return x;
-        } 
+        static secret get();
         
-        random_keysource() : First{get()} {}
+        static ptr<keysource> make() {
+            return std::make_shared<random_keysource>();
+        }
         
         secret first() const override {
             return First;
         }
         
         ptr<keysource> rest() const override {
-            return std::make_shared<random_keysource>();
+            return make();
         }
+        
+        random_keysource() : First{get()} {}
     };
 
 }

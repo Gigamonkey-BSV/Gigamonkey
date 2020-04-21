@@ -52,9 +52,13 @@ namespace Gigamonkey::Merkle {
             incomplete pairwise_concatinate() const;
         };
         
-        static data::map<digest256&, path> paths(digest_tree);
+        static data::map<digest256&, path> paths(digest_tree) {
+            throw method::unimplemented{"Merkle::tree::paths"};
+        }
         
-        static digest_tree build(list<digest256> q, ordered_list<uint32> leaves);
+        static digest_tree build(list<digest256> q, ordered_list<uint32> leaves) {
+            throw method::unimplemented{"Merkle::tree::build"};
+        }
         
         tree(digest_tree t, data::map<digest256&, path> p) : Tree{t}, Paths{p} {}
         tree(digest_tree t) : Tree{t}, Paths{paths(t)} {}
@@ -67,6 +71,8 @@ namespace Gigamonkey::Merkle {
         tree(list<digest256> q,              // All txs in a block in order.
              ordered_list<uint32> leaves   // all indicies of txs that we want to remember. 
         ) : tree{build(q, leaves)} {}
+        
+        tree(list<digest256> q) : tree{q, ordered_list<uint32>{}} {}
         
         tree add(path) const;
         

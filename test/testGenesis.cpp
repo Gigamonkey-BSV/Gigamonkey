@@ -8,7 +8,7 @@ namespace Gigamonkey::Bitcoin {
 
     // can result in stack smashing
     TEST(HeaderTest, TestHeader) {
-        bytes genesis_serialized = bytes(data::encoding::hex::string{std::string{} + 
+        bytes genesis_serialized = bytes_view(data::encoding::hex::string{std::string{} + 
             "0100000000000000000000000000000000000000000000000000000000000000" +
             "000000003BA3EDFD7A7B12B27AC72C3E67768F617FC81BC3888A51323A9FB8AA" +
             "4B1E5E4A29AB5F49FFFF001D1DAC2B7C01010000000100000000000000000000" +

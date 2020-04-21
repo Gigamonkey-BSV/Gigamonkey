@@ -243,11 +243,11 @@ namespace Gigamonkey::Bitcoin {
     
     using program = list<instruction>;
     
-    bytes compile(program p); // TODO 
+    bytes compile(program p); 
     
-    bytes compile(instruction i); // TODO
+    bytes compile(instruction i); 
     
-    program decompile(bytes_view); // TODO
+    program decompile(bytes_view); 
     
     inline size_t length(instruction o) {
         return o.length();

@@ -15,15 +15,18 @@ namespace Gigamonkey::Bitcoin {
         virtual ptr<keysource> rest() const = 0;
     };
     
-    struct output_pattern {
-        struct change {
-            bytes OutputScript;
-            ptr<redeemable> Redeemer;
-            ptr<keysource> Keys;
-        };
-        
-        virtual change create(ptr<keysource>) const = 0;
+    enum output_pattern : uint32 {
+        pay_to_pubkey = 1, 
+        pay_to_address = 2
     };
+    
+    struct change {
+        bytes OutputScript;
+        ptr<redeemable> Redeemer;
+    };
+    
+    template <output_pattern p>
+    change create_redeemable_output_script(ptr<keysource>&);
     
     struct redeem_pay_to_pubkey final : redeemable {
         secret Secret;
@@ -54,25 +57,39 @@ namespace Gigamonkey::Bitcoin {
         uint32 expected_size() const override {
             return DerSignatureExpectedSize + Pubkey.size() + 2;
         };
+
     };
     
-    struct pay_to_pubkey_pattern final : output_pattern {
-        change create(ptr<keysource> k) const {
+}
+
+namespace Gigamonkey::Bitcoin::patterns {
+    template<output_pattern p> struct output;
+    
+    template<> struct output<pay_to_pubkey> {
+        static change create(ptr<keysource>& k) {
             secret s = k->first();
+            k = k->rest();
             return change{pay_to_pubkey::script(s.to_public()),
-                std::make_shared<redeem_pay_to_pubkey>(s), 
-                k->rest()};
+                std::make_shared<redeem_pay_to_pubkey>(s)};
         }
     };
     
-    struct pay_to_address_pattern final : output_pattern {
-        change create(ptr<keysource> k) const {
+    template<> struct output<pay_to_address> {
+        static change create(ptr<keysource>& k) {
             secret s = k->first();
+            k = k->rest();
             return change{pay_to_address::script(s.address().Digest), 
-                std::make_shared<redeem_pay_to_address>(s, s.to_public()),
-                k->rest()};
+                std::make_shared<redeem_pay_to_address>(s, s.to_public())};
         }
     };
+}
+
+namespace Gigamonkey::Bitcoin {
+    
+    template <output_pattern p>
+    change create_redeemable_output_script(ptr<keysource>& k) {
+        return patterns::output<p>::create(k);
+    }
     
 }
 

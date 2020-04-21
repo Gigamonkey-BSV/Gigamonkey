@@ -14,6 +14,7 @@ testExpandCompact.cpp
 testDifficulty.cpp
 testWorkString.cpp
 testWork.cpp 
+#testWallet.cpp 
 #testGenesis.cpp 
 testBoost.cpp
 testLib.cpp )

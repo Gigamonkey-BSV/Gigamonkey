@@ -23,11 +23,19 @@ namespace Gigamonkey::Bitcoin {
         bool Valid;
         
         funds() : Entries{}, Value{0}, Valid{true} {}
-        funds(list<spendable> e, satoshi a, bool v) : Entries{e}, Value{a}, Valid{v} {}
+        funds(list<spendable> e) : funds{funds{}.insert(e)} {}
         
         funds insert(spendable s) const {
             return {Entries << s, Value + s.Prevout.Output.Value, Valid && s.valid()};
         }
+        
+        funds insert(list<spendable> s) const {
+            if (s.empty()) return {};
+            return insert(s.first()).insert(s.rest());
+        }
+        
+    private:
+        funds(list<spendable> e, satoshi value, bool valid) : Entries{e}, Value{value}, Valid{valid} {}
     };
     
     struct wallet {
@@ -39,14 +47,14 @@ namespace Gigamonkey::Bitcoin {
         
         fee Fee;
         
-        ptr<output_pattern> Change;
+        output_pattern Change;
         
-        wallet() : Policy{unset}, Funds{}, Change{nullptr} {}
-        wallet(spend_policy policy, funds fun, ptr<keysource> k, fee f, ptr<output_pattern> c) : 
+        wallet() : Policy{unset}, Funds{}, Change{output_pattern{0}} {}
+        wallet(funds fun, spend_policy policy, ptr<keysource> k, fee f, output_pattern c) : 
             Policy{policy}, Funds{fun}, Keys{k}, Fee{f}, Change{c} {}
         
         bool valid() const {
-            return Policy != unset && data::valid(Funds) && Change != nullptr;
+            return Policy != unset && data::valid(Funds) && Change != output_pattern{0};
         }
         
         bool value() const {
@@ -65,7 +73,7 @@ namespace Gigamonkey::Bitcoin {
         
         static satoshi value(list<output>);
         
-        static list<output_pattern::change> make_change(ptr<output_pattern>, ptr<keysource>, uint32 num);
+        static list<change> make_change(output_pattern, ptr<keysource>, uint32 num);
         
         struct selected {
             list<data::entry<spendable, sighash::directive>> Selected;
@@ -95,7 +103,7 @@ namespace Gigamonkey::Bitcoin {
         if (to_spend > value()) return {};
         
         // step 1. generate change scripts
-        list<output_pattern::change> change = make_change(Change, Keys, 2);
+        list<change> change = make_change(Change, Keys, 2);
         
         // step 2. Select inputs to redeem. 
         selected x = select(Funds, to_spend, Policy, Fee);
