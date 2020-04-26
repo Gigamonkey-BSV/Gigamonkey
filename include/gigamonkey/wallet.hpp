@@ -12,10 +12,15 @@ namespace Gigamonkey::Bitcoin {
         double FeePerByte;
         double FeePerSigop;
         
-        satoshi calculate(uint32 size, uint32 sigops) const {
+        satoshi calculate(size_t size, uint32 sigops) const {
             return FeePerByte * size + FeePerSigop * sigops;
         }
-    } OneSatoshiPerByte{1, 0};
+        
+        bool sufficient(const vertex& t) const {
+            return t.fee() >= calculate(t.size(), t.sigops());
+        }
+        
+    };
     
     struct funds {
         list<spendable> Entries;
@@ -34,89 +39,99 @@ namespace Gigamonkey::Bitcoin {
             return insert(s.first()).insert(s.rest());
         }
         
+        struct selected;
+        
+        selected select_next() const;
+        selected select_random() const;
+        
     private:
         funds(list<spendable> e, satoshi value, bool valid) : Entries{e}, Value{value}, Valid{valid} {}
+    };
+    
+    struct funds::selected {
+        spendable Selected;
+        funds Remainder;
+    };
+    
+    inline funds::selected funds::select_next() const {
+        throw method::unimplemented{"funds::select_next"};
+    }
+    
+    inline funds::selected funds::select_random() const {
+        throw method::unimplemented{"funds::select_random"};
+    }
+    
+    struct payment {
+        satoshi Value;
+        bytes Script;
+        
+        explicit operator output() {
+            return output{Value, Script};
+        }
+        
+        payment(output o) : Value{o.Value}, Script{o.Script} {}
+        
+        payment(satoshi value, const bytes& script) : Value{value}, Script{script} {}
+
+        payment(satoshi value, const address& addr) : Value{value}, Script{pay_to_address::script(addr.Digest)} {}
+
+        payment(satoshi value, const pubkey& pub) : Value{value}, Script{pay_to_pubkey::script(pub)} {}
+        
+        payment(satoshi value, std::string paymail) {
+            throw method::unimplemented{"payment::payment(paymail)"};
+        }
+        
     };
     
     struct wallet {
         enum spend_policy {unset, all, fifo, random};
         
-        spend_policy Policy;
         funds Funds;
+        spend_policy Policy;
         ptr<keysource> Keys;
         
         fee Fee;
         
-        output_pattern Change;
+        ptr<output_pattern> Change;
         
-        wallet() : Policy{unset}, Funds{}, Change{output_pattern{0}} {}
-        wallet(funds fun, spend_policy policy, ptr<keysource> k, fee f, output_pattern c) : 
-            Policy{policy}, Funds{fun}, Keys{k}, Fee{f}, Change{c} {}
+        satoshi Dust;
+        
+        wallet() : Policy{unset}, Funds{}, Keys{nullptr}, Fee{0, 0}, Change{nullptr}, Dust{} {}
+        wallet(funds fun, spend_policy policy, ptr<keysource> k, fee f, ptr<output_pattern> c, satoshi d) : 
+            Policy{policy}, Funds{fun}, Keys{k}, Fee{f}, Change{c}, Dust{d} {}
         
         bool valid() const {
-            return Policy != unset && data::valid(Funds) && Change != output_pattern{0};
-        }
-        
-        bool value() const {
-            return Funds.Value;
+            return Policy != unset && data::valid(Funds) && Change != nullptr && Keys != nullptr;
         }
         
         struct spent;
         
-        template <typename ... X> 
-        spent spend(X ... payments) const;
+        spent spend(list<payment>) const;
         
     private:
         output pay(const output& o) {
             return o;
         }
         
-        static satoshi value(list<output>);
-        
-        static list<change> make_change(output_pattern, ptr<keysource>, uint32 num);
-        
-        struct selected {
-            list<data::entry<spendable, sighash::directive>> Selected;
-            funds Remainder;
-            ptr<keysource> Keys;
-        };
-        
-        static selected select(funds, satoshi, spend_policy, fee);
+        static list<data::entry<spendable, sighash::directive>> select(funds, satoshi, spend_policy, fee, size_t) {
+            throw method::unimplemented{"wallet::select"};
+        }
     };
-        
+    
     struct wallet::spent {
-        bytes Transaction;
+        vertex Vertex;
         wallet Remainder;
         
+        bool valid() const {
+            return Vertex.valid() && Remainder.valid();
+        }
+        
     private:
-        spent() : Transaction{}, Remainder{} {}
-        spent(const bytes& t, const wallet& r) : Transaction{t}, Remainder{r} {}
+        spent() : Vertex{}, Remainder{} {}
+        spent(const vertex& v, const wallet& r) : Vertex{v}, Remainder{r} {}
         
         friend struct wallet;
     };
-    
-    template <typename ... X> 
-    wallet::spent wallet::spend(X ... payments) const {
-        if (!valid()) return spent{};
-        list<output> outputs{payments...};
-        satoshi to_spend = value(outputs);
-        if (to_spend > value()) return {};
-        
-        // step 1. generate change scripts
-        list<change> change = make_change(Change, Keys, 2);
-        
-        // step 2. Select inputs to redeem. 
-        selected x = select(Funds, to_spend, Policy, Fee);
-        
-        // step 3. determine fee.
-        
-        // step 4. setup outputs.
-        
-        // step 5. create tx
-        bytes tx = redeem(x.Selected, outputs);
-        if (!Gigamonkey::transaction::valid(tx)) return {};
-        return spent{tx, wallet{}};
-    }
     
 }
 

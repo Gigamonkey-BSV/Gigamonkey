@@ -31,7 +31,7 @@ namespace Gigamonkey::Bitcoin::redemption {
 
 namespace Gigamonkey::Bitcoin {
     
-    transaction redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out, int32_little locktime) {
+    vertex redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out, int32_little locktime) {
         satoshi spent = fold([](satoshi s, data::entry<spendable, sighash::directive> v) -> satoshi {
             return s + v.Key.Prevout.Output.Value;
         }, 0, prev);
@@ -43,11 +43,40 @@ namespace Gigamonkey::Bitcoin {
                     return input{s.Key.Prevout.Outpoint, {}, s.Key.Sequence};
                 }, prev), out, locktime}.write();
         uint32 ind{0};
-        return transaction{for_each([&incomplete, &ind](data::entry<spendable, sighash::directive> s) -> input {
-            return input{s.Key.Prevout.Outpoint, 
-                redemption::redeem(s.Key.Redeemer.redeem(s.Value), input_index{s.Key.Prevout.Output, incomplete, ind++}), 
-                s.Key.Sequence};
-        }, prev), out, locktime};
+        list<input> in;
+        list<prevout> prevouts;
+        list<data::entry<spendable, sighash::directive>> p = prev;
+        while (!p.empty()) {
+            data::entry<spendable, sighash::directive> entry = p.first();
+            in = in << input{entry.Key.Prevout.Outpoint, 
+                redemption::redeem(entry.Key.Redeemer.redeem(entry.Value), 
+                    input_index{entry.Key.Prevout.Output, incomplete, ind++}), 
+                entry.Key.Sequence};
+            prevouts = prevouts << entry.Key.Prevout;
+        }
+        return {prevouts, transaction{in, out, locktime}};
+    }
+    
+    satoshi vertex::spent() const {
+        return fold([](satoshi x, const prevout& p) -> satoshi {
+            return x + p.Output.Value;
+        }, satoshi{0}, Previous);
+    }
+    
+    bool vertex::valid() const {
+        if (!transaction().valid()) return false; 
+        list<prevout> p = Previous;
+        while(!p.empty()) {
+            if(!p.first().valid()) return false;
+            p = p.rest();
+        }
+        if (spent() > sent()) return false;
+        // TODO run scripts
+        return true;
+    }
+    
+    uint32 vertex::sigops() const {
+        throw method::unimplemented{"vertex::sigops"};
     }
     
 }

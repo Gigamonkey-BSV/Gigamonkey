@@ -18,6 +18,7 @@ namespace Gigamonkey::Bitcoin {
         virtual uint<80> header(const digest<32>&) const = 0; 
         virtual list<txid> transactions(const digest<32>&) const = 0;
         virtual bytes block(const digest<32>&) const = 0; 
+        bool broadcast(const bytes tx);
     };
 }
 
@@ -85,14 +86,8 @@ namespace Gigamonkey::Bitcoin {
         
         bool valid() const;
         
-        bool operator==(const header& h) const {
-            return Version == h.Version && Previous == h.Previous && MerkleRoot == h.MerkleRoot 
-                && Timestamp == h.Timestamp && Target == h.Target && Nonce == h.Nonce;
-        }
-        
-        bool operator!=(const header& h) const {
-            return !operator==(h);
-        }
+        bool operator==(const header& h) const;
+        bool operator!=(const header& h) const;
     };
 }
 
@@ -122,6 +117,9 @@ namespace Gigamonkey::Bitcoin {
         
         bytes_writer write(bytes_writer w) const;
         bytes_reader read(bytes_reader r);
+        
+        bool operator==(const outpoint& o) const;
+        bool operator!=(const outpoint& o) const;
     };
 }
 
@@ -148,6 +146,9 @@ namespace Gigamonkey::Bitcoin {
         bytes_reader read(bytes_reader r);
         
         size_t serialized_size() const;
+        
+        bool operator==(const input& i) const;
+        bool operator!=(const input& i) const;
     };
 }
 
@@ -172,6 +173,9 @@ namespace Gigamonkey::Bitcoin {
         bytes_reader read(bytes_reader r);
         
         size_t serialized_size() const;
+        
+        bool operator==(const output& o) const;
+        bool operator!=(const output& o) const;
     };
 }
 
@@ -226,6 +230,17 @@ namespace Gigamonkey::Bitcoin {
         bool coinbase() const;
         
         size_t serialized_size() const;
+        
+        uint32 sigops() const;
+        
+        satoshi sent() const {
+            return fold([](satoshi x, const output& o) -> satoshi {
+                return x + o.Value;
+            }, satoshi{0}, Outputs);
+        }
+        
+        bool operator==(const transaction& t) const;
+        bool operator!=(const transaction& t) const;
     };
 }
 
@@ -254,6 +269,9 @@ namespace Gigamonkey::Bitcoin {
         bytes write() const;
         
         size_t serialized_size() const;
+        
+        bool operator==(const block& b) const;
+        bool operator!=(const block& b) const;
     };
 }
 
@@ -371,6 +389,15 @@ namespace Gigamonkey::Bitcoin {
     inline bytes_reader header::read(bytes_reader r) {
         return r >> Version >> Previous >> MerkleRoot >> Timestamp >> Target >> Nonce;
     }
+        
+    inline bool header::operator==(const header& h) const {
+        return Version == h.Version && Previous == h.Previous && MerkleRoot == h.MerkleRoot 
+            && Timestamp == h.Timestamp && Target == h.Target && Nonce == h.Nonce;
+    }
+        
+    inline bool header::operator!=(const header& h) const {
+        return !operator==(h);
+    }
     
     inline uint<80> header::write() const {
         uint<80> x; // inefficient: unnecessary copy. 
@@ -386,6 +413,14 @@ namespace Gigamonkey::Bitcoin {
     inline bytes_reader outpoint::read(bytes_reader r) {
         return r >> Reference >> Index;
     }
+        
+    inline bool outpoint::operator==(const outpoint& o) const {
+        return Reference == o.Reference && Index == o.Index;
+    }
+    
+    inline bool outpoint::operator!=(const outpoint& o) const {
+        return !operator==(o);
+    }
     
     inline size_t input::serialized_size() const {
         return 40 + var_int_size(Script.size()) + Script.size();
@@ -399,12 +434,28 @@ namespace Gigamonkey::Bitcoin {
         return read_data(r >> Outpoint, Script) >> Sequence;
     }
     
+    inline bool input::operator==(const input& i) const {
+        return Outpoint == i.Outpoint && Script == i.Script && Sequence == i.Sequence;
+    }
+    
+    inline bool input::operator!=(const input& i) const {
+        return !operator==(i);
+    }
+    
     inline bytes_writer output::write(bytes_writer w) const {
         return write_data(w << Value, Script);
     }
     
     inline bytes_reader output::read(bytes_reader r) {
         return read_data(r >> Value, Script);
+    }
+    
+    inline bool output::operator==(const output& o) const {
+        return Value == o.Value && Script == o.Script;
+    }
+    
+    inline bool output::operator!=(const output& o) const {
+        return !operator==(o);
     }
     
     inline size_t output::serialized_size() const {
@@ -435,6 +486,21 @@ namespace Gigamonkey::Bitcoin {
         return t;
     }
     
+    inline bytes transaction::write() const {
+        bytes b(serialized_size());
+        bytes_writer w{b.begin(), b.end()};
+        w = w << *this;
+        return b;
+    }
+    
+    inline bool transaction::operator==(const transaction& t) const {
+        return Version == t.Version && Inputs == t.Inputs && Outputs == t.Outputs && Locktime == t.Locktime;
+    }
+    
+    inline bool transaction::operator!=(const transaction& t) const {
+        return !operator==(t);
+    }
+    
     inline bytes_writer block::write(bytes_writer w) const {
         throw data::method::unimplemented{"block::write"};
     }
@@ -453,6 +519,14 @@ namespace Gigamonkey::Bitcoin {
         bytes b(serialized_size());
         write(bytes_writer(b.begin(), b.end()));
         return b;
+    }
+    
+    inline bool block::operator==(const block& b) const {
+        return Header == b.Header && Transactions == b.Transactions;
+    }
+    
+    inline bool block::operator!=(const block& b) const {
+        return !operator==(b);
     }
 }
 

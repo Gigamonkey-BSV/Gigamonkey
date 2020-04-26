@@ -46,6 +46,7 @@ namespace Gigamonkey::Bitcoin {
         // create a redeem script. 
         virtual redemption::incomplete redeem(sighash::directive) const = 0;
         virtual uint32 expected_size() const = 0;
+        virtual uint32 sigops() const = 0;
     };
     
     struct prevout {
@@ -69,10 +70,37 @@ namespace Gigamonkey::Bitcoin {
         spendable(redeemable& r, prevout p, uint32_little s = 0) : Redeemer{r}, Prevout{p}, Sequence{s} {}
     };
     
-    transaction redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out, int32_little locktime);
+    struct vertex {
+        list<prevout> Previous;
+        transaction Transaction;
+        
+        satoshi spent() const;
+        
+        satoshi sent() const;
+        satoshi fee() const;
+        size_t size() const;
+        
+        bool valid() const;
+        
+        uint32 sigops() const;
+    };
     
-    inline transaction redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out) {
+    vertex redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out, int32_little locktime);
+    
+    inline vertex redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out) {
         return redeem(prev, out, 0);
+    }
+    
+    inline satoshi vertex::sent() const {
+        return Transaction.sent();
+    }
+    
+    inline satoshi vertex::fee() const {
+        return spent() - sent();
+    }
+    
+    inline size_t vertex::size() const {
+        return Transaction.serialized_size();
     }
     
 }

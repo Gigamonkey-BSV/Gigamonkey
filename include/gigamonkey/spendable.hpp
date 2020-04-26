@@ -15,18 +15,14 @@ namespace Gigamonkey::Bitcoin {
         virtual ptr<keysource> rest() const = 0;
     };
     
-    enum output_pattern : uint32 {
-        pay_to_pubkey = 1, 
-        pay_to_address = 2
-    };
-    
     struct change {
         bytes OutputScript;
         ptr<redeemable> Redeemer;
     };
     
-    template <output_pattern p>
-    change create_redeemable_output_script(ptr<keysource>&);
+    struct output_pattern {
+        virtual change create_redeemable(ptr<keysource>&) const = 0;
+    };
     
     struct redeem_pay_to_pubkey final : redeemable {
         secret Secret;
@@ -41,6 +37,10 @@ namespace Gigamonkey::Bitcoin {
         uint32 expected_size() const override {
             return DerSignatureExpectedSize + 1;
         };
+        
+        uint32 sigops() const override {
+            return 1;
+        }
     };
     
     struct redeem_pay_to_address final : redeemable {
@@ -57,39 +57,30 @@ namespace Gigamonkey::Bitcoin {
         uint32 expected_size() const override {
             return DerSignatureExpectedSize + Pubkey.size() + 2;
         };
+        
+        uint32 sigops() const override {
+            return 1;
+        }
 
     };
     
-}
-
-namespace Gigamonkey::Bitcoin::patterns {
-    template<output_pattern p> struct output;
-    
-    template<> struct output<pay_to_pubkey> {
-        static change create(ptr<keysource>& k) {
+    struct pay_to_pubkey_pattern : output_pattern {
+        change create_redeemable(ptr<keysource>& k) const override {
             secret s = k->first();
             k = k->rest();
             return change{pay_to_pubkey::script(s.to_public()),
                 std::make_shared<redeem_pay_to_pubkey>(s)};
-        }
+        };
     };
     
-    template<> struct output<pay_to_address> {
-        static change create(ptr<keysource>& k) {
+    struct pay_to_address_pattern : output_pattern {
+        change create_redeemable(ptr<keysource>& k) const override {
             secret s = k->first();
             k = k->rest();
             return change{pay_to_address::script(s.address().Digest), 
                 std::make_shared<redeem_pay_to_address>(s, s.to_public())};
-        }
+        };
     };
-}
-
-namespace Gigamonkey::Bitcoin {
-    
-    template <output_pattern p>
-    change create_redeemable_output_script(ptr<keysource>& k) {
-        return patterns::output<p>::create(k);
-    }
     
 }
 
