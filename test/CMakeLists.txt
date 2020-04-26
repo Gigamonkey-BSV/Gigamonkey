@@ -19,8 +19,10 @@ testWork.cpp
 #testWallet.cpp 
 #testGenesis.cpp 
 testBoost.cpp
-testLib.cpp )
+testBip32.cpp
+testLib.cpp 
+testBip32Derivations.cpp)
 target_include_directories(testGigamonkey PUBLIC .)
-target_link_libraries(testGigamonkey gmock_main gigamonkey data ${LIB_BITCOIN_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY})
+target_link_libraries(testGigamonkey gmock_main gigamonkey data)
 get_target_property(OUT testGigamonkey LINK_LIBRARIES)
 message(STATUS ${OUT})

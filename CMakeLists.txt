@@ -137,7 +137,7 @@ add_library(gigamonkey STATIC
     #src/bitcoin_sv/sv.cpp 
 )
 
-target_link_libraries(gigamonkey PUBLIC data common util bitcoinconsensus)
+target_link_libraries(gigamonkey PUBLIC data common util bitcoinconsensus ${LIB_BITCOIN_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY})
 
 target_include_directories(gigamonkey PUBLIC include)
 

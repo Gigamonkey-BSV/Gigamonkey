@@ -5,37 +5,77 @@
 #define GIGAMONKEY_SCHEMA_HD
 
 #include <gigamonkey/wallet.hpp>
+#include <data/types.hpp>
+#include <ostream>
 
 namespace Gigamonkey::Bitcoin::hd {
     
-    struct chain_code {};
+    using chain_code = data::bytes;
     
     namespace bip32 {
-    
-        struct secret {
-            secp256k1::secret Secret;
-            chain_code ChainCode;
-            
-            secret(const secp256k1::secret& s, const chain_code& cc) : Secret{s}, ChainCode{cc} {}
-            secret(string_view s) : secret{read(s)} {}
-            
-            static secret read(string_view);
-            string write();
-        };
-        
+
         struct pubkey {
+
+            enum type : byte {
+                main = 0x78,
+                test = 0x74
+            };
             secp256k1::pubkey Pubkey;
             chain_code ChainCode;
+            type Net;
+            byte Depth;
+            uint32_t Parent;
+            uint32_t Sequence;
             
             pubkey(const secp256k1::pubkey& p, const chain_code& cc) : Pubkey{p}, ChainCode{cc} {}
             pubkey(string_view s) : pubkey{read(s)} {}
+            pubkey() = default;
             
             static pubkey read(string_view);
+            static pubkey from_seed(bytes entropy,type net);
+
             string write();
+
+            bool operator==(const pubkey &rhs) const;
+
+            bool operator!=(const pubkey &rhs) const;
+
+            friend std::ostream &operator<<(std::ostream &os, const pubkey &pubkey);
         };
-        
-        secret derive(const secret&, uint32);
+        struct secret {
+            enum type : byte {
+                main = 0x78,
+                test = 0x74
+            };
+            secp256k1::secret Secret;
+            chain_code ChainCode;
+            type Net;
+            byte Depth;
+            uint32_t Parent;
+            uint32_t Sequence;
+
+            secret(const secp256k1::secret& s, const chain_code& cc, type network) : Secret{s}, ChainCode{cc}, Net{network} {}
+            secret(string_view s) : secret{read(s)} {}
+            secret() = default;
+
+
+            static secret read(string_view);
+            static secret from_seed(bytes entropy,type net);
+
+            string write();
+            pubkey to_public();
+
+            bool operator==(const secret &rhs) const;
+
+            bool operator!=(const secret &rhs) const;
+
+            friend std::ostream &operator<<(std::ostream &os, const secret &secret);
+        };
+
+        secret derive(secret, uint32);
+        secret derive(secret,string);
         pubkey derive(const pubkey&, uint32);
+        pubkey derive(const pubkey&,string);
         
         inline secret derive(const secret& s, list<uint32> l) {
             if (l.empty()) return s;

@@ -15,12 +15,12 @@ namespace Gigamonkey::Bitcoin {
         satoshi calculate(size_t size, uint32 sigops) const {
             return FeePerByte * size + FeePerSigop * sigops;
         }
-        
         bool sufficient(const vertex& t) const {
             return t.fee() >= calculate(t.size(), t.sigops());
         }
         
     };
+
     
     struct funds {
         list<spendable> Entries;

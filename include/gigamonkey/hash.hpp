@@ -161,11 +161,14 @@ namespace Gigamonkey {
             --(*this);
             return ret;
         }
+        uint operator*(const uint& ret) {
+            return base_uint<bits>::operator*(ret);
+        }
     };
     
     using uint160 = uint<20>;
     using uint256 = uint<32>;
-    
+
     template <size_t size> struct digest : nonzero<uint<size>> {
         
         digest() : nonzero<uint<size>>{} {}
