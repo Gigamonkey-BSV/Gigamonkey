@@ -96,9 +96,9 @@ namespace Gigamonkey::Bitcoin {
         
         satoshi Dust;
         
-        wallet() : Policy{unset}, Funds{}, Keys{nullptr}, Fee{0, 0}, Change{nullptr}, Dust{} {}
+        wallet() : Funds{}, Policy{unset}, Keys{nullptr}, Fee{0, 0}, Change{nullptr}, Dust{} {}
         wallet(funds fun, spend_policy policy, ptr<keysource> k, fee f, ptr<output_pattern> c, satoshi d) : 
-            Policy{policy}, Funds{fun}, Keys{k}, Fee{f}, Change{c}, Dust{d} {}
+            Funds{fun}, Policy{policy}, Keys{k}, Fee{f}, Change{c}, Dust{d} {}
         
         bool valid() const {
             return Policy != unset && data::valid(Funds) && Change != nullptr && Keys != nullptr;

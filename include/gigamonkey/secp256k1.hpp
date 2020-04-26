@@ -242,7 +242,7 @@ namespace Gigamonkey::secp256k1 {
     }
     
     inline bool signature::operator==(const signature& s) const {
-        for (int i = 0; i < Size; i ++) if (Data.data[i] != s.Data.data[i]) return false;
+        for (size_t i = 0; i < Size; i ++) if (Data.data[i] != s.Data.data[i]) return false;
         return true;
     }
     
