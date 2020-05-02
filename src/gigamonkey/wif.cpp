@@ -11,12 +11,12 @@ namespace Gigamonkey::Bitcoin {
         base58::check b58(s);
         if (!b58.valid()) return secret{};
         secret w{};
-        if (b58.Data.size() == 33) {
+        if (b58.size() == 33) {
             w.Compressed = false;
-        } else if (b58.Data.size() == 34) {
+        } else if (b58.size() == 34) {
             w.Compressed = true;
         } else return {};
-        bytes_reader r = (bytes_reader(b58.Data.data(), b58.Data.data() + b58.Data.size()) >> (byte&)(w.Prefix) >> w.Secret); 
+        bytes_reader r = (bytes_reader(b58.data(), b58.data() + b58.size()) >> (byte&)(w.Prefix) >> w.Secret); 
         
         if (w.Compressed) {
             byte suffix;

@@ -7,7 +7,7 @@
 namespace Gigamonkey::base58 {
     
     string check::encode() const {
-        bytes data = Bitcoin::append_checksum(Data);
+        bytes data = Bitcoin::append_checksum(static_cast<bytes>(*this));
         size_t leading_zeros = 0;
         while (leading_zeros < data.size() && data[leading_zeros] == 0) leading_zeros++;
         string b58 = data::encoding::base58::write(bytes_view(data).substr(leading_zeros));

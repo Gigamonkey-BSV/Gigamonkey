@@ -6,6 +6,7 @@
 
 #include "signature.hpp"
 #include "address.hpp"
+#include <gigamonkey/ecies/electrum.hpp>
 
 namespace Gigamonkey::Bitcoin {
     
@@ -54,6 +55,9 @@ namespace Gigamonkey::Bitcoin {
         
         signature sign(const input_index& tx, sighash::directive d) const;
         
+        bytes encrypt(const bytes& message) const;
+        bytes decrypt(const bytes& message) const;
+        
     private:
         static Bitcoin::address::type to_address_type(type t);
     };
@@ -99,6 +103,14 @@ namespace Gigamonkey::Bitcoin {
     
     inline signature secret::sign(const input_index& tx, sighash::directive d) const {
         return Bitcoin::sign(tx, d, Secret);
+    }
+        
+    inline bytes secret::encrypt(const bytes& message) const {
+        return ECIES::electrum::encrypt(message, to_public());
+    }
+    
+    inline bytes secret::decrypt(const bytes& message) const {
+        return ECIES::electrum::decrypt(message, Secret);
     }
     
 }

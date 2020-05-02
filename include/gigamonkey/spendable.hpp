@@ -4,8 +4,6 @@
 #ifndef GIGAMONKEY_SPENDABLE
 #define GIGAMONKEY_SPENDABLE
 
-#include "timechain.hpp"
-#include <gigamonkey/script.hpp>
 #include "redeem.hpp"
 
 namespace Gigamonkey::Bitcoin {

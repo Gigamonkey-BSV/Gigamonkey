@@ -107,15 +107,6 @@ namespace Gigamonkey::Bitcoin {
         struct spent;
         
         spent spend(list<payment>) const;
-        
-    private:
-        output pay(const output& o) {
-            return o;
-        }
-        
-        static list<data::entry<spendable, sighash::directive>> select(funds, satoshi, spend_policy, fee, size_t) {
-            throw method::unimplemented{"wallet::select"};
-        }
     };
     
     struct wallet::spent {

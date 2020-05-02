@@ -8,14 +8,16 @@ endif()
 
 
 ADD_EXECUTABLE(testGigamonkey  
+testBase58.cpp 
 testFormat.cpp 
 testAddress.cpp
 testExpandCompact.cpp
 testDifficulty.cpp
 testWorkString.cpp
 testWork.cpp 
-testWallet.cpp 
-testGenesis.cpp 
+#testECIES.cpp 
+#testWallet.cpp 
+#testGenesis.cpp 
 testBoost.cpp
 testLib.cpp )
 target_include_directories(testGigamonkey PUBLIC .)

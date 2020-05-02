@@ -17,8 +17,7 @@ namespace Gigamonkey::base58 {
     // In base 58 check encoding, each initial
     // zero bytes are written as a '1'. The rest
     // is encoded as a base 58 number. 
-    struct check {
-        bytes Data;
+    struct check : bytes {
         
         bool valid() const;
         
@@ -97,24 +96,24 @@ inline std::ostream& operator<<(std::ostream& o, Gigamonkey::Bitcoin::address& a
 namespace Gigamonkey::base58 {
     
     inline bool check::valid() const {
-        return Data.size() > 0;
+        return size() > 0;
     }
     
     inline byte check::version() const {
         if (!valid()) return 0;
-        return Data[0];
+        return operator[](0);
     }
     
     inline bytes_view check::payload() const {
         if (!valid()) return {};
-        return bytes_view(Data).substr(1);
+        return bytes_view(*this).substr(1);
     }
     
-    inline check::check(byte version, bytes data) : Data{write(data.size() + 1, version, data)} {}
+    inline check::check(byte version, bytes data) : bytes{write(data.size() + 1, version, data)} {}
     inline check::check(string_view s) : check{decode(s)} {}
     
-    inline check::check() : Data{} {};
-    inline check::check(bytes p) : Data{p} {}
+    inline check::check() : bytes{} {};
+    inline check::check(bytes p) : bytes{p} {}
     
 }
 
