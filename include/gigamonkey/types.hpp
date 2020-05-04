@@ -11,6 +11,7 @@
 #include <data/stream.hpp>
 
 #include <data/data.hpp>
+#include <nlohmann/json.hpp>
 
 inline bool implies(bool a, bool b) {
     return (!a) || b;
@@ -64,6 +65,8 @@ namespace Gigamonkey {
             return data::math::nonzero<X>::operator>=(n.Value);
         }
     };
+    
+    using json = nlohmann::json;
     /*
     template <size_t size>
     using uint = data::uint<size>;

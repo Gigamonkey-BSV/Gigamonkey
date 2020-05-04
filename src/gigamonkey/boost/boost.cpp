@@ -209,7 +209,7 @@ namespace Gigamonkey::Boost {
         
         return compile(boost_output_script);
     }
-    
+    /*
     work::puzzle puzzle(Boost::output_script o, digest160 miner) { 
         if (o.Type == Boost::invalid || (o.Type == Boost::contract && o.MinerAddress != miner)) return {};
         
@@ -218,49 +218,30 @@ namespace Gigamonkey::Boost {
             Merkle::path{list<digest256>{}, 0}, 
             write(o.Tag.size() + 168, o.Tag, o.UserNonce, o.MinerAddress), 
             o.AdditionalData};
-    }
+    }*/
     
     inline bool between_inclusive(int x, int y, int z) {
         return x <= y && y <= z;
     }
     
-    digest160 job::miner_address() const {
-        size_t puzzle_header_size = Puzzle.Header.size();
-        if (puzzle_header_size < 20) return {};
-        digest160 x;
-        std::copy(Puzzle.Header.end() - 20, 
-                  Puzzle.Header.end(), 
-                  x.begin());
-        return x;
-    }
-    
     input_script from_solution(
                 Bitcoin::signature signature, 
                 Bitcoin::pubkey pubkey, 
+                uint32_little nonce1, 
                 work::solution x, Boost::type t) {
         if (t == Boost::invalid || !x.valid()) return input_script{};
         
-        input_script in = t == Boost::bounty ? 
-            input_script::bounty(signature, pubkey, x.Nonce, x.Timestamp, 0, 0, pubkey.hash()) : 
-            input_script::contract(signature, pubkey, x.Nonce, x.Timestamp, 0, 0);
+        if (t == Boost::bounty)  
+            return input_script::bounty(signature, pubkey, x.Nonce, x.Timestamp, x.ExtraNonce, nonce1, pubkey.hash()); 
         
-        std::copy(
-            x.ExtraNonce.begin(), 
-            x.ExtraNonce.begin() + 4, 
-            in.ExtraNonce1.data());
-        
-        std::copy(
-            x.ExtraNonce.begin() + 4, 
-            x.ExtraNonce.end(), 
-            in.ExtraNonce2.data());
-        
-        return in;
+        return input_script::contract(signature, pubkey, x.Nonce, x.Timestamp, x.ExtraNonce, nonce1);
     }
     
     input_script::input_script(
         Bitcoin::signature signature, 
         Bitcoin::pubkey pubkey, 
-        work::solution x, Boost::type t) : input_script{from_solution(signature, pubkey, x, t)} {}
+                uint32_little nonce1, 
+        work::solution x, Boost::type t) : input_script{from_solution(signature, pubkey, nonce1, x, t)} {}
     
     Boost::output_script job::output_script() const {
         if (Type == invalid) return Boost::output_script();
@@ -283,6 +264,16 @@ namespace Gigamonkey::Boost {
         std::copy(Puzzle.Body.begin() + 4, Puzzle.Body.end(), out.AdditionalData.begin());
         
         return out;
+    }
+    
+    digest160 job::miner_address() const {
+        size_t puzzle_header_size = Puzzle.Header.size();
+        if (puzzle_header_size < 20) return {};
+        digest160 x;
+        std::copy(Puzzle.Header.end() - 20, 
+                  Puzzle.Header.end(), 
+                  x.begin());
+        return x;
     }
     
 }

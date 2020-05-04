@@ -311,6 +311,7 @@ namespace Gigamonkey {
             input_script(
                 Bitcoin::signature signature, 
                 Bitcoin::pubkey pubkey, 
+                uint32_little nonce1,
                 work::solution, Boost::type);
         };
         
@@ -324,19 +325,20 @@ namespace Gigamonkey {
             }
             
             job() : Type{invalid}, Puzzle{} {}
-            job(type t, work::puzzle p) : Type{t}, Puzzle{p} {}
             
-            job(Boost::output_script x, digest160 addr) : job(make(x, addr)) {}
+            job(const Boost::output_script& x, const digest160& addr, uint32_little extra_nonce) : 
+                job(make(x, addr, extra_nonce)) {}
             
             job(Boost::type type, 
                 int32_little category, 
-                uint256 content, 
+                const uint256& content, 
                 work::target target, 
-                bytes tag, 
+                const bytes& tag, 
                 uint32_little user_nonce, 
-                bytes data, 
-                digest160 miner_address) : 
-                job(make(type, category, content, target, tag, user_nonce, data, miner_address)) {}
+                const bytes& data, 
+                const digest160& miner_address, 
+                uint32_little extra_nonce) : 
+                job(make(type, category, content, target, tag, user_nonce, data, miner_address, extra_nonce)) {}
             
             bool operator==(const job& j) const {
                 return Puzzle == j.Puzzle && Type == j.Type;
@@ -351,40 +353,44 @@ namespace Gigamonkey {
             digest160 miner_address() const;
 
         private:
+            job(type t, work::puzzle p) : Type{t}, Puzzle{p} {}
+            
             static job make(Boost::type type, 
                 int32_little version, 
-                uint256 content, 
+                const uint256& content, 
                 work::target target, 
-                bytes tag, 
+                const bytes& tag, 
                 uint32_little user_nonce, 
-                bytes data, 
-                digest160 miner_address) {
+                const bytes& data, 
+                const digest160& miner_address, 
+                uint32_little extra_nonce) {
                 if (type == invalid) return {};
                 return job{type, work::puzzle{version, content, target, Merkle::path{}, 
-                write(tag.size() + 20, tag, miner_address), 
+                write(tag.size() + 20, tag, miner_address), extra_nonce, 
                 write(data.size() + 4, user_nonce, data)}};
             }
             
-            static job make(Boost::output_script x, digest160 miner_address) {
+            static job make(const Boost::output_script& x, const digest160& miner_address, uint32_little extra_nonce) {
                 if (x.Type == invalid || (x.Type == contract && x.MinerAddress != miner_address)) return {};
                 return make(x.Type, x.Category, x.Content, x.Target, x.Tag, 
-                    x.UserNonce, x.AdditionalData, miner_address);
+                    x.UserNonce, x.AdditionalData, miner_address, extra_nonce);
             }
         };
         
         inline work::proof work_proof(output_script out, input_script in) {
             return out.Type == invalid || in.Type != out.Type ? work::proof{} : 
-                work::proof{job{out, out.Type == bounty ? in.MinerAddress : out.MinerAddress}.Puzzle, 
-                    work::solution{in.Timestamp, in.Nonce, write(12, in.ExtraNonce1, in.ExtraNonce2)}};
+                work::proof{job{out, out.Type == bounty ? in.MinerAddress : out.MinerAddress, in.ExtraNonce1}.Puzzle, 
+                    work::solution{in.Timestamp, in.Nonce, in.ExtraNonce2}};
         }
         
         struct redeem_boost final : Bitcoin::redeemable {
             Bitcoin::secret Secret;
             Bitcoin::pubkey Pubkey;
+            uint32_little ExtraNonce1;
             work::solution Solution;
             type Type;
             Bitcoin::redemption::incomplete redeem(Bitcoin::sighash::directive d) const override {
-                Bitcoin::program p = input_script{Bitcoin::signature{}, Pubkey, Solution, Type}.program();
+                Bitcoin::program p = input_script{Bitcoin::signature{}, Pubkey, ExtraNonce1, Solution, Type}.program();
                 if (p.empty()) return {};
                 return {Bitcoin::redemption::element{&Secret, d}, compile(p.rest())};
             }

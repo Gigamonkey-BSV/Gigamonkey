@@ -11,9 +11,9 @@ namespace Gigamonkey::work {
     struct solution {
         timestamp Timestamp;
         nonce Nonce;
-        bytes ExtraNonce;
+        uint64_little ExtraNonce;
         
-        solution(timestamp t, nonce n, bytes b);
+        solution(timestamp t, nonce n, uint64_little b);
         solution();
         
         bool valid() const;
@@ -26,20 +26,15 @@ namespace Gigamonkey::work {
         int32_little Category;
         uint256 Digest;
         target Target;
-        Merkle::path MerklePath;
+        Merkle::path Path;
         bytes Header;
+        uint32_little ExtraNonce;
         bytes Body;
         
         puzzle();
-        puzzle(int32_little v, uint256 d, target g, Merkle::path mp, bytes h, bytes b);
+        puzzle(int32_little v, const uint256& d, target g, Merkle::path mp, const bytes& h, uint32_little extra, const bytes& b);
         
         bool valid() const;
-        
-        bytes meta(solution x) const;
-            
-        work::string string(solution x) const;
-        
-        bool check(solution x) const;
         
         bool operator==(const puzzle& p) const;
         bool operator!=(const puzzle& p) const;
@@ -62,15 +57,7 @@ namespace Gigamonkey::work {
         bool operator!=(const proof& p) const;
     };
     
-    inline proof cpu_solve(puzzle p, solution initial) {
-        uint256 target = p.Target.expand();
-        if (target == 0) return {};
-        // This is for test purposes only. Therefore we do not
-        // accept difficulties that are above the ordinary minimum. 
-        if (p.Target.difficulty() > difficulty::minimum()) return {}; 
-        while(p.string(initial).hash() >= target) initial.Nonce++;
-        return proof{p, initial};
-    }
+    proof cpu_solve(puzzle p, solution initial);
     
 }
 
@@ -80,7 +67,7 @@ inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::solutio
 
 inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::puzzle& p) {
     return o << "puzzle{Category: " << p.Category << ", Digest: " << p.Digest << ", Target: " << 
-        p.Target << ", MerklePath: " << p.MerklePath << ", Header: " << p.Header << ", Body: " << p.Body << "}";
+        p.Target << ", Path: " << p.Path << ", Header: " << p.Header << ", ExtraNonce: " << p.ExtraNonce << ", Body: " << p.Body << "}";
 }
 
 inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::proof& p) {
@@ -89,15 +76,7 @@ inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::proof& 
 
 namespace Gigamonkey::work {
     
-    inline bool proof::valid() const {
-        return string().valid();
-    }
-        
-    inline bytes puzzle::meta(solution x) const {
-        return write(Header.size() + x.ExtraNonce.size() + Body.size(), Header, x.ExtraNonce, Body);
-    }
-    
-    inline solution::solution(timestamp t, nonce n, bytes b) : Timestamp{t}, Nonce{n}, ExtraNonce{b} {}
+    inline solution::solution(timestamp t, nonce n, uint64_little b) : Timestamp{t}, Nonce{n}, ExtraNonce{b} {}
     inline solution::solution() : Timestamp{}, Nonce{}, ExtraNonce{} {};
     
     inline bool solution::valid() const {
@@ -114,35 +93,21 @@ namespace Gigamonkey::work {
         return !operator==(s);
     }
     
-    inline puzzle::puzzle() : Category{}, Digest{}, Target{}, MerklePath{}, Header{}, Body{} {}
-    inline puzzle::puzzle(int32_little v, uint256 d, target g, Merkle::path mp, bytes h, bytes b) : 
-        Category{v}, Digest{d}, Target{g}, MerklePath{mp}, Header{h}, Body{b} {}
+    inline puzzle::puzzle() : Category{}, Digest{}, Target{}, Path{}, Header{}, ExtraNonce{}, Body{} {}
+    inline puzzle::puzzle(int32_little v, const uint256& d, target g, Merkle::path mp, const bytes& h, uint32_little extra, const bytes& b) : 
+        Category{v}, Digest{d}, Target{g}, Path{mp}, Header{h}, ExtraNonce{extra}, Body{b} {}
     
     inline bool puzzle::valid() const {
         return Target.valid();
-    }
-    
-    inline string puzzle::string(solution x) const {
-        return work::string{
-            Category, 
-            Digest, 
-            MerklePath.derive_root(Bitcoin::hash256(meta(x))), 
-            x.Timestamp, 
-            Target, 
-            x.Nonce
-        };
-    }
-    
-    inline bool puzzle::check(solution x) const {
-        return string(x).valid();
     }
     
     inline bool puzzle::operator==(const puzzle& p) const {
         return Category == p.Category && 
             Digest == p.Digest && 
             Target == p.Target && 
-            MerklePath == p.MerklePath && 
+            Path == p.Path && 
             Header == p.Header && 
+            ExtraNonce == p.ExtraNonce &&
             Body == p.Body;
     }
     
@@ -154,11 +119,23 @@ namespace Gigamonkey::work {
     inline proof::proof(puzzle p, solution x) : Puzzle{p}, Solution{x} {}
     
     inline bytes proof::meta() const {
-        return Puzzle.meta(Solution);
+        return write(Puzzle.Header.size() + 12 + Puzzle.Body.size(), 
+            Puzzle.Header, Puzzle.ExtraNonce, Solution.ExtraNonce, Puzzle.Body);
     }
     
     inline string proof::string() const {
-        return Puzzle.string(Solution);
+        return work::string{
+            Puzzle.Category, 
+            Puzzle.Digest, 
+            Puzzle.Path.derive_root(Bitcoin::hash256(meta())), 
+            Solution.Timestamp, 
+            Puzzle.Target, 
+            Solution.Nonce
+        };
+    }
+    
+    inline bool proof::valid() const {
+        return string().valid();
     }
      
     inline bool proof::operator==(const proof& p) const {
@@ -167,6 +144,17 @@ namespace Gigamonkey::work {
     
     inline bool proof::operator!=(const proof& p) const {
         return !operator==(p);
+    }
+    
+    inline proof cpu_solve(puzzle p, solution initial) {
+        uint256 target = p.Target.expand();
+        if (target == 0) return {};
+        // This is for test purposes only. Therefore we do not
+        // accept difficulties that are above the ordinary minimum. 
+        if (p.Target.difficulty() > difficulty::minimum()) return {}; 
+        proof pr{p, initial};
+        while(!pr.valid()) pr.Solution.Nonce++;
+        return pr;
     }
 }
 
