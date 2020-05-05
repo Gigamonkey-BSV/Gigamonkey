@@ -92,21 +92,6 @@ namespace Gigamonkey::Boost {
             }
             return x;
         }
-        /*
-        struct test_input {
-            Boost::type Type; 
-            uint256 Content; 
-            work::target Target;
-            bytes Tag;
-            uint64_little UserNonce;
-            bytes Data;
-            Bitcoin::secret Key;
-            uint32_little ExtraNonce;
-        };
-        
-        static output_script get_output_script(test_input);
-        
-        static job get_job(test_input);*/
         
         class test_case {
             test_case(job j, const output_script& x, const Stratum::job& sj, uint64_little n2, Bitcoin::secret key) : 
@@ -114,13 +99,13 @@ namespace Gigamonkey::Boost {
             
             static test_case build(
                 const output_script& o, 
-                Stratum::id jobID, 
+                Stratum::job_id jobID, 
                 timestamp start, 
                 const Stratum::worker& worker, 
                 uint64_little n2, uint64 key) {
                 Bitcoin::secret s(Bitcoin::secret::main, secp256k1::secret(secp256k1::coordinate(key)));
                 job Job{o, s.address().Digest, worker.ExtraNonce1};
-                return test_case{Job, o, Stratum::job{jobID, Job.Puzzle, worker, start, true}, n2, s};
+                return test_case{Job, o, Stratum::job{jobID, Job.Puzzle, worker, 1, start, true}, n2, s};
             }
             
             static test_case build(Boost::type type, 
@@ -129,7 +114,7 @@ namespace Gigamonkey::Boost {
                 bytes tag, 
                 uint32_little user_nonce, 
                 bytes data, 
-                const Stratum::id jobID, 
+                const Stratum::job_id jobID, 
                 timestamp start, 
                 const Stratum::worker& worker, 
                 uint64_little n2, 
@@ -140,7 +125,7 @@ namespace Gigamonkey::Boost {
                 
                 return test_case(Job, 
                     output_script{type, 1, content, target, tag, user_nonce, data, address}, 
-                    Stratum::job{jobID, Job.Puzzle, worker, start, true}, 
+                    Stratum::job{jobID, Job.Puzzle, worker, 1, start, true}, 
                     n2, s);
             }
             
@@ -153,7 +138,7 @@ namespace Gigamonkey::Boost {
             
             test_case(
                 output_script o, 
-                Stratum::id jobID, 
+                Stratum::job_id jobID, 
                 timestamp start, 
                 const Stratum::worker& worker, 
                 uint64_little n2, 
@@ -166,7 +151,7 @@ namespace Gigamonkey::Boost {
                 bytes tag, 
                 uint32_little user_nonce, 
                 bytes data, 
-                Stratum::id jobID, 
+                Stratum::job_id jobID, 
                 timestamp start,
                 const Stratum::worker& worker,
                 uint64_little n2, 
@@ -223,7 +208,7 @@ namespace Gigamonkey::Boost {
             const digest256 ContentsB, 
             const work::target Target, 
             const uint32_little UserNonce, 
-            const Stratum::id JobID, 
+            const Stratum::job_id JobID, 
             const Stratum::worker_name WorkerName, 
             const timestamp Start, 
             const uint32_little InitialNonce,
@@ -330,8 +315,8 @@ namespace Gigamonkey::Boost {
             }, test_cases, proofs);
             
             // The Stratum shares. 
-            auto shares = data::for_each([WorkerName, JobID](work::proof x) -> Stratum::share {
-                return Stratum::share{WorkerName, JobID, 
+            auto Stratum_shares = data::for_each([WorkerName, JobID](work::proof x) -> Stratum::share {
+                return Stratum::share{1, WorkerName, JobID, 
                     x.Solution.ExtraNonce, 
                     x.Solution.Timestamp, 
                     x.Solution.Nonce};
@@ -383,19 +368,29 @@ namespace Gigamonkey::Boost {
             // Test 5: proofs from Stratum jobs and shares. 
             if (!test_orthogonal(proofs, map_thread<work::proof>([](Stratum::job j, Stratum::share sh) -> work::proof {
                 return Stratum::solved{j, sh}.proof();
-            }, Stratum_jobs, shares))) 
+            }, Stratum_jobs, Stratum_shares))) 
                 return {"could not reconstruct proofs from Stratum."};
-            
-            // Test 6: Stratum job to json and back. 
-            /*if (!test_orthogonal(Stratum_jobs, 
+            /*
+            // Test 6: Stratum jobs and shares to json and back. 
+            if (!test_orthogonal(Stratum_jobs, 
                 data::for_each([](const Stratum::job j) -> Stratum::job {
                     json serialized;
                     Stratum::job unserialized = j;
-                    Stratum::to_json(serialized, j.Notify);
+                    Stratum::to_json(serialized, unserialized.Notify);
                     Stratum::from_json(serialized, unserialized.Notify);
                     return unserialized;
                 }, Stratum_jobs)))
-                return {"could not convert Stratum job to json and back"};*/
+                return {"could not convert Stratum job to json and back"};
+            
+            if (!test_orthogonal(Stratum_shares, 
+                data::for_each([](const Stratum::share j) -> Stratum::share {
+                    json serialized;
+                    Stratum::share unserialized{};
+                    Stratum::to_json(serialized, j);
+                    Stratum::from_json(serialized, unserialized);
+                    return unserialized;
+                }, Stratum_shares)))
+                return {"could not convert Stratum shares to json and back"};*/
             
             // Test 7: whether we can serialize and deserialize output and input scripts
             // and whether the scripts are valid. 
@@ -415,7 +410,7 @@ namespace Gigamonkey {
         const digest256 ContentsB = sha256(std::string{} + 
             "It's very difficult to censor a message that has lots of proof-of-work because everyone wants to see it."); 
         const uint32_little UserNonce{77777777}; 
-        const Stratum::id JobID{0}; 
+        const Stratum::job_id JobID{0}; 
         const Stratum::worker_name WorkerName{0}; 
         const timestamp Start{1};
         

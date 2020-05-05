@@ -4,13 +4,125 @@
 #include <gigamonkey/work/proof.hpp>
 
 namespace Gigamonkey::Stratum {
-    using id = uint32;
-    using uint256 = Gigamonkey::uint256;
+    using request_id = uint64;
     
-    using worker_name = std::string;
+    // List of stratum methods (incomplete)
+    enum method {
+        unset,
+        mining_authorize, 
+        mining_configure, 
+        mining_subscribe, 
+        mining_notify, 
+        mining_set_target, 
+        mining_submit, 
+        client_get_version,
+        client_reconnect
+    };
+    
+    std::string method_to_string(method m);
+    
+    method method_from_string(std::string st);
+    
+    // Stratum error codes (incomplete)
+    enum error_code {
+        none
+    };
+    
+    std::string error_message_from_code(error_code);
+    
+    struct request;
+    struct response;
+    struct notification;
+    
+    void to_json(json& j, const request& p); 
+    void from_json(const json& j, request& p); 
+    
+    void to_json(json& j, const response& p); 
+    void from_json(const json& j, response& p); 
+    
+    void to_json(json& j, const notification& p); 
+    void from_json(const json& j, notification& p); 
+    
+    struct request {
+        
+        request_id ID;
+        
+        method Method;
+        
+        list<json> Params;
+        
+        request() : ID{0}, Method{unset}, Params{} {}
+        request(request_id id, method m, list<json> p) : ID{id}, Method{m}, Params{p} {}
+        
+        bool valid() const {
+            return Method != unset;
+        }
+        
+        bool operator==(const request& r) const {
+            return ID == r.ID && Method == r.Method && Params == r.Params;
+        }
+        
+        bool operator!=(const request& r) const {
+            return !operator==(r);
+        }
+        
+    };
+    
+    struct notification {
+        
+        method Method;
+        
+        list<json> Params;
+        
+        notification() : Method{unset}, Params{} {}
+        notification(method m, list<json> p) : Method{m}, Params{p} {}
+        
+        bool valid() const {
+            return Method != unset;
+        }
+        
+        bool operator==(const notification& r) const {
+            return Method == r.Method && Params == r.Params;
+        }
+        
+        bool operator!=(const notification& r) const {
+            return !operator==(r);
+        }
+    };
+    
+    struct response {
+        
+        request_id ID;
+        
+        json Result;
+        
+        error_code ErrorCode;
+        
+        std::string ErrorMessage;
+        
+        response() : ID{0}, Result{}, ErrorCode{none}{}
+        response(request_id id, json p) : ID{id}, Result{p}, ErrorCode{none}, ErrorMessage{} {}
+        response(request_id id, json p, error_code c) : 
+            ID{id}, Result{p}, ErrorCode{c}, ErrorMessage{error_message_from_code(c)} {}
+        
+        bool operator==(const response& r) const {
+            return ID == r.ID && Result == r.Result && ErrorCode == r.ErrorCode;
+        }
+        
+        bool operator!=(const response& r) const {
+            return !operator==(r);
+        }
+        
+    private:
+        response(request_id id, json p, error_code c, std::string error_message) : 
+            ID{id}, Result{p}, ErrorCode{c}, ErrorMessage{error_message} {}
+            
+        friend void from_json(const json& j, response& p);
+    };
     
     // Representation of a Stratum notify message. 
     struct notify { 
+        request_id ID;
         // would be hash of prev block for Bitcoin, contents for Boost. 
         uint256 Digest; 
         
@@ -27,16 +139,16 @@ namespace Gigamonkey::Stratum {
         
         bool Clean;
         
-        notify() : Digest{}, GenerationTx1{}, GenerationTx2{}, Path{}, Target{}, Now{}, Clean{} {}
-        notify(uint256 d, bytes tx1, bytes tx2, list<digest256> p, work::target t, timestamp n, bool c) : 
-            Digest{d}, GenerationTx1{tx1}, GenerationTx2{tx2}, Path{p}, Target{t}, Now{n}, Clean{c} {};
+        notify() : ID{}, Digest{}, GenerationTx1{}, GenerationTx2{}, Path{}, Target{}, Now{}, Clean{} {}
+        notify(request_id id, uint256 d, bytes tx1, bytes tx2, list<digest256> p, work::target t, timestamp n, bool c) : 
+            ID{id}, Digest{d}, GenerationTx1{tx1}, GenerationTx2{tx2}, Path{p}, Target{t}, Now{n}, Clean{c} {};
         
         bool valid() const {
             return Now.valid() && Target.valid();
         }
         
         bool operator==(const notify& n) const {
-            return Digest == n.Digest && 
+            return ID == n.ID && Digest == n.Digest && 
                 GenerationTx1 == n.GenerationTx1 && 
                 GenerationTx2 == n.GenerationTx2 && 
                 Path == n.Path && Target == n.Target && 
@@ -46,19 +158,47 @@ namespace Gigamonkey::Stratum {
         bool operator!=(const notify& n) const {
             return !operator==(n);
         }
+        
+        static bool valid(const json& j);
+        
+        explicit operator notification() const;
     };
+    
+    using job_id = uint32;
+    
+    using worker_name = std::string;
     
     // A Stratum share; also a representation of the 'submit' method.
     struct share {
+        request_id ID;
         worker_name Name;
-        id JobID;
+        job_id JobID;
         uint64_little ExtraNonce2;
         timestamp nTime;
         nonce nOnce;
         
+        share() : ID{}, Name{}, JobID{}, ExtraNonce2{}, nTime{}, nOnce{} {}
+        share(request_id id, worker_name name, job_id jid, uint64_little n2, timestamp time, nonce n)
+            : ID{id}, Name{name}, JobID{jid}, ExtraNonce2{n2}, nTime{time}, nOnce{n} {}
+        
         bool valid() const {
             return Name != std::string{};
         }
+        
+        bool operator==(const share& n) const {
+            return ID == n.ID && Name == n.Name && 
+                JobID == n.JobID && 
+                ExtraNonce2 == n.ExtraNonce2 && 
+                nTime == n.nTime && nOnce == n.nOnce;
+        }
+        
+        bool operator!=(const share& n) const {
+            return !operator==(n);
+        }
+        
+        static bool valid(const json& j);
+        
+        explicit operator request() const;
     };
     
     void to_json(json& j, const notify& p); 
@@ -87,7 +227,7 @@ namespace Gigamonkey::Stratum {
     };
     
     struct job {  
-        id JobID;
+        job_id JobID;
         
         int32_little Version;
         
@@ -96,11 +236,11 @@ namespace Gigamonkey::Stratum {
         notify Notify;
         
         job() : JobID{}, Version{}, Worker{}, Notify{} {}
-        job(id i, int32_little v, const worker& w, notify n) : 
+        job(job_id i, int32_little v, const worker& w, notify n) : 
             JobID{i}, Version{v}, Worker{w}, Notify{n} {}
-        job(id i, const work::puzzle& puzzle, const worker& w, timestamp now, bool clean) : 
+        job(job_id i, const work::puzzle& puzzle, const worker& w, request_id id, timestamp now, bool clean) : 
             JobID{i}, Version{puzzle.Category}, Worker{w}, 
-            Notify{puzzle.Digest, puzzle.Header, puzzle.Body, puzzle.Path.Hashes, puzzle.Target, now, clean} {}
+            Notify{id, puzzle.Digest, puzzle.Header, puzzle.Body, puzzle.Path.Hashes, puzzle.Target, now, clean} {}
         
         bool valid() const {
             return Notify.valid();
@@ -133,8 +273,8 @@ namespace Gigamonkey::Stratum {
         
         solved(const job& j, const share&sh) : Job{j}, Share{sh} {}
         
-        solved(id i, const worker_name& name, const work::proof& p, bool clean) : 
-            Job{i, p.Puzzle, worker{name, p.Puzzle.ExtraNonce}, p.Solution.Timestamp, clean}, Share{} {}
+        solved(job_id i, const worker_name& name, const work::proof& p, request_id id, bool clean) : 
+            Job{i, p.Puzzle, worker{name, p.Puzzle.ExtraNonce}, id, p.Solution.Timestamp, clean}, Share{} {}
         
         work::proof proof() const {
             return work::proof{
