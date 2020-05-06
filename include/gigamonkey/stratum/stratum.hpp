@@ -49,10 +49,10 @@ namespace Gigamonkey::Stratum {
         
         method Method;
         
-        list<json> Params;
+        std::vector<json> Params;
         
         request() : ID{0}, Method{unset}, Params{} {}
-        request(request_id id, method m, list<json> p) : ID{id}, Method{m}, Params{p} {}
+        request(request_id id, method m, const std::vector<json>& p) : ID{id}, Method{m}, Params{p} {}
         
         bool valid() const {
             return Method != unset;
@@ -72,10 +72,10 @@ namespace Gigamonkey::Stratum {
         
         method Method;
         
-        list<json> Params;
+        std::vector<json> Params;
         
         notification() : Method{unset}, Params{} {}
-        notification(method m, list<json> p) : Method{m}, Params{p} {}
+        notification(method m, const std::vector<json>& p) : Method{m}, Params{p} {}
         
         bool valid() const {
             return Method != unset;
@@ -120,9 +120,11 @@ namespace Gigamonkey::Stratum {
         friend void from_json(const json& j, response& p);
     };
     
+    using job_id = uint32;
+    
     // Representation of a Stratum notify message. 
     struct notify { 
-        request_id ID;
+        job_id ID; 
         // would be hash of prev block for Bitcoin, contents for Boost. 
         uint256 Digest; 
         
@@ -140,9 +142,11 @@ namespace Gigamonkey::Stratum {
         bool Clean;
         
         notify() : ID{}, Digest{}, GenerationTx1{}, GenerationTx2{}, Path{}, Target{}, Now{}, Clean{} {}
-        notify(request_id id, uint256 d, bytes tx1, bytes tx2, list<digest256> p, work::target t, timestamp n, bool c) : 
+        notify(job_id id, uint256 d, bytes tx1, bytes tx2, list<digest256> p, work::target t, timestamp n, bool c) : 
             ID{id}, Digest{d}, GenerationTx1{tx1}, GenerationTx2{tx2}, Path{p}, Target{t}, Now{n}, Clean{c} {};
         
+        explicit notify(const notification&);
+            
         bool valid() const {
             return Now.valid() && Target.valid();
         }
@@ -159,12 +163,8 @@ namespace Gigamonkey::Stratum {
             return !operator==(n);
         }
         
-        static bool valid(const json& j);
-        
         explicit operator notification() const;
     };
-    
-    using job_id = uint32;
     
     using worker_name = std::string;
     
@@ -181,6 +181,8 @@ namespace Gigamonkey::Stratum {
         share(request_id id, worker_name name, job_id jid, uint64_little n2, timestamp time, nonce n)
             : ID{id}, Name{name}, JobID{jid}, ExtraNonce2{n2}, nTime{time}, nOnce{n} {}
         
+        explicit share(const request& n);
+        
         bool valid() const {
             return Name != std::string{};
         }
@@ -195,8 +197,6 @@ namespace Gigamonkey::Stratum {
         bool operator!=(const share& n) const {
             return !operator==(n);
         }
-        
-        static bool valid(const json& j);
         
         explicit operator request() const;
     };
@@ -227,7 +227,6 @@ namespace Gigamonkey::Stratum {
     };
     
     struct job {  
-        job_id JobID;
         
         int32_little Version;
         
@@ -235,19 +234,19 @@ namespace Gigamonkey::Stratum {
         
         notify Notify;
         
-        job() : JobID{}, Version{}, Worker{}, Notify{} {}
-        job(job_id i, int32_little v, const worker& w, notify n) : 
-            JobID{i}, Version{v}, Worker{w}, Notify{n} {}
-        job(job_id i, const work::puzzle& puzzle, const worker& w, request_id id, timestamp now, bool clean) : 
-            JobID{i}, Version{puzzle.Category}, Worker{w}, 
-            Notify{id, puzzle.Digest, puzzle.Header, puzzle.Body, puzzle.Path.Hashes, puzzle.Target, now, clean} {}
+        job() : Version{}, Worker{}, Notify{} {}
+        job(int32_little v, const worker& w, notify n) : 
+            Version{v}, Worker{w}, Notify{n} {}
+        job(job_id i, const work::puzzle& puzzle, const worker& w, timestamp now, bool clean) : 
+            Version{puzzle.Category}, Worker{w}, 
+            Notify{i, puzzle.Digest, puzzle.Header, puzzle.Body, puzzle.Path.Hashes, puzzle.Target, now, clean} {}
         
         bool valid() const {
             return Notify.valid();
         }
         
         bool operator==(const job& j) const {
-            return JobID == j.JobID && Version == j.Version && Worker == j.Worker && Notify == j.Notify;
+            return Version == j.Version && Worker == j.Worker && Notify == j.Notify;
         }
         
         bool operator!=(const job& j) const {
@@ -273,8 +272,8 @@ namespace Gigamonkey::Stratum {
         
         solved(const job& j, const share&sh) : Job{j}, Share{sh} {}
         
-        solved(job_id i, const worker_name& name, const work::proof& p, request_id id, bool clean) : 
-            Job{i, p.Puzzle, worker{name, p.Puzzle.ExtraNonce}, id, p.Solution.Timestamp, clean}, Share{} {}
+        solved(job_id i, const worker_name& name, const work::proof& p, bool clean) : 
+            Job{i, p.Puzzle, worker{name, p.Puzzle.ExtraNonce}, p.Solution.Timestamp, clean}, Share{} {}
         
         work::proof proof() const {
             return work::proof{

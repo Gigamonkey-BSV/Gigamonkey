@@ -243,7 +243,7 @@ namespace Gigamonkey::Boost {
                 uint32_little nonce1, 
         work::solution x, Boost::type t) : input_script{from_solution(signature, pubkey, nonce1, x, t)} {}
     
-    Boost::output_script job::output_script() const {
+    Boost::output_script puzzle::output_script() const {
         if (Type == invalid) return Boost::output_script();
         
         size_t puzzle_header_size = Puzzle.Header.size();
@@ -266,7 +266,7 @@ namespace Gigamonkey::Boost {
         return out;
     }
     
-    digest160 job::miner_address() const {
+    digest160 puzzle::miner_address() const {
         size_t puzzle_header_size = Puzzle.Header.size();
         if (puzzle_header_size < 20) return {};
         digest160 x;
