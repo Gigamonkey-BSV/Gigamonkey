@@ -2,6 +2,7 @@
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/script.hpp>
+#include <data/math/number/bytes/N.hpp>
 
 namespace Gigamonkey::Bitcoin {
     

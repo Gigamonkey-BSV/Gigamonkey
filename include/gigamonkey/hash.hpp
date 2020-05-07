@@ -5,6 +5,7 @@
 #define GIGAMONKEY_HASH
 
 #include "types.hpp"
+#include <data/encoding/integer.hpp>
 
 #include "arith_uint256.h"
 
@@ -34,7 +35,7 @@ namespace Gigamonkey {
             return begin() + size;
         }
         
-        byte* data() {
+        byte* data() {  
             return begin();
         }
         
@@ -123,7 +124,7 @@ namespace Gigamonkey {
 
 template <size_t size, unsigned int bits> 
 inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::uint<size, bits>& s) {
-    return o << data::encoding::hexidecimal::write(s, data::endian::little);
+    return o << data::encoding::hexidecimal::write((data::bytes_view)(s), data::endian::little);
 }
 
 template <size_t size> 
@@ -177,8 +178,10 @@ namespace Gigamonkey {
     
     template <size_t size, unsigned int bits>
     inline uint<size, bits>::uint(string_view hex) : uint(0) {
-        bytes b(data::encoding::hexidecimal::read(hex, endian::little));
-        if (b.size() == size) std::copy(b.begin(), b.end(), begin());
+        if (hex.size() != size * 2 + 2) return;
+        if (!data::encoding::hexidecimal::valid(hex)) return;
+        bytes read = bytes_view(encoding::hex::string{hex.substr(2)});
+        std::reverse_copy(read.begin(), read.end(), begin());
     }
 
 }
