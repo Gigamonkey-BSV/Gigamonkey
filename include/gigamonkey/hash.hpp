@@ -18,6 +18,7 @@ namespace Gigamonkey {
         uint(slice<size>);
         
         explicit uint(string_view hex);
+        explicit uint(const base_uint<bits>& b) : base_uint<bits>{b} {}
         
         byte* begin() {
             return (byte*)base_uint<bits>::pn;
@@ -55,7 +56,106 @@ namespace Gigamonkey {
             return slice<size>(const_cast<byte*>(data()));
         }
         
-        operator N() const;
+        explicit operator N() const;
+        
+        uint& operator=(uint64_t b) {
+            base_uint<bits>::operator=(b);
+            return *this;
+        }
+        
+        uint& operator^=(const uint& b) {
+            base_uint<bits>::operator^=(b);
+            return *this;
+        }
+
+        uint& operator&=(const uint& b) {
+            base_uint<bits>::operator&=(b);
+            return *this;
+        }
+
+        uint& operator|=(const uint& b) {
+            base_uint<bits>::operator|=(b);
+            return *this;
+        }
+
+        uint& operator^=(uint64 b) {
+            base_uint<bits>::operator^=(b);
+            return *this;
+        }
+        
+        uint& operator|=(uint64 b) {
+            base_uint<bits>::operator|=(b);
+            return *this;
+        }
+        
+        uint& operator<<=(unsigned int shift) {
+            base_uint<bits>::operator<<=(shift);
+            return *this;
+        }
+        
+        uint& operator>>=(unsigned int shift) {
+            base_uint<bits>::operator>>=(shift);
+            return *this;
+        }
+        
+        uint& operator+=(const uint& b) {
+            base_uint<bits>::operator+=(b);
+            return *this;
+        }
+        
+        uint& operator-=(const uint& b) {
+            base_uint<bits>::operator-=(b);
+            return *this;
+        }
+        
+        uint& operator+=(uint64 b) {
+            base_uint<bits>::operator+=(b);
+            return *this;
+        }
+        
+        uint& operator-=(uint64 b) {
+            base_uint<bits>::operator-=(b);
+            return *this;
+        }
+        
+        uint& operator*=(uint32 b) {
+            base_uint<bits>::operator*=(b);
+            return *this;
+        }
+        
+        uint& operator*=(const uint& b) {
+            base_uint<bits>::operator*=(b);
+            return *this;
+        }
+        
+        uint& operator/=(const uint& b) {
+            base_uint<bits>::operator/=(b);
+            return *this;
+        }
+        
+        uint& operator++() {
+            base_uint<bits>::operator++();
+            return *this;
+        }
+        
+        const uint operator++(int) {
+            // postfix operator
+            const uint ret = *this;
+            ++(*this);
+            return ret;
+        }
+        
+        uint& operator--() {
+            base_uint<bits>::operator--();
+            return *this;
+        }
+        
+        const uint operator--(int) {
+            // postfix operator
+            const uint ret = *this;
+            --(*this);
+            return ret;
+        }
     };
     
     using uint160 = uint<20>;
@@ -118,6 +218,36 @@ namespace Gigamonkey {
             return hash256(b);
         }
     
+    }
+    
+}
+
+
+
+namespace data::encoding::hexidecimal { 
+    
+    template <size_t size, unsigned int bits> 
+    inline std::string write(const Gigamonkey::uint<size, bits>& n) {
+        return write((N)(n));
+    }
+    
+    template <size_t size, unsigned int bits> 
+    inline std::ostream& write(std::ostream& o, const Gigamonkey::uint<size, bits>& n) {
+        return o << write(n);
+    }
+    
+}
+
+namespace data::encoding::integer {
+    
+    template <size_t size, unsigned int bits> 
+    inline std::string write(const Gigamonkey::uint<size, bits>& n) {
+        return write((N)(n));
+    }
+    
+    template <size_t size, unsigned int bits> 
+    inline std::ostream& write(std::ostream& o, const Gigamonkey::uint<size, bits>& n) {
+        return o << write(n);
     }
     
 }

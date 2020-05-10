@@ -8,6 +8,8 @@
 
 namespace Gigamonkey {
     
+    using duration = double;
+    
     struct timestamp : nonzero<uint32_little> {
         
         static timestamp read(string_view);
@@ -37,6 +39,26 @@ namespace Gigamonkey {
         
         bytes_writer write(bytes_writer w) const {
             return w << nonzero<uint32_little>::Value;
+        }
+        
+        bool operator>(const timestamp& t) const {
+            return nonzero<uint32_little>::Value > t.Value;
+        }
+        
+        bool operator<(const timestamp& t) const {
+            return nonzero<uint32_little>::Value < t.Value;
+        }
+        
+        bool operator>=(const timestamp& t) const {
+            return nonzero<uint32_little>::Value >= t.Value;
+        }
+        
+        bool operator<=(const timestamp& t) const {
+            return nonzero<uint32_little>::Value <= t.Value;
+        }
+        
+        duration operator-(const timestamp& t) const {
+            return double(uint32(nonzero<uint32_little>::Value)) - double(uint32(t.Value));
         }
     };
 }
