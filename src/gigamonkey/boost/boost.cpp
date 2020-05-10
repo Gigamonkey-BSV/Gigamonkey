@@ -246,8 +246,8 @@ namespace Gigamonkey::Boost {
     Boost::output_script puzzle::output_script() const {
         if (Type == invalid) return Boost::output_script();
         
-        size_t puzzle_header_size = Puzzle.Header.size();
-        size_t puzzle_body_size = Puzzle.Body.size();
+        size_t puzzle_header_size = puzzle::Header.size();
+        size_t puzzle_body_size = puzzle::Body.size();
         
         if (puzzle_header_size < 20) return Boost::output_script();
         if (puzzle_body_size < 4) return Boost::output_script();
@@ -255,23 +255,23 @@ namespace Gigamonkey::Boost {
         size_t tag_size = puzzle_header_size - 20;
         size_t data_size = puzzle_body_size - 4;
         
-        Boost::output_script out{Type, Puzzle.Category, Puzzle.Digest, Puzzle.Target, 
+        Boost::output_script out{Type, puzzle::Category, puzzle::Digest, puzzle::Target, 
             bytes(tag_size), 0, bytes(puzzle_body_size - 4), 
             Type == contract ? miner_address() : digest160{}};
         
-        std::copy(Puzzle.Header.begin(), Puzzle.Header.begin() + tag_size, out.Tag.begin());
-        std::copy(Puzzle.Body.begin(), Puzzle.Body.begin() + 4, out.UserNonce.begin());
-        std::copy(Puzzle.Body.begin() + 4, Puzzle.Body.end(), out.AdditionalData.begin());
+        std::copy(puzzle::Header.begin(), puzzle::Header.begin() + tag_size, out.Tag.begin());
+        std::copy(puzzle::Body.begin(), puzzle::Body.begin() + 4, out.UserNonce.begin());
+        std::copy(puzzle::Body.begin() + 4, puzzle::Body.end(), out.AdditionalData.begin());
         
         return out;
     }
     
     digest160 puzzle::miner_address() const {
-        size_t puzzle_header_size = Puzzle.Header.size();
+        size_t puzzle_header_size = puzzle::Header.size();
         if (puzzle_header_size < 20) return {};
         digest160 x;
-        std::copy(Puzzle.Header.end() - 20, 
-                  Puzzle.Header.end(), 
+        std::copy(puzzle::Header.end() - 20, 
+                  puzzle::Header.end(), 
                   x.begin());
         return x;
     }

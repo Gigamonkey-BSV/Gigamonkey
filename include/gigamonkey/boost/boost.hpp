@@ -5,7 +5,6 @@
 #include <gigamonkey/address.hpp>
 #include <gigamonkey/work/proof.hpp>
 #include <gigamonkey/redeem.hpp>
-#include <data/encoding/halves.hpp>
 
 namespace Gigamonkey {
     
@@ -365,15 +364,14 @@ namespace Gigamonkey {
         };
         
         // A puzzle is created after ExtraNonce is assigned by the mining pool. 
-        struct puzzle {
+        struct puzzle : work::puzzle {
             type Type;
-            work::puzzle Puzzle;
             
             bool valid() const {
-                return (Type == Boost::bounty || Type == Boost::contract) && Puzzle.valid();
+                return (Type == Boost::bounty || Type == Boost::contract) && work::puzzle::valid();
             }
             
-            puzzle() : Type{invalid}, Puzzle{} {}
+            puzzle() : work::puzzle{}, Type{invalid} {}
             
             puzzle(Boost::type type, 
                 int32_little category, 
@@ -391,7 +389,7 @@ namespace Gigamonkey {
                     x.UserNonce, x.AdditionalData, x.MinerAddress, extra_nonce} {}
             
             bool operator==(const puzzle& j) const {
-                return Puzzle == j.Puzzle && Type == j.Type;
+                return Type == j.Type && work::puzzle::operator==(static_cast<const work::puzzle&>(j));
             }
             
             bool operator!=(const puzzle& j) const {
@@ -403,7 +401,7 @@ namespace Gigamonkey {
             digest160 miner_address() const;
 
         private:
-            puzzle(type t, work::puzzle p) : Type{t}, Puzzle{p} {}
+            puzzle(work::puzzle p, type t) : work::puzzle{p}, Type{t} {}
             
             static puzzle make(Boost::type type, 
                 int32_little version, 
@@ -415,18 +413,35 @@ namespace Gigamonkey {
                 const digest160& miner_address, 
                 uint32_little extra_nonce) {
                 if (type == invalid) return {};
-                return puzzle{type, work::puzzle{version, content, target, Merkle::path{}, 
+                return puzzle{work::puzzle{version, content, target, Merkle::path{}, 
                 write(tag.size() + 20, tag, miner_address), extra_nonce, 
-                write(data.size() + 4, user_nonce, data)}};
+                write(data.size() + 4, user_nonce, data)}, type};
             }
         };
         
-        inline work::proof work_proof(output_script out, input_script in) {
-            return out.Type == invalid || in.Type != out.Type ? work::proof{} : 
-                work::proof{puzzle{job{out, out.Type == bounty ? in.MinerAddress : out.MinerAddress},
-                    in.ExtraNonce1}.Puzzle, 
-                    work::solution{in.Timestamp, in.Nonce, in.ExtraNonce2}};
-        }
+        struct proof : work::proof {
+            type Type;
+            
+            proof() : work::proof{}, Type{invalid} {}
+            proof(const puzzle& p, const work::solution& x) : 
+                work::proof{static_cast<const work::puzzle&>(p), x}, Type{p.Type} {}
+            proof(Boost::output_script out, Boost::input_script in) : proof{} {
+                if (out.Type == invalid || in.Type != out.Type) return;
+                *this = proof{puzzle{job{out, out.Type == bounty ? in.MinerAddress : out.MinerAddress},
+                    in.ExtraNonce1}, work::solution{in.Timestamp, in.Nonce, in.ExtraNonce2}};
+            }
+            
+            Boost::output_script output_script() const;
+            Boost::input_script input_script() const;
+            
+            bool operator==(const proof& j) const {
+                return Type == j.Type && work::proof::operator==(static_cast<const work::proof&>(j));
+            }
+            
+            bool operator!=(const proof& j) const {
+                return !operator==(j);
+            }
+        };
         
         struct redeem_boost final : Bitcoin::redeemable {
             Bitcoin::secret Secret;

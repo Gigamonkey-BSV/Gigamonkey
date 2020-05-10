@@ -9,17 +9,16 @@
 #include <data/encoding/integer.hpp>
 #include <data/iterable.hpp>
 #include <secp256k1.h>
-#include <pubkey.h>
 
 namespace Gigamonkey::secp256k1 {
     
-    const size_t SecretSize = 32;
+    constexpr size_t SecretSize{32};
     
     // There are two representations of public
     // keys that are allowed in Bitcoin. 
     // compressed is default. 
-    const size_t CompressedPubkeySize = 33;
-    const size_t UncompressedPubkeySize = 65;
+    constexpr size_t CompressedPubkeySize{33};
+    constexpr size_t UncompressedPubkeySize{65};
     
     // Values written at the start of the standard
     // pubkey representation which tell how it is 
@@ -123,8 +122,6 @@ namespace Gigamonkey::secp256k1 {
             encoding::hex::string hex(s);
             if (hex.valid()) Value = bytes_view(hex);
         }
-        
-        //explicit pubkey(const CPubKey&);
         
         bool valid() const;
         
