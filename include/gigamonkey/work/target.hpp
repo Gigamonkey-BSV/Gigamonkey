@@ -53,11 +53,7 @@ namespace Gigamonkey::work {
     
     struct target : uint32_little {
         
-        static target encode(byte e, uint24_little v) {
-            target t;
-            bytes_writer(t.begin(), t.end()) << v << e;
-            return t;
-        }
+        static target encode(byte e, uint24_little v);
         
         target() : uint32_little{0} {}
         target(byte e, uint24_little v) : target{encode(e, v)} {}
@@ -100,6 +96,12 @@ namespace Gigamonkey::work {
     const target SuccessSixteenth{32, 0x100000};
     
     inline difficulty::difficulty(target t) : difficulty(scale(), N(t.expand())) {}
+    
+    inline target target::encode(byte e, uint24_little v) {
+        target t;
+        data::writer<uint24_little::iterator>(t.begin(), t.end()) << v << e;
+        return t;
+    }
 
 }
 

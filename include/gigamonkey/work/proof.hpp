@@ -47,7 +47,8 @@ namespace Gigamonkey::work {
         bool valid() const;
         
         proof();
-        proof(puzzle p, solution x);
+        proof(const puzzle& p, const solution& x);
+        proof(const string& w, Merkle::path mp, const bytes& h, const uint32_little& n1, const uint64_little& n2, const bytes& b);
         
         bytes meta() const;
         
@@ -116,7 +117,7 @@ namespace Gigamonkey::work {
     }
     
     inline proof::proof() : Puzzle{}, Solution{} {}
-    inline proof::proof(puzzle p, solution x) : Puzzle{p}, Solution{x} {}
+    inline proof::proof(const puzzle& p, const solution& x) : Puzzle{p}, Solution{x} {}
     
     inline bytes proof::meta() const {
         return write(Puzzle.Header.size() + 12 + Puzzle.Body.size(), 

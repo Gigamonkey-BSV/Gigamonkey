@@ -30,7 +30,8 @@ namespace Gigamonkey::work {
                 Gigamonkey::header::nonce(x)};
         }
         
-        explicit string(slice<80> x) : string(read(x)) {}
+        explicit string(const slice<80>& x) : string(read(x)) {}
+        explicit string(const CBlockHeader&);
         
         uint<80> write() const;
         

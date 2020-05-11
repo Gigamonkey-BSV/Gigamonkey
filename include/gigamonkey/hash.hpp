@@ -20,6 +20,9 @@ namespace Gigamonkey {
         explicit uint(string_view hex);
         explicit uint(const base_uint<bits>& b) : base_uint<bits>{b} {}
         
+        explicit uint(::uint256);
+        explicit uint(arith_uint256);
+        
         byte* begin() {
             return (byte*)base_uint<bits>::pn;
         }

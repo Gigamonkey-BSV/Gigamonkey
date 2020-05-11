@@ -423,13 +423,19 @@ namespace Gigamonkey {
             type Type;
             
             proof() : work::proof{}, Type{invalid} {}
+            
             proof(const puzzle& p, const work::solution& x) : 
                 work::proof{static_cast<const work::puzzle&>(p), x}, Type{p.Type} {}
+            
             proof(Boost::output_script out, Boost::input_script in) : proof{} {
                 if (out.Type == invalid || in.Type != out.Type) return;
                 *this = proof{puzzle{job{out, out.Type == bounty ? in.MinerAddress : out.MinerAddress},
                     in.ExtraNonce1}, work::solution{in.Timestamp, in.Nonce, in.ExtraNonce2}};
             }
+            
+            proof(type t, const work::string& w, const bytes& h, 
+                const uint32_little& n1, const uint64_little& n2, const bytes& b) : 
+                work::proof{w, {}, h, n1, n2, b}, Type{t} {}
             
             Boost::output_script output_script() const;
             Boost::input_script input_script() const;
