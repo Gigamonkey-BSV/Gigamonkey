@@ -6,6 +6,7 @@
 
 #include "types.hpp"
 #include <data/encoding/integer.hpp>
+#include <data/math/number/bytes/N.hpp>
 
 #include "arith_uint256.h"
 
@@ -19,6 +20,7 @@ namespace Gigamonkey {
         
         explicit uint(string_view hex);
         explicit uint(const base_uint<bits>& b) : base_uint<bits>{b} {}
+        explicit uint(const N& n);
         
         explicit uint(::uint256);
         explicit uint(arith_uint256);
@@ -315,6 +317,13 @@ namespace Gigamonkey {
         if (!data::encoding::hexidecimal::valid(hex)) return;
         bytes read = bytes_view(encoding::hex::string{hex.substr(2)});
         std::reverse_copy(read.begin(), read.end(), begin());
+    }
+    
+    template <size_t size, unsigned int bits>
+    uint<size, bits>::uint(const N& n) : uint(0) {
+        data::math::number::N_bytes<data::endian::little> b{n};
+        if (b.size() > size) std::copy(b.begin(), b.begin() + size, begin());
+        else std::copy(b.begin(), b.end(), begin());
     }
 
 }
