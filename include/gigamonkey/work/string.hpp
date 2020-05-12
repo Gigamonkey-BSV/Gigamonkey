@@ -9,18 +9,18 @@
 namespace Gigamonkey::work {
     
     struct string {
-        int32_little Version;
+        int32_little Category;
         uint256 Digest;
         uint256 MerkleRoot;
         timestamp Timestamp;
         target Target;
         nonce Nonce;
         
-        string() : Version(0), Digest(0), MerkleRoot(0), Timestamp(), Target(0), Nonce(0) {}
+        string() : Category(0), Digest(0), MerkleRoot(0), Timestamp(), Target(0), Nonce(0) {}
         string(int32_little v, uint256 d, uint256 mp, timestamp ts, target tg, nonce n) : 
-            Version{v}, Digest{d}, MerkleRoot{mp}, Timestamp{ts}, Target{tg}, Nonce{n} {}
+            Category{v}, Digest{d}, MerkleRoot{mp}, Timestamp{ts}, Target{tg}, Nonce{n} {}
         
-        static string read(slice<80> x) {
+        static string read(const slice<80> x) {
             return string{
                 Gigamonkey::header::version(x), 
                 uint<32>{Gigamonkey::header::previous(x)}, 
@@ -46,7 +46,7 @@ namespace Gigamonkey::work {
         bool valid() const;
         
         explicit string(const Bitcoin::header& h) : 
-            Version(h.Version), Digest(h.Previous), MerkleRoot(h.MerkleRoot), Timestamp(h.Timestamp), Target(h.Target), Nonce(h.Nonce) {}
+            Category(h.Version), Digest(h.Previous), MerkleRoot(h.MerkleRoot), Timestamp(h.Timestamp), Target(h.Target), Nonce(h.Nonce) {}
         
         work::difficulty difficulty() const {
             return Target.difficulty();
@@ -55,7 +55,7 @@ namespace Gigamonkey::work {
         explicit operator CBlockHeader() const;
         
         bool operator==(const string& x) const {
-            return Version == x.Version && 
+            return Category == x.Category && 
                 Digest == x.Digest && 
                 MerkleRoot == x.MerkleRoot && 
                 Timestamp == x.Timestamp && 

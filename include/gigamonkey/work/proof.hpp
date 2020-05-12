@@ -32,7 +32,10 @@ namespace Gigamonkey::work {
         bytes Body;
         
         puzzle();
-        puzzle(int32_little v, const uint256& d, target g, Merkle::path mp, const bytes& h, uint32_little extra, const bytes& b);
+        puzzle(
+            int32_little v, const uint256& d, 
+            target g, Merkle::path mp, const bytes& h, 
+            uint32_little extra, const bytes& b);
         
         bool valid() const;
         
@@ -48,9 +51,17 @@ namespace Gigamonkey::work {
         
         proof();
         proof(const puzzle& p, const solution& x);
-        proof(const string& w, Merkle::path mp, const bytes& h, const uint32_little& n1, const uint64_little& n2, const bytes& b);
+        proof(
+            const string& w, 
+            Merkle::path mp, 
+            const bytes& h, 
+            const uint32_little& n1, 
+            const uint64_little& n2, 
+            const bytes& b);
         
         bytes meta() const;
+        
+        digest256 merkle_root() const;
         
         work::string string() const;
         
@@ -119,16 +130,30 @@ namespace Gigamonkey::work {
     inline proof::proof() : Puzzle{}, Solution{} {}
     inline proof::proof(const puzzle& p, const solution& x) : Puzzle{p}, Solution{x} {}
     
+    inline proof::proof(
+        const struct string& w, 
+        Merkle::path mp, 
+        const bytes& h, 
+        const uint32_little& n1, 
+        const uint64_little& n2, 
+        const bytes& b) : Puzzle{w.Category, w.Digest, w.Target, {}, h, n1, b}, Solution{w.Timestamp, w.Nonce, n2} {
+        if (w.MerkleRoot != merkle_root()) *this = {};
+    }
+    
     inline bytes proof::meta() const {
         return write(Puzzle.Header.size() + 12 + Puzzle.Body.size(), 
             Puzzle.Header, Puzzle.ExtraNonce, Solution.ExtraNonce, Puzzle.Body);
+    }
+    
+    inline digest256 proof::merkle_root() const {
+        return Puzzle.Path.derive_root(Bitcoin::hash256(meta()));
     }
     
     inline string proof::string() const {
         return work::string{
             Puzzle.Category, 
             Puzzle.Digest, 
-            Puzzle.Path.derive_root(Bitcoin::hash256(meta())), 
+            merkle_root(), 
             Solution.Timestamp, 
             Puzzle.Target, 
             Solution.Nonce

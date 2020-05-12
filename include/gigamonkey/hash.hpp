@@ -15,7 +15,7 @@ namespace Gigamonkey {
         uint(uint64 u) : base_uint<bits>(u) {}
         uint() : uint(0) {}
         
-        uint(slice<size>);
+        uint(const slice<size>);
         
         explicit uint(string_view hex);
         explicit uint(const base_uint<bits>& b) : base_uint<bits>{b} {}
@@ -291,7 +291,7 @@ inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonke
 namespace Gigamonkey {
 
     template <size_t size, unsigned int bits>
-    inline uint<size, bits>::uint(slice<size> x) {
+    inline uint<size, bits>::uint(const slice<size> x) {
         std::copy(x.begin(), x.end(), begin());
     }
     

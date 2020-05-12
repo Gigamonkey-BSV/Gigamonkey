@@ -23,7 +23,7 @@ namespace Gigamonkey::Bitcoin {
 }
 
 namespace Gigamonkey::header {
-    int32_little version(slice<80>);
+    int32_little version(const slice<80>);
     
     const digest256 previous(const slice<80> x);
     

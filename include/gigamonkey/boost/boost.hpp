@@ -363,6 +363,8 @@ namespace Gigamonkey {
             operator Boost::output_script() const; 
         };
         
+        struct proof;
+        
         // A puzzle is created after ExtraNonce is assigned by the mining pool. 
         struct puzzle : work::puzzle {
             type Type;
@@ -417,6 +419,8 @@ namespace Gigamonkey {
                 write(tag.size() + 20, tag, miner_address), extra_nonce, 
                 write(data.size() + 4, user_nonce, data)}, type};
             }
+            
+            friend struct proof;
         };
         
         struct proof : work::proof {
@@ -429,15 +433,22 @@ namespace Gigamonkey {
             
             proof(Boost::output_script out, Boost::input_script in) : proof{} {
                 if (out.Type == invalid || in.Type != out.Type) return;
-                *this = proof{puzzle{job{out, out.Type == bounty ? in.MinerAddress : out.MinerAddress},
+                *this = proof{Boost::puzzle{job{out, out.Type == bounty ? in.MinerAddress : out.MinerAddress},
                     in.ExtraNonce1}, work::solution{in.Timestamp, in.Nonce, in.ExtraNonce2}};
             }
             
             proof(type t, const work::string& w, const bytes& h, 
                 const uint32_little& n1, const uint64_little& n2, const bytes& b) : 
                 work::proof{w, {}, h, n1, n2, b}, Type{t} {}
+                
+            Boost::puzzle puzzle() const {
+                return Boost::puzzle{work::proof::Puzzle, Type};
+            }
             
-            Boost::output_script output_script() const;
+            Boost::output_script output_script() const {
+                return puzzle().output_script();
+            }
+            
             Boost::input_script input_script() const;
             
             bool operator==(const proof& j) const {
