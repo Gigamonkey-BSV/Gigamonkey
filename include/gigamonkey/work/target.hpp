@@ -18,7 +18,9 @@ namespace Gigamonkey::work {
         explicit difficulty(const Z& z) : Q(z) {}
         explicit difficulty(target t);
         //explicit difficulty(double);
-        explicit operator double() const;
+        explicit operator double() const {
+            return double(Q::Numerator) / double(Q::Denominator.Number);
+        }
         
         static difficulty minimum() {
             return difficulty(1);
