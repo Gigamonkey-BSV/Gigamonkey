@@ -181,6 +181,25 @@ namespace Gigamonkey {
             }
             
         };
+    
+        struct output {
+            Bitcoin::outpoint Reference;
+            output_script Script;
+            satoshi Value;
+            digest256 ID;
+            
+            output() : Reference{}, Script{}, Value{0}, ID{} {}
+            output(const Bitcoin::outpoint& o, const output_script& s, satoshi v) : 
+                Reference{o}, Script{s}, Value{v}, ID{s.hash()} {}
+                
+            bool valid() const {
+                return Reference.valid() && Script.valid() && ID.valid();
+            }
+            
+        private:
+            output(const Bitcoin::outpoint& o, const output_script& j, satoshi v, const uint256& id) : 
+                Reference{o}, Script{j}, Value{v}, ID{id} {}
+        };
         
         struct input_script {
             Boost::type Type;

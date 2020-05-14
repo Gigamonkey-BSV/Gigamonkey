@@ -4,7 +4,6 @@
 #ifndef GIGAMONKEY_SECP256K1
 #define GIGAMONKEY_SECP256K1
 
-#include "types.hpp"
 #include "hash.hpp"
 #include <data/encoding/integer.hpp>
 #include <data/iterable.hpp>
@@ -369,3 +368,4 @@ namespace Gigamonkey::secp256k1 {
 }
 
 #endif
+
