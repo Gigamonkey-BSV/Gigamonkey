@@ -49,7 +49,7 @@ namespace Gigamonkey::Bitcoin {
         while (!p.empty()) {
             data::entry<spendable, sighash::directive> entry = p.first();
             in = in << input{entry.Key.Prevout.Outpoint, 
-                redemption::redeem(entry.Key.Redeemer.redeem(entry.Value), 
+                redemption::redeem(entry.Key.Redeemer->redeem(entry.Value), 
                     input_index{entry.Key.Prevout.Output, incomplete, ind++}), 
                 entry.Key.Sequence};
             prevouts = prevouts << entry.Key.Prevout;

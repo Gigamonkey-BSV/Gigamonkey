@@ -59,7 +59,7 @@ namespace Gigamonkey::Bitcoin {
     };
     
     struct spendable {
-        redeemable& Redeemer;
+        ptr<redeemable> Redeemer;
         prevout Prevout;
         uint32_little Sequence;
         
@@ -67,7 +67,7 @@ namespace Gigamonkey::Bitcoin {
             return Prevout.valid();
         } 
         
-        spendable(redeemable& r, prevout p, uint32_little s = 0) : Redeemer{r}, Prevout{p}, Sequence{s} {}
+        spendable(ptr<redeemable> r, prevout p, uint32_little s = 0) : Redeemer{r}, Prevout{p}, Sequence{s} {}
     };
     
     struct vertex {

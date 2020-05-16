@@ -104,7 +104,7 @@ namespace Gigamonkey::Boost {
                 const Stratum::worker& worker, 
                 uint64_little n2, uint64 key) {
                 Bitcoin::secret s(Bitcoin::secret::main, secp256k1::secret(secp256k1::coordinate(key)));
-                puzzle Puzzle{job{o, s.address().Digest}, worker.ExtraNonce1};
+                puzzle Puzzle{o, s.address().Digest, worker.ExtraNonce1};
                 return test_case{Puzzle, o, Stratum::job{jobID, Puzzle, worker, start, true}, n2, s};
             }
             
@@ -121,7 +121,7 @@ namespace Gigamonkey::Boost {
                 uint64 key) { 
                 Bitcoin::secret s(Bitcoin::secret::main, secp256k1::secret(secp256k1::coordinate(key)));
                 digest160 address = s.address().Digest;
-                puzzle Puzzle{job{type, 1, content, target, tag, user_nonce, data, address}, worker.ExtraNonce1};
+                puzzle Puzzle{type, 1, content, target, tag, user_nonce, data, address, worker.ExtraNonce1};
                 
                 return test_case(Puzzle, 
                     output_script{type, 1, content, target, tag, user_nonce, data, address}, 

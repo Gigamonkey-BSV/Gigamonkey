@@ -46,8 +46,8 @@ namespace Gigamonkey::Bitcoin {
                 remainder = funds{};
                 list<spendable> entries = to_redeem.Entries;
                 while (!entries.empty()) {
-                    inputs_size += entries.first().Redeemer.expected_size();
-                    inputs_sigops += entries.first().Redeemer.sigops();
+                    inputs_size += entries.first().Redeemer->expected_size();
+                    inputs_sigops += entries.first().Redeemer->sigops();
                     entries = entries.rest();
                 }
                 break;
@@ -56,8 +56,8 @@ namespace Gigamonkey::Bitcoin {
                 remainder = Funds;
                 do {
                     funds::selected x = remainder.select_next();
-                    inputs_size += x.Selected.Redeemer.expected_size();
-                    inputs_sigops += x.Selected.Redeemer.sigops();
+                    inputs_size += x.Selected.Redeemer->expected_size();
+                    inputs_sigops += x.Selected.Redeemer->sigops();
                     to_redeem = to_redeem.insert(x.Selected);
                     remainder = x.Remainder;
                     fee = Fee.calculate(inputs_size + outputs_size + 8, inputs_sigops);
@@ -68,8 +68,8 @@ namespace Gigamonkey::Bitcoin {
                 remainder = Funds;
                 do {
                     funds::selected x = remainder.select_random();
-                    inputs_size += x.Selected.Redeemer.expected_size();
-                    inputs_sigops += x.Selected.Redeemer.sigops();
+                    inputs_size += x.Selected.Redeemer->expected_size();
+                    inputs_sigops += x.Selected.Redeemer->sigops();
                     to_redeem = to_redeem.insert(x.Selected);
                     fee = Fee.calculate(inputs_size + outputs_size + 8, inputs_sigops);
                 } while (to_redeem.Value < to_spend + fee);

@@ -334,7 +334,7 @@ namespace Gigamonkey {
         };
         
         // A job is a work::puzzle without ExtraNonce and with a Boost type. 
-        // This type always has an address associated with it. 
+        // Both an address and key are associated with it.  
         struct job {
             type Type;
             int32_little Category;
@@ -343,14 +343,14 @@ namespace Gigamonkey {
             bytes Tag;
             uint32_little UserNonce;
             bytes AdditionalData;
-            digest160 MinerAddress;
+            Bitcoin::secret MinerKey;
             
             bool valid() const { 
-                return (Type == Boost::bounty || Type == Boost::contract) && 
-                    Target.valid() && MinerAddress.valid();
+                return Target.valid() && MinerKey.valid() && 
+                    (Type == Boost::bounty || Type == Boost::contract);
             }
             
-            job() : Type{invalid}, Category{}, Content{}, Target{}, Tag{}, UserNonce{}, AdditionalData{}, MinerAddress{} {}
+            job() : Type{invalid}, Category{}, Content{}, Target{}, Tag{}, UserNonce{}, AdditionalData{}, MinerKey{} {}
             
             job(Boost::type type, 
                 int32_little category, 
@@ -359,20 +359,20 @@ namespace Gigamonkey {
                 const bytes& tag, 
                 uint32_little user_nonce, 
                 const bytes& data, 
-                const digest160& miner_address) : 
+                const Bitcoin::secret& miner_key) : 
                 Type{type}, Category{category}, Content{content}, Target{target}, Tag{tag}, UserNonce{user_nonce}, 
-                AdditionalData{data}, MinerAddress{miner_address} {}
+                AdditionalData{data}, MinerKey{miner_key} {}
             
-            job(const Boost::output_script& x, const digest160& addr) : job{} {
+            job(const Boost::output_script& x, const Bitcoin::secret& addr) : job{} {
                 if (x.Type == invalid) return;
-                if (x.Type == contract && x.MinerAddress != addr) return;
+                if (x.Type == contract && x.MinerAddress != addr.address().Digest) return;
                 *this = job{x.Type, x.Category, x.Content, x.Target, x.Tag, x.UserNonce, x.AdditionalData, addr};
             }
             
             bool operator==(const job& j) const {
                 return Type == j.Type && Category == j.Category && Content == j.Content && 
                     Target == j.Target && Tag == j.Tag && UserNonce == j.UserNonce && 
-                    AdditionalData == j.AdditionalData && MinerAddress == j.MinerAddress;
+                    AdditionalData == j.AdditionalData && MinerKey == j.MinerKey;
             }
             
             bool operator!=(const job& j) const {
@@ -380,6 +380,10 @@ namespace Gigamonkey {
             }
             
             operator Boost::output_script() const; 
+            
+            digest160 miner_address() const {
+                return MinerKey.address().Digest;
+            }
         };
         
         struct proof;
@@ -404,10 +408,13 @@ namespace Gigamonkey {
                 const digest160& miner_address, 
                 uint32_little extra_nonce) : 
                 puzzle(make(type, category, content, target, tag, user_nonce, data, miner_address, extra_nonce)) {}
-            
-            puzzle(const job& x, uint32_little extra_nonce) : 
-                puzzle{x.Type, x.Category, x.Content, x.Target, x.Tag, 
-                    x.UserNonce, x.AdditionalData, x.MinerAddress, extra_nonce} {}
+                
+            puzzle(const output_script& x, const digest160& miner_address, uint32_little extra_nonce) {
+                if (x.Type == invalid) return;
+                if (x.Type == contract && x.MinerAddress != miner_address) return;
+                *this = puzzle{x.Type, x.Category, x.Content, x.Target, 
+                    x.Tag, x.UserNonce, x.AdditionalData, miner_address, extra_nonce};
+            }
             
             bool operator==(const puzzle& j) const {
                 return Type == j.Type && work::puzzle::operator==(static_cast<const work::puzzle&>(j));
@@ -425,7 +432,7 @@ namespace Gigamonkey {
             puzzle(work::puzzle p, type t) : work::puzzle{p}, Type{t} {}
             
             static puzzle make(Boost::type type, 
-                int32_little version, 
+                int32_little category, 
                 const uint256& content, 
                 work::target target, 
                 const bytes& tag, 
@@ -434,7 +441,7 @@ namespace Gigamonkey {
                 const digest160& miner_address, 
                 uint32_little extra_nonce) {
                 if (type == invalid) return {};
-                return puzzle{work::puzzle{version, content, target, Merkle::path{}, 
+                return puzzle{work::puzzle{category, content, target, Merkle::path{}, 
                 write(tag.size() + 20, tag, miner_address), extra_nonce, 
                 write(data.size() + 4, user_nonce, data)}, type};
             }
@@ -452,8 +459,10 @@ namespace Gigamonkey {
             
             proof(Boost::output_script out, Boost::input_script in) : proof{} {
                 if (out.Type == invalid || in.Type != out.Type) return;
-                *this = proof{Boost::puzzle{job{out, out.Type == bounty ? in.MinerAddress : out.MinerAddress},
-                    in.ExtraNonce1}, work::solution{in.Timestamp, in.Nonce, in.ExtraNonce2}};
+                *this = proof{Boost::puzzle{out.Type, out.Category, out.Content, 
+                        out.Target, out.Tag, out.UserNonce, out.AdditionalData, 
+                        out.Type == bounty ? in.MinerAddress : out.MinerAddress, in.ExtraNonce1},
+                    work::solution{in.Timestamp, in.Nonce, in.ExtraNonce2}};
             }
             
             proof(type t, const work::string& w, const bytes& h, 
