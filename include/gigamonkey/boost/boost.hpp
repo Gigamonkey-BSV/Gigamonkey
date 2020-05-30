@@ -379,7 +379,19 @@ namespace Gigamonkey {
                 return !operator==(j);
             }
             
-            operator Boost::output_script() const; 
+            Boost::output_script output_script() const {
+                switch (Type) {
+                    case bounty : 
+                        return Boost::output_script::bounty(
+                            Category, Content, Target, Tag, 
+                            UserNonce, AdditionalData);
+                    case contract : 
+                        return Boost::output_script::contract(
+                            Category, Content, Target, Tag, 
+                            UserNonce, AdditionalData, miner_address());
+                    default: return Boost::output_script{};
+                }
+            }
             
             digest160 miner_address() const {
                 return MinerKey.address().Digest;
@@ -393,7 +405,7 @@ namespace Gigamonkey {
             type Type;
             
             bool valid() const {
-                return (Type == Boost::bounty || Type == Boost::contract) && work::puzzle::valid();
+                return Type != Boost::invalid && work::puzzle::valid();
             }
             
             puzzle() : work::puzzle{}, Type{invalid} {}

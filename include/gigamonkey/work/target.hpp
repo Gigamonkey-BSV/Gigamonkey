@@ -12,7 +12,7 @@ namespace Gigamonkey::work {
     using uint256 = Gigamonkey::uint256;
     
     struct target;
-    
+    /*
     struct difficulty : Q {
         explicit difficulty(const Q& q) : Q(q) {}
         explicit difficulty(const Z& z) : Q(z) {}
@@ -49,10 +49,137 @@ namespace Gigamonkey::work {
         }
         
         explicit difficulty(const Z& z, const N& n) : Q(z, n) {}
+    };*/
+    
+    // units of difficulty per second. 
+    struct hashpower {
+        double Value;
+        
+        hashpower operator+(const hashpower& x) const {
+            return hashpower{Value + x.Value};
+        }
+        
+        hashpower& operator+=(const hashpower& x) {
+            Value += x.Value;
+            return *this;
+        }
+        
+        hashpower operator-(const hashpower& x) const {
+            return hashpower{Value - x.Value};
+        }
+        
+        hashpower& operator-=(const hashpower& x) {
+            Value -= x.Value;
+            return *this;
+        }
+        
+        hashpower operator*(double x) const {
+            return hashpower{Value * x};
+        }
+        
+        bool operator==(const hashpower& x) const {
+            return Value == x.Value;
+        }
+        
+        bool operator!=(const hashpower& x) const {
+            return Value != x.Value;
+        }
+        
+        bool operator>=(const hashpower& x) const {
+            return Value >= x.Value;
+        }
+        
+        bool operator<=(const hashpower& x) const {
+            return Value <= x.Value;
+        }
+        
+        bool operator>(const hashpower& x) const {
+            return Value > x.Value;
+        }
+        
+        bool operator<(const hashpower& x) const {
+            return Value < x.Value;
+        }
+        
+        explicit operator double() const {
+            return Value;
+        }
+    };
+    
+    // proportional to hash operations per second. 
+    struct difficulty {
+        double Value;
+        
+        bool valid() const {
+            return Value >= 1;
+        }
+        
+        explicit operator double() const {
+            return Value;
+        }
+        
+        difficulty() : Value{0} {}
+        explicit difficulty(double x) : Value{x} {}
+        
+        static difficulty minimum() {
+            return difficulty(1);
+        }
+        
+        difficulty operator+(const difficulty& x) const {
+            return difficulty{Value + x.Value};
+        }
+        
+        difficulty operator+=(const difficulty& x) {
+            Value += x.Value;
+            return *this;
+        }
+        
+        difficulty operator-(const difficulty& x) const {
+            return difficulty{Value - x.Value};
+        }
+        
+        difficulty operator-=(const difficulty& x) {
+            Value -= x.Value;
+            return *this;
+        }
+        
+        difficulty operator*(double x) const {
+            return difficulty(Value * x);
+        }
+        
+        bool operator==(const difficulty& x) const {
+            return Value == x.Value;
+        }
+        
+        bool operator!=(const difficulty& x) const {
+            return Value != x.Value;
+        }
+        
+        bool operator>=(const difficulty& x) const {
+            return Value >= x.Value;
+        }
+        
+        bool operator<=(const difficulty& x) const {
+            return Value <= x.Value;
+        }
+        
+        bool operator>(const difficulty& x) const {
+            return Value > x.Value;
+        }
+        
+        bool operator<(const difficulty& x) const {
+            return Value < x.Value;
+        }
+        
+        double operator/(const hashpower& x) const {
+            return Value / x.Value;
+        }
+        
     };
     
     uint256 expand_compact(uint32_little);
     
+    // proportional to inverse difficulty.
     struct target : uint32_little {
         
         static target encode(byte e, uint24_little v);
@@ -80,7 +207,9 @@ namespace Gigamonkey::work {
         }
         
         work::difficulty difficulty() const {
-            return work::difficulty(*this);
+            return work::difficulty{
+                double(Z{"0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"}) / 
+                double(N(expand()))};
         };
         
         explicit operator work::difficulty() const {
@@ -97,7 +226,7 @@ namespace Gigamonkey::work {
     const target SuccessEighth{32, 0x200000};
     const target SuccessSixteenth{32, 0x100000};
     
-    inline difficulty::difficulty(target t) : difficulty(scale(), N(t.expand())) {}
+    //inline difficulty::difficulty(target t) : difficulty(scale(), N(t.expand())) {}
     
     inline target target::encode(byte e, uint24_little v) {
         target t;

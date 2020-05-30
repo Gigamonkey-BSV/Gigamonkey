@@ -20,6 +20,10 @@ namespace Gigamonkey {
         explicit timestamp(const uint32_little& t) : nonzero<uint32_little>{t} {}
         explicit timestamp(const nonzero<uint32_little>& n) : nonzero<uint32_little>{n} {}
         
+        static timestamp now() {
+            return timestamp{uint32_little{static_cast<uint32>(time(nullptr))}};
+        };
+        
         byte* data() {
             return nonzero<uint32_little>::Value.data();
         }
@@ -30,6 +34,10 @@ namespace Gigamonkey {
         
         operator bytes_view() const {
             return bytes_view(data(), 4);
+        }
+        
+        explicit operator uint32() {
+            return nonzero<uint32_little>::Value;
         }
         
         string write() const {
