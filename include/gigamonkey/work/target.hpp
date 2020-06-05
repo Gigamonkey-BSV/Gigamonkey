@@ -175,6 +175,10 @@ namespace Gigamonkey::work {
             return Value / x.Value;
         }
         
+        double operator/(const difficulty& x) const {
+            return Value / x.Value;
+        }
+        
     };
     
     uint256 expand_compact(uint32_little);
