@@ -103,9 +103,14 @@ if(NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/data/CMakeLists.txt")
     message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
 endif()
 
-if(NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/bitcoin-sv/CMakeLists.txt")
-	message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
+if(NOT CHAIN_SRC_ROOT)
+	message(FATAL_ERROR "Root dir of chain's source code not defined! (-DCHAIN_SRC_ROOT=<path>)")
 endif()
+message("-- Root Dir of ${CHAIN_NAME}: ${CHAIN_SRC_ROOT} (-DCHAIN_SRC_ROOT=${CHAIN_SRC_ROOT})")
+if (NOT EXISTS "${CHAIN_SRC_ROOT}/src/version.h")
+	message(FATAL_ERROR "The source code of ${CHAIN_NAME} does not exist!")
+endif()
+
 ## Enable testing
 include(CTest)
 
@@ -115,7 +120,7 @@ if(PACKAGE_TESTS)
 endif()
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/extern/data/")
-add_subdirectory("${PROJECT_SOURCE_DIR}/extern/bitcoin-sv/")
+add_subdirectory("${CHAIN_SRC_ROOT}" bitcoin-sv)
 add_library(gigamonkey STATIC 
     src/bitcoin_sv/hash.cpp
     src/bitcoin_sv/signature.cpp
