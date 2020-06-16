@@ -1,6 +1,3 @@
-[submodule "extern/bitcoin-sv"]
-	path = extern/bitcoin-sv
-	url = https://github.com/bitcoin-sv/bitcoin-sv
 [submodule "extern/data"]
 	path = extern/data
 	url = https://github.com/DanielKrawisz/data
