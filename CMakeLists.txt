@@ -118,6 +118,13 @@ if(PACKAGE_TESTS)
 	enable_testing()
 	add_subdirectory(test)
 endif()
+find_package(nlohmann_json 3.2.0 REQUIRED)
+if(nlohmann_json_FOUND)
+
+	message(STATUS "nlohmann_json_INCLUDE_DIRS: ${nlohmann_json_INCLUDE_DIRS}")
+	message(STATUS "nlohmann_json_LIBRARIES: ${nlohmann_json_LIBRARIES}")
+
+endif()
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/extern/data/")
 add_subdirectory("${CHAIN_SRC_ROOT}" bitcoin-sv)
@@ -142,7 +149,7 @@ add_library(gigamonkey STATIC
     #src/bitcoin_sv/sv.cpp 
 )
 
-target_link_libraries(gigamonkey PUBLIC data common util bitcoinconsensus ${LIB_BITCOIN_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY})
+target_link_libraries(gigamonkey PUBLIC data common util bitcoinconsensus ${LIB_BITCOIN_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} nlohmann_json::nlohmann_json)
 
 target_include_directories(gigamonkey PUBLIC include)
 
