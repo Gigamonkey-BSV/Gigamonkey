@@ -94,6 +94,10 @@ namespace Gigamonkey {
                 return !operator==(o);
             }
             
+            size_t serialized_size() const {
+                return write().size();
+            }
+            
             static Boost::type type(script x) {
                 return read(x).Type;
             }
@@ -254,6 +258,10 @@ namespace Gigamonkey {
             
             script write() const {
                 return Bitcoin::compile(program());
+            }
+            
+            size_t serialized_size() const {
+                return write().size();
             }
             
             // construct a Boost bounty input script. 
