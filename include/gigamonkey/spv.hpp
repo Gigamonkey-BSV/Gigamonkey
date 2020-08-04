@@ -5,7 +5,8 @@
 #define GIGAMONKEY_SPV
 
 #include "timechain.hpp"
-#include "work.hpp"
+#include "merkle.hpp"
+#include "txid.hpp"
 
 namespace Gigamonkey::Bitcoin {
     
@@ -16,6 +17,7 @@ namespace Gigamonkey::Bitcoin {
         struct header {
             Bitcoin::header Header;
             digest<32> Hash;
+            N Height;
             work::difficulty Cumulative;
             
             header(Bitcoin::header h, digest<32> s, work::difficulty d) : Header{h}, Hash{s}, Cumulative{d} {}
@@ -29,54 +31,28 @@ namespace Gigamonkey::Bitcoin {
             }
         };
         
-        struct chain {
-            list<header> Chain;
-            
-            bool valid() const {
-                return !data::empty(Chain);
-            }
-            
-            work::difficulty difficulty() const {
-                return valid() ? Chain.first().Cumulative : work::difficulty{0};
-            }
-            
-            chain add(const Bitcoin::header& h) const {
-                digest<32> digest = h.hash();
-                if (Chain.first().Hash != digest) return {};
-                return chain{Chain << header{h, digest, difficulty() + h.Target.difficulty()};
-            }
-            
-            bool operator>(const chain& h) {
-                return difficulty() > h.difficulty();
-            }
-            
-            bool operator<(const chain& h) {
-                return difficulty() < h.difficulty();
-            }
-            
-            bool operator>=(const chain& h) {
-                return difficulty() >= h.difficulty();
-            }
-            
-            bool operator<=(const chain& h) {
-                return difficulty() <= h.difficulty();
-            }
-            
-        private:
-            chain(list<header> c) : Chain{c} {}
-            chain() : Chain{} {}
-            friend struct headers;
+        virtual header latest() = 0;
+        
+        virtual ptr<header> by_height(const N&) = 0;
+        
+        struct merkle {
+            header Header;
+            Merkle::path Path;
         };
         
-        ordered_list<chain> Chains;
-        map<digest<32>, list<header>> Headers;
+        virtual ptr<merkle> get_path(const txid&) = 0;
         
-        headers() : Chains{ordered_list<chain>{} << chain{list<header>{} << header{genesis(), genesis().hash(), genesis().difficulty()}}} {}
-        
-        headers attach(const Bitcoin::header& h) const;
-        
-    private:
-        headers(ordered_list<chain> ch, map<digest<32>, list<header>> h) : Chains{ch}, Headers{h} {}
+    };
+    
+    struct transactions {
+        // the transaction lifecycle
+        enum status : byte {
+            invalid,         // cannot be broadcasted
+            valid,           // could be broadcasted
+            broadcasted,     // has been spent
+            spendable,       // can be redeemed
+            confirmed        // has a merkle path
+        };
     };
     
 }

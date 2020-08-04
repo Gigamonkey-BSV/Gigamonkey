@@ -15,13 +15,15 @@ testExpandCompact.cpp
 testDifficulty.cpp
 testWorkString.cpp
 testWork.cpp 
+
 #testECIES.cpp 
 #testWallet.cpp 
 #testGenesis.cpp 
+
 testBoost.cpp
 testBip32.cpp
-testLib.cpp 
-testBip32Derivations.cpp)
+testBip32Derivations.cpp
+testLib.cpp )
 target_include_directories(testGigamonkey PUBLIC .)
 target_link_libraries(testGigamonkey gmock_main gigamonkey data)
 get_target_property(OUT testGigamonkey LINK_LIBRARIES)

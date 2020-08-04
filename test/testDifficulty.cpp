@@ -7,13 +7,6 @@
 namespace Gigamonkey::work {
 
     TEST(DifficultyTest, TestDifficulty) {
-        
-        difficulty success_half = SuccessHalf.difficulty();
-        
-        EXPECT_TRUE(success_half.valid());
-        EXPECT_TRUE(SuccessQuarter.difficulty().valid());
-        EXPECT_TRUE(SuccessEighth.difficulty().valid());
-        EXPECT_TRUE(SuccessSixteenth.difficulty().valid());
         EXPECT_TRUE(difficulty::minimum().valid());
         EXPECT_TRUE(difficulty(1).valid());
         EXPECT_TRUE(difficulty(2).valid());

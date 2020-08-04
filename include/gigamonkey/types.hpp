@@ -8,10 +8,11 @@
 #include <string_view>
 #include <array>
 
+#include <boost/endian/conversion.hpp>
+
 #include <data/stream.hpp>
 
 #include <data/data.hpp>
-#include <nlohmann/json.hpp>
 
 inline bool implies(bool a, bool b) {
     return (!a) || b;
@@ -20,15 +21,6 @@ inline bool implies(bool a, bool b) {
 namespace Gigamonkey {
     
     using namespace data;
-    
-    using endian = boost::endian::order;
-    
-    const endian BigEndian = boost::endian::order::big;
-    const endian LittleEndian = boost::endian::order::little;
-    
-    constexpr inline endian opposite_endian(endian e) {
-        return e == BigEndian ? LittleEndian : BigEndian;
-    }
     
     using checksum = uint32_little;
     
@@ -42,6 +34,8 @@ namespace Gigamonkey {
     using satoshi = boost::endian::native_int64_t;
     
     using nonce = uint32_little;
+    
+    enum chain : byte {test, main};
     
     template <typename X>
     struct nonzero : data::math::nonzero<X> {
@@ -66,7 +60,6 @@ namespace Gigamonkey {
         }
     };
     
-    using json = nlohmann::json;
     /*
     template <size_t size>
     using uint = data::uint<size>;

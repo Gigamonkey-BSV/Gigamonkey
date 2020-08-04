@@ -1,7 +1,13 @@
 #ifndef GIGAMONKEY_STRATUM_STRATUM
 #define GIGAMONKEY_STRATUM_STRATUM
 
+#include <nlohmann/json.hpp>
+
 #include <gigamonkey/work/proof.hpp>
+
+namespace Gigamonkey {
+    using json = nlohmann::json;
+}
 
 namespace Gigamonkey::Stratum {
     using request_id = uint64;

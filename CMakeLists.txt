@@ -108,7 +108,7 @@ if(NOT CHAIN_SRC_ROOT)
 endif()
 message("-- Root Dir of ${CHAIN_NAME}: ${CHAIN_SRC_ROOT} (-DCHAIN_SRC_ROOT=${CHAIN_SRC_ROOT})")
 if (NOT EXISTS "${CHAIN_SRC_ROOT}/src/version.h")
-	message(FATAL_ERROR "The source code of ${CHAIN_NAME} does not exist!")
+	message(FATAL_ERROR "The source code of bitcoin SV does not exist!")
 endif()
 
 ## Enable testing
