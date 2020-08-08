@@ -240,4 +240,8 @@ namespace Gigamonkey::work {
 
 }
 
+inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::hashpower& h) {
+    return o << "(" << h.Value << " difficulty / second)";
+}
+
 #endif 
