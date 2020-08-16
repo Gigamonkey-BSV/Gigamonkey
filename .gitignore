@@ -34,5 +34,6 @@
 #cmake
 build/
 cmake-build-debug/
+cmake-build-debug-coverage/
 .idea/
-
+.vscode/

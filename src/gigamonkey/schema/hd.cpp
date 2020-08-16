@@ -4,10 +4,21 @@
 #include <gigamonkey/schema/hd.hpp>
 #include <data/encoding/base58.hpp>
 #include <data/encoding/endian.hpp>
+#include <data/io/unimplemented.hpp>
 #include <crypto++/cryptlib.h>
 #include <crypto++/hmac.h>
 #include <crypto++/files.h>
 #include <crypto++/sha.h>
+#include <crypto++/hex.h>
+#include <cryptopp/sha.h>
+#include <cryptopp/pwdbased.h>
+#include <boost/locale.hpp>
+#include <unicode/normalizer2.h>
+#include <unicode/utypes.h>
+
+#include <unicode/unistr.h>
+#include <bitset>
+
 
 namespace Gigamonkey::Bitcoin::hd::bip32 {
 
@@ -187,7 +198,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         return secret1;
     }
 
-    secret secret::from_seed(bytes entropy, secret::type net) {
+    secret secret::from_seed(seed entropy, secret::type net) {
         const char *keyText = "Bitcoin seed";
         byte hmaced[CryptoPP::HMAC<CryptoPP::SHA512>::DIGESTSIZE];
         try {
@@ -301,7 +312,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         return outputString.encode();
     }
 
-    pubkey pubkey::from_seed(bytes entropy, type net) {
+    pubkey pubkey::from_seed(seed entropy, type net) {
         return secret::from_seed(entropy, (secret::type) net).to_public();
     }
 
@@ -437,13 +448,134 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
 }
 
 namespace Gigamonkey::Bitcoin::hd::bip39 {
-
-    bip32::secret read(cross<std::string> words) {
-        throw method::unimplemented{"bip39::read"};
+    char getBit(int index,bytes bitarray) {
+        return (bitarray[index/8] >> 7-(index & 0x7)) & 0x1;
     }
 
-    cross<std::string> write(bip32::secret) {
-        throw method::unimplemented{"bip39::write"};
+    void setBit(int index, int value,bytes& bitarray) {
+        bitarray[index/8] = bitarray[index/8] | (value  << 7-(index & 0x7));
+    }
+
+    cross<std::string> getWordList(languages lang) {
+        switch(lang) {
+            case english:
+                return english_words();
+            case japanese:
+                return japanese_words();
+            default:
+                return english_words();
+        }
+    }
+    std::string getLangSplit(languages lang) {
+        switch(lang) {
+            case japanese:
+                return "\u3000";
+            default:
+                return " ";
+        }
+    }
+
+    seed read(std::string words,const string& passphrase,languages lang) {
+        if(lang!=english)
+            throw data::method::unimplemented("Non English Language");
+
+
+
+        std::string passcode;
+        char wordsBA2[words.length()];
+        for(int i=0;i<words.length();i++)
+        {
+            wordsBA2[i]=words[i];
+        }
+        std::string salt="mnemonic"+passphrase;
+        CryptoPP::PKCS5_PBKDF2_HMAC<CryptoPP::SHA512> pbkdf2;
+        byte key[64];
+
+        pbkdf2.DeriveKey(key,sizeof(key),0,(const byte *)wordsBA2,words.length(),(const byte *)salt.data(),salt.length(),2048);
+        seed seedObj(64);
+        std::copy(std::begin(key),std::end(key),seedObj.begin());
+        return seedObj;
+    }
+
+    std::string generate(entropy ent,languages lang) {
+        if(lang!=english)
+            throw data::method::unimplemented("Non English Language");
+        assert(ent.size()%4==0);
+        assert(ent.size() >= 16 && ent.size() <= 32);
+        byte abDigest[CryptoPP::SHA256::DIGESTSIZE];
+        CryptoPP::SHA256().CalculateDigest(abDigest, ent.data(), ent.size());
+        int checksumLength=(ent.size()*8) /32;
+
+        byte checkByte=abDigest[0];
+        byte mask=1;
+        mask = (1 << checksumLength) - 1;
+        mask = mask << 8-checksumLength;
+        checkByte&=mask;
+        ent.emplace_back(checkByte);
+        std::vector<int16> word_indices((((ent.size()-1)*8)+checksumLength)/11);
+        std::fill(word_indices.begin(), word_indices.end(), 0);
+        for(int i=0;i<word_indices.size()*11;i++)
+        {
+            word_indices[i /11]+=getBit(i,ent) << (10 - (i%11));
+        }
+        cross<std::string> words_ret;
+        cross<std::string> wordList=getWordList(lang);
+
+        for(short word_indice : word_indices)
+        {
+            words_ret.emplace_back(wordList[word_indice]);
+        }
+        std::string output="";
+        for(std::string str : words_ret)
+            output+=str+getLangSplit(lang);
+        switch(lang)
+        {
+            case japanese:
+                boost::trim_right_if(output,boost::is_any_of(getLangSplit(lang)));
+            case english:
+                boost::trim_right(output);
+        }
+
+        return output;
+    }
+
+    bool valid(std::string words_text,languages lang) {
+        std::vector<std::string> wordsList;
+        boost::split(wordsList, words_text, boost::is_any_of(getLangSplit(lang)));
+        std::vector<int> wordIndices(wordsList.size());
+        cross<std::string> refWordList=getWordList(lang);
+        for(int i=0;i<wordsList.size();i++) {
+            bool found=false;
+            for(int j=0;j<refWordList.size();j++) {
+                if(refWordList[j]==wordsList[i]) {
+                    wordIndices[i] = j;
+                    found=true;
+                }
+            }
+            if(!found)
+                return false;
+
+
+        }
+        int wordIndicesSize=wordIndices.size();
+        double numBits=((wordIndices.size())*11);
+        bytes byteArray(ceil(numBits/8));
+        for(int i=0;i<numBits;i++ )
+        {
+            bool bit=((wordIndices[i/11]) & (1<<(10-(i%11))));
+            setBit(i,bit,byteArray);
+        }
+        byte check=byteArray[byteArray.size()-1];
+        byte abDigest[CryptoPP::SHA256::DIGESTSIZE];
+        CryptoPP::SHA256().CalculateDigest(abDigest, byteArray.data(), byteArray.size()-1);
+        int checksumLength=((byteArray.size()-1)*8) /32;
+        byte checkByte=abDigest[0];
+        byte mask=1;
+        mask = (1 << checksumLength) - 1;
+        mask = mask << 8-checksumLength;
+        checkByte&=mask;
+
+        return checkByte==check;
     }
 
 }

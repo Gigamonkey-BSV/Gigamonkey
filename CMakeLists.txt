@@ -45,8 +45,9 @@ if(NOT TARGET gtest_main AND PACKAGE_TESTS)
 	# the gtest and gtest_main targets.
 	add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
 			${CMAKE_CURRENT_BINARY_DIR}/googletest-build)
-endif()
+include(GoogleTest)
 
+endif()
 
 # Check Git submodules
 
@@ -77,7 +78,7 @@ set(Boost_USE_DEBUG_RUNTIME     OFF         CACHE BOOL "") # '-g' tag
 set(Boost_COMPILER              "-mgw49"    CACHE STRING "")
 
 # Include Boost
-find_package(Boost 1.72.0 COMPONENTS system  REQUIRED)
+find_package(Boost 1.72.0 COMPONENTS system locale  REQUIRED)
 
 if(Boost_FOUND)
 
@@ -89,6 +90,8 @@ if(Boost_FOUND)
     add_definitions("-DHAS_BOOST")
 
 endif()
+
+find_package(ICU 61.0 COMPONENTS uc i18n REQUIRED)
 
 # Find Crypto++
 find_package(CryptoPP REQUIRED)
@@ -128,6 +131,7 @@ endif()
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/extern/data/")
 add_subdirectory("${CHAIN_SRC_ROOT}" bitcoin-sv)
+
 add_library(gigamonkey STATIC 
     src/bitcoin_sv/hash.cpp
     src/bitcoin_sv/signature.cpp
@@ -149,7 +153,7 @@ add_library(gigamonkey STATIC
     #src/bitcoin_sv/sv.cpp 
 )
 
-target_link_libraries(gigamonkey PUBLIC data common util bitcoinconsensus ${LIB_BITCOIN_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} nlohmann_json::nlohmann_json)
+target_link_libraries(gigamonkey PUBLIC data common util bitcoinconsensus ${LIB_BITCOIN_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} nlohmann_json::nlohmann_json ICU::uc ICU::i18n)
 
 target_include_directories(gigamonkey PUBLIC include)
 
