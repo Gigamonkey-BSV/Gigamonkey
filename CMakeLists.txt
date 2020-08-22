@@ -91,7 +91,7 @@ if(Boost_FOUND)
 
 endif()
 
-find_package(ICU 61.0 COMPONENTS uc i18n REQUIRED)
+#find_package(ICU 60.2 COMPONENTS uc i18n REQUIRED)
 
 # Find Crypto++
 find_package(CryptoPP REQUIRED)
@@ -153,7 +153,7 @@ add_library(gigamonkey STATIC
     #src/bitcoin_sv/sv.cpp 
 )
 
-target_link_libraries(gigamonkey PUBLIC data common util bitcoinconsensus ${LIB_BITCOIN_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} nlohmann_json::nlohmann_json ICU::uc ICU::i18n)
+target_link_libraries(gigamonkey PUBLIC data common util bitcoinconsensus ${LIB_BITCOIN_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} nlohmann_json::nlohmann_json )
 
 target_include_directories(gigamonkey PUBLIC include)
 
