@@ -10,9 +10,9 @@
 #include <crypto++/files.h>
 #include <crypto++/sha.h>
 #include <crypto++/hex.h>
-#include <cryptopp/sha.h>
-#include <cryptopp/pwdbased.h>
+#include <crypto++/pwdbased.h>
 #include <boost/locale.hpp>
+#include <cmath>
 //#include <unicode/normalizer2.h>
 //#include <unicode/utypes.h>
 
@@ -559,7 +559,7 @@ namespace Gigamonkey::Bitcoin::hd::bip39 {
         }
         int wordIndicesSize=wordIndices.size();
         double numBits=((wordIndices.size())*11);
-        bytes byteArray(ceil(numBits/8));
+        bytes byteArray(std::ceil(numBits/8));
         for(int i=0;i<numBits;i++ )
         {
             bool bit=((wordIndices[i/11]) & (1<<(10-(i%11))));

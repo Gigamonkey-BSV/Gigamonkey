@@ -9,6 +9,18 @@
 #include <data/iterable.hpp>
 #include <secp256k1.h>
 
+namespace Gigamonkey {
+    template <typename pubkey, typename signature, typename digest>
+    struct signing_key {
+        
+        virtual signature sign(const digest& d) const = 0;
+        
+        virtual pubkey to_public() const = 0;
+        
+        virtual bool valid() const = 0;
+    };
+}
+
 namespace Gigamonkey::secp256k1 {
     
     constexpr size_t SecretSize{32};
@@ -64,7 +76,7 @@ namespace Gigamonkey::secp256k1 {
     
     using digest = Gigamonkey::digest<SecretSize>;
     
-    class secret : public nonzero<coordinate> {
+    class secret : public nonzero<coordinate>, public signing_key<pubkey, signature, digest> {
         static bool valid(bytes_view);
         static bytes to_public_compressed(bytes_view);
         static bytes to_public_uncompressed(bytes_view);
@@ -79,15 +91,15 @@ namespace Gigamonkey::secp256k1 {
         secret() : nonzero<coordinate>{} {}
         explicit secret(const coordinate& v) : nonzero<coordinate>{v} {}
         
-        bool valid() const;
+        bool valid() const override;
         
         bool operator==(const secret& s) const;
         
         bool operator!=(const secret& s) const;
         
-        signature sign(const digest& d) const;
+        signature sign(const digest& d) const override;
         
-        pubkey to_public() const;
+        pubkey to_public() const override;
         
         secret operator-() const;
         
