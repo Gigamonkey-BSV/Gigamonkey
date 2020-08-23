@@ -13,10 +13,10 @@
 #include <cryptopp/sha.h>
 #include <cryptopp/pwdbased.h>
 #include <boost/locale.hpp>
-#include <unicode/normalizer2.h>
-#include <unicode/utypes.h>
+//#include <unicode/normalizer2.h>
+//#include <unicode/utypes.h>
 
-#include <unicode/unistr.h>
+//#include <unicode/unistr.h>
 #include <bitset>
 
 
