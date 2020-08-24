@@ -6,18 +6,20 @@
 
 #include "hash.hpp"
 #include <data/encoding/integer.hpp>
-#include <data/iterable.hpp>
+#include <data/crypto/encrypted.hpp>
 #include <secp256k1.h>
 
 namespace Gigamonkey {
+    // we use different representations of keys. Thus, we have an 
+    // abstract class for secret keys. 
     template <typename pubkey, typename signature, typename digest>
     struct signing_key {
         
-        virtual signature sign(const digest& d) const = 0;
+        virtual bool valid() const = 0;
         
         virtual pubkey to_public() const = 0;
         
-        virtual bool valid() const = 0;
+        virtual signature sign(const digest& d) const = 0;
     };
 }
 
@@ -76,7 +78,9 @@ namespace Gigamonkey::secp256k1 {
     
     using digest = Gigamonkey::digest<SecretSize>;
     
-    class secret : public nonzero<coordinate>, public signing_key<pubkey, signature, digest> {
+    using signing_key = Gigamonkey::signing_key<pubkey, signature, digest>;
+    
+    class secret : public nonzero<coordinate>, public signing_key {
         static bool valid(bytes_view);
         static bytes to_public_compressed(bytes_view);
         static bytes to_public_uncompressed(bytes_view);
@@ -108,7 +112,6 @@ namespace Gigamonkey::secp256k1 {
         secret operator*(const secret& s) const;
     };
     
-        
     class pubkey {
         static bool valid(bytes_view);
         static bool verify(bytes_view pubkey, const digest&, const signature&);
@@ -173,9 +176,33 @@ namespace Gigamonkey::secp256k1 {
         digest160 hash() const;
     };
     
+    class encrypted_key : public nonzero<coordinate>, public signing_key {
+        data::crypto::locked<32> Encrypted;
+        
+        secret decrypt() const {
+            secret x;
+            data::crypto::decrypted{Encrypted.decrypt()};
+            return x;
+        }
+        
+        bool valid() const override {
+            return decrypt().valid();
+        }
+        
+        pubkey to_public() const override {
+            return decrypt().to_public();
+        }
+        
+        signature sign(const digest& d) const override {
+            return decrypt().sign(d);
+        }
+    };
+    
 }
 
 namespace Gigamonkey::Bitcoin {
+    // a Bitcoin pubkey is just a secp256k1 pubkey. 
+    // Secret keys are different. 
     using pubkey = secp256k1::pubkey;
 }
 

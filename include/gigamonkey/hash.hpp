@@ -12,6 +12,7 @@
 
 namespace Gigamonkey {
     
+    // a representation of uints of any size. 
     template <size_t size, unsigned int bits = 8 * size> struct uint : base_uint<bits> {
         uint(uint64 u) : base_uint<bits>(u) {}
         uint() : uint(0) {}
@@ -166,9 +167,12 @@ namespace Gigamonkey {
         }
     };
     
+    // sizes of standard hash functions. 
     using uint160 = uint<20>;
     using uint256 = uint<32>;
+    using uint512 = uint<64>;
 
+    // a hash digest. 
     template <size_t size> struct digest : nonzero<uint<size>> {
         
         digest() : nonzero<uint<size>>{} {}
@@ -204,6 +208,7 @@ namespace Gigamonkey {
     using digest256 = digest<32>;
     using digest512 = digest<64>;
     
+    // standard hash functions. 
     digest160 ripemd160(bytes_view b);
     digest256 sha256(bytes_view b);
     
@@ -212,6 +217,7 @@ namespace Gigamonkey {
     
     namespace Bitcoin {
     
+        // bitcoin hash functions. 
         digest160 hash160(bytes_view b);
         digest256 hash256(bytes_view b);
     

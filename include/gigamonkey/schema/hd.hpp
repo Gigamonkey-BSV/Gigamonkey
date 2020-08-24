@@ -22,6 +22,7 @@ namespace Gigamonkey::Bitcoin::hd {
                 main = 0x78,
                 test = 0x74
             };
+            
             secp256k1::pubkey Pubkey;
             chain_code ChainCode;
             type Net;
@@ -44,11 +45,13 @@ namespace Gigamonkey::Bitcoin::hd {
 
             friend std::ostream &operator<<(std::ostream &os, const pubkey &pubkey);
         };
+        
         struct secret {
             enum type : byte {
                 main = 0x78,
                 test = 0x74
             };
+            
             secp256k1::secret Secret;
             chain_code ChainCode;
             type Net;
@@ -60,9 +63,8 @@ namespace Gigamonkey::Bitcoin::hd {
             secret(string_view s) : secret{read(s)} {}
             secret() = default;
 
-
             static secret read(string_view);
-            static secret from_seed(seed entropy,type net);
+            static secret from_seed(seed entropy, type net);
 
             string write();
             pubkey to_public();
@@ -88,6 +90,27 @@ namespace Gigamonkey::Bitcoin::hd {
             if (l.empty()) return p;
             return derive(derive(p, l.first()), l.rest());
         }
+        
+        struct key : public secp256k1::signing_key {
+            ptr<secret> Master;
+            list<uint32> Path;
+        
+            secp256k1::secret derive() const {
+                return bip32::derive(*Master, Path).Secret;
+            }
+            
+            bool valid() const override {
+                return derive().valid();
+            }
+            
+            Bitcoin::pubkey to_public() const override {
+                return derive().to_public();
+            }
+            
+            secp256k1::signature sign(const digest256& d) const override {
+                return derive().sign(d);
+            }
+        };
     
     }
     
