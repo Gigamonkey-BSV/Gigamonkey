@@ -7,7 +7,7 @@
 
 namespace Gigamonkey::Bitcoin {
     
-    signature sign(const digest<32>& d, const secp256k1::secret& s) {
+    signature sign(const digest256& d, const secp256k1::secret& s) {
         signature x;
         CKey z{};
         z.Set(s.Value.begin(), s.Value.end(), true);
@@ -17,13 +17,13 @@ namespace Gigamonkey::Bitcoin {
         return x; 
     }
     
-    bool verify(const signature& x, const digest<32>& d, const pubkey& p) {
+    bool verify(const signature& x, const digest256& d, const pubkey& p) {
         ::uint256 hash{};
         std::copy(d.Value.begin(), d.Value.end(), hash.begin());
         return CPubKey{p.Value.begin(), p.Value.end()}.Verify(hash, static_cast<const std::vector<uint8_t> &>(x.Data));
     }
-
-    digest<32> signature_hash(const input_index &v, sighash::directive d) {
+    
+    digest256 signature_hash(const input_index &v, sighash::directive d) {
         CScript script(v.Output.Script.begin(),v.Output.Script.end());
         CDataStream stream{static_cast<const std::vector<uint8_t>&>(v.Transaction), SER_NETWORK, PROTOCOL_VERSION};
         CTransaction tx{deserialize, stream};

@@ -30,7 +30,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
     }
 
 
-    secret derive(secret sec, uint32 child) {
+    secret derive(const secret& sec, uint32 child) {
         secret derived;
         derived.Depth = sec.Depth + 1;
         derived.Parent = fp(sec.Secret.to_public().hash());
@@ -92,7 +92,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
             child_key.push_back(itr2);
         }
 
-        uint256 key{keyCode};
+        secp256k1::coordinate key{keyCode};
         std::reverse(key.begin(), key.end());
         derived.Secret = secp256k1::secret{key};
         for (int i = 32; i < 64; i++)
@@ -183,7 +183,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         bytes_view chain_code = view.substr(12, 32);
         bytes_view key = view.substr(12 + 32 + 1);
 
-        uint<32> keyuint;
+        secp256k1::coordinate keyuint;
 
         auto tmpItr = key.begin();
         auto keyItr = keyuint.begin();
@@ -198,7 +198,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         return secret1;
     }
 
-    secret secret::from_seed(seed entropy, secret::type net) {
+    secret secret::from_seed(seed entropy, type net) {
         const char *keyText = "Bitcoin seed";
         byte hmaced[CryptoPP::HMAC<CryptoPP::SHA512>::DIGESTSIZE];
         try {
@@ -210,7 +210,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         }
 
         secret secret1;
-        secret1.Secret = secp256k1::secret{uint<32>{hmaced}};
+        secret1.Secret = secp256k1::secret{secp256k1::coordinate{hmaced}};
         secret1.ChainCode = chain_code();
         for (int i = 0; i < 32; i++) {
             secret1.ChainCode.push_back(hmaced[32 + i]);
@@ -222,7 +222,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         return secret1;
     }
 
-    string secret::write() {
+    string secret::write() const {
         bytes output;
 
         bytes prv = bytes({0x88, 0xAD, 0xE4});
@@ -264,11 +264,11 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         return os;
     }
 
-    pubkey secret::to_public() {
+    pubkey secret::to_public() const {
         pubkey pu;
         pu.Depth = Depth;
         pu.Sequence = Sequence;
-        pu.Net = (pubkey::type) Net;
+        pu.Net = Net;
         pu.ChainCode = bytes(32);
         std::copy(ChainCode.begin(), ChainCode.end(), pu.ChainCode.begin());
         pu.Parent = Parent;
@@ -286,7 +286,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
     }
 
 
-    string pubkey::write() {
+    string pubkey::write() const {
         bytes output;
         bytes prv = bytes({0x88, 0xB2, 0x1E});
         for (int i = 0; i < prv.size(); i++)
@@ -313,7 +313,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
     }
 
     pubkey pubkey::from_seed(seed entropy, type net) {
-        return secret::from_seed(entropy, (secret::type) net).to_public();
+        return secret::from_seed(entropy, net).to_public();
     }
 
     pubkey pubkey::read(string_view str) {
@@ -372,7 +372,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         return !(rhs == *this);
     }
 
-    secret derive(secret sec, string path) {
+    secret derive(const secret& sec, string path) {
         if (path.empty())
             return secret();
         std::vector<uint32_t> paths;

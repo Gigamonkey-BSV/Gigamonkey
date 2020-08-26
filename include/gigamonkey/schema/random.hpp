@@ -4,7 +4,7 @@
 #ifndef GIGAMONKEY_SCHEMA_RANDOM
 #define GIGAMONKEY_SCHEMA_RANDOM
 
-#include <gigamonkey/spendable.hpp>
+#include "keysource.hpp"
 #include <data/crypto/random.hpp>
 
 namespace Gigamonkey {
@@ -25,12 +25,15 @@ namespace Gigamonkey::Bitcoin {
     
     class random_keysource final : public keysource {
         ptr<data::crypto::random> Random;
+        secret::type Net;
+        bool Compressed;
         
     public:
         secret First;
         
-        static ptr<keysource> make(ptr<data::crypto::random> r) {
-            return std::static_pointer_cast<keysource>(std::make_shared<random_keysource>(r));
+        static ptr<keysource> make(ptr<data::crypto::random> r, 
+            secret::type net = secret::main, bool compressed = true) {
+            return std::static_pointer_cast<keysource>(std::make_shared<random_keysource>(r, net, compressed));
         }
         
         secret first() const override {
@@ -41,7 +44,8 @@ namespace Gigamonkey::Bitcoin {
             return make(Random);
         }
         
-        random_keysource(ptr<data::crypto::random> r) : Random{r}, First{} {
+        random_keysource(ptr<data::crypto::random> r, 
+            secret::type net = secret::main, bool compressed = true) : Random{r}, Net{net}, Compressed{compressed}, First{} {
             do {*r >> First.Secret.Value; } while (!First.valid());
         }
     };

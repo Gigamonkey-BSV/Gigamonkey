@@ -20,7 +20,6 @@ namespace Gigamonkey::Bitcoin {
         }
         
     };
-
     
     struct funds {
         list<spendable> Entries;

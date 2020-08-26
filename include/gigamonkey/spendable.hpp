@@ -5,13 +5,9 @@
 #define GIGAMONKEY_SPENDABLE
 
 #include "redeem.hpp"
+#include <gigamonkey/schema/keysource.hpp>
 
 namespace Gigamonkey::Bitcoin {
-    
-    struct keysource {
-        virtual secret first() const = 0;
-        virtual ptr<keysource> rest() const = 0;
-    };
     
     struct change {
         bytes OutputScript;

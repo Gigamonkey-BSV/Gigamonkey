@@ -7,12 +7,13 @@
 #ifndef GIGAMONKEY_SCRIPT
 #define GIGAMONKEY_SCRIPT
 
-#include <boost/endian/conversion.hpp>
-#include <gigamonkey/signature.hpp>
-#include <gigamonkey/address.hpp>
-
 #include <script/script.h>
 #include <script/script_error.h>
+
+#include <boost/endian/conversion.hpp>
+
+#include <gigamonkey/signature.hpp>
+#include <gigamonkey/address.hpp>
 
 namespace Gigamonkey::Bitcoin { 
     

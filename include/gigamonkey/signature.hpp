@@ -79,11 +79,11 @@ namespace Gigamonkey::Bitcoin {
         index Index;
     };
     
-    digest<32> signature_hash(const input_index& v, sighash::directive d);
+    digest256 signature_hash(const input_index& v, sighash::directive d);
     
-    signature sign(const digest<32>&, const secp256k1::secret&);
+    signature sign(const digest256&, const secp256k1::secret&);
     
-    bool verify(const signature&, const digest<32>&, const pubkey&);
+    bool verify(const signature&, const digest256&, const pubkey&);
     
     inline signature sign(const input_index& i, sighash::directive d, const secp256k1::secret& s) {
         return sign(signature_hash(i, d), s);
@@ -105,9 +105,11 @@ namespace Gigamonkey::Bitcoin {
         Data[2] = 0x02;
         Data[3] = 33;
         Data[4] = 0x01;
+        // everything in between here will be zero
         Data[37] = 0x02;
         Data[38] = 32;
         Data[39] = 0x01;
+        // here too. 
         Data[71] = byte(directive(sighash::all));
     }
 }

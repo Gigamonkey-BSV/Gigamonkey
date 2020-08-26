@@ -53,6 +53,8 @@ namespace Gigamonkey::Bitcoin {
         
         Bitcoin::address address() const;
         
+        signature sign(const digest256& d) const;
+        
         signature sign(const input_index& tx, sighash::directive d) const;
         
         bytes encrypt(const bytes& message) const;
@@ -99,6 +101,10 @@ namespace Gigamonkey::Bitcoin {
     
     inline Bitcoin::address secret::address() const {
         return {to_address_type(Prefix), to_public()};
+    }
+    
+    inline signature secret::sign(const digest256& d) const {
+        return Bitcoin::sign(d, Secret);
     }
     
     inline signature secret::sign(const input_index& tx, sighash::directive d) const {

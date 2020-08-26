@@ -56,7 +56,7 @@ protected:
         std::vector<char> input=HexToBytes(GetParam().seed);
         Gigamonkey::bytes seed(input.size());
         std::copy(input.begin(),input.end(),seed.begin());
-        seedkey=Gigamonkey::Bitcoin::hd::bip32::secret::from_seed(seed,Gigamonkey::Bitcoin::hd::bip32::secret::main);
+        seedkey=Gigamonkey::Bitcoin::hd::bip32::secret::from_seed(seed,Gigamonkey::Bitcoin::hd::bip32::main);
     }
 };
 

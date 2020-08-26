@@ -4,10 +4,10 @@
 #ifndef GIGAMONKEY_TIMECHAIN
 #define GIGAMONKEY_TIMECHAIN
 
+#include "primitives/block.h"
 #include <gigamonkey/txid.hpp>
 #include <gigamonkey/merkle.hpp>
 #include <gigamonkey/work/target.hpp>
-#include "primitives/block.h"
 
 namespace Gigamonkey::Bitcoin {
     struct timechain {

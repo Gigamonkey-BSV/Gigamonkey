@@ -56,7 +56,7 @@ TEST_P(Bip39Tests,WordsToKey) {
     const std::string& words=std::get<2>(GetParam());
     Gigamonkey::Bitcoin::hd::seed seed=Gigamonkey::Bitcoin::hd::bip39::read(words,std::get<3>(GetParam()),std::get<0>(GetParam()));
 
-    Gigamonkey::Bitcoin::hd::bip32::secret secret=Gigamonkey::Bitcoin::hd::bip32::secret::from_seed(seed,Gigamonkey::Bitcoin::hd::bip32::secret::main);
+    Gigamonkey::Bitcoin::hd::bip32::secret secret=Gigamonkey::Bitcoin::hd::bip32::secret::from_seed(seed,Gigamonkey::Bitcoin::hd::bip32::main);
     ASSERT_EQ(secret.write(),std::get<5>(GetParam())) << "Words do not become the right key";
 }
 TEST_P(Bip39Tests,EntropyToKey) {
@@ -67,7 +67,7 @@ TEST_P(Bip39Tests,EntropyToKey) {
     std::string output=Gigamonkey::Bitcoin::hd::bip39::generate(ent);
     Gigamonkey::Bitcoin::hd::seed seed=Gigamonkey::Bitcoin::hd::bip39::read(output,std::get<3>(GetParam()),std::get<0>(GetParam()));
 
-    Gigamonkey::Bitcoin::hd::bip32::secret secret=Gigamonkey::Bitcoin::hd::bip32::secret::from_seed(seed,Gigamonkey::Bitcoin::hd::bip32::secret::main);
+    Gigamonkey::Bitcoin::hd::bip32::secret secret=Gigamonkey::Bitcoin::hd::bip32::secret::from_seed(seed,Gigamonkey::Bitcoin::hd::bip32::main);
     ASSERT_EQ(secret.write(),std::get<5>(GetParam())) << "Entropy does not become the right key";
 
 }
@@ -75,7 +75,7 @@ TEST_P(Bip39Tests,WrongPassphraseFails) {
     const std::string& words=std::get<2>(GetParam());
     Gigamonkey::Bitcoin::hd::seed seed=Gigamonkey::Bitcoin::hd::bip39::read(words,"IFailToPassOrCode",std::get<0>(GetParam()));
 
-    Gigamonkey::Bitcoin::hd::bip32::secret secret=Gigamonkey::Bitcoin::hd::bip32::secret::from_seed(seed,Gigamonkey::Bitcoin::hd::bip32::secret::main);
+    Gigamonkey::Bitcoin::hd::bip32::secret secret=Gigamonkey::Bitcoin::hd::bip32::secret::from_seed(seed,Gigamonkey::Bitcoin::hd::bip32::main);
     ASSERT_NE(secret.write(),std::get<5>(GetParam())) << "Words become right key without correct passphrase";
 }
 

@@ -9,20 +9,6 @@
 #include <data/crypto/encrypted.hpp>
 #include <secp256k1.h>
 
-namespace Gigamonkey {
-    // we use different representations of keys. Thus, we have an 
-    // abstract class for secret keys. 
-    template <typename pubkey, typename signature, typename digest>
-    struct signing_key {
-        
-        virtual bool valid() const = 0;
-        
-        virtual pubkey to_public() const = 0;
-        
-        virtual signature sign(const digest& d) const = 0;
-    };
-}
-
 namespace Gigamonkey::secp256k1 {
     
     constexpr size_t SecretSize{32};
@@ -43,7 +29,18 @@ namespace Gigamonkey::secp256k1 {
         compressed_negative = 0x02
     };
     
-    using coordinate = uint<SecretSize>;
+    struct coordinate : uint<SecretSize> {
+        using uint<SecretSize>::uint;
+        
+        static coordinate max() {
+            static coordinate Max{"0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141"};
+            return Max;
+        }
+        
+        bool valid() const {
+            return *this < max(); 
+        }
+    };
     
     struct point {
         coordinate X;
@@ -78,9 +75,7 @@ namespace Gigamonkey::secp256k1 {
     
     using digest = Gigamonkey::digest<SecretSize>;
     
-    using signing_key = Gigamonkey::signing_key<pubkey, signature, digest>;
-    
-    class secret : public nonzero<coordinate>, public signing_key {
+    class secret final : public nonzero<coordinate> {
         static bool valid(bytes_view);
         static bytes to_public_compressed(bytes_view);
         static bytes to_public_uncompressed(bytes_view);
@@ -95,15 +90,15 @@ namespace Gigamonkey::secp256k1 {
         secret() : nonzero<coordinate>{} {}
         explicit secret(const coordinate& v) : nonzero<coordinate>{v} {}
         
-        bool valid() const override;
+        bool valid() const;
         
         bool operator==(const secret& s) const;
         
         bool operator!=(const secret& s) const;
         
-        signature sign(const digest& d) const override;
+        signature sign(const digest& d) const;
         
-        pubkey to_public() const override;
+        pubkey to_public() const;
         
         secret operator-() const;
         
@@ -174,28 +169,6 @@ namespace Gigamonkey::secp256k1 {
         string write_string() const;
         
         digest160 hash() const;
-    };
-    
-    class encrypted_key : public nonzero<coordinate>, public signing_key {
-        data::crypto::locked<32> Encrypted;
-        
-        secret decrypt() const {
-            secret x;
-            data::crypto::decrypted{Encrypted.decrypt()};
-            return x;
-        }
-        
-        bool valid() const override {
-            return decrypt().valid();
-        }
-        
-        pubkey to_public() const override {
-            return decrypt().to_public();
-        }
-        
-        signature sign(const digest& d) const override {
-            return decrypt().sign(d);
-        }
     };
     
 }
@@ -306,7 +279,7 @@ namespace Gigamonkey::secp256k1 {
     }
         
     inline bool secret::valid() const {
-        return Value.size() > 0 && valid(Value);
+        return nonzero<coordinate>::valid();
     }
     
     inline bool secret::operator==(const secret& s) const {

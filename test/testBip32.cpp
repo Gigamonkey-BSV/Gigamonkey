@@ -62,7 +62,7 @@ TEST(Bip32,ToPublic) {
     Gigamonkey::bytes seed(input.size());
     std::copy(input.begin(),input.end(),seed.begin());
 
-    Gigamonkey::Bitcoin::hd::bip32::secret secret=Gigamonkey::Bitcoin::hd::bip32::secret::from_seed(seed,Gigamonkey::Bitcoin::hd::bip32::secret::main);
+    Gigamonkey::Bitcoin::hd::bip32::secret secret=Gigamonkey::Bitcoin::hd::bip32::secret::from_seed(seed,Gigamonkey::Bitcoin::hd::bip32::main);
     Gigamonkey::Bitcoin::hd::bip32::secret secret2=Gigamonkey::Bitcoin::hd::bip32::secret::read("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi");
     Gigamonkey::Bitcoin::hd::bip32::pubkey pubkey=secret.to_public();
     Gigamonkey::Bitcoin::hd::bip32::pubkey expected=Gigamonkey::Bitcoin::hd::bip32::pubkey::read("xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8");
