@@ -68,17 +68,22 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 RUN update-alternatives --set python /usr/bin/python3
 RUN ldconfig
 
+WORKDIR /tmp
+ADD https://github.com/bitcoin-sv/bitcoin-sv/archive/v1.0.4.tar.gz /tmp/
+RUN tar -xvzf /tmp/v1.0.4.tar.gz
+
 COPY . /tmp/gigamonkey
-RUN git clone https://github.com/bitcoin-sv/bitcoin-sv/ /tmp/bitcoin-sv
-RUN mkdir -p /tmp/build && cd /tmp/build && cmake \
+RUN mkdir -p /tmp/build
+WORKDIR /tmp/build
+RUN cmake \
         -DJOBS=${BUILD_JOBS} \
         -DBOOST_ROOT=/usr/bsv/ \
-        -DCHAIN_SRC_ROOT=/tmp/bitcoin-sv \
+        -DCHAIN_SRC_ROOT=/tmp/bitcoin-sv-1.0.4/ \
         -DCHAIN_EXTRA_FLAGS=--with-boost=/usr/bsv \
         -DCMAKE_INSTALL_PREFIX=/usr/bsv/ \
         -DCMAKE_PREFIX_PATH=/usr/bsv/ \
         /tmp/gigamonkey
 
-RUN cd /tmp/build && make
+RUN make
 
-CMD /tmp/build/test/testGigamonkey
+CMD ctest
