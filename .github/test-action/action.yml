@@ -1,0 +1,9 @@
+# action.yml
+name: 'CTest Tests'
+description: 'Tests the code as it is run'
+outputs:
+  ctest_output: # id of output
+    description: 'Output of ctest'
+runs:
+  using: 'docker'
+  image: '../../Dockerfile'
