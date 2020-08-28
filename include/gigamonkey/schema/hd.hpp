@@ -9,14 +9,16 @@
 #include <ostream>
 
 // HD is a format for infinite sequences of keys that 
-// can be derived from a single master. 
+// can be derived from a single master. This key format
+// will be depricated but needs to be supported for 
+// older wallets. 
 namespace Gigamonkey::Bitcoin::hd {
     
     using chain_code = data::bytes;
     using seed = data::bytes;
     using entropy = data::bytes;
     
-    // bip 32 defines the basic format. 
+    // bip 32 defines the basic format. See: https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki
     namespace bip32 {
 
         enum type : byte {
@@ -53,6 +55,8 @@ namespace Gigamonkey::Bitcoin::hd {
             bool operator==(const pubkey &rhs) const;
 
             bool operator!=(const pubkey &rhs) const;
+            
+            pubkey derive(list<uint32> l) ;
 
             friend std::ostream &operator<<(std::ostream &os, const pubkey &pubkey);
         };
@@ -85,6 +89,8 @@ namespace Gigamonkey::Bitcoin::hd {
             bool operator!=(const secret &rhs) const;
             
             signature sign(const digest256& d) const;
+            
+            secret derive(list<uint32> l);
 
             friend std::ostream &operator<<(std::ostream &os, const secret &secret);
         };
@@ -102,6 +108,14 @@ namespace Gigamonkey::Bitcoin::hd {
         inline pubkey derive(const pubkey& p, list<uint32> l) {
             if (l.empty()) return p;
             return derive(derive(p, l.first()), l.rest());
+        }
+            
+        inline pubkey pubkey::derive(list<uint32> l) {
+            return bip32::derive(*this, l);
+        }
+        
+        inline secret secret::derive(list<uint32> l) {
+            return bip32::derive(*this, l);
         }
     
     }

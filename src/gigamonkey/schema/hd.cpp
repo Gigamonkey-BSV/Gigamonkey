@@ -455,8 +455,8 @@ namespace Gigamonkey::Bitcoin::hd::bip39 {
     void setBit(int index, int value,bytes& bitarray) {
         bitarray[index/8] = bitarray[index/8] | (value  << 7-(index & 0x7));
     }
-
-    cross<std::string> getWordList(languages lang) {
+    
+    const cross<std::string>& getWordList(languages lang) {
         switch(lang) {
             case english:
                 return english_words();
@@ -466,6 +466,7 @@ namespace Gigamonkey::Bitcoin::hd::bip39 {
                 return english_words();
         }
     }
+    
     std::string getLangSplit(languages lang) {
         switch(lang) {
             case japanese:
@@ -519,7 +520,7 @@ namespace Gigamonkey::Bitcoin::hd::bip39 {
             word_indices[i /11]+=getBit(i,ent) << (10 - (i%11));
         }
         cross<std::string> words_ret;
-        cross<std::string> wordList=getWordList(lang);
+        const cross<std::string>& wordList=getWordList(lang);
 
         for(short word_indice : word_indices)
         {
@@ -543,7 +544,7 @@ namespace Gigamonkey::Bitcoin::hd::bip39 {
         std::vector<std::string> wordsList;
         boost::split(wordsList, words_text, boost::is_any_of(getLangSplit(lang)));
         std::vector<int> wordIndices(wordsList.size());
-        cross<std::string> refWordList=getWordList(lang);
+        const cross<std::string>& refWordList=getWordList(lang);
         for(int i=0;i<wordsList.size();i++) {
             bool found=false;
             for(int j=0;j<refWordList.size();j++) {
