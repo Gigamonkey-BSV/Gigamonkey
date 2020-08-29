@@ -1,0 +1,19 @@
+on: [push]
+
+jobs:
+  testss:
+    runs-on: ubuntu-latest
+    name: A job to run tests
+    steps:
+   # To use this repository's private action,
+      # you must check out the repository
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: 'true'
+      - name: test
+        uses: ./.github/test-action/ # Uses an action in the root directory
+        id: action
+      # Use the output from the `hello` step
+      - name: Get the output
+        run: echo "The time was ${{ steps.test.outputs.ctest_output }}"
