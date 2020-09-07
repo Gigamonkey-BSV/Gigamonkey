@@ -12,12 +12,12 @@ namespace Gigamonkey::work {
         int32_little Category;
         uint256 Digest;
         uint256 MerkleRoot;
-        timestamp Timestamp;
-        target Target;
+        Bitcoin::timestamp Timestamp;
+        compact Target;
         nonce Nonce;
         
         string() : Category(0), Digest(0), MerkleRoot(0), Timestamp(), Target(0), Nonce(0) {}
-        string(int32_little v, uint256 d, uint256 mp, timestamp ts, target tg, nonce n) : 
+        string(int32_little v, uint256 d, uint256 mp, Bitcoin::timestamp ts, compact tg, nonce n) : 
             Category{v}, Digest{d}, MerkleRoot{mp}, Timestamp{ts}, Target{tg}, Nonce{n} {}
         
         static string read(const slice<80> x) {
@@ -25,8 +25,8 @@ namespace Gigamonkey::work {
                 Gigamonkey::header::version(x), 
                 uint<32>{Gigamonkey::header::previous(x)}, 
                 uint<32>{Gigamonkey::header::merkle_root(x)}, 
-                timestamp{Gigamonkey::header::timestamp(x)}, 
-                work::target{Gigamonkey::header::target(x)}, 
+                Bitcoin::timestamp{Gigamonkey::header::timestamp(x)}, 
+                compact{Gigamonkey::header::target(x)}, 
                 Gigamonkey::header::nonce(x)};
         }
         

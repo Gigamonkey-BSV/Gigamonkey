@@ -18,7 +18,7 @@ namespace Gigamonkey {
             Boost::type Type;
             int32_little Category;
             uint256 Content;
-            work::target Target;
+            work::compact Target;
             bytes Tag;
             uint32_little UserNonce;
             bytes AdditionalData;
@@ -33,7 +33,7 @@ namespace Gigamonkey {
                 Boost::type type, 
                 int32_little category, 
                 uint256 content, 
-                work::target target, 
+                work::compact target, 
                 bytes tag, 
                 uint32_little user_nonce, 
                 bytes data, 
@@ -43,7 +43,7 @@ namespace Gigamonkey {
             static output_script bounty(
                 int32_little category,
                 uint256 content,
-                work::target target, 
+                work::compact target, 
                 bytes_view tag, 
                 uint32_little user_nonce, 
                 bytes_view data) {
@@ -55,7 +55,7 @@ namespace Gigamonkey {
             static output_script contract(
                 int32_little category,
                 uint256 content,
-                work::target target, 
+                work::compact target, 
                 bytes_view tag, 
                 uint32_little user_nonce, 
                 bytes_view data, 
@@ -118,7 +118,7 @@ namespace Gigamonkey {
                 return read(x).Content;
             }
             
-            static work::target target(script x) {
+            static work::compact target(script x) {
                 return read(x).Target;
             }
             
@@ -142,7 +142,7 @@ namespace Gigamonkey {
             output_script(
                 int32_little category, 
                 uint256 content,
-                work::target target, 
+                work::compact target, 
                 bytes_view tag, 
                 uint32_little user_nonce, 
                 bytes_view data) : Type{Boost::bounty}, 
@@ -157,7 +157,7 @@ namespace Gigamonkey {
             output_script(
                 int32_little category, 
                 uint256 content,
-                work::target target, 
+                work::compact target, 
                 bytes_view tag, 
                 uint32_little user_nonce, 
                 bytes_view data,
@@ -174,7 +174,7 @@ namespace Gigamonkey {
                 Boost::type type, 
                 int32_little category, 
                 uint256 content, 
-                work::target target, 
+                work::compact target, 
                 bytes tag, 
                 uint32_little user_nonce, 
                 bytes data, 
@@ -210,7 +210,7 @@ namespace Gigamonkey {
             Bitcoin::signature Signature;
             Bitcoin::pubkey Pubkey;
             uint32_little Nonce;
-            Gigamonkey::timestamp Timestamp;
+            Bitcoin::timestamp Timestamp;
             uint64_little ExtraNonce2;
             uint32_little ExtraNonce1;
             digest160 MinerAddress;
@@ -220,7 +220,7 @@ namespace Gigamonkey {
                 Bitcoin::signature signature, 
                 Bitcoin::pubkey pubkey, 
                 uint32_little nonce,
-                Gigamonkey::timestamp timestamp,
+                Bitcoin::timestamp timestamp,
                 uint64_little extra_nonce_2,
                 uint32_little extra_nonce_1,
                 digest160 miner_address) : Type{Boost::bounty}, 
@@ -236,7 +236,7 @@ namespace Gigamonkey {
                 Bitcoin::signature signature, 
                 Bitcoin::pubkey pubkey, 
                 uint32_little nonce,
-                Gigamonkey::timestamp timestamp,
+                Bitcoin::timestamp timestamp,
                 uint64_little extra_nonce_2,
                 uint32_little extra_nonce_1) : Type{Boost::contract}, 
                 Signature{signature}, 
@@ -269,7 +269,7 @@ namespace Gigamonkey {
                 Bitcoin::signature signature, 
                 Bitcoin::pubkey pubkey,  
                 uint32_little nonce,
-                Gigamonkey::timestamp timestamp,
+                Bitcoin::timestamp timestamp,
                 uint64_little extra_nonce_2,
                 uint32_little extra_nonce_1, 
                 digest160 miner_address) {
@@ -281,7 +281,7 @@ namespace Gigamonkey {
                 Bitcoin::signature signature, 
                 Bitcoin::pubkey pubkey,  
                 uint32_little nonce,
-                Gigamonkey::timestamp timestamp,
+                Bitcoin::timestamp timestamp,
                 uint64_little extra_nonce_2,
                 uint32_little extra_nonce_1) {
                 return input_script{signature, pubkey, nonce, timestamp, extra_nonce_2, extra_nonce_1};
@@ -322,7 +322,7 @@ namespace Gigamonkey {
                 return read(x).Pubkey;
             }
             
-            static Gigamonkey::timestamp timestamp(script x) {
+            static Bitcoin::timestamp timestamp(script x) {
                 return read(x).Timestamp;
             }
             
@@ -347,7 +347,7 @@ namespace Gigamonkey {
             type Type;
             int32_little Category;
             uint256 Content;
-            work::target Target;
+            work::compact Target;
             bytes Tag;
             uint32_little UserNonce;
             bytes AdditionalData;
@@ -363,7 +363,7 @@ namespace Gigamonkey {
             job(Boost::type type, 
                 int32_little category, 
                 const uint256& content, 
-                work::target target, 
+                work::compact target, 
                 const bytes& tag, 
                 uint32_little user_nonce, 
                 const bytes& data, 
@@ -421,7 +421,7 @@ namespace Gigamonkey {
             puzzle(Boost::type type, 
                 int32_little category, 
                 const uint256& content, 
-                work::target target, 
+                work::compact target, 
                 const bytes& tag, 
                 uint32_little user_nonce, 
                 const bytes& data, 
@@ -454,7 +454,7 @@ namespace Gigamonkey {
             static puzzle make(Boost::type type, 
                 int32_little category, 
                 const uint256& content, 
-                work::target target, 
+                work::compact target, 
                 const bytes& tag, 
                 uint32_little user_nonce, 
                 const bytes& data, 

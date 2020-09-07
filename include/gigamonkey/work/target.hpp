@@ -9,239 +9,266 @@
 #include <vector>
 
 namespace Gigamonkey::work {
-    using uint256 = Gigamonkey::uint256;
-    
-    struct target;
-    /*
-    struct difficulty : Q {
-        explicit difficulty(const Q& q) : Q(q) {}
-        explicit difficulty(const Z& z) : Q(z) {}
-        explicit difficulty(target t);
-        //explicit difficulty(double);
-        explicit operator double() const {
-            return double(Q::Numerator) / double(Q::Denominator.Number);
-        }
-        
-        static difficulty minimum() {
-            return difficulty(1);
-        }
-        
-        difficulty operator+(const difficulty& x) const {
-            return difficulty(Q::operator+(x));
-        }
-        
-        difficulty operator-(const difficulty& x) const {
-            return difficulty(Q::operator-(x));
-        }
-        
-        difficulty operator*(const difficulty& x) const {
-            return difficulty(Q::operator*(x));
-        }
-        
-        difficulty operator/(const difficulty& x) const {
-            return difficulty(Q::operator/(x));
-        }
-        
-    private:
-        static Z scale() {
-            static Z Scale("0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
-            return Scale;
-        }
-        
-        explicit difficulty(const Z& z, const N& n) : Q(z, n) {}
-    };*/
     
     // units of difficulty per second. 
     struct hashpower {
         double Value;
         
-        hashpower operator+(const hashpower& x) const {
-            return hashpower{Value + x.Value};
-        }
+        hashpower operator+(const hashpower& x) const;
+        hashpower& operator+=(const hashpower& x);
+        hashpower operator-(const hashpower& x) const;
+        hashpower& operator-=(const hashpower& x);
         
-        hashpower& operator+=(const hashpower& x) {
-            Value += x.Value;
-            return *this;
-        }
+        hashpower operator*(double x) const;
         
-        hashpower operator-(const hashpower& x) const {
-            return hashpower{Value - x.Value};
-        }
+        bool operator==(const hashpower& x) const;
+        bool operator!=(const hashpower& x) const;
         
-        hashpower& operator-=(const hashpower& x) {
-            Value -= x.Value;
-            return *this;
-        }
+        bool operator>=(const hashpower& x) const;
+        bool operator<=(const hashpower& x) const;
+        bool operator>(const hashpower& x) const;
+        bool operator<(const hashpower& x) const;
         
-        hashpower operator*(double x) const {
-            return hashpower{Value * x};
-        }
-        
-        bool operator==(const hashpower& x) const {
-            return Value == x.Value;
-        }
-        
-        bool operator!=(const hashpower& x) const {
-            return Value != x.Value;
-        }
-        
-        bool operator>=(const hashpower& x) const {
-            return Value >= x.Value;
-        }
-        
-        bool operator<=(const hashpower& x) const {
-            return Value <= x.Value;
-        }
-        
-        bool operator>(const hashpower& x) const {
-            return Value > x.Value;
-        }
-        
-        bool operator<(const hashpower& x) const {
-            return Value < x.Value;
-        }
-        
-        explicit operator double() const {
-            return Value;
-        }
+        explicit operator double() const;
     };
     
     // proportional to hash operations per second. 
     struct difficulty {
         double Value;
         
-        bool valid() const {
-            return Value >= 1;
-        }
+        bool valid() const;
         
-        explicit operator double() const {
-            return Value;
-        }
+        explicit operator double() const;
         
-        difficulty() : Value{0} {}
-        explicit difficulty(double x) : Value{x} {}
+        difficulty();
+        explicit difficulty(double x);
         
-        static difficulty minimum() {
-            return difficulty(1);
-        }
+        static difficulty minimum();
         
-        difficulty operator+(const difficulty& x) const {
-            return difficulty{Value + x.Value};
-        }
+        difficulty operator+(const difficulty& x) const;
+        difficulty operator+=(const difficulty& x);
+        difficulty operator-(const difficulty& x) const;
+        difficulty operator-=(const difficulty& x);
         
-        difficulty operator+=(const difficulty& x) {
-            Value += x.Value;
-            return *this;
-        }
+        difficulty operator*(double x) const;
         
-        difficulty operator-(const difficulty& x) const {
-            return difficulty{Value - x.Value};
-        }
+        bool operator==(const difficulty& x) const;
+        bool operator!=(const difficulty& x) const;
         
-        difficulty operator-=(const difficulty& x) {
-            Value -= x.Value;
-            return *this;
-        }
+        bool operator>=(const difficulty& x) const;
+        bool operator<=(const difficulty& x) const;
+        bool operator>(const difficulty& x) const;
+        bool operator<(const difficulty& x) const;
         
-        difficulty operator*(double x) const {
-            return difficulty(Value * x);
-        }
-        
-        bool operator==(const difficulty& x) const {
-            return Value == x.Value;
-        }
-        
-        bool operator!=(const difficulty& x) const {
-            return Value != x.Value;
-        }
-        
-        bool operator>=(const difficulty& x) const {
-            return Value >= x.Value;
-        }
-        
-        bool operator<=(const difficulty& x) const {
-            return Value <= x.Value;
-        }
-        
-        bool operator>(const difficulty& x) const {
-            return Value > x.Value;
-        }
-        
-        bool operator<(const difficulty& x) const {
-            return Value < x.Value;
-        }
-        
-        double operator/(const hashpower& x) const {
-            return Value / x.Value;
-        }
-        
-        double operator/(const difficulty& x) const {
-            return Value / x.Value;
-        }
+        double operator/(const hashpower& x) const;
+        double operator/(const difficulty& x) const;
         
     };
-    
-    uint256 expand_compact(uint32_little);
     
     // proportional to inverse difficulty.
-    struct target : uint32_little {
+    struct compact : uint32_little {
         
-        static target encode(byte e, uint24_little v);
+        static compact encode(byte e, uint24_little v);
         
-        target() : uint32_little{0} {}
-        target(byte e, uint24_little v) : target{encode(e, v)} {}
-        explicit target(uint32_little i) : uint32_little{i} {}
-        explicit target(uint32 i) : uint32_little{i} {}
-        explicit target(work::difficulty);
+        compact();
+        compact(byte e, uint24_little v);
+        explicit compact(uint32_little i);
+        explicit compact(uint32 i);
+        explicit compact(work::difficulty);
         
-        byte exponent() const {
-            return static_cast<byte>(static_cast<uint32_little>(*this) >> 24);
-        }
+        byte exponent() const;
         
-        uint24_little digits() const {
-            return uint24_little{static_cast<uint32_little>(*this) & 0x00FFFFFF};
-        }
+        uint24_little digits() const;
         
-        bool valid() const {
-            return expand() != 0;
-        }
+        bool valid() const;
         
-        uint256 expand() const {
-            return expand_compact(static_cast<uint32_little>(*this));
-        }
+        uint256 expand() const;
         
-        work::difficulty difficulty() const {
-            return work::difficulty{
-                double(Z{"0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"}) / 
-                double(N(expand()))};
-        };
+        work::difficulty difficulty() const;
         
-        explicit operator work::difficulty() const {
-            return difficulty();
-        }
+        explicit operator work::difficulty() const;
         
-        operator bytes_view() const {
-            return bytes_view{uint32_little::data(), 4};
-        }
+        operator bytes_view() const;
     };
     
-    const target SuccessHalf{33, 0x8000};
-    const target SuccessQuarter{32, 0x400000};
-    const target SuccessEighth{32, 0x200000};
-    const target SuccessSixteenth{32, 0x100000};
+    uint256 expand(const compact&);
     
-    //inline difficulty::difficulty(target t) : difficulty(scale(), N(t.expand())) {}
-    
-    inline target target::encode(byte e, uint24_little v) {
-        target t;
-        data::writer<uint24_little::iterator>(t.begin(), t.end()) << v << e;
-        return t;
-    }
+    const compact SuccessHalf{33, 0x8000};
+    const compact SuccessQuarter{32, 0x400000};
+    const compact SuccessEighth{32, 0x200000};
+    const compact SuccessSixteenth{32, 0x100000};
 
 }
 
 inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::hashpower& h) {
     return o << "(" << h.Value << " difficulty / second)";
+}
+
+namespace Gigamonkey::Bitcoin {
+    using target = work::compact;
+}
+
+namespace Gigamonkey::work {
+    
+    inline hashpower hashpower::operator+(const hashpower& x) const {
+        return hashpower{Value + x.Value};
+    }
+    
+    inline hashpower& hashpower::operator+=(const hashpower& x) {
+        Value += x.Value;
+        return *this;
+    }
+    
+    inline hashpower hashpower::operator-(const hashpower& x) const {
+        return hashpower{Value - x.Value};
+    }
+    
+    inline hashpower& hashpower::operator-=(const hashpower& x) {
+        Value -= x.Value;
+        return *this;
+    }
+    
+    inline hashpower hashpower::operator*(double x) const {
+        return hashpower{Value * x};
+    }
+    
+    inline bool hashpower::operator==(const hashpower& x) const {
+        return Value == x.Value;
+    }
+    
+    inline bool hashpower::operator!=(const hashpower& x) const {
+        return Value != x.Value;
+    }
+    
+    inline bool hashpower::operator>=(const hashpower& x) const {
+        return Value >= x.Value;
+    }
+    
+    inline bool hashpower::operator<=(const hashpower& x) const {
+        return Value <= x.Value;
+    }
+    
+    inline bool hashpower::operator>(const hashpower& x) const {
+        return Value > x.Value;
+    }
+    
+    inline bool hashpower::operator<(const hashpower& x) const {
+        return Value < x.Value;
+    }
+    
+    inline hashpower::operator double() const {
+        return Value;
+    }
+    
+    inline bool difficulty::valid() const {
+        return *this >= minimum();
+    }
+    
+    inline difficulty::operator double() const {
+        return Value;
+    }
+    
+    inline difficulty::difficulty() : Value{0} {}
+    inline difficulty::difficulty(double x) : Value{x} {}
+    
+    inline difficulty difficulty::minimum() {
+        return difficulty(1);
+    }
+    
+    inline difficulty difficulty::operator+(const difficulty& x) const {
+        return difficulty{Value + x.Value};
+    }
+    
+    inline difficulty difficulty::operator+=(const difficulty& x) {
+        Value += x.Value;
+        return *this;
+    }
+    
+    inline difficulty difficulty::operator-(const difficulty& x) const {
+        return difficulty{Value - x.Value};
+    }
+    
+    inline difficulty difficulty::operator-=(const difficulty& x) {
+        Value -= x.Value;
+        return *this;
+    }
+    
+    inline difficulty difficulty::operator*(double x) const {
+        return difficulty(Value * x);
+    }
+    
+    inline bool difficulty::operator==(const difficulty& x) const {
+        return Value == x.Value;
+    }
+    
+    inline bool difficulty::operator!=(const difficulty& x) const {
+        return Value != x.Value;
+    }
+    
+    inline bool difficulty::operator>=(const difficulty& x) const {
+        return Value >= x.Value;
+    }
+    
+    inline bool difficulty::operator<=(const difficulty& x) const {
+        return Value <= x.Value;
+    }
+    
+    inline bool difficulty::operator>(const difficulty& x) const {
+        return Value > x.Value;
+    }
+    
+    inline bool difficulty::operator<(const difficulty& x) const {
+        return Value < x.Value;
+    }
+    
+    inline double difficulty::operator/(const hashpower& x) const {
+        return Value / x.Value;
+    }
+    
+    inline double difficulty::operator/(const difficulty& x) const {
+        return Value / x.Value;
+    }
+    
+    inline compact::compact() : uint32_little{0} {}
+    inline compact::compact(byte e, uint24_little v) : compact{encode(e, v)} {}
+    inline compact::compact(uint32_little i) : uint32_little{i} {}
+    inline compact::compact(uint32 i) : uint32_little{i} {}
+    
+    inline byte compact::exponent() const {
+        return static_cast<byte>(static_cast<uint32_little>(*this) >> 24);
+    }
+    
+    inline uint24_little compact::digits() const {
+        return uint24_little{static_cast<uint32_little>(*this) & 0x00FFFFFF};
+    }
+    
+    inline bool compact::valid() const {
+        return expand() != 0;
+    }
+    
+    inline uint256 compact::expand() const {
+        return work::expand(*this);
+    }
+    
+    inline work::difficulty compact::difficulty() const {
+        return work::difficulty{
+            double(Z{"0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"}) / 
+            double(N(expand()))};
+    };
+    
+    inline compact::operator work::difficulty() const {
+        return difficulty();
+    }
+    
+    inline compact::operator bytes_view() const {
+        return bytes_view{uint32_little::data(), 4};
+    }
+
+    inline compact compact::encode(byte e, uint24_little v) {
+        compact t;
+        data::writer<uint24_little::iterator>(t.begin(), t.end()) << v << e;
+        return t;
+    }
 }
 
 #endif 

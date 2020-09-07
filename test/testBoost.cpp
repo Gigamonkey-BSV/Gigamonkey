@@ -100,22 +100,22 @@ namespace Gigamonkey::Boost {
             static test_case build(
                 const output_script& o, 
                 Stratum::job_id jobID, 
-                timestamp start, 
+                Bitcoin::timestamp start, 
                 const Stratum::worker& worker, 
                 uint64_little n2, uint64 key) {
                 Bitcoin::secret s(Bitcoin::secret::main, secp256k1::secret(secp256k1::coordinate(key)));
                 puzzle Puzzle{o, s.address().Digest, worker.ExtraNonce1};
-                return test_case{Puzzle, o, Stratum::job{jobID, Puzzle, worker, start, true}, n2, s};
+                return test_case{Puzzle, o, Stratum::job{jobID, Puzzle, worker, Stratum::timestamp(start), true}, n2, s};
             }
             
             static test_case build(Boost::type type, 
                 const uint256& content, 
-                work::target target, 
+                work::compact target, 
                 bytes tag, 
                 uint32_little user_nonce, 
                 bytes data, 
                 const Stratum::job_id jobID, 
-                timestamp start, 
+                Bitcoin::timestamp start, 
                 const Stratum::worker& worker, 
                 uint64_little n2, 
                 uint64 key) { 
@@ -125,7 +125,7 @@ namespace Gigamonkey::Boost {
                 
                 return test_case(Puzzle, 
                     output_script{type, 1, content, target, tag, user_nonce, data, address}, 
-                    Stratum::job{jobID, Puzzle, worker, start, true}, 
+                    Stratum::job{jobID, Puzzle, worker, Stratum::timestamp(start), true}, 
                     n2, s);
             }
             
@@ -139,7 +139,7 @@ namespace Gigamonkey::Boost {
             test_case(
                 output_script o, 
                 Stratum::job_id jobID, 
-                timestamp start, 
+                Bitcoin::timestamp start, 
                 const Stratum::worker& worker, 
                 uint64_little n2, 
                 uint64 key) : 
@@ -147,12 +147,12 @@ namespace Gigamonkey::Boost {
             
             test_case(Boost::type type, 
                 uint256 content, 
-                work::target target, 
+                work::compact target, 
                 bytes tag, 
                 uint32_little user_nonce, 
                 bytes data, 
                 Stratum::job_id jobID, 
-                timestamp start,
+                Bitcoin::timestamp start,
                 const Stratum::worker& worker,
                 uint64_little n2, 
                 uint64 key) : 
@@ -206,11 +206,11 @@ namespace Gigamonkey::Boost {
         response operator()(
             const digest256 ContentsA,
             const digest256 ContentsB, 
-            const work::target Target, 
+            const work::compact Target, 
             const uint32_little UserNonce, 
             const Stratum::job_id JobID, 
             const Stratum::worker_name WorkerName, 
-            const timestamp Start, 
+            const Bitcoin::timestamp Start, 
             const uint32_little InitialNonce,
             const uint64 InitialKey) {
             
@@ -301,7 +301,7 @@ namespace Gigamonkey::Boost {
             
             // finally we generate solutions. 
             auto proofs = data::for_each([](const test_case t) -> work::proof {
-                return work::cpu_solve(t.Puzzle, work::solution(t.Job.Notify.Now, 0, t.ExtraNonce2));
+                return work::cpu_solve(t.Puzzle, work::solution(t.Job.timestamp(), 0, t.ExtraNonce2));
             }, test_cases);
             
             // here are the input scripts. 
@@ -313,7 +313,7 @@ namespace Gigamonkey::Boost {
             auto Stratum_shares = data::for_each([WorkerName, JobID](work::proof x) -> Stratum::share {
                 return Stratum::share{1, WorkerName, JobID, 
                     x.Solution.ExtraNonce, 
-                    x.Solution.Timestamp, 
+                    Stratum::timestamp(x.Solution.Timestamp), 
                     x.Solution.Nonce};
             }, proofs);
             
@@ -411,12 +411,12 @@ namespace Gigamonkey {
         const uint32_little UserNonce{77777777}; 
         const Stratum::job_id JobID{0}; 
         const Stratum::worker_name WorkerName{0}; 
-        const timestamp Start{1};
+        const Bitcoin::timestamp Start{1};
         
         Boost::tests::response r;
         
         EXPECT_NO_THROW(r = Boost::tests{}(
-            ContentsA, ContentsB, work::target{32, 0x0080ff}, UserNonce, JobID, WorkerName, Start, 0, 13034));
+            ContentsA, ContentsB, work::compact{32, 0x0080ff}, UserNonce, JobID, WorkerName, Start, 0, 13034));
         EXPECT_TRUE(r.Success) << "Tests failed because: " << r.Reason << std::endl;
         
         EXPECT_TRUE(r.Success);

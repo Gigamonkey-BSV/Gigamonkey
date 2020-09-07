@@ -37,26 +37,26 @@ namespace Gigamonkey {
     
     enum chain : byte {test, main};
     
-    template <typename X>
+    template <typename X> 
     struct nonzero : data::math::nonzero<X> {
         
         nonzero(const X& x) : data::math::nonzero<X>{x} {}
         nonzero() : data::math::nonzero<X>{} {}
         
         bool operator<(const nonzero& n) const {
-            return data::math::nonzero<X>::operator<(n.Value);
+            return data::math::nonzero<X>::Value < n.Value;
         }
         
         bool operator>(const nonzero& n) const {
-            return data::math::nonzero<X>::operator>(n.Value);
+            return data::math::nonzero<X>::Value > n.Value;
         }
         
         bool operator<=(const nonzero& n) const {
-            return data::math::nonzero<X>::operator<=(n.Value);
+            return data::math::nonzero<X>::Value <= n.Value;
         }
         
         bool operator>=(const nonzero& n) const {
-            return data::math::nonzero<X>::operator>=(n.Value);
+            return data::math::nonzero<X>::Value >= n.Value;
         }
     };
     

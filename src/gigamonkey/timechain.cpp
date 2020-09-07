@@ -10,7 +10,7 @@ namespace Gigamonkey {
     }
     
     bool header_valid(const Bitcoin::header& h) {
-        return h.Version >= 1 && h.MerkleRoot.valid() && h.Timestamp != timestamp{};
+        return h.Version >= 1 && h.MerkleRoot.valid() && h.Timestamp != Bitcoin::timestamp{};
     }
 }
 
@@ -22,15 +22,15 @@ namespace Gigamonkey::header {
         return version;
     }
     
-    Gigamonkey::timestamp timestamp(const slice<80> x) {
-        Gigamonkey::timestamp time;
+    Bitcoin::timestamp timestamp(const slice<80> x) {
+        Bitcoin::timestamp time;
         slice<4> v = x.range<68, 72>();
         std::copy(v.begin(), v.end(), time.data());
         return time;
     }
     
-    work::target target(const slice<80> x) {
-        work::target work;
+    work::compact target(const slice<80> x) {
+        work::compact work;
         slice<4> v = x.range<72, 76>();
         std::copy(v.begin(), v.end(), work.data());
         return work;

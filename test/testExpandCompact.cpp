@@ -13,7 +13,7 @@ namespace Gigamonkey::work {
         uint256 Expected;
         
         test_case() : Input{}, Expected{} {}
-        test_case(target t, std::string x) : Input{t.expand()}, Expected{x} {}
+        test_case(compact t, std::string x) : Input{t.expand()}, Expected{x} {}
     };
     
     bool check(list<test_case> test_cases) {
@@ -34,19 +34,19 @@ namespace Gigamonkey::work {
     TEST(ExpandCompactTest, TestExpandCompact) {
         
         // Negative tests
-        auto negative_test = target{32, 0x800000};
+        auto negative_test = compact{32, 0x800000};
         EXPECT_FALSE(negative_test.valid());
         
         auto tests = list<test_case>{} << 
-            test_case{target{2, 0xabcd}, 
+            test_case{compact{2, 0xabcd}, 
                 std::string{"0x00000000000000000000000000000000000000000000000000000000000000ab"}} << 
-            test_case{target{3, 0xabcd}, 
+            test_case{compact{3, 0xabcd}, 
                 std::string{"0x000000000000000000000000000000000000000000000000000000000000abcd"}} << 
-            test_case{target{4, 0xabcd}, 
+            test_case{compact{4, 0xabcd}, 
                 std::string{"0x0000000000000000000000000000000000000000000000000000000000abcd00"}} << 
-            test_case{target{5, 0xabcd}, 
+            test_case{compact{5, 0xabcd}, 
                 std::string{"0x00000000000000000000000000000000000000000000000000000000abcd0000"}} << 
-            test_case{target{33, 0xabcd}, 
+            test_case{compact{33, 0xabcd}, 
                 std::string{"0xabcd000000000000000000000000000000000000000000000000000000000000"}} <<
             test_case{SuccessHalf, 
                 std::string{"0x8000000000000000000000000000000000000000000000000000000000000000"}} <<

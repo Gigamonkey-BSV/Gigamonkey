@@ -9,11 +9,11 @@
 namespace Gigamonkey::work {
     
     struct solution {
-        timestamp Timestamp;
+        Bitcoin::timestamp Timestamp;
         nonce Nonce;
         uint64_little ExtraNonce;
         
-        solution(timestamp t, nonce n, uint64_little b);
+        solution(Bitcoin::timestamp t, nonce n, uint64_little b);
         solution();
         
         bool valid() const;
@@ -25,7 +25,7 @@ namespace Gigamonkey::work {
     struct puzzle {
         int32_little Category;
         uint256 Digest;
-        target Target;
+        compact Target;
         Merkle::path Path;
         bytes Header;
         uint32_little ExtraNonce;
@@ -34,7 +34,7 @@ namespace Gigamonkey::work {
         puzzle();
         puzzle(
             int32_little v, const uint256& d, 
-            target g, Merkle::path mp, const bytes& h, 
+            compact g, Merkle::path mp, const bytes& h, 
             uint32_little extra, const bytes& b);
         
         bool valid() const;
@@ -88,7 +88,7 @@ inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::proof& 
 
 namespace Gigamonkey::work {
     
-    inline solution::solution(timestamp t, nonce n, uint64_little b) : Timestamp{t}, Nonce{n}, ExtraNonce{b} {}
+    inline solution::solution(Bitcoin::timestamp t, nonce n, uint64_little b) : Timestamp{t}, Nonce{n}, ExtraNonce{b} {}
     inline solution::solution() : Timestamp{}, Nonce{}, ExtraNonce{} {};
     
     inline bool solution::valid() const {
@@ -106,7 +106,7 @@ namespace Gigamonkey::work {
     }
     
     inline puzzle::puzzle() : Category{}, Digest{}, Target{}, Path{}, Header{}, ExtraNonce{}, Body{} {}
-    inline puzzle::puzzle(int32_little v, const uint256& d, target g, Merkle::path mp, const bytes& h, uint32_little extra, const bytes& b) : 
+    inline puzzle::puzzle(int32_little v, const uint256& d, compact g, Merkle::path mp, const bytes& h, uint32_little extra, const bytes& b) : 
         Category{v}, Digest{d}, Target{g}, Path{mp}, Header{h}, ExtraNonce{extra}, Body{b} {}
     
     inline bool puzzle::valid() const {

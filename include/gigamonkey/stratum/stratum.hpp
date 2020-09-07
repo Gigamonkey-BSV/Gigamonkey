@@ -4,6 +4,7 @@
 #include <nlohmann/json.hpp>
 
 #include <gigamonkey/work/proof.hpp>
+#include <gigamonkey/stratum/difficulty.hpp>
 
 namespace Gigamonkey {
     using json = nlohmann::json;
@@ -11,6 +12,8 @@ namespace Gigamonkey {
 
 namespace Gigamonkey::Stratum {
     using request_id = uint64;
+
+    using timestamp = uint32_big;
     
     // List of stratum methods (incomplete)
     enum method {
@@ -142,19 +145,19 @@ namespace Gigamonkey::Stratum {
         // The path is always index zero, so we don't need to store an index. 
         list<digest256> Path;
         
-        work::target Target;
+        work::compact Target;
         timestamp Now;
         
         bool Clean;
         
         notify() : ID{}, Digest{}, GenerationTx1{}, GenerationTx2{}, Path{}, Target{}, Now{}, Clean{} {}
-        notify(job_id id, uint256 d, bytes tx1, bytes tx2, list<digest256> p, work::target t, timestamp n, bool c) : 
+        notify(job_id id, uint256 d, bytes tx1, bytes tx2, list<digest256> p, work::compact t, timestamp n, bool c) : 
             ID{id}, Digest{d}, GenerationTx1{tx1}, GenerationTx2{tx2}, Path{p}, Target{t}, Now{n}, Clean{c} {};
         
         explicit notify(const notification&);
             
         bool valid() const {
-            return Now.valid() && Target.valid();
+            return Target.valid();
         }
         
         bool operator==(const notify& n) const {
@@ -270,6 +273,10 @@ namespace Gigamonkey::Stratum {
                 Worker.ExtraNonce1,
                 Notify.GenerationTx2};
         }
+        
+        Bitcoin::timestamp timestamp() const {
+            return Bitcoin::timestamp(Notify.Now);
+        }
     };
     
     struct solved {
@@ -279,13 +286,13 @@ namespace Gigamonkey::Stratum {
         solved(const job& j, const share&sh) : Job{j}, Share{sh} {}
         
         solved(job_id i, const worker_name& name, const work::proof& p, bool clean) : 
-            Job{i, p.Puzzle, worker{name, p.Puzzle.ExtraNonce}, p.Solution.Timestamp, clean}, Share{} {}
+            Job{i, p.Puzzle, worker{name, p.Puzzle.ExtraNonce}, timestamp(p.Solution.Timestamp.Value), clean}, Share{} {}
         
         work::proof proof() const {
             return work::proof{
                 Job.puzzle(), 
                 work::solution{
-                    Share.nTime, 
+                    Bitcoin::timestamp{Share.nTime}, 
                     Share.nOnce, 
                     Share.ExtraNonce2}};
         }

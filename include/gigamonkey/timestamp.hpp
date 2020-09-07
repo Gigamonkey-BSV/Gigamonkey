@@ -6,7 +6,7 @@
 
 #include <gigamonkey/types.hpp>
 
-namespace Gigamonkey {
+namespace Gigamonkey::Bitcoin {
     
     using duration = double;
     
@@ -17,8 +17,10 @@ namespace Gigamonkey {
         timestamp() : nonzero<uint32_little>{} {}
         
         explicit timestamp(string_view s) : timestamp{read(s)} {}
+        explicit timestamp(const uint32& t) : nonzero<uint32_little>{t} {}
         explicit timestamp(const uint32_little& t) : nonzero<uint32_little>{t} {}
         explicit timestamp(const nonzero<uint32_little>& n) : nonzero<uint32_little>{n} {}
+        explicit timestamp(const uint32_big& x) : nonzero<uint32_little>{uint32_little{x}} {}
         
         static timestamp now() {
             return timestamp{uint32_little{static_cast<uint32>(time(nullptr))}};
@@ -36,7 +38,7 @@ namespace Gigamonkey {
             return bytes_view(data(), 4);
         }
         
-        explicit operator uint32() {
+        explicit operator uint32() const {
             return nonzero<uint32_little>::Value;
         }
         
@@ -71,15 +73,15 @@ namespace Gigamonkey {
     };
 }
 
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::timestamp& s) {
+inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::timestamp& s) {
     return o << s.write();
 }
 
-inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::timestamp& s) {
+inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::Bitcoin::timestamp& s) {
     return w << s.Value;
 }
 
-inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::timestamp& s) {
+inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::Bitcoin::timestamp& s) {
     return r >> s.Value;
 }
 

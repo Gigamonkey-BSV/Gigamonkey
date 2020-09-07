@@ -9,7 +9,7 @@
 namespace Gigamonkey::work {
     
     // copied from arith_uint256.cpp and therefore probably works. 
-    uint256 expand_compact(uint32_little c) {
+    uint256 expand(const compact& c) {
         uint32 compact = c;
         uint256 expanded;
         int nSize = compact >> 24;

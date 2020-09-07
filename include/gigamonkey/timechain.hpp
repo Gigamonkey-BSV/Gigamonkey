@@ -29,9 +29,9 @@ namespace Gigamonkey::header {
     
     const digest256 merkle_root(const slice<80> x);
     
-    Gigamonkey::timestamp timestamp(const slice<80>);
+    Bitcoin::timestamp timestamp(const slice<80>);
     
-    work::target target(const slice<80>);
+    Bitcoin::target target(const slice<80>);
     
     uint32_little nonce(const slice<80>);
     
@@ -46,7 +46,7 @@ namespace Gigamonkey::Bitcoin {
         digest<32> Previous;
         digest<32> MerkleRoot;
         timestamp Timestamp;
-        work::target Target;
+        target Target;
         uint32_little Nonce;
         
         header() : Version{}, Previous{}, MerkleRoot{}, Timestamp{}, Target{}, Nonce{} {}
@@ -56,7 +56,7 @@ namespace Gigamonkey::Bitcoin {
             digest<32> p,
             digest<32> mr,
             timestamp ts,
-            work::target t,
+            target t,
             uint32_little n) : Version{v}, Previous{p}, MerkleRoot{mr}, Timestamp{ts}, Target{t}, Nonce{n} {}
             
         static header read(slice<80> x) {
@@ -65,7 +65,7 @@ namespace Gigamonkey::Bitcoin {
                 digest<32>{Gigamonkey::header::previous(x)}, 
                 digest<32>{Gigamonkey::header::merkle_root(x)}, 
                 timestamp{Gigamonkey::header::timestamp(x)}, 
-                work::target{Gigamonkey::header::target(x)}, 
+                target{Gigamonkey::header::target(x)}, 
                 Gigamonkey::header::nonce(x)};
         }
         
