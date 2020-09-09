@@ -75,6 +75,11 @@ if(Boost_FOUND)
 endif()
 
 #find_package(ICU 60.2 COMPONENTS uc i18n REQUIRED)
+find_package(OpenSSL REQUIRED)
+message("OpenSSL include dir: ${OPENSSL_INCLUDE_DIR}")
+        message("OpenSSL libraries: ${OPENSSL_LIBRARIES}")
+
+        include_directories(${OPENSSL_INCLUDE_DIR})
 
 # Find Crypto++
 find_package(CryptoPP REQUIRED)
@@ -142,7 +147,7 @@ add_library(gigamonkey STATIC
     #src/bitcoin_sv/sv.cpp 
 )
 
-target_link_libraries(gigamonkey PUBLIC data common util bitcoinconsensus ${LIB_BITCOIN_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} nlohmann_json::nlohmann_json ${NTL_LIBRARY} )
+target_link_libraries(gigamonkey PUBLIC data common util bitcoinconsensus ${LIB_BITCOIN_LIBRARIES} ${OPENSSL_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} nlohmann_json::nlohmann_json ${NTL_LIBRARY} )
 
 target_include_directories(gigamonkey PUBLIC include)
 
