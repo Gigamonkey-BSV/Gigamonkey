@@ -117,11 +117,6 @@ if(nlohmann_json_FOUND)
 
 endif()
 
-find_package(NTL REQUIRED)
-if(NTL_FOUND)
-	include_directories(${NTL_INCLUDE_DIR})
-endif()
-
 add_subdirectory("${PROJECT_SOURCE_DIR}/extern/data/")
 add_subdirectory("${CHAIN_SRC_ROOT}" bitcoin-sv)
 
@@ -147,7 +142,7 @@ add_library(gigamonkey STATIC
     #src/bitcoin_sv/sv.cpp 
 )
 
-target_link_libraries(gigamonkey PUBLIC data common util bitcoinconsensus ${LIB_BITCOIN_LIBRARIES} ${OPENSSL_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} nlohmann_json::nlohmann_json ${NTL_LIBRARY} )
+target_link_libraries(gigamonkey PUBLIC data common util bitcoinconsensus ${LIB_BITCOIN_LIBRARIES} ${OPENSSL_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} nlohmann_json::nlohmann_json )
 
 target_include_directories(gigamonkey PUBLIC include)
 
