@@ -43,20 +43,20 @@ namespace Gigamonkey {
         nonzero(const X& x) : data::math::nonzero<X>{x} {}
         nonzero() : data::math::nonzero<X>{} {}
         
-        bool operator<(const nonzero& n) const {
-            return data::math::nonzero<X>::Value < n.Value;
+        bool operator<(const X& n) const {
+            return data::math::nonzero<X>::Value < n;
         }
         
-        bool operator>(const nonzero& n) const {
-            return data::math::nonzero<X>::Value > n.Value;
+        bool operator>(const X& n) const {
+            return data::math::nonzero<X>::Value > n;
         }
         
-        bool operator<=(const nonzero& n) const {
-            return data::math::nonzero<X>::Value <= n.Value;
+        bool operator<=(const X& n) const {
+            return data::math::nonzero<X>::Value <= n;
         }
         
-        bool operator>=(const nonzero& n) const {
-            return data::math::nonzero<X>::Value >= n.Value;
+        bool operator>=(const X& n) const {
+            return data::math::nonzero<X>::Value >= n;
         }
     };
     
