@@ -170,5 +170,5 @@ target_link_libraries(gigamonkey PUBLIC data util ${OPENSSL_LIBRARIES} ${CRYPTOP
 target_include_directories(gigamonkey PUBLIC include)
 
 # Set C++ version
-target_compile_features(gigamonkey PUBLIC cxx_std_17)
+target_compile_features(gigamonkey PUBLIC cxx_std_20)
 set_target_properties(gigamonkey PROPERTIES CXX_EXTENSIONS OFF)
