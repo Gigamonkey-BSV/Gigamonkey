@@ -202,6 +202,30 @@ namespace Gigamonkey {
         const byte* end() const {
             return nonzero<uint<size>>::Value.end();
         }
+        
+        bool operator==(const digest& d) const {
+            return nonzero<uint<size>>::Value == d.Value;
+        }
+        
+        bool operator!=(const digest& d) const {
+            return nonzero<uint<size>>::Value != d.Value;
+        }
+        
+        bool operator>(const digest& d) const {
+            return nonzero<uint<size>>::Value > d.Value;
+        }
+        
+        bool operator<(const digest& d) const {
+            return nonzero<uint<size>>::Value < d.Value;
+        }
+        
+        bool operator<=(const digest& d) const {
+            return nonzero<uint<size>>::Value <= d.Value;
+        }
+        
+        bool operator>=(const digest& d) const {
+            return nonzero<uint<size>>::Value >= d.Value;
+        }
     };
 
     using digest160 = digest<20>;

@@ -8,6 +8,8 @@
 #include <string_view>
 #include <array>
 
+#include <nlohmann/json.hpp>
+
 #include <boost/endian/conversion.hpp>
 
 #include <data/stream.hpp>
@@ -37,35 +39,11 @@ namespace Gigamonkey {
     
     enum chain : byte {test, main};
     
-    template <typename X> 
-    struct nonzero : data::math::nonzero<X> {
-        
-        nonzero(const X& x) : data::math::nonzero<X>{x} {}
-        nonzero() : data::math::nonzero<X>{} {}
-        
-        bool operator<(const X& n) const {
-            return data::math::nonzero<X>::Value < n;
-        }
-        
-        bool operator>(const X& n) const {
-            return data::math::nonzero<X>::Value > n;
-        }
-        
-        bool operator<=(const X& n) const {
-            return data::math::nonzero<X>::Value <= n;
-        }
-        
-        bool operator>=(const X& n) const {
-            return data::math::nonzero<X>::Value >= n;
-        }
-    };
+    using json = nlohmann::json;
     
-    /*
-    template <size_t size>
-    using uint = data::uint<size>;
+    using N = data::math::number::gmp::N;
     
-    using N_bytes = data::N_bytes<LittleEndian>;
-    using Z_bytes = data::Z_bytes<LittleEndian>;*/
+    template <typename X> using nonzero = data::math::nonzero<X>;
     
     template <size_t size>
     using slice = data::slice<byte, size>;
