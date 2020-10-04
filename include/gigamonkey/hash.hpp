@@ -5,6 +5,7 @@
 #define GIGAMONKEY_HASH
 
 #include "types.hpp"
+#include <data/data.hpp>
 #include <data/encoding/integer.hpp>
 #include <data/math/number/bytes/N.hpp>
 
@@ -199,8 +200,6 @@ namespace Gigamonkey {
     }
     
 }
-
-
 
 namespace data::encoding::hexidecimal { 
     

@@ -12,9 +12,11 @@ class Bip32Test :
 
 };
 
+namespace Gigamonkey::Bitcoin::hd {
+
 TEST(Bip32,Basic)
 {
-    Gigamonkey::Bitcoin::hd::bip32::secret secret=Gigamonkey::Bitcoin::hd::bip32::secret::read("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi");
+    bip32::secret secret=bip32::secret::read("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi");
 }
 
 std::vector<char> HexToBytes(const std::string& hex) {
@@ -31,18 +33,18 @@ std::vector<char> HexToBytes(const std::string& hex) {
 
 
 TEST(Bip32,DeriveChain) {
-    Gigamonkey::Bitcoin::hd::bip32::secret secret=Gigamonkey::Bitcoin::hd::bip32::secret::read("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi");
-    Gigamonkey::Bitcoin::hd::bip32::secret expected=Gigamonkey::Bitcoin::hd::bip32::secret::read("xprv9uHRZZhk6KAJC1avXpDAp4MDc3sQKNxDiPvvkX8Br5ngLNv1TxvUxt4cV1rGL5hj6KCesnDYUhd7oWgT11eZG7XnxHrnYeSvkzY7d2bhkJ7");
-    Gigamonkey::Bitcoin::hd::bip32::secret derived=Gigamonkey::Bitcoin::hd::bip32::derive(secret,"0\'");
+    bip32::secret secret=bip32::secret::read("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi");
+    bip32::secret expected=bip32::secret::read("xprv9uHRZZhk6KAJC1avXpDAp4MDc3sQKNxDiPvvkX8Br5ngLNv1TxvUxt4cV1rGL5hj6KCesnDYUhd7oWgT11eZG7XnxHrnYeSvkzY7d2bhkJ7");
+    bip32::secret derived=bip32::derive(secret,"0\'");
     ASSERT_EQ(expected,derived);
-    ASSERT_EQ(derived.to_public().write(),Gigamonkey::Bitcoin::hd::bip32::pubkey::read("xpub68Gmy5EdvgibQVfPdqkBBCHxA5htiqg55crXYuXoQRKfDBFA1WEjWgP6LHhwBZeNK1VTsfTFUHCdrfp1bgwQ9xv5ski8PX9rL2dZXvgGDnw").write());
-    Gigamonkey::Bitcoin::hd::bip32::secret expected2=Gigamonkey::Bitcoin::hd::bip32::secret::read("xprv9wTYmMFdV23N2TdNG573QoEsfRrWKQgWeibmLntzniatZvR9BmLnvSxqu53Kw1UmYPxLgboyZQaXwTCg8MSY3H2EU4pWcQDnRnrVA1xe8fs");
-    ASSERT_EQ(expected2,Gigamonkey::Bitcoin::hd::bip32::derive(secret,"0\'/1"));
+    ASSERT_EQ(derived.to_public().write(),bip32::pubkey::read("xpub68Gmy5EdvgibQVfPdqkBBCHxA5htiqg55crXYuXoQRKfDBFA1WEjWgP6LHhwBZeNK1VTsfTFUHCdrfp1bgwQ9xv5ski8PX9rL2dZXvgGDnw").write());
+    bip32::secret expected2=bip32::secret::read("xprv9wTYmMFdV23N2TdNG573QoEsfRrWKQgWeibmLntzniatZvR9BmLnvSxqu53Kw1UmYPxLgboyZQaXwTCg8MSY3H2EU4pWcQDnRnrVA1xe8fs");
+    ASSERT_EQ(expected2,bip32::derive(secret,"0\'/1"));
 }
 
 
 TEST(Bip32,PublicRead) {
-    Gigamonkey::Bitcoin::hd::bip32::pubkey read=Gigamonkey::Bitcoin::hd::bip32::pubkey::read("xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8");
+    bip32::pubkey read=bip32::pubkey::read("xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8");
     ASSERT_EQ(read.Sequence,0) << "Invalid Sequence";
     ASSERT_EQ(read.Depth,0) << "Invalid Depth";
     ASSERT_EQ(read.Parent,0) << "Invalid Parent Fingerprint";
@@ -52,7 +54,7 @@ TEST(Bip32,PublicRead) {
 }
 
 TEST(Bip32,PublicWrite) {
-    Gigamonkey::Bitcoin::hd::bip32::pubkey expected=Gigamonkey::Bitcoin::hd::bip32::pubkey::read("xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8");
+    bip32::pubkey expected=bip32::pubkey::read("xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8");
     ASSERT_EQ(expected.write(),"xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8");
 }
 
@@ -62,9 +64,11 @@ TEST(Bip32,ToPublic) {
     Gigamonkey::bytes seed(input.size());
     std::copy(input.begin(),input.end(),seed.begin());
 
-    Gigamonkey::Bitcoin::hd::bip32::secret secret=Gigamonkey::Bitcoin::hd::bip32::secret::from_seed(seed,Gigamonkey::Bitcoin::hd::bip32::main);
-    Gigamonkey::Bitcoin::hd::bip32::secret secret2=Gigamonkey::Bitcoin::hd::bip32::secret::read("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi");
-    Gigamonkey::Bitcoin::hd::bip32::pubkey pubkey=secret.to_public();
-    Gigamonkey::Bitcoin::hd::bip32::pubkey expected=Gigamonkey::Bitcoin::hd::bip32::pubkey::read("xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8");
+    bip32::secret secret=bip32::secret::from_seed(seed,bip32::main);
+    bip32::secret secret2=bip32::secret::read("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi");
+    bip32::pubkey pubkey=secret.to_public();
+    bip32::pubkey expected=bip32::pubkey::read("xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8");
+
+}
 
 }

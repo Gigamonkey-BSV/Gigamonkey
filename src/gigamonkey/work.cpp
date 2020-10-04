@@ -8,6 +8,17 @@
 
 namespace Gigamonkey::work {
     
+    proof cpu_solve(puzzle p, solution initial) {
+        uint256 target = p.Target.expand();
+        if (target == 0) return {};
+        // This is for test purposes only. Therefore we do not
+        // accept difficulties that are above the ordinary minimum. 
+        if (p.Target.difficulty() > difficulty::minimum()) return {}; 
+        proof pr{p, initial};
+        while(!pr.valid()) pr.Solution.Nonce++;
+        return pr;
+    }
+    
     // copied from arith_uint256.cpp and therefore probably works. 
     uint256 expand(const compact& c) {
         uint32 compact = c;

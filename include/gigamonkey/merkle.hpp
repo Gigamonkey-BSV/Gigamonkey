@@ -26,7 +26,7 @@ namespace Gigamonkey::Merkle {
         digests Digests;
         
         path();
-        path(uint32 i, digests p);
+        path(uint32 i, const digests p);
         
         bool valid() const;
         
@@ -314,7 +314,7 @@ namespace Gigamonkey::Merkle {
     
     inline path::path() : Index{0}, Digests{} {}
     
-    inline path::path(uint32 i, digests p) : Index{i}, Digests{p} {}
+    inline path::path(uint32 i, const digests p) : Index{i}, Digests{p} {}
         
     inline bool path::valid() const {
         return Digests.valid();

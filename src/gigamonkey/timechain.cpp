@@ -14,98 +14,38 @@ namespace Gigamonkey {
     }
 }
 
-namespace Gigamonkey::header {
-    int32_little version(const slice<80> x) {
+namespace Gigamonkey::Bitcoin {
+    int32_little header::version(const slice<80> x) {
         int32_little version;
         slice<4> v = x.range<0, 4>();
         std::copy(v.begin(), v.end(), version.data());
         return version;
     }
     
-    Bitcoin::timestamp timestamp(const slice<80> x) {
+    Bitcoin::timestamp header::timestamp(const slice<80> x) {
         Bitcoin::timestamp time;
         slice<4> v = x.range<68, 72>();
         std::copy(v.begin(), v.end(), time.data());
         return time;
     }
     
-    work::compact target(const slice<80> x) {
+    work::compact header::target(const slice<80> x) {
         work::compact work;
         slice<4> v = x.range<72, 76>();
         std::copy(v.begin(), v.end(), work.data());
         return work;
     }
     
-    uint32_little nonce(const slice<80> x) {
+    uint32_little header::nonce(const slice<80> x) {
         uint32_little n;
         slice<4> v = x.range<76, 80>();
         std::copy(v.begin(), v.end(), n.data());
         return n;
     }
     
-    bool valid(const slice<80> h) {
+    bool header::valid(const slice<80> h) {
         return header_valid(Bitcoin::header::read(h)) && header_valid_work(h);
     }
-    
-}
-
-namespace Gigamonkey::transaction {
-    bool valid(bytes_view) {
-        throw data::method::unimplemented{"transaction::valid"};
-    }
-    
-    // Whether this is a coinbase transaction. 
-    bool coinbase(bytes_view) {
-        throw data::method::unimplemented{"transaction::coinbase"};
-    }
-}
-
-namespace Gigamonkey::block {
-    struct tx_reader {
-        bytes_view Next;
-        bytes_reader Rest;
-        
-        bool valid() const;
-    };
-    
-    cross<bytes_view> transactions(bytes_view b) {
-        bytes_view after_header{b.substr(80)};
-        throw method::unimplemented{"block::transactions"};
-    }
-    
-    tx_reader read_next_tx(bytes_reader);
-    /*
-    digest256 merkle_root(bytes_view block) {
-        Merkle::leaves l{};
-        bytes_view txs{transactions(block)};
-        bytes_reader reading{txs.begin(), txs.end()};
-        while(reading.Reader.Begin != reading.Reader.End) {
-            tx_reader next = read_next_tx(reading);
-            l = l << Bitcoin::hash256(next.Next);
-            reading = next.Rest;
-        }
-        return Merkle::root(l);
-    }*/
-    
-    /*
-    bool valid(bytes_view b) {
-        // TODO check magic number
-        slice<80> h = header(b);
-        if (!header::valid(h)) return false;
-        cross<uint64> tx_indices = transactions(b);
-        if (tx_indices.size() == 0 || !transaction::coinbase(txs[0])) return false;
-        for (int i = 1; i < tx_indices.size(); i++) if (!transaction::valid(txs[i])) return false;
-        return header::merkle_root(h) == merkle_root(txs);
-    }*/
-    
-    /* TODO
-    const slice<80> header(bytes_view b) {
-        return data::slice<byte>{b}.range<8, 88>();
-    }*/
-    
-}
-
-namespace Gigamonkey::Bitcoin {
     
     Gigamonkey::uint256 satoshi_uint256_to_uint256(::uint256 x) {
         Gigamonkey::uint256 y;
@@ -149,7 +89,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     bool input::valid() const {
-        return Outpoint.valid() && decompile(Script) != program{};
+        return decompile(Script) != program{};
     }
     
     bool output::valid() const {
@@ -158,10 +98,10 @@ namespace Gigamonkey::Bitcoin {
     
     size_t transaction::serialized_size() const {
         return 8 + var_int_size(Inputs.size()) + var_int_size(Inputs.size()) + 
-            data::fold([](size_t size, const input& i)->size_t{
+            data::fold([](size_t size, const Bitcoin::input& i)->size_t{
                 return size + i.serialized_size();
             }, 0, Inputs) + 
-            data::fold([](size_t size, const output& i)->size_t{
+            data::fold([](size_t size, const Bitcoin::output& i)->size_t{
                 return size + i.serialized_size();
             }, 0, Outputs);
     }

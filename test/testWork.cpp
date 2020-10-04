@@ -30,19 +30,13 @@ namespace Gigamonkey::work {
         
         auto messages = list<std::string>{} << message1 << message2;
         
-        const compact target_2 = SuccessHalf;
-        const compact target_4 = SuccessQuarter;
-        const compact target_8 = SuccessEighth;
-        const compact target_16 = SuccessSixteenth;
         const compact target_32{32, 0x080000};
         const compact target_64{32, 0x040000};
         const compact target_128{32, 0x020000};
         const compact target_256{32, 0x010000};
         const compact target_512{32, 0x008000};
         
-        auto targets = list<compact>{} << 
-            //target_16 << 
-            //target_32 << 
+        auto targets = list<compact>{} <<   
             target_64 << 
             target_128 << 
             target_256 << 
@@ -54,7 +48,7 @@ namespace Gigamonkey::work {
                 Merkle::path{}, bytes{}, 353, bytes(m));
         }, messages, targets);
         
-        uint64_little extra_nonce = 90983;
+        uint64_big extra_nonce = 90983;
         
         auto proofs = data::for_each([&extra_nonce](puzzle p) -> proof {
             return cpu_solve(p, solution(Bitcoin::timestamp(1), 0, extra_nonce++));

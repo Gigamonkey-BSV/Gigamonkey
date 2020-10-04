@@ -49,10 +49,7 @@ namespace Gigamonkey::Bitcoin {
         duration operator-(const timestamp& t) const;
     };
 
-    inline std::ostream& operator<<(std::ostream& o, const timestamp& s) {
-        time_t t = static_cast<time_t>(uint32_t(s));
-        return o << ctime(&t);
-    }
+    std::ostream& operator<<(std::ostream& o, const timestamp& s);
 
     inline bytes_writer operator<<(bytes_writer w, const timestamp& s) {
         return w << s.Value;

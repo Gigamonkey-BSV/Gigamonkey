@@ -23,13 +23,13 @@ namespace Gigamonkey::Bitcoin {
         
         block genesis = block::read(genesis_serialized);
         
-        EXPECT_TRUE(Gigamonkey::block::valid(genesis_serialized));
+        EXPECT_TRUE(block::valid(genesis_serialized));
         EXPECT_TRUE(genesis.valid());
         EXPECT_EQ(genesis_serialized, genesis.write());
         //EXPECT_EQ(block::read(genesis_serialized), genesis);
         EXPECT_EQ(genesis.Header.hash(), genesis_header_hash);
         EXPECT_EQ(genesis.Header.hash(), genesis_header_hash);
-        EXPECT_EQ(genesis.Header.MerkleRoot, Gigamonkey::block::merkle_root(Gigamonkey::block::transactions(genesis_serialized)));
+        EXPECT_EQ(genesis.Header.MerkleRoot, block::merkle_root(genesis_serialized));
     }
 
 }

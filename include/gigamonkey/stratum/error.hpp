@@ -15,39 +15,22 @@ namespace Gigamonkey::Stratum {
     
     std::string error_message_from_code(error_code);
     
-    struct error;
-    
-    inline bool operator==(const error& a, const error& b);
-    inline bool operator!=(const error& a, const error& b);
-    
-    void to_json(json& j, const error& p); 
-    void from_json(const json& j, error& p); 
-    
-    std::ostream& operator<<(std::ostream&, const error&);
-    
     struct error {
         error_code Code;
         string Message;
-        bool Valid;
         
-        error() : Code{none}, Message{}, Valid{false} {}
-        error(error_code e, string m) : Code{e}, Message{m}, Valid{true} {}
-        explicit error(error_code e) : Code{e}, Message{error_message_from_code(e)}, Valid{true} {}
+        error() : Code{}, Message{} {}
+        error(error_code e, string m) : Code{e}, Message{m} {}
+        explicit error(error_code e) : Code{e}, Message{error_message_from_code(e)} {}
+        
+        static bool valid(const json& j) {
+            return j.is_array() && j.size() == 2 && j[0].is_number_unsigned() && j[1].is_string();
+        }
+        
+        explicit operator json() const {
+            return {uint32(Code), Message};
+        }
     };
-    
-    inline bool operator==(const error& a, const error& b) {
-        return a.Code == b.Code;
-    }
-    
-    inline bool operator!=(const error& a, const error& b) {
-        return a.Code != b.Code;
-    }
-    
-    inline std::ostream& operator<<(std::ostream& o, const error& r) {
-        json j;
-        to_json(j, r);
-        return o << j;
-    }
     
 }
 

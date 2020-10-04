@@ -5,117 +5,77 @@
 
 namespace Gigamonkey::Stratum::mining {
     
-    subscribe_request::subscribe_request(const request& r) : subscribe_request{} {
-        if (!r.valid() || r.Method != mining_subscribe || r.Params.size() == 0 || r.Params.size() > 2 || !r.Params[0].is_string()) return;
-        if (r.Params.size() == 1) *this = subscribe_request{r.ID, string(r.Params[0])};
-        else if (r.Params[1].is_string()) {
-            session_id id;
-            from_json(r.Params[1], id);
-            if (data::valid(id)) *this = subscribe_request{r.ID, string(r.Params[0]), id};
-        }
+    subscription::subscription(const json& j) : subscription{} {
+        if (!(j.is_array() && j.size() == 2 && j[0].is_string() && from_json(j[1], ID))) return;
+        Method = method_from_string(j[0]);
     }
     
-    subscribe_request::operator request() const {
-        if (!valid()) return {};
-        params p;
-        p.push_back(UserAgent);
-        if (ExtraNonce1) {
-            json j;
-            to_json(j, *ExtraNonce1);
-            p.push_back(j);
-        }
-        return request{ID, mining_subscribe, p};
+    subscription::operator json() const {
+        parameters p;
+        p.resize(2);
+        p[0] = method_to_string(Method);
+        to_json(p[1], ID);
+        return p;
     }
     
-    subscribe_response::subscribe_response(const response& r) : subscribe_response{} {
-        if (r.is_error() || 
-            !r.Result.is_array() || 
-            r.Result.size() != 3 || 
-            !r.Result[0].is_array() || 
-            !r.Result[1].is_string() || 
-            !r.Result[2].is_number_unsigned()) return;
-        
-        ExtraNonce2Size = uint32(r.Result[2]);
-        from_json(r.Result[1], ExtraNonce1);
-        
-        for (const json& j : r.Result[0]) {
-            subscription x; 
-            from_json(j, x);
-            Subscriptions = Subscriptions << x;
+    parameters subscribe_request::serialize(const parameters& p) {
+        Stratum::parameters x;
+        if (p.ExtraNonce1) {
+            x.resize(2);
+            x[1] = encoding::hex::fixed<4>(*p.ExtraNonce1);
         }
-        
-        Valid = true;
+        else x.resize(1);
+        x[0] = p.UserAgent;
+        return x;
     }
     
-    subscribe_response::operator response() const {
-        if (!Valid) return {};
+    subscribe_request::parameters subscribe_request::deserialize(const Stratum::parameters& p) {
+        if (p.size() == 0 || p.size() > 2 || !p[0].is_string()) return {};
         
-        params subs;
-        for (const subscription& x : Subscriptions) {
-            json j;
-            to_json(j, x);
-            subs.push_back(j);
+        parameters x;
+        x.UserAgent = p[0];
+        if (p.size() == 2) {
+            session_id n1;
+            from_json(p[1], n1);
+            x.ExtraNonce1 = n1;
+        }
+        return x;
+    }
+    
+    parameters subscribe_response::serialize(const parameters& p) {
+        if (!p.valid()) return {};
+        
+        Stratum::parameters s;
+        s.resize(p.Subscriptions.size());
+        auto n = s.begin();
+        for (const subscription& x : p.Subscriptions) {
+            *n = json(x);
+            n++;
         }
         
-        params p;
-        p.push_back(subs);
+        Stratum::parameters x;
+        x.resize(3);
+        x[0] = s;
+        to_json(x[1], p.ExtraNonce1);
+        x[2] = p.ExtraNonce2Size;
         
-        json id;
-        to_json(id, ExtraNonce1);
-        p.push_back(id);
-        p.push_back(ExtraNonce2Size);
+        return x;
+    }
+    
+    subscribe_response::parameters subscribe_response::deserialize(const Stratum::parameters& p) {
+        parameters x;
+        if (p.size() != 3 || !p[0].is_array() || !p[2].is_number_unsigned() || !from_json(p[1], x.ExtraNonce1)) return {};
         
-        return response(ID, p);
-    }
-    
-    void to_json(json& j, const subscription& p) {
-        if (!data::valid(p)) {
-            j = {};
-            return;
-        }
-        json id;
-        to_json(id, p.ID);
-        j = {method_to_string(p.Method), id};
-    }
-    
-    void from_json(const json& j, subscription& p) {
-        p = {};
-        if (j.is_array() && j.size() == 2 && j[0].is_string() && j[1].is_string()) {
-            from_json(j[1], p.ID);
-            p.Method = method_from_string(string(j[0]));
-        }
-    }
-    
-    void to_json(json& j, const subscribe_request& p) {
-        if (!data::valid(p)) {
-            j = {};
-            return;
+        for (const json& j : p[0]) {
+            subscription z{j};
+            if (!z.valid()) return {};
+            x.Subscriptions = x.Subscriptions << z;
         }
         
-        to_json(j, request(p));
-    }
-    
-    void from_json(const json& j, subscribe_request& p) {
-        p = {};
-        request x;
-        from_json(j, x);
-        p = subscribe_request(x);
-    }
-    
-    void to_json(json& j, const subscribe_response& p) {
-        if (!data::valid(p)) {
-            j = {};
-            return;
-        }
+        x.ExtraNonce2Size = uint32(p[2]);
         
-        to_json(j, response(p));
-    }
-    
-    void from_json(const json& j, subscribe_response& p) {
-        p = {};
-        response x;
-        from_json(j, x);
-        p = subscribe_response(x);
+        return x;
+        
     }
     
 }

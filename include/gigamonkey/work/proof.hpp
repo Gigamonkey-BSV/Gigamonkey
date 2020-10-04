@@ -5,42 +5,60 @@
 #define GIGAMONKEY_WORK_PROOF
 
 #include <gigamonkey/work/string.hpp>
+#include <gigamonkey/stratum/session_id.hpp>
 
 namespace Gigamonkey::work {
+    
+    struct solution;
+    struct puzzle;
+    struct proof;
+    
+    proof solve(puzzle p, solution initial);
+    
+    bool operator==(const solution&, const solution&);
+    bool operator!=(const solution&, const solution&);
+    
+    bool operator==(const puzzle&, const puzzle&);
+    bool operator!=(const puzzle&, const puzzle&);
+    
+    bool operator==(const proof&, const proof&);
+    bool operator!=(const proof&, const proof&);
     
     struct solution {
         Bitcoin::timestamp Timestamp;
         nonce Nonce;
-        uint64_little ExtraNonce;
         
-        solution(Bitcoin::timestamp t, nonce n, uint64_little b);
+        // Extra nonce is a part of Stratum but not part of the Bitcoin protocol. That is why we use big-endian. 
+        uint64_big ExtraNonce2;
+        
+        solution(Bitcoin::timestamp t, nonce n, uint64_big b);
         solution();
         
         bool valid() const;
-        
-        bool operator==(const solution& s) const;
-        bool operator!=(const solution& s) const;
     };
     
     struct puzzle {
+        // corresponds to Version in the Bitcoin protocol. 
         int32_little Category;
         uint256 Digest;
         compact Target;
         Merkle::path Path;
+        
+        // corresponds to the first part of the coinbase tx. 
         bytes Header;
-        uint32_little ExtraNonce;
+        
+        Stratum::session_id ExtraNonce1;
+        
+        // second part of the coinbase tx. 
         bytes Body;
         
         puzzle();
         puzzle(
             int32_little v, const uint256& d, 
             compact g, Merkle::path mp, const bytes& h, 
-            uint32_little extra, const bytes& b);
+            Stratum::session_id extra, const bytes& b);
         
         bool valid() const;
-        
-        bool operator==(const puzzle& p) const;
-        bool operator!=(const puzzle& p) const;
     };
     
     struct proof {
@@ -55,8 +73,8 @@ namespace Gigamonkey::work {
             const string& w, 
             Merkle::path mp, 
             const bytes& h, 
-            const uint32_little& n1, 
-            const uint64_little& n2, 
+            const Stratum::session_id& n1, 
+            const uint64_big& n2, 
             const bytes& b);
         
         bytes meta() const;
@@ -64,63 +82,65 @@ namespace Gigamonkey::work {
         digest256 merkle_root() const;
         
         work::string string() const;
-        
-        bool operator==(const proof& p) const;
-        bool operator!=(const proof& p) const;
     };
     
     proof cpu_solve(puzzle p, solution initial);
     
+    // right now we only have cpu mining in this lib. 
+    inline proof solve(puzzle p, solution initial) {
+        return cpu_solve(p, initial);
+    }
+    
     inline std::ostream& operator<<(std::ostream& o, const solution& p) {
-        return o << "solution{Timestamp: " << p.Timestamp << ", Nonce: " << p.Nonce << ", ExtraNonce: " << p.ExtraNonce << "}";
+        return o << "solution{Timestamp: " << p.Timestamp << ", Nonce: " << p.Nonce << ", ExtraNonce2: " << p.ExtraNonce2 << "}";
     }
 
     inline std::ostream& operator<<(std::ostream& o, const puzzle& p) {
         return o << "puzzle{Category: " << p.Category << ", Digest: " << p.Digest << ", Target: " << 
-            p.Target << ", Path: " << p.Path << ", Header: " << p.Header << ", ExtraNonce: " << p.ExtraNonce << ", Body: " << p.Body << "}";
+            p.Target << ", Path: " << p.Path << ", Header: " << p.Header << ", ExtraNonce1: " << p.ExtraNonce1 << ", Body: " << p.Body << "}";
     }
 
     inline std::ostream& operator<<(std::ostream& o, const proof& p) {
         return o << "proof{Puzzle: " << p.Puzzle << ", Solution: " << p.Solution << "}";
     }
     
-    inline solution::solution(Bitcoin::timestamp t, nonce n, uint64_little b) : Timestamp{t}, Nonce{n}, ExtraNonce{b} {}
-    inline solution::solution() : Timestamp{}, Nonce{}, ExtraNonce{} {};
+    inline solution::solution(Bitcoin::timestamp t, nonce n, uint64_big b) : Timestamp{t}, Nonce{n}, ExtraNonce2{b} {}
+    inline solution::solution() : Timestamp{}, Nonce{}, ExtraNonce2{} {};
     
     inline bool solution::valid() const {
         return Timestamp.valid();
     }
     
-    inline bool solution::operator==(const solution& s) const {
-        return Timestamp == s.Timestamp && 
-            Nonce == s.Nonce && 
-            ExtraNonce == s.ExtraNonce;
+    inline bool operator==(const solution& a, const solution& b) {
+        return a.Timestamp == b.Timestamp && 
+            a.Nonce == b.Nonce && 
+            a.ExtraNonce2 == b.ExtraNonce2;
     }
     
-    inline bool solution::operator!=(const solution& s) const {
-        return !operator==(s);
+    inline bool operator!=(const solution& a, const solution& b) {
+        return !(a == b);
     }
     
-    inline puzzle::puzzle() : Category{}, Digest{}, Target{}, Path{}, Header{}, ExtraNonce{}, Body{} {}
-    inline puzzle::puzzle(int32_little v, const uint256& d, compact g, Merkle::path mp, const bytes& h, uint32_little extra, const bytes& b) : 
-        Category{v}, Digest{d}, Target{g}, Path{mp}, Header{h}, ExtraNonce{extra}, Body{b} {}
+    inline puzzle::puzzle() : Category{}, Digest{}, Target{}, Path{}, Header{}, ExtraNonce1{}, Body{} {}
+    inline puzzle::puzzle(int32_little v, const uint256& d, compact g, Merkle::path mp, const bytes& h, Stratum::session_id extra, const bytes& b) : 
+        Category{v}, Digest{d}, Target{g}, Path{mp}, Header{h}, ExtraNonce1{extra}, Body{b} {}
     
     inline bool puzzle::valid() const {
         return Target.valid();
     }
     
-    inline bool puzzle::operator==(const puzzle& p) const {
-        return Category == p.Category && 
-            Digest == p.Digest && 
-            Target == p.Target && 
-            Path == p.Path && 
-            Header == p.Header && 
-            ExtraNonce == p.ExtraNonce &&
-            Body == p.Body;
+    inline bool operator==(const puzzle& a, const puzzle& b) {
+        return a.Category == b.Category && 
+            a.Digest == b.Digest && 
+            a.Target == b.Target && 
+            a.Path == b.Path && 
+            a.Header == b.Header && 
+            a.ExtraNonce1 == b.ExtraNonce1 &&
+            a.Body == b.Body;
     }
     
-    inline bool puzzle::operator!=(const puzzle& p) const {
-        return !operator==(p);
+    inline bool operator!=(const puzzle& a, const puzzle& b) {
+        return !(a == b);
     }
     
     inline proof::proof() : Puzzle{}, Solution{} {}
@@ -130,15 +150,15 @@ namespace Gigamonkey::work {
         const struct string& w, 
         Merkle::path mp, 
         const bytes& h, 
-        const uint32_little& n1, 
-        const uint64_little& n2, 
+        const Stratum::session_id& n1, 
+        const uint64_big& n2, 
         const bytes& b) : Puzzle{w.Category, w.Digest, w.Target, {}, h, n1, b}, Solution{w.Timestamp, w.Nonce, n2} {
         if (w.MerkleRoot != merkle_root()) *this = {};
     }
     
     inline bytes proof::meta() const {
         return write(Puzzle.Header.size() + 12 + Puzzle.Body.size(), 
-            Puzzle.Header, Puzzle.ExtraNonce, Solution.ExtraNonce, Puzzle.Body);
+            Puzzle.Header, Puzzle.ExtraNonce1, Solution.ExtraNonce2, Puzzle.Body);
     }
     
     inline digest256 proof::merkle_root() const {
@@ -160,23 +180,12 @@ namespace Gigamonkey::work {
         return string().valid();
     }
      
-    inline bool proof::operator==(const proof& p) const {
-        return Puzzle == p.Puzzle && Solution == p.Solution;
+    inline bool operator==(const proof& a, const proof& b) {
+        return a.Puzzle == b.Puzzle && a.Solution == b.Solution;
     }
     
-    inline bool proof::operator!=(const proof& p) const {
-        return !operator==(p);
-    }
-    
-    inline proof cpu_solve(puzzle p, solution initial) {
-        uint256 target = p.Target.expand();
-        if (target == 0) return {};
-        // This is for test purposes only. Therefore we do not
-        // accept difficulties that are above the ordinary minimum. 
-        if (p.Target.difficulty() > difficulty::minimum()) return {}; 
-        proof pr{p, initial};
-        while(!pr.valid()) pr.Solution.Nonce++;
-        return pr;
+    inline bool operator!=(const proof& a, const proof& b) {
+        return !(a == b);
     }
 }
 

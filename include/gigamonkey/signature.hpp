@@ -92,13 +92,11 @@ namespace Gigamonkey::Bitcoin {
     inline bool verify(const signature& x, const input_index& i, sighash::directive d, const pubkey& p) {
         return verify(x, signature_hash(i, d), p);
     }
-}
 
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::signature& x) {
-    return o << "signature{" << data::encoding::hex::write(x.Data) << "}";
-}
-
-namespace Gigamonkey::Bitcoin {
+    inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::signature& x) {
+        return o << "signature{" << data::encoding::hex::write(x.Data) << "}";
+    }
+    
     inline signature::signature() : Data(72) {
         Data[0] = 0x30;
         Data[1] = 69;

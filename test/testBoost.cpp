@@ -20,7 +20,7 @@ std::ostream& operator<<(std::ostream& o, scripts x) {
 namespace Gigamonkey::Boost {
 
     template <typename f, typename X, typename Y>
-    static bool dot_cross(f foo, list<X> x, list<Y> y) {
+    bool dot_cross(f foo, list<X> x, list<Y> y) {
         if (x.size() != y.size()) return false;
         if (x.size() == 0) return true;
         list<X> input = x;
@@ -89,7 +89,7 @@ namespace Gigamonkey::Boost {
     }
     
     class test_case {
-        test_case(puzzle j, const output_script& x, const Stratum::job& sj, uint64_little n2, Bitcoin::secret key) : 
+        test_case(puzzle j, const output_script& x, const Stratum::job& sj, uint64_big n2, Bitcoin::secret key) : 
             Puzzle{j}, Script{x}, Job{sj}, ExtraNonce2{n2}, Key{key} {}
         
         static test_case build(
@@ -97,10 +97,10 @@ namespace Gigamonkey::Boost {
             Stratum::job_id jobID, 
             Bitcoin::timestamp start, 
             const Stratum::worker& worker, 
-            uint64_little n2, uint64 key) {
+            uint64_big n2, uint64 key) {
             Bitcoin::secret s(Bitcoin::secret::main, secp256k1::secret(secp256k1::coordinate(key)));
-            puzzle Puzzle{o, s.address().Digest, worker.extra_nonce_1()};
-            return test_case{Puzzle, o, Stratum::job{jobID, Puzzle, worker, start, true}, n2, s};
+            puzzle Puzzle{o, s.address().Digest, worker.ExtraNonce1};
+            return test_case{Puzzle, o, Stratum::job{jobID, worker.Name, Puzzle, start, true}, n2, s};
         }
         
         static test_case build(Boost::type type, 
@@ -112,15 +112,15 @@ namespace Gigamonkey::Boost {
             const Stratum::job_id jobID, 
             Bitcoin::timestamp start, 
             const Stratum::worker& worker, 
-            uint64_little n2, 
+            uint64_big n2, 
             uint64 key) { 
             Bitcoin::secret s(Bitcoin::secret::main, secp256k1::secret(secp256k1::coordinate(key)));
             digest160 address = s.address().Digest;
-            puzzle Puzzle{type, 1, content, target, tag, user_nonce, data, address, worker.extra_nonce_1()};
+            puzzle Puzzle{type, 1, content, target, tag, user_nonce, data, address, worker.ExtraNonce1};
             
             return test_case(Puzzle, 
                 output_script{type, 1, content, target, tag, user_nonce, data, address}, 
-                Stratum::job{jobID, Puzzle, worker, start, true}, 
+                Stratum::job{jobID, worker.Name, Puzzle, start, true}, 
                 n2, s);
         }
         
@@ -128,7 +128,7 @@ namespace Gigamonkey::Boost {
         puzzle Puzzle;
         output_script Script;
         Stratum::job Job;
-        uint64_little ExtraNonce2;
+        uint64_big ExtraNonce2;
         Bitcoin::secret Key;
         
         test_case(
@@ -136,7 +136,7 @@ namespace Gigamonkey::Boost {
             Stratum::job_id jobID, 
             Bitcoin::timestamp start, 
             const Stratum::worker& worker, 
-            uint64_little n2, 
+            uint64_big n2, 
             uint64 key) : 
             test_case(build(o, jobID, start, worker, n2, key)) {}
         
@@ -149,7 +149,7 @@ namespace Gigamonkey::Boost {
             Stratum::job_id jobID, 
             Bitcoin::timestamp start,
             const Stratum::worker& worker,
-            uint64_little n2, 
+            uint64_big n2, 
             uint64 key) : 
             test_case(build(type, content, target, tag, user_nonce, data, jobID, start, worker, n2, key)) {}
     };
@@ -308,7 +308,7 @@ namespace Gigamonkey::Boost {
         
         // here are the input scripts. 
         auto input_scripts = map_thread<input_script>([Signature](const test_case t, work::proof i) -> input_script {
-            return input_script{Signature, t.Key.to_public(), t.Puzzle.ExtraNonce, i.Solution, t.Puzzle.Type};
+            return input_script{Signature, t.Key.to_public(), t.Puzzle.ExtraNonce1, i.Solution, t.Puzzle.Type};
         }, test_cases, proofs);
         
         auto proofs_from_scripts = map_thread<work::proof>([](output_script o, input_script i) -> work::proof {
@@ -355,7 +355,7 @@ namespace Gigamonkey::Boost {
         // The Stratum shares. 
         auto Stratum_shares = data::for_each([WorkerName, JobID](work::proof x) -> Stratum::share {
             return Stratum::share{WorkerName, JobID, 
-                x.Solution.ExtraNonce, 
+                x.Solution.ExtraNonce2, 
                 x.Solution.Timestamp, 
                 x.Solution.Nonce};
         }, proofs);
@@ -366,28 +366,6 @@ namespace Gigamonkey::Boost {
         
         EXPECT_TRUE(test_orthogonal(proofs, proofs_from_stratum)) << "could not reconstruct proofs from Stratum.";
         
-        // Phase 8: Stratum jobs and shares to json and back. 
-        
-        auto unserialized_Stratum_jobs = data::for_each([](const Stratum::job j) -> Stratum::job {
-            json serialized;
-            Stratum::job unserialized;
-            Stratum::mining::to_json(serialized, j.Notify);
-            Stratum::mining::from_json(serialized, unserialized.Notify);
-            unserialized.Worker = j.Worker;
-            return unserialized;
-        }, Stratum_jobs.rest());
-        
-        EXPECT_TRUE(test_orthogonal(Stratum_jobs.rest(), 
-            unserialized_Stratum_jobs)) << "could not convert Stratum jobs to json and back";
-        
-        EXPECT_TRUE(test_orthogonal(Stratum_shares.rest(), 
-            data::for_each([](const Stratum::share x) -> Stratum::share {
-                json serialized;
-                Stratum::mining::submit_request unserialized{};
-                Stratum::mining::to_json(serialized, Stratum::mining::submit_request{1, x});
-                Stratum::mining::from_json(serialized, unserialized);
-                return unserialized.Share;
-            }, Stratum_shares.rest()))) << "could not convert Stratum shares to json and back";
     }
 
 }

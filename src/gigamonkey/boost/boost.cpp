@@ -163,8 +163,8 @@ namespace Gigamonkey::Boost {
             push_data(Pubkey),
             push_data(Nonce),
             push_data(bytes_view(Timestamp)),
-            push_data(ExtraNonce2),
-            push_data(ExtraNonce1)};
+            push_data(bytes_view(ExtraNonce2)),
+            push_data(bytes_view(ExtraNonce1))};
         if (Type == Boost::bounty) p = p << push_data(MinerAddress);
         return p;
     }
@@ -227,20 +227,19 @@ namespace Gigamonkey::Boost {
     input_script from_solution(
                 Bitcoin::signature signature, 
                 Bitcoin::pubkey pubkey, 
-                uint32_little nonce1, 
+                Stratum::session_id nonce1, 
                 work::solution x, Boost::type t) {
         if (t == Boost::invalid || !x.valid()) return input_script{};
         
-        if (t == Boost::bounty)  
-            return input_script::bounty(signature, pubkey, x.Nonce, x.Timestamp, x.ExtraNonce, nonce1, pubkey.hash()); 
+        if (t == Boost::bounty) return input_script::bounty(signature, pubkey, x.Nonce, x.Timestamp, x.ExtraNonce2, nonce1, pubkey.hash()); 
         
-        return input_script::contract(signature, pubkey, x.Nonce, x.Timestamp, x.ExtraNonce, nonce1);
+        return input_script::contract(signature, pubkey, x.Nonce, x.Timestamp, x.ExtraNonce2, nonce1);
     }
     
     input_script::input_script(
         Bitcoin::signature signature, 
         Bitcoin::pubkey pubkey, 
-                uint32_little nonce1, 
+        Stratum::session_id nonce1, 
         work::solution x, Boost::type t) : input_script{from_solution(signature, pubkey, nonce1, x, t)} {}
     
     Boost::output_script puzzle::output_script() const {
@@ -275,35 +274,34 @@ namespace Gigamonkey::Boost {
                   x.begin());
         return x;
     }
-    
-}
 
-std::ostream& operator<<(std::ostream& o, const Gigamonkey::Boost::output_script s) {
-    using namespace Gigamonkey::Boost;
-    if (s.Type == invalid) return o << "BoostOutputScript{Type : invalid}";
-    o << "BoostOutputScript{Type : ";
-    if (s.Type == contract) o << "contract, MinerAddress : " << s.MinerAddress;
-    else o << "bounty";
-    return o << 
-        ", Category : " << s.Category << 
-        ", Content : " << s.Content << 
-        ", Target : " << s.Target << 
-        ", Tag : " << data::encoding::hexidecimal::write(s.Tag, data::endian::little) << 
-        ", UserNonce : " << s.UserNonce << 
-        ", AdditionalData : " << data::encoding::hexidecimal::write(s.AdditionalData, data::endian::little) << "}";
-}
+    std::ostream& operator<<(std::ostream& o, const Gigamonkey::Boost::output_script s) {
+        using namespace Gigamonkey::Boost;
+        if (s.Type == invalid) return o << "BoostOutputScript{Type : invalid}";
+        o << "BoostOutputScript{Type : ";
+        if (s.Type == contract) o << "contract, MinerAddress : " << s.MinerAddress;
+        else o << "bounty";
+        return o << 
+            ", Category : " << s.Category << 
+            ", Content : " << s.Content << 
+            ", Target : " << s.Target << 
+            ", Tag : " << data::encoding::hexidecimal::write(s.Tag, data::endian::little) << 
+            ", UserNonce : " << s.UserNonce << 
+            ", AdditionalData : " << data::encoding::hexidecimal::write(s.AdditionalData, data::endian::little) << "}";
+    }
 
-std::ostream& operator<<(std::ostream& o, const Gigamonkey::Boost::input_script s) {
-    using namespace Gigamonkey::Boost;
-    if (s.Type == invalid) return o << "BoostInputScript{Type : invalid}";
-    o << "BoostInputScript{Type : " << (s.Type == contract ? "contract" : "bounty") << 
-        ", Signature : " << s.Signature << 
-        ", Pubkey : " << s.Pubkey << 
-        ", Nonce : " << s.Nonce << 
-        ", Timestamp : " << s.Timestamp << 
-        ", ExtraNonce2 : " << s.ExtraNonce2 << 
-        ", ExtraNonce1 : " << s.ExtraNonce1;
-    if (s.Type == bounty) o << ", MinerAddress: " << s.MinerAddress;
-    return o << "}";
-}
+    std::ostream& operator<<(std::ostream& o, const Gigamonkey::Boost::input_script s) {
+        using namespace Gigamonkey::Boost;
+        if (s.Type == invalid) return o << "BoostInputScript{Type : invalid}";
+        o << "BoostInputScript{Type : " << (s.Type == contract ? "contract" : "bounty") << 
+            ", Signature : " << s.Signature << 
+            ", Pubkey : " << s.Pubkey << 
+            ", Nonce : " << s.Nonce << 
+            ", Timestamp : " << s.Timestamp << 
+            ", ExtraNonce2 : " << s.ExtraNonce2 << 
+            ", ExtraNonce1 : " << s.ExtraNonce1;
+        if (s.Type == bounty) o << ", MinerAddress: " << s.MinerAddress;
+        return o << "}";
+    }
 
+}

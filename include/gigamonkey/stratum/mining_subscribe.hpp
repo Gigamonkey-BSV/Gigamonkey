@@ -5,121 +5,200 @@
 #define GIGAMONKEY_STRATUM_MINING_SUBSCRIBE
 
 #include <gigamonkey/stratum/stratum.hpp>
-#include <gigamonkey/stratum/session_id.hpp>
+#include <gigamonkey/stratum/mining.hpp>
 
 namespace Gigamonkey::Stratum::mining {
-    
-    struct subscription;
-    struct subscribe_request;
-    struct subscribe_response;
-    
-    bool operator==(const subscription& a, const subscription& b);
-    bool operator!=(const subscription& a, const subscription& b);
-    
-    bool operator==(const subscribe_request& a, const subscribe_request& b);
-    bool operator!=(const subscribe_request& a, const subscribe_request& b);
-    
-    bool operator==(const subscribe_response& a, const subscribe_response& b);
-    bool operator!=(const subscribe_response& a, const subscribe_response& b);
-    
-    void to_json(json& j, const subscription& p); 
-    void from_json(const json& j, subscription& p); 
-    
-    void to_json(json& j, const subscribe_request& p); 
-    void from_json(const json& j, subscribe_request& p); 
-    
-    void to_json(json& j, const subscribe_response& p); 
-    void from_json(const json& j, subscribe_response& p); 
-    
-    std::ostream& operator<<(std::ostream&, const subscription&);
-    std::ostream& operator<<(std::ostream&, const subscribe_request&);
-    std::ostream& operator<<(std::ostream&, const subscribe_response&);
     
     struct subscription {
         method Method;
         session_id ID;
         
-        subscription() : Method{}, ID{} {}
+        subscription() : Method{unset}, ID{} {}
         subscription(method m, session_id id) : Method{m}, ID{id} {}
+        explicit subscription(const json&);
+        explicit operator json() const;
         
         bool valid() const {
-            return Method != unset && data::valid(ID);
+            return Method != unset;
         }
     };
     
-    struct subscribe_request {
-        request_id ID; 
-        string UserAgent;
-        std::optional<session_id> ExtraNonce1;
+    bool operator==(const subscription& a, const subscription& b);
+    bool operator!=(const subscription& a, const subscription& b);
+    
+    std::ostream& operator<<(std::ostream&, const subscription&);
+    
+    struct subscribe_request : request {
+        struct parameters {
+            string UserAgent;
+            std::optional<session_id> ExtraNonce1;
+            
+            parameters(const string& u) : UserAgent{u}, ExtraNonce1{} {}
+            parameters(const string& u, session_id i) : UserAgent{u}, ExtraNonce1{i} {}
+            
+            bool valid() const;
+            bool operator==(const parameters& p) const;
+            bool operator!=(const parameters& p) const;
+            
+        private:
+            parameters() : UserAgent{}, ExtraNonce1{} {}
+            
+            friend struct subscribe_request;
+        };
         
-        bool valid() const {
-            return UserAgent != "" && (! bool(ExtraNonce1) || data::valid(*ExtraNonce1));
-        }
+        static Stratum::parameters serialize(const parameters&);
+        static parameters deserialize(const Stratum::parameters&);
         
-        subscribe_request() : ID{}, UserAgent{}, ExtraNonce1{} {}
-        explicit subscribe_request(const request&);
-        subscribe_request(request_id id, const string& u) : ID{id}, UserAgent{u}, ExtraNonce1{} {}
-        subscribe_request(request_id id, const string& u, session_id i) : ID{id}, UserAgent{u}, ExtraNonce1{i} {}
+        static bool valid(const json& j);
+        static string user_agent(const json& j);
+        static std::optional<session_id> extra_nonce_1(const json& j);
         
-        explicit operator request() const;
+        bool valid() const;
+        string user_agent() const;
+        std::optional<session_id> extra_nonce_1() const;
+        
+        using request::request;
+        subscribe_request(request_id id, const string& u) : request{id, mining_subscribe, {u}} {}
+        subscribe_request(request_id id, const string& u, session_id i) : request{id, mining_subscribe, serialize(parameters{u, i})} {}
+        
     };
     
-    struct subscribe_response {
-        request_id ID; 
-        list<subscription> Subscriptions;
-        session_id ExtraNonce1;
-        uint32 ExtraNonce2Size;
-        bool Valid;
+    struct subscribe_response : response {
+        struct parameters {
+            list<subscription> Subscriptions;
+            session_id ExtraNonce1;
+            uint32 ExtraNonce2Size;
+            
+            bool valid() const;
+            
+            parameters(list<subscription> s, session_id n1, uint32 n2x);
+            parameters(list<subscription> s, session_id n1);
+            
+            bool operator==(const parameters& p) const;
+            bool operator!=(const parameters& p) const;
+            
+        private:
+            parameters() : Subscriptions{}, ExtraNonce1{}, ExtraNonce2Size{} {}
+            friend struct subscribe_response;
+        };
         
-        subscribe_response() : ID{}, Subscriptions{}, ExtraNonce1{}, ExtraNonce2Size{}, Valid{false} {}
+        static Stratum::parameters serialize(const parameters&);
+        static parameters deserialize(const Stratum::parameters&);
+        
+        static bool valid(const json& j);
+        static list<subscription> subscriptions(const json& j);
+        static session_id extra_nonce_1(const json& j);
+        static uint32 extra_nonce_2_size(const json& j);
+        
+        bool valid() const;
+        list<subscription> subscriptions() const;
+        session_id extra_nonce_1() const;
+        uint32 extra_nonce_2_size() const;
+        
+        using response::response;
         subscribe_response(request_id id, list<subscription> sub, session_id i, uint32 x) : 
-            ID{id}, Subscriptions{sub}, ExtraNonce1{i}, ExtraNonce2Size{x}, Valid{true} {}
+            response{id, serialize(parameters{sub, i, x})} {}
         
-        explicit subscribe_response(const response&);
-        explicit operator response() const;
     };
     
-    inline bool operator==(const subscription& a, const subscription& b) {
-        return a.Method == b.Method && a.ID == b.ID;
+    bool inline operator==(const subscription& a, const subscription& b) {
+        return a.Method && b.Method && a.ID == b.ID;
     }
     
-    inline bool operator!=(const subscription& a, const subscription& b) {
-        return a.Method != b.Method || a.ID != b.ID;
+    bool inline operator!=(const subscription& a, const subscription& b) {
+        return !(a == b);
     }
     
-    inline bool operator==(const subscribe_request& a, const subscribe_request& b) {
-        return a.UserAgent == b.UserAgent && a.ExtraNonce1 == b.ExtraNonce1;
+    bool inline subscribe_request::parameters::valid() const {
+        return UserAgent != "" && (!bool(ExtraNonce1) || data::valid(*ExtraNonce1));
     }
     
-    inline bool operator!=(const subscribe_request& a, const subscribe_request& b) {
-        return a.UserAgent != b.UserAgent || a.ExtraNonce1 != b.ExtraNonce1;
+    bool inline subscribe_request::parameters::operator==(const parameters& p) const {
+        return UserAgent == p.UserAgent && ExtraNonce1 == p.ExtraNonce1;
     }
     
-    inline bool operator==(const subscribe_response& a, const subscribe_response& b) {
-        return a.Subscriptions == b.Subscriptions && a.ExtraNonce1 == b.ExtraNonce1 && a.ExtraNonce2Size == b.ExtraNonce2Size && a.Valid == b.Valid;
+    bool inline subscribe_request::parameters::operator!=(const parameters& p) const {
+        return UserAgent != p.UserAgent || ExtraNonce1 != p.ExtraNonce1;
     }
     
-    inline bool operator!=(const subscribe_response& a, const subscribe_response& b) {
-        return a.Subscriptions != b.Subscriptions || a.ExtraNonce1 != b.ExtraNonce1 || a.ExtraNonce2Size != b.ExtraNonce2Size || a.Valid != b.Valid;
+    bool inline subscribe_response::parameters::valid() const {
+        return ExtraNonce2Size != 0;
     }
     
-    inline std::ostream& operator<<(std::ostream& o, const subscription& r) {
-        json j;
-        to_json(j, r);
-        return o << j;
+    inline std::ostream& operator<<(std::ostream& o, const subscription& s) {
+        return o << json(s);
     }
     
-    inline std::ostream& operator<<(std::ostream& o, const subscribe_request& r) {
-        json j;
-        to_json(j, r);
-        return o << j;
+    inline subscribe_response::parameters::parameters(list<subscription> s, session_id n1, uint32 n2x) : 
+        Subscriptions{s}, ExtraNonce1{n1}, ExtraNonce2Size{n2x} {}
+    
+    inline subscribe_response::parameters::parameters(list<subscription> s, session_id n1) : 
+        Subscriptions{s}, ExtraNonce1{n1}, ExtraNonce2Size{worker::ExtraNonce2_size} {}
+    
+    bool inline subscribe_response::parameters::operator==(const parameters& p) const {
+        return Subscriptions == p.Subscriptions && ExtraNonce1 == ExtraNonce1 && ExtraNonce2Size == ExtraNonce2Size;
     }
     
-    inline std::ostream& operator<<(std::ostream& o, const subscribe_response& r) {
-        json j;
-        to_json(j, r);
-        return o << j;
+    bool inline subscribe_response::parameters::operator!=(const parameters& p) const {
+        return !(*this == p);
     }
+    
+    bool inline subscribe_request::valid() const {
+        return valid(*this);
+    }
+    
+    string inline subscribe_request::user_agent() const {
+        return user_agent(*this);
+    }
+    
+    std::optional<session_id> inline subscribe_request::extra_nonce_1() const {
+        return extra_nonce_1(*this);
+    }
+    
+    bool inline subscribe_request::valid(const json& j) {
+        return request::valid(j) && deserialize(j["params"]).valid();
+    }
+    
+    string inline subscribe_request::user_agent(const json& j) {
+        return deserialize(j["params"]).UserAgent;
+    }
+    
+    std::optional<session_id> inline subscribe_request::extra_nonce_1(const json& j) {
+        return deserialize(j["params"]).ExtraNonce1;
+    }
+        
+    bool inline subscribe_response::valid(const json& j) {
+        return response::valid(j) && deserialize(j["result"]).valid();
+    }
+    
+    list<subscription> inline subscribe_response::subscriptions(const json& j) {
+        return deserialize(j["result"]).Subscriptions;
+    }
+    
+    session_id inline subscribe_response::extra_nonce_1(const json& j) {
+        return deserialize(j["result"]).ExtraNonce1;
+    }
+    
+    uint32 inline subscribe_response::extra_nonce_2_size(const json& j) {
+        return deserialize(j["result"]).ExtraNonce2Size;
+    }
+    
+    bool inline subscribe_response::valid() const {
+        return valid(*this);
+    }
+    
+    list<subscription> inline subscribe_response::subscriptions() const {
+        return subscriptions(*this);
+    }
+    
+    session_id inline subscribe_response::extra_nonce_1() const {
+        return extra_nonce_1(*this);
+    }
+    
+    uint32 inline subscribe_response::extra_nonce_2_size() const {
+        return extra_nonce_2_size(*this);
+    }
+    
 }
 
 #endif

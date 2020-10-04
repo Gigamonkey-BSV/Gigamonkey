@@ -22,12 +22,12 @@ namespace Gigamonkey::work {
         
         static string read(const slice<80> x) {
             return string{
-                Gigamonkey::header::version(x), 
-                uint<32>{Gigamonkey::header::previous(x)}, 
-                uint<32>{Gigamonkey::header::merkle_root(x)}, 
-                Bitcoin::timestamp{Gigamonkey::header::timestamp(x)}, 
-                compact{Gigamonkey::header::target(x)}, 
-                Gigamonkey::header::nonce(x)};
+                Bitcoin::header::version(x), 
+                uint<32>{Bitcoin::header::previous(x)}, 
+                uint<32>{Bitcoin::header::merkle_root(x)}, 
+                Bitcoin::timestamp{Bitcoin::header::timestamp(x)}, 
+                compact{Bitcoin::header::target(x)}, 
+                Bitcoin::header::nonce(x)};
         }
         
         explicit string(const slice<80>& x) : string(read(x)) {}
@@ -40,7 +40,7 @@ namespace Gigamonkey::work {
         }
         
         static bool valid(const slice<80> x) {
-            return Bitcoin::hash256(x).Value < header::target(x).expand();
+            return Bitcoin::hash256(x).Value < Bitcoin::header::target(x).expand();
         }
         
         bool valid() const;

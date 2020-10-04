@@ -12,9 +12,13 @@
 
 #include <boost/endian/conversion.hpp>
 
-#include <data/stream.hpp>
+#include <nlohmann/json.hpp>
 
-#include <data/data.hpp>
+#include <data/stream.hpp>
+#include <data/tools.hpp>
+#include <data/math/nonnegative.hpp>
+#include <data/math/number/gmp/N.hpp>
+#include <data/encoding/hex.hpp>
 
 #include <data/encoding/hex.hpp>
 
@@ -41,7 +45,6 @@ namespace Gigamonkey {
     using N = data::math::number::gmp::N;
     
     template <typename X> using nonzero = data::math::nonzero<X>;
-    
     template <size_t size>
     using slice = data::slice<byte, size>;
     

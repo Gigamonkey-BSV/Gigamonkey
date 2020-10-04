@@ -9,54 +9,73 @@
 namespace Gigamonkey::Stratum::mining {
     
     struct authorize_request;
-    
     using authorize_response = boolean_response;
     
-    inline bool operator==(const authorize_request& a, const authorize_request& b);
-    inline bool operator!=(const authorize_request& a, const authorize_request& b);
-    
-    void to_json(json& j, const authorize_request& p);
-    void from_json(const json& j, authorize_request& p);
-    
-    std::ostream& operator<<(std::ostream&, const authorize_request&);
-    
-    struct authorize_request {
-        request_id ID;
-        string username;
-        std::optional<string> password;
+    struct authorize_request : request {
+        struct parameters {
+            string Username;
+            std::optional<string> Password;
         
-        authorize_request();
+            bool valid() const;
+            bool operator==(const parameters& x) const;
+            bool operator!=(const parameters& x) const;
+            
+            parameters();
+            explicit parameters(string u);
+            parameters(string u, string p);
+        };
+        
+        static Stratum::parameters serialize(const parameters&);
+        static parameters deserialize(const Stratum::parameters&);
+        
+        static bool valid(const json&);
+        
+        static string username(const json&);
+        static std::optional<string> password(const json&);
+        
+        using request::request;
         authorize_request(request_id id, string u);
         authorize_request(request_id id, string u, string p);
         
-        bool valid() const;
+        string username() const;
         
-        explicit authorize_request(const request&);
-        explicit operator request() const;
+        std::optional<string> password() const;
+        
+        bool valid() const;
     };
     
-    inline bool operator==(const authorize_request& a, const authorize_request& b) {
-        return a.ID == b.ID && a.username == b.username && a.password == b.password;
+    bool inline authorize_request::parameters::valid() const {
+        return Username != "";
     }
     
-    inline bool operator!=(const authorize_request& a, const authorize_request& b) {
-        return a.ID != b.ID || a.username != b.username || a.password != b.password;
+    bool inline authorize_request::parameters::operator==(const parameters& x) const {
+        return Username == x.Username && Password == x.Password;
     }
     
-    inline std::ostream& operator<<(std::ostream& o, const authorize_request& r) {
-        json j;
-        to_json(j, r);
-        return o << j;
+    bool inline authorize_request::parameters::operator!=(const parameters& x) const {
+        return Username != x.Username || Password != x.Password;
     }
     
-    inline authorize_request::authorize_request() : ID{}, username{}, password{} {}
+    inline authorize_request::parameters::parameters() : Username{}, Password() {}
+    inline authorize_request::parameters::parameters(string u) : Username{u}, Password{} {}
+    inline authorize_request::parameters::parameters(string u, string p) : Username{u}, Password{p} {}
     
-    inline authorize_request::authorize_request(request_id id, string u) : ID{id}, username{u}, password{} {}
+    inline authorize_request::authorize_request(request_id id, string u) : 
+        request{id, mining_authorize, {u}} {}
     
-    inline authorize_request::authorize_request(request_id id, string u, string p) : ID{id}, username{u}, password{p} {}
+    inline authorize_request::authorize_request(request_id id, string u, string p) : 
+        request{id, mining_authorize, {u, p}} {}
+        
+    string inline authorize_request::username() const {
+        return username(*this);
+    }
     
-    inline bool authorize_request::valid() const {
-        return username != "";
+    std::optional<string> inline authorize_request::password() const {
+        return password(*this);
+    }
+    
+    bool inline authorize_request::valid() const {
+        return valid(*this);
     }
     
 }

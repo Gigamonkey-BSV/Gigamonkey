@@ -54,7 +54,7 @@ namespace Gigamonkey::Bitcoin {
         outpoint Outpoint;
         
         bool valid() const {
-            return Output.valid() && Outpoint.valid();
+            return Output.valid() && Outpoint != outpoint::coinbase();
         }
     };
     

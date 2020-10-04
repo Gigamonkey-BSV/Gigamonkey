@@ -31,66 +31,63 @@ namespace Gigamonkey::Stratum {
         return unset;
     }
     
-    void to_json(json& j, const request& p) {
-        if (!p.valid()) {
-            j = {};
-            return;
-        }
-        
-        j = {{"id", p.ID}, {"method", method_to_string(p.Method)}, {"params", p.Params}};
+    request_id request::id(const json& j) {
+        if (!j.contains("id")) return 0;
+        auto q = j["id"];
+        if (q.is_number_unsigned()) return request_id(q);
+        return 0;
     }
     
-    void from_json(const json& j, request& p) {
-        if (!(j.contains("id") && j.contains("params") && j.contains("method") && 
-                j["id"].is_number_unsigned() && j["method"].is_string() && j["params"].is_array())) {
-            p = {};
-            return;
-        }
-        
-        p = request{j["id"], method_from_string(j["method"]), j["params"]};
+    Stratum::method request::method(const json& j) {
+        if (!j.contains("method")) return unset;
+        auto q = j["method"];
+        if (q.is_string()) return method_from_string(string(q));
+        return unset;
     }
     
-    void to_json(json& j, const response& p) {
-        if (p.Error == error{none}) j = {{"id", p.ID}, {"result", p.Result}, {"error", nullptr}};
-        else {
-            json errj;
-            to_json(errj, p.Error);
-            j = {{"id", p.ID}, {"result", p.Result}, {"error", errj}};
-        }
+    parameters request::params(const json& j) {
+        if(!j.contains("params")) return {};
+        auto q = j["params"];
+        if(q.is_array()) return q;
+        return {};
     }
     
-    void from_json(const json& j, response& p) {
-        if (!(j.contains("id") && j.contains("result") && j.contains("error")) && 
-                j["id"].is_null() && (j["error"].is_null() || (j["error"].is_array() && j["error"].size() == 2))) {
-            p = {};
-            return;
-        }
-        
-        if (j["error"].is_null()) p = response{j["id"], j["result"]};
-        else {
-            error e;
-            from_json(j["error"], e);
-            p = response{j["id"], j["result"], e};
-        }
+    Stratum::method notification::method(const json& j) {
+        if (!j.contains("method")) return unset;
+        auto q = j["method"];
+        if (q.is_string()) return method_from_string(string(q));
+        return unset;
     }
     
-    void to_json(json& j, const notification& p) {
-        if (!p.valid()) {
-            j = {};
-            return;
-        }
+    parameters notification::params(const json& j) {
+        if(!j.contains("params")) return {};
+        auto q = j["params"];
+        if(q.is_array()) return q;
+        return {};
+    }
         
-        j = {{"id", nullptr}, {"method", method_to_string(p.Method)}, {"params", p.Params}};
+    bool response::valid(const json& j) {
+        if (!(j.contains("id") && j.contains("result") && j.contains("error"))) return false;
+        auto id = j["id"];
+        auto err = j["error"];
+        return id.is_number_unsigned() && (err.is_null() || Stratum::error::valid(err));
     }
     
-    void from_json(const json& j, notification& p) {
-        if (!(j.contains("id") && j.contains("params") && j.contains("method") && 
-                j["id"].is_null() && j["method"].is_string() && j["params"].is_array())) {
-            p = {};
-            return;
-        }
-        
-        p = notification{method_from_string(j["method"]), j["params"]};
+    request_id response::id(const json& j) {
+        if (!j.contains("id")) return 0;
+        auto q = j["id"];
+        if (q.is_number_unsigned()) return request_id(q);
+        return 0;
+    }
+    
+    json response::result(const json& j) {
+        if (!j.contains("result")) return nullptr;
+        return j["result"];
+    }
+    
+    std::optional<Stratum::error> response::error(const json& j) {
+        if (!j.contains("error")) return {};
+        return {error(j["error"])};
     }
     
 }

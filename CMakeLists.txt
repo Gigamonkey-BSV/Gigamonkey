@@ -124,6 +124,8 @@ add_library(gigamonkey STATIC
     src/bitcoin_sv/hash.cpp
     src/bitcoin_sv/signature.cpp
     src/bitcoin_sv/script.cpp
+    #src/bitcoin_sv/sv.cpp 
+    src/gigamonkey/timestamp.cpp
     src/gigamonkey/secp256k1.cpp
     src/gigamonkey/merkle.cpp
     src/gigamonkey/script.cpp
@@ -136,15 +138,14 @@ add_library(gigamonkey STATIC
     src/gigamonkey/schema/hd.cpp
     src/gigamonkey/schema/random.cpp
     src/gigamonkey/wallet.cpp
-    src/gigamonkey/stratum/stratum.cpp
     src/gigamonkey/stratum/error.cpp
+    src/gigamonkey/stratum/stratum.cpp
     src/gigamonkey/stratum/difficulty.cpp
-    src/gigamonkey/stratum/boolean_response.cpp
     src/gigamonkey/stratum/mining_subscribe.cpp
     src/gigamonkey/stratum/mining_authorize.cpp
-    src/gigamonkey/stratum/mining_notify.cpp
+    src/gigamonkey/stratum/mining.cpp
     src/gigamonkey/boost/boost.cpp
-    #src/bitcoin_sv/sv.cpp 
+    #src/gigamonkey/rpc/getminingcandidate.cpp
 )
 
 target_link_libraries(gigamonkey PUBLIC data common util bitcoinconsensus ${LIB_BITCOIN_LIBRARIES} ${OPENSSL_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} nlohmann_json::nlohmann_json )

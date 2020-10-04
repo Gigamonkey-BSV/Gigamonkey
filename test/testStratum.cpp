@@ -4,6 +4,7 @@
 #include <gigamonkey/stratum/session_id.hpp>
 #include <gigamonkey/stratum/mining_authorize.hpp>
 #include <gigamonkey/stratum/mining_subscribe.hpp>
+#include <gigamonkey/stratum/job.hpp>
 #include "gtest/gtest.h"
 
 namespace Gigamonkey::Stratum {
@@ -26,8 +27,8 @@ namespace Gigamonkey::Stratum {
         to_json(j_a, id_a);
         to_json(j_b, id_b);
         EXPECT_NE(j_a, j_b);
-        from_json(j_a, j_id_a);
-        from_json(j_b, j_id_b);
+        EXPECT_TRUE(from_json(j_a, j_id_a));
+        EXPECT_TRUE(from_json(j_b, j_id_b));
         EXPECT_NE(j_id_a, j_id_b);
         EXPECT_EQ(id_a, j_id_a);
         EXPECT_EQ(id_b, j_id_b);
@@ -35,105 +36,195 @@ namespace Gigamonkey::Stratum {
 }
 
 namespace Gigamonkey::Stratum::mining { 
+    TEST(StratumTest, TestBooleanResponse) {
+        struct response_test_case {
+            request_id ID;
+            bool Result;
+            
+            operator boolean_response() const {
+                return boolean_response{ID, Result};
+            }
+        };
+        
+        std::vector<response_test_case> test_cases{{64, true}, {94, false}};
+        
+        for (const auto& i : test_cases) for (const auto& j : test_cases) {
+            auto response_i = boolean_response(i);
+            auto response_j = boolean_response(j);
+            EXPECT_EQ(i.Result, response_i.result());
+            if (i.ID == j.ID) {
+                EXPECT_EQ(i.ID, response_j.id());
+                EXPECT_EQ(response_i, response_j);
+            } else {
+                EXPECT_NE(i.ID, response_j.id());
+                EXPECT_NE(response_i, response_j);
+            }
+        }
+        
+    }
+
     TEST(StratumTest, TestMiningAuthorize) {
-        authorize_request with_password(64, "dk", "meep");
-        authorize_request without_password(94, "dk");
+        struct request_test_case {
+            request_id ID;
+            authorize_request::parameters Params;
+            
+            operator authorize_request() const {
+                if (Params.Password) return authorize_request{ID, Params.Username, *Params.Password};
+                return authorize_request{ID, Params.Username};
+            }
+        };
         
-        authorize_response true_response{64, true};
-        authorize_response false_response{94, false};
+        std::vector<request_test_case> test_cases{
+            {64, authorize_request::parameters{"dk", "meep"}}, 
+            {94, authorize_request::parameters{"dk"}}};
         
-        EXPECT_TRUE(data::valid(with_password));
-        EXPECT_TRUE(data::valid(without_password));
-        
-        EXPECT_TRUE(data::valid(true_response));
-        EXPECT_TRUE(data::valid(false_response));
-        
-        EXPECT_NE(with_password, without_password);
-        EXPECT_NE(true_response, false_response);
-        
-        json with_password_json;
-        json without_password_json;
-        
-        json true_response_json;
-        json false_response_json;
-        
-        to_json(with_password_json, with_password);
-        to_json(without_password_json, without_password);
-        to_json(true_response_json, true_response);
-        to_json(false_response_json, false_response);
-        
-        EXPECT_NE(with_password_json, without_password_json);
-        EXPECT_NE(true_response_json, false_response_json);
-        
-        authorize_request with_password_read;
-        authorize_request without_password_read;
-        
-        authorize_response true_response_read;
-        authorize_response false_response_read;
-        
-        EXPECT_FALSE(data::valid(with_password_read));
-        EXPECT_FALSE(data::valid(without_password_read));
-        
-        EXPECT_FALSE(data::valid(true_response_read));
-        EXPECT_FALSE(data::valid(false_response_read));
-        
-        from_json(with_password_json, with_password_read);
-        from_json(without_password_json, without_password_read);
-        from_json(true_response_json, true_response_read);
-        from_json(false_response_json, false_response_read);
+        for (const auto& i : test_cases) for (const auto& j : test_cases) {
+            auto request_i = authorize_request(i);
+            auto request_j = authorize_request(j);
+            auto deserialized_i = authorize_request::deserialize(request_i.params());
+            auto deserialized_j = authorize_request::deserialize(request_j.params());
+            EXPECT_EQ(authorize_request::valid(request_i), deserialized_i.valid());
+            if (i.ID == j.ID) {
+                EXPECT_EQ(i.ID, request_j.id());
+                EXPECT_EQ(request_i, request_j);
+                EXPECT_EQ(deserialized_i, deserialized_j);
+                EXPECT_EQ(i.Params, deserialized_j);
+            } else {
+                EXPECT_NE(i.ID, request_j.id());
+                EXPECT_NE(request_i, request_j);
+                EXPECT_NE(deserialized_i, deserialized_j);
+                EXPECT_NE(i.Params, deserialized_j);
+            }
+        }
         
     }
     
     TEST(StratumTest, TestMiningSubscribe) {
-        subscribe_request with_user_id(23, "dk", 2);
-        subscribe_request without_user_id(45, "dk");
+        struct request_test_case {
+            request_id ID;
+            subscribe_request::parameters Params;
+            
+            operator subscribe_request() const {
+                if (Params.ExtraNonce1) return subscribe_request{ID, Params.UserAgent, *Params.ExtraNonce1};
+                return subscribe_request{ID, Params.UserAgent};
+            }
+        };
         
-        subscribe_response response_1{23, {subscription{mining_set_difficulty, 1}, subscription{mining_notify, 2}}, 7, 8};
-        subscribe_response response_2{45, {subscription{mining_notify, 3}}, 30, 8};
+        struct response_test_case {
+            request_id ID;
+            subscribe_response::parameters Result;
+            
+            operator subscribe_response() const {
+                return subscribe_response{ID, Result.Subscriptions, Result.ExtraNonce1, Result.ExtraNonce2Size};
+            }
+        };
         
-        EXPECT_TRUE(data::valid(with_user_id));
-        EXPECT_TRUE(data::valid(without_user_id));
+        std::vector<request_test_case> request_test_cases{{23, {"dk", 2}}, {45, {"dk"}}};
         
-        EXPECT_TRUE(data::valid(response_1));
-        EXPECT_TRUE(data::valid(response_2));
+        std::vector<response_test_case> response_test_cases {
+            {23, {{subscription{mining_set_difficulty, 1}, subscription{mining_notify, 2}}, 7, 8}}, 
+            {45, {{subscription{mining_notify, 3}}, 30, 8}}};
         
-        EXPECT_NE(with_user_id, without_user_id);
-        EXPECT_NE(response_1, response_2);
+        for (const auto& i : request_test_cases) for (const auto& j : request_test_cases) {
+            auto request_i = subscribe_request(i);
+            auto request_j = subscribe_request(j);
+            auto deserialized_i = subscribe_request::deserialize(request_i.params());
+            auto deserialized_j = subscribe_request::deserialize(request_j.params());
+            EXPECT_EQ(subscribe_request::valid(request_i), deserialized_i.valid());
+            if (i.ID == j.ID) {
+                EXPECT_EQ(i.ID, request_j.id());
+                EXPECT_EQ(request_i, request_j);
+                EXPECT_EQ(deserialized_i, deserialized_j);
+                EXPECT_EQ(i.Params, deserialized_j);
+            } else {
+                EXPECT_NE(i.ID, request_j.id());
+                EXPECT_NE(request_i, request_j);
+                EXPECT_NE(deserialized_i, deserialized_j);
+                EXPECT_NE(i.Params, deserialized_j);
+            }
+        }
         
-        json with_user_id_json;
-        json without_user_id_json;
+        for (const auto& i : response_test_cases) for (const auto& j : response_test_cases) {
+            auto response_i = subscribe_response(i);
+            auto response_j = subscribe_response(j);
+            auto deserialized_i = subscribe_response::deserialize(response_i.result());
+            auto deserialized_j = subscribe_response::deserialize(response_j.result());
+            EXPECT_EQ(subscribe_response::valid(response_i), deserialized_i.valid());
+            if (i.ID == j.ID) {
+                EXPECT_EQ(i.ID, response_j.id());
+                EXPECT_EQ(response_i, response_j);
+                EXPECT_EQ(deserialized_i, deserialized_j);
+                EXPECT_EQ(i.Result, deserialized_j);
+            } else {
+                EXPECT_NE(i.ID, response_j.id());
+                EXPECT_NE(response_i, response_j);
+                EXPECT_NE(deserialized_i, deserialized_j);
+                EXPECT_NE(i.Result, deserialized_j);
+            }
+        }
         
-        json response_1_json;
-        json response_2_json;
-        
-        to_json(with_user_id_json, with_user_id);
-        to_json(without_user_id_json, without_user_id);
-        to_json(response_1_json, response_1);
-        to_json(response_2_json, response_2);
-        
-        EXPECT_NE(with_user_id_json, without_user_id_json);
-        EXPECT_NE(response_1_json, response_2_json);
-        
-        subscribe_request with_user_id_read;
-        subscribe_request without_user_id_read;
-        
-        subscribe_response response_1_read;
-        subscribe_response response_2_read;
-        
-        EXPECT_FALSE(data::valid(with_user_id_read));
-        EXPECT_FALSE(data::valid(without_user_id_read));
-        
-        EXPECT_FALSE(data::valid(response_1_read));
-        EXPECT_FALSE(data::valid(response_2_read));
-        
-        from_json(with_user_id_json, with_user_id_read);
-        from_json(without_user_id_json, without_user_id_read);
-        from_json(response_1_json, response_1_read);
-        from_json(response_2_json, response_2_read);
     }
     
-    TEST(StratumTest, TestNotifySubmit) {
-        // TODO need to test merkle branches here. 
+    TEST(StratumTest, TestMiningSubmit) {
+        struct notify_test_case {
+            request_id ID;
+            notify::parameters Params;
+            
+            operator notify() const {
+                return notify{Params};
+            }
+        };
+        
+        std::vector<notify_test_case> notify_test_cases{};
+        
+        for (const auto& i : notify_test_cases) for (const auto& j : notify_test_cases) {
+            auto notify_i = notify(i);
+            auto notify_j = notify(j);
+            auto deserialized_i = notify::deserialize(notify_i.params());
+            auto deserialized_j = notify::deserialize(notify_j.params());
+            EXPECT_EQ(notify::valid(notify_i), deserialized_i.valid());
+            if (i.ID == j.ID) {
+                EXPECT_EQ(notify_i, notify_j);
+                EXPECT_EQ(deserialized_i, deserialized_j);
+                EXPECT_EQ(i.Params, deserialized_j);
+            } else {
+                EXPECT_NE(notify_i, notify_j);
+                EXPECT_NE(deserialized_i, deserialized_j);
+                EXPECT_NE(i.Params, deserialized_j);
+            }
+        }
+    }
+    
+    TEST(StratumTest, TestMiningNotify) {
+        struct request_test_case {
+            request_id ID;
+            share Params;
+            
+            operator submit_request() const {
+                return submit_request{ID, Params};
+            }
+        };
+        
+        std::vector<request_test_case> request_test_cases{};
+        
+        for (const auto& i : request_test_cases) for (const auto& j : request_test_cases) {
+            auto request_i = submit_request(i);
+            auto request_j = submit_request(j);
+            auto deserialized_i = submit_request::deserialize(request_i.params());
+            auto deserialized_j = submit_request::deserialize(request_j.params());
+            EXPECT_EQ(request_i.valid(), deserialized_i.valid());
+            if (i.ID == j.ID) {
+                EXPECT_EQ(i.ID, request_j.id());
+                EXPECT_EQ(request_i, request_j);
+                EXPECT_EQ(deserialized_i, deserialized_j);
+                EXPECT_EQ(i.Params, submit_request::deserialize(request_j.params()));
+            } else {
+                EXPECT_NE(i.ID, request_j.id());
+                EXPECT_NE(request_i, request_j);
+                EXPECT_NE(deserialized_i, deserialized_j);
+                EXPECT_NE(i.Params, submit_request::deserialize(request_j.params()));
+            }
+        }
     }
 
 }

@@ -4,7 +4,8 @@
 #ifndef GIGAMONKEY_STRATUM_JOB
 #define GIGAMONKEY_STRATUM_JOB
 
-#include <gigamonkey/work/proof.hpp>
+#include <gigamonkey/address.hpp>
+#include <gigamonkey/boost/boost.hpp>
 #include <gigamonkey/stratum/difficulty.hpp>
 
 #include <gigamonkey/stratum/mining_submit.hpp>
@@ -13,7 +14,6 @@
 namespace Gigamonkey::Stratum {
     
     struct job;
-    
     struct solved;
     
     bool operator==(const job& a, const job& b);
@@ -26,18 +26,15 @@ namespace Gigamonkey::Stratum {
         
         worker Worker;
         
-        mining::notify Notify;
+        mining::notify::parameters Notify;
         
         job();
-        job(const worker& w, mining::notify n);
-        job(job_id i, const work::puzzle& puzzle, const worker& w, Bitcoin::timestamp now, bool clean);
+        job(const worker&, const mining::notify::parameters&);
+        job(job_id, const worker_name&, const work::puzzle&, Bitcoin::timestamp, bool clean);
         
-        bool valid() const {
-            return data::valid(Worker) && data::valid(Notify);
-        }
+        bool valid() const;
         
         work::puzzle puzzle() const;
-        
         Bitcoin::timestamp timestamp() const;
         
     };
@@ -47,7 +44,6 @@ namespace Gigamonkey::Stratum {
         share Share;
         
         solved(const job& j, const share& sh);
-        
         solved(job_id i, const worker_name& name, const work::proof& p, bool clean);
         
         work::proof proof() const;
@@ -74,10 +70,15 @@ namespace Gigamonkey::Stratum {
         
     inline job::job() : Worker{}, Notify{} {}
     
-    inline job::job(const worker& w, mining::notify n) : Worker{w}, Notify{n} {}
+    inline job::job(const worker& w, const mining::notify::parameters& n) : Worker{w}, Notify{n} {}
     
-    inline job::job(job_id i, const work::puzzle& puzzle, const worker& w, Bitcoin::timestamp now, bool clean) : 
-        Worker{w}, Notify{i, puzzle.Digest, puzzle.Header, puzzle.Body, puzzle.Path.Digests, puzzle.Category, puzzle.Target, now, clean} {}
+    inline job::job(job_id i, const worker_name& name, const work::puzzle& puzzle, Bitcoin::timestamp now, bool clean) : 
+        Worker{name, puzzle.ExtraNonce1}, 
+        Notify{i, puzzle.Digest, puzzle.Header, puzzle.Body, puzzle.Path.Digests, puzzle.Category, puzzle.Target, now, clean} {}
+    
+    inline bool job::valid() const {
+        return data::valid(Worker) && data::valid(Notify);
+    }
     
     inline work::puzzle job::puzzle() const {
         if (!valid()) return work::puzzle{};
@@ -87,7 +88,7 @@ namespace Gigamonkey::Stratum {
             Notify.Target, 
             Merkle::path{0, Notify.Path}, 
             Notify.GenerationTx1, 
-            Worker.ExtraNonce1.Value,
+            Worker.ExtraNonce1,
             Notify.GenerationTx2};
     }
     
@@ -98,7 +99,7 @@ namespace Gigamonkey::Stratum {
     inline solved::solved(const job& j, const share&sh) : Job{j}, Share{sh} {}
     
     inline solved::solved(job_id i, const worker_name& name, const work::proof& p, bool clean) : 
-        Job{i, p.Puzzle, worker{name, session_id{p.Puzzle.ExtraNonce}}, p.Solution.Timestamp, clean}, 
+        Job{i, name, p.Puzzle, p.Solution.Timestamp, clean}, 
         Share{name, i, p.Solution} {}
     
     inline work::proof solved::proof() const {

@@ -3,7 +3,7 @@
 
 #include <gigamonkey/wif.hpp>
 #include <gigamonkey/address.hpp>
-#include <gigamonkey/txid.hpp>
+#include <gigamonkey/timechain.hpp>
 
 namespace Gigamonkey::Bitcoin {
     

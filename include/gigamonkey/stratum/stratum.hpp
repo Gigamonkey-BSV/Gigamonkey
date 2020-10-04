@@ -26,152 +26,131 @@ namespace Gigamonkey::Stratum {
     
     method method_from_string(std::string st);
     
-    struct request;
-    struct response;
-    struct notification;
+    using parameters = json::array_t;
     
-    inline bool operator==(const request& a, const request& b);
-    inline bool operator!=(const request& a, const request& b);
-    
-    inline bool operator==(const notification& a, const notification& b);
-    inline bool operator!=(const notification& a, const notification& b);
-    
-    inline bool operator==(const response& a, const response& b);
-    inline bool operator!=(const response& a, const response& b);
-    
-    void to_json(json& j, const request& p); 
-    void from_json(const json& j, request& p); 
-    
-    void to_json(json& j, const response& p); 
-    void from_json(const json& j, response& p); 
-    
-    void to_json(json& j, const notification& p); 
-    void from_json(const json& j, notification& p); 
-    
-    std::ostream& operator<<(std::ostream&, const request&);
-    std::ostream& operator<<(std::ostream&, const response&);
-    std::ostream& operator<<(std::ostream&, const notification&);
-    
-    using params = json::array_t;
-    
-    struct request {
+    struct request : json {
         
-        request_id ID;
+        static bool valid(const json&);
         
-        method Method;
+        static request_id id(const json&);
+        static Stratum::method method(const json&);
+        static parameters params(const json&);
         
-        params Params;
+        bool valid() const;
+        
+        request_id id() const;
+        Stratum::method method() const;
+        parameters params() const;
         
         request();
-        request(request_id id, method m, const params& p);
+        request(request_id id, Stratum::method m, const parameters& p);
+        explicit request(const json& j) : json{j} {}
+    };
+    
+    struct notification : json {
+        
+        static bool valid(const json&);
+        
+        static Stratum::method method(const json&);
+        static parameters params(const json&);
         
         bool valid() const;
         
-    };
-    
-    struct notification {
-        
-        method Method;
-        
-        params Params;
+        Stratum::method method() const;
+        parameters params() const;
         
         notification();
-        notification(method m, const params& p);
-        
-        bool valid() const;
+        notification(Stratum::method m, const parameters& p);
+        explicit notification(const json& j) : json{j} {}
     };
     
-    struct response {
+    struct response : json {
         
-        request_id ID;
+        static bool valid(const json&);
         
-        json Result;
+        static request_id id(const json&);
+        static json result(const json&);
+        static std::optional<Stratum::error> error(const json&);
         
-        error Error;
+        bool valid() const;
+        
+        request_id id() const;
+        json result() const;
+        std::optional<Stratum::error> error() const;
         
         response();
         response(request_id id, const json& p);
-        response(request_id id, const json& p, const error& e);
-            
-        bool is_error() const;
-        bool valid() const;
+        response(request_id id, const json& p, const Stratum::error& e);
+        explicit response(const json& j) : json{j} {}
+        
+        bool is_error() const {
+            return bool(error());
+        }
         
     };
     
-    using job_id = uint32;
+    inline request::request() : json{} {}
     
-    using worker_name = std::string;
+    inline request::request(request_id id, Stratum::method m, const parameters& p) : 
+        json{{"id", id}, {"method", method_to_string(m)}, {"params", p}} {}
     
-    inline bool operator==(const request& a, const request& b) {
-        return a.ID == b.ID && a.Method == b.Method && a.Params == b.Params;
+    inline bool request::valid(const json& j) {
+        return request::method(j) != unset && j.contains("params") && j["params"].is_array() && j.contains("id") && j["id"].is_number_unsigned();
     }
-    
-    inline bool operator!=(const request& a, const request& b) {
-        return !(a == b);
-    }
-    
-    inline bool operator==(const notification& a, const notification& b) {
-        return a.Method == b.Method && a.Params == b.Params;
-    }
-    
-    inline bool operator!=(const notification& a, const notification& b) {
-        return ! (a == b);
-    }
-    
-    inline bool operator==(const response& a, const response& b) {
-        return a.ID == b.ID && a.Result == b.Result && a.Error == b.Error;
-    }
-    
-    inline bool operator!=(const response& a, const response& b) {
-        return ! (a == b);
-    }
-    
-    inline std::ostream& operator<<(std::ostream& o, const request& r) {
-        json j;
-        to_json(j, r);
-        return o << j;
-    }
-    
-    inline std::ostream& operator<<(std::ostream& o, const response& r) {
-        json j;
-        to_json(j, r);
-        return o << j;
-    }
-    
-    inline std::ostream& operator<<(std::ostream& o, const notification& r) {
-        json j;
-        to_json(j, r);
-        return o << j;
-    }
-    
-    inline request::request() : ID{0}, Method{unset}, Params{} {}
-    
-    inline request::request(request_id id, method m, const params& p) : ID{id}, Method{m}, Params(p) {}
     
     inline bool request::valid() const {
-        return Method != unset;
+        return valid(*this);
+    }
+        
+    inline request_id request::id() const {
+        return id(*this);
     }
     
-    inline notification::notification() : Method{unset}, Params{} {}
+    inline Stratum::method request::method() const {
+        return method(*this);
+    }
     
-    inline notification::notification(method m, const params& p) : Method{m}, Params(p) {}
+    inline parameters request::params() const {
+        return params(*this);
+    }
+    
+    inline notification::notification() : json{} {}
+    
+    inline notification::notification(Stratum::method m, const parameters& p) : 
+        json{{"id", nullptr}, {"method"}, {"params", p}} {}
+    
+    inline bool notification::valid(const json& j) {
+        return notification::method(j) != unset && j.contains("params") && j["params"].is_array() && j.contains("id") && j["id"].is_null();
+    }
     
     inline bool notification::valid() const {
-        return Method != unset;
+        return valid(*this);
     }
     
-    inline response::response() : ID{0}, Result{}, Error{none} {}
-    
-    inline response::response(request_id id, const json& p) : ID{id}, Result(p), Error{none} {}
-    
-    inline response::response(request_id id, const json& p, const error& e) : ID{id}, Result(p), Error{e} {}
-    
-    inline bool response::is_error() const {
-        return Error.Code == none;
+    inline Stratum::method notification::method() const {
+        return method(*this);
     }
     
-    inline bool response::valid() const {
-        return data::valid(Error);
+    inline parameters notification::params() const {
+        return params(*this);
+    }
+    
+    inline response::response() : json{} {}
+    
+    inline response::response(request_id id, const json& p) : json{{"id", id}, {"result", p}, {"error", nullptr}} {}
+    
+    inline response::response(request_id id, const json& p, const Stratum::error& e) : json{{"id", id}, {"result", p}, {"error", json(e)}} {}
+    
+    request_id inline response::id() const {
+        return id(*this);
+    }
+    
+    json inline response::result() const {
+        return result(*this);
+    }
+    
+    std::optional<Stratum::error> inline response::error() const {
+        return error(*this);
     }
     
 }

@@ -4,33 +4,34 @@
 #include <gigamonkey/stratum/mining_authorize.hpp>
 
 namespace Gigamonkey::Stratum::mining {
-    
-    authorize_request::authorize_request(const request& r) : authorize_request{} {
-        if (!r.valid() || r.Method != mining_authorize || r.Params.size() == 0 || r.Params.size() > 2 || ! r.Params[0].is_string()) return;
-        if (r.Params.size() == 1) *this = {r.ID, string(r.Params[0])};
-        else if (r.Params[1].is_string()) *this = {r.ID, string(r.Params[0]), string(r.Params[1])};
+    Stratum::parameters authorize_request::serialize(const parameters& p) {
+        if (p.Password) return {p.Username, *p.Password};
+        return {p.Username};
     }
     
-    authorize_request::operator request() const {
-        params p;
-        p.push_back(username);
-        if (password) p.push_back(*password);
-        return request(ID, mining_authorize, p);
+    authorize_request::parameters authorize_request::deserialize(const Stratum::parameters& p) {
+        if (p.size() < 1 || p.size() > 2 || !p[0].is_string()) return parameters{};
+        if (p.size() == 1) return parameters{string(p[0])};
+        return parameters{string(p[0]), string(p[1])};
     }
     
-    void to_json(json& j, const authorize_request& p) {
-        if (!data::valid(p)) {
-            j = {};
-            return;
-        }
+    bool authorize_request::valid(const json& j) {
+        auto p = request::params(j);
+        if (p.size() < 1 || p.size() > 2 || !p[0].is_string()) return false;
+        if (p.size() == 2 && !p[1].is_string()) return false;
+        return true;
+    }
+    
+    string username(const json& j) {
+        auto p = request::params(j);
+        if (p.size() == 0) return "";
+        return string(p[1]);
+    }
         
-        to_json(j, request(p));
+    std::optional<string> password(const json& j) {
+        auto p = request::params(j);
+        if (p.size() < 2) return {};
+        return {string(p[1])};
     }
     
-    void from_json(const json& j, authorize_request& p) {
-        p = {};
-        request x;
-        from_json(j, x);
-        p = authorize_request(x);
-    }
 }

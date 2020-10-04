@@ -4,133 +4,79 @@
 #ifndef GIGAMONKEY_STRATUM_MINING_NOTIFY
 #define GIGAMONKEY_STRATUM_MINING_NOTIFY
 
-#include <gigamonkey/merkle.hpp>
-
 #include <gigamonkey/stratum/difficulty.hpp>
-#include <gigamonkey/stratum/session_id.hpp>
 
 #include <gigamonkey/stratum/stratum.hpp>
+#include <gigamonkey/stratum/mining.hpp>
 
 namespace Gigamonkey::Stratum::mining {
     
     // Representation of a Stratum notify message. 
-    struct notify;
+    struct notify : notification { 
+        struct parameters {
+            job_id ID;
+            
+            // would be hash of prev block for Bitcoin, contents for Boost. 
+            uint256 Digest; 
+            
+            // Stratum separates the coinbase into two parts. Between these two parts
+            // the nonces contributed from both parties (miner and mining pool) are inserted.
+            bytes GenerationTx1;
+            bytes GenerationTx2;
+            
+            // The path is always index zero, so we don't need to store an index. 
+            Merkle::digests Path;
+            
+            int32_little Version;
+            
+            work::compact Target;
+            
+            Bitcoin::timestamp Now;
+            
+            bool Clean;
+            
+            bool valid() const {
+                return Digest != 0 && Path.valid() && Target.valid() && Now.valid();
+            } 
+            
+            parameters();
+            parameters(job_id id, const uint256& u, const bytes& t1, const bytes& t2, 
+                Merkle::digests p, int32_little v, work::compact c, Bitcoin::timestamp t, bool b);
     
-    bool operator==(const notify&, const notify&);
-    bool operator!=(const notify&, const notify&);
-    
-    void to_json(json& j, const notify& p); 
-    void from_json(const json& j, notify& p); 
-    
-    std::ostream& operator<<(std::ostream&, const notify&);
-    
-}
-
-namespace Gigamonkey::Stratum {
-    
-    struct worker {
-        worker_name Name;
-        session_id ExtraNonce1;
-        constexpr static uint32_t ExtraNonce2_size{8};
+            bool operator==(const parameters& b) const;
+            bool operator!=(const parameters& b) const;
+            
+        };
         
-        worker();
+        static Stratum::parameters serialize(const parameters&);
+        static parameters deserialize(const Stratum::parameters&);
         
-        // for Boost
-        worker(worker_name n, session_id n1);
-        
-        uint32_little extra_nonce_1() const;
+        using notification::notification;
+        notify(const parameters& p) : notification{mining_notify, serialize(p)} {}
+        notify(
+            job_id id, const uint256& u, const bytes& t1, const bytes& t2, 
+            Merkle::digests p, int32_little v, work::compact c, Bitcoin::timestamp t, bool b) :
+            notify{parameters{id, u, t1, t2, p, v, c, t, b}} {}
     };
     
-    bool operator==(const worker& a, const worker& b);
-    bool operator!=(const worker& a, const worker& b);
+    inline notify::parameters::parameters() : 
+        ID{}, Digest{}, GenerationTx1{}, GenerationTx2{}, Path{}, Version{}, Target{}, Now{}, Clean{} {}
     
-}
+    inline notify::parameters::parameters(
+        job_id id, const uint256& u, const bytes& t1, const bytes& t2, 
+        Merkle::digests p, int32_little v, work::compact c, Bitcoin::timestamp t, bool b) : 
+        ID{id}, Digest{u}, GenerationTx1{t1}, GenerationTx2{t2}, Path{p}, Version{v}, Target{c}, Now{t}, Clean{b} {};
 
-namespace Gigamonkey::Stratum::mining {
-    
-    // Representation of a Stratum notify message. 
-    struct notify { 
-        
-        job_id ID; 
-        
-        // would be hash of prev block for Bitcoin, contents for Boost. 
-        uint256 Digest; 
-        
-        // Stratum separates the coinbase into two parts. Between these two parts
-        // the nonces contributed from both parties (miner and mining pool) are inserted.
-        bytes GenerationTx1;
-        bytes GenerationTx2;
-        
-        // The path is always index zero, so we don't need to store an index. 
-        Merkle::digests Path;
-        
-        int32_little Version;
-        
-        work::compact Target;
-        
-        Bitcoin::timestamp Now;
-        
-        bool Clean;
-        
-        bool valid() const {
-            return data::valid(Digest) && data::valid(Path) && data::valid(Target) && data::valid(Now);
-        }
-        
-        notify();
-        notify(job_id, uint256, bytes, bytes, Merkle::digests, int32_little, work::compact, Bitcoin::timestamp, bool);
-        
-        explicit notify(const notification&);
-        explicit operator notification() const;
-        
-    };
-    
-}
-
-namespace Gigamonkey::Stratum {
-    
-    inline bool operator==(const worker& a, const worker& b) {
-        return a.Name == b.Name && a.ExtraNonce1 == b.ExtraNonce1;
-    }
-        
-    inline bool operator!=(const worker& a, const worker& b) {
-        return !(a == b);
+    bool inline notify::parameters::operator==(const parameters& b) const {
+        return ID == b.ID && Digest == b.Digest && 
+            GenerationTx1 == b.GenerationTx1 && GenerationTx2 == b.GenerationTx2 && 
+            Path == b.Path && Version == b.Version && Target == b.Target && 
+            Now == b.Now && Clean == b.Clean;
     }
     
-    inline worker::worker() : Name{}, ExtraNonce1{} {}
-        
-    inline worker::worker(worker_name n, session_id n1) : Name{n}, ExtraNonce1{n1} {}
-        
-    inline uint32_little worker::extra_nonce_1() const {
-        return ExtraNonce1.Value;
+    bool inline notify::parameters::operator!=(const parameters& b) const {
+        return !(*this == b);
     }
-    
-}
-
-namespace Gigamonkey::Stratum::mining {
-    
-    inline bool operator==(const notify& a, const notify& b) {
-        return a.ID == b.ID && a.Digest == b.Digest && 
-            a.GenerationTx1 == b.GenerationTx1 && 
-            a.GenerationTx2 == b.GenerationTx2 && 
-            a.Path == b.Path && a.Version == b.Version && a.Target == b.Target && 
-            a.Now == b.Now && a.Clean == b.Clean;
-    }
-    
-    inline bool operator!=(const notify& a, const notify& b) {
-        return !(a == b);
-    }
-    
-    inline std::ostream& operator<<(std::ostream& o, const notify& r) {
-        json j;
-        to_json(j, r);
-        return o << j;
-    }
-    
-    inline notify::notify() : ID{}, Digest{}, GenerationTx1{}, GenerationTx2{}, Path{}, Target{}, Now{}, Clean{} {}
-    
-    inline notify::notify(job_id id, uint256 d, bytes tx1, bytes tx2, Merkle::digests p, 
-        int32_little v, work::compact t, Bitcoin::timestamp n, bool c) : 
-        ID{id}, Digest{d}, GenerationTx1{tx1}, GenerationTx2{tx2}, Path{p}, Version{v}, Target{t}, Now{n}, Clean{c} {};
     
 }
 
