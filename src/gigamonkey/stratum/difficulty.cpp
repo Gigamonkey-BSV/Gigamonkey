@@ -10,10 +10,6 @@ namespace Gigamonkey::Stratum {
     struct Difficulty {
         static const uint64_t GetDiffOneBits() { return DiffOneBits; }
 
-        static const uint256 &GetDiffOneTarget() {
-            throw 0;
-        }
-
         static const std::array<uint256, TableSize> &GetDiffToTargetTable() {
             static const auto DiffToTargetTable = GenerateDiffToTargetTable();
             return DiffToTargetTable;
@@ -23,13 +19,13 @@ namespace Gigamonkey::Stratum {
             std::array<uint256, TableSize> table;
             uint32_t shifts = 0;
             for (auto &target : table) {
-                target = ArithToUint256(GetDiffOneTarget() >> (shifts++));
+                target = ArithToUint256(work::difficulty::unit() >> (shifts++));
             }
             return table;
         }
 
         static difficulty TargetToDiff(const uint256 &target) {
-            return difficulty{(GetDiffOneTarget() / target).GetLow64()};
+            return difficulty{(work::difficulty::unit() / target).GetLow64()};
         }
 
         static void
@@ -52,19 +48,19 @@ namespace Gigamonkey::Stratum {
             }
 
             // If it is not found in the table, it will be calculated.
-            target = ArithToUint256(GetDiffOneTarget() / diff.Value);
+            target = ArithToUint256(work::difficulty::unit() / diff.Value);
         }
 
         static void BitsToDifficulty(uint32_t bits, double *difficulty) {
             arith_uint256 target;
             target.SetCompact(bits);
-            *difficulty = GetDiffOneTarget().getdouble() / target.getdouble();
+            *difficulty = double(work::difficulty::unit()) / target.getdouble();
         }
 
         static void BitsToDifficulty(uint32_t bits, uint64_t *difficulty) {
             arith_uint256 target;
             target.SetCompact(bits);
-            *difficulty = (GetDiffOneTarget() / target).GetLow64();
+            *difficulty = (work::difficulty::unit() / target).GetLow64();
         }
     };
     

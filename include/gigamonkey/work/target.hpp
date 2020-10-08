@@ -63,6 +63,11 @@ namespace Gigamonkey::work {
         double operator/(const hashpower& x) const;
         double operator/(const difficulty& x) const;
         
+        static uint256& unit() {
+            static uint256 Unit{"0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"};
+            return Unit;
+        }
+        
     };
     
     // proportional to inverse difficulty.
@@ -252,7 +257,7 @@ namespace Gigamonkey::work {
     
     inline work::difficulty compact::difficulty() const {
         return work::difficulty{
-            double(Z{"0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"}) / 
+            double(work::difficulty::unit()) / 
             double(N(expand()))};
     };
     

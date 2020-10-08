@@ -26,145 +26,48 @@ namespace Gigamonkey {
         explicit uint(::uint256);
         explicit uint(arith_uint256);
         
-        byte* begin() {
-            return (byte*)base_uint<bits>::pn;
-        }
-        
-        byte* end() {
-            return begin() + size;
-        }
-        
-        const byte* begin() const {
-            return (byte*)this->pn;
-        }
-        
-        const byte* end() const {
-            return begin() + size;
-        }
-        
-        byte* data() {  
-            return begin();
-        }
-        
-        const byte* data() const {
-            return begin();
-        }
-        
-        operator bytes_view() const {
-            return bytes_view{data(), size};
-        }
-        
-        operator slice<size>() {
-            return slice<size>(data());
-        }
-        
-        operator const slice<size>() const {
-            return slice<size>(const_cast<byte*>(data()));
-        }
-        
         explicit operator N() const;
+        explicit operator double() const;
         
-        uint& operator=(uint64_t b) {
-            base_uint<bits>::operator=(b);
-            return *this;
-        }
+        operator bytes_view() const;
+        operator slice<size>();
+        operator const slice<size>() const;
         
-        uint& operator^=(const uint& b) {
-            base_uint<bits>::operator^=(b);
-            return *this;
-        }
-
-        uint& operator&=(const uint& b) {
-            base_uint<bits>::operator&=(b);
-            return *this;
-        }
-
-        uint& operator|=(const uint& b) {
-            base_uint<bits>::operator|=(b);
-            return *this;
-        }
-
-        uint& operator^=(uint64 b) {
-            base_uint<bits>::operator^=(b);
-            return *this;
-        }
+        uint& operator=(uint64_t b);
         
-        uint& operator|=(uint64 b) {
-            base_uint<bits>::operator|=(b);
-            return *this;
-        }
+        uint& operator^=(const uint& b);
+        uint& operator&=(const uint& b);
+        uint& operator|=(const uint& b);
+        uint& operator^=(uint64 b);
+        uint& operator|=(uint64 b);
         
-        uint& operator<<=(unsigned int shift) {
-            base_uint<bits>::operator<<=(shift);
-            return *this;
-        }
+        uint& operator<<=(unsigned int shift);
+        uint& operator>>=(unsigned int shift);
         
-        uint& operator>>=(unsigned int shift) {
-            base_uint<bits>::operator>>=(shift);
-            return *this;
-        }
+        uint& operator+=(const uint& b);
+        uint& operator-=(const uint& b);
+        uint& operator+=(uint64 b);
+        uint& operator-=(uint64 b);
+        uint& operator*=(uint32 b);
+        uint& operator*=(const uint& b);
+        uint& operator/=(const uint& b);
         
-        uint& operator+=(const uint& b) {
-            base_uint<bits>::operator+=(b);
-            return *this;
-        }
+        uint& operator++();
+        const uint operator++(int);
         
-        uint& operator-=(const uint& b) {
-            base_uint<bits>::operator-=(b);
-            return *this;
-        }
+        uint& operator--();
+        const uint operator--(int);
         
-        uint& operator+=(uint64 b) {
-            base_uint<bits>::operator+=(b);
-            return *this;
-        }
+        uint operator*(const uint& ret);
         
-        uint& operator-=(uint64 b) {
-            base_uint<bits>::operator-=(b);
-            return *this;
-        }
+        byte* begin();
+        byte* end();
         
-        uint& operator*=(uint32 b) {
-            base_uint<bits>::operator*=(b);
-            return *this;
-        }
+        const byte* begin() const;
+        const byte* end() const;
         
-        uint& operator*=(const uint& b) {
-            base_uint<bits>::operator*=(b);
-            return *this;
-        }
-        
-        uint& operator/=(const uint& b) {
-            base_uint<bits>::operator/=(b);
-            return *this;
-        }
-        
-        uint& operator++() {
-            base_uint<bits>::operator++();
-            return *this;
-        }
-        
-        const uint operator++(int) {
-            // postfix operator
-            const uint ret = *this;
-            ++(*this);
-            return ret;
-        }
-        
-        uint& operator--() {
-            base_uint<bits>::operator--();
-            return *this;
-        }
-        
-        const uint operator--(int) {
-            // postfix operator
-            const uint ret = *this;
-            --(*this);
-            return ret;
-        }
-        uint operator*(const uint& ret) {
-            return base_uint<bits>::operator*(ret);
-        }
+        byte* data();
+        const byte* data() const;
     };
     
     // sizes of standard hash functions. 
@@ -357,6 +260,179 @@ namespace Gigamonkey {
         data::math::number::N_bytes<data::endian::little> b{n};
         if (b.size() > size) std::copy(b.begin(), b.begin() + size, begin());
         else std::copy(b.begin(), b.end(), begin());
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits>::operator bytes_view() const {
+        return bytes_view{data(), size};
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits>::operator slice<size>() {
+        return slice<size>(data());
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits>::operator const slice<size>() const {
+        return slice<size>(const_cast<byte*>(data()));
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits>::operator double() const {
+        return double(operator N());
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits>& uint<size, bits>::operator=(uint64_t b) {
+        base_uint<bits>::operator=(b);
+        return *this;
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits>& uint<size, bits>::operator^=(const uint& b) {
+        base_uint<bits>::operator^=(b);
+        return *this;
+    }
+
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits>& uint<size, bits>::operator&=(const uint& b) {
+        base_uint<bits>::operator&=(b);
+        return *this;
+    }
+
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits>& uint<size, bits>::operator|=(const uint& b) {
+        base_uint<bits>::operator|=(b);
+        return *this;
+    }
+
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits>& uint<size, bits>::operator^=(uint64 b) {
+        base_uint<bits>::operator^=(b);
+        return *this;
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits>& uint<size, bits>::operator|=(uint64 b) {
+        base_uint<bits>::operator|=(b);
+        return *this;
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits>& uint<size, bits>::operator<<=(unsigned int shift) {
+        base_uint<bits>::operator<<=(shift);
+        return *this;
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits>& uint<size, bits>::operator>>=(unsigned int shift) {
+        base_uint<bits>::operator>>=(shift);
+        return *this;
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits>& uint<size, bits>::operator+=(const uint& b) {
+        base_uint<bits>::operator+=(b);
+        return *this;
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits>& uint<size, bits>::operator-=(const uint& b) {
+        base_uint<bits>::operator-=(b);
+        return *this;
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits>& uint<size, bits>::operator+=(uint64 b) {
+        base_uint<bits>::operator+=(b);
+        return *this;
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits>& uint<size, bits>::operator-=(uint64 b) {
+        base_uint<bits>::operator-=(b);
+        return *this;
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits>& uint<size, bits>::operator*=(uint32 b) {
+        base_uint<bits>::operator*=(b);
+        return *this;
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits>& uint<size, bits>::operator*=(const uint& b) {
+        base_uint<bits>::operator*=(b);
+        return *this;
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits>& uint<size, bits>::operator/=(const uint& b) {
+        base_uint<bits>::operator/=(b);
+        return *this;
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits>& uint<size, bits>::operator++() {
+        base_uint<bits>::operator++();
+        return *this;
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline const uint<size, bits> uint<size, bits>::operator++(int) {
+        // postfix operator
+        const uint ret = *this;
+        ++(*this);
+        return ret;
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits>& uint<size, bits>::operator--() {
+        base_uint<bits>::operator--();
+        return *this;
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline const uint<size, bits> uint<size, bits>::operator--(int) {
+        // postfix operator
+        const uint ret = *this;
+        --(*this);
+        return ret;
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits> uint<size, bits>::operator*(const uint& ret) {
+        return base_uint<bits>::operator*(ret);
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline byte* uint<size, bits>::begin() {
+        return (byte*)base_uint<bits>::pn;
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline byte* uint<size, bits>::end() {
+        return begin() + size;
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline const byte* uint<size, bits>::begin() const {
+        return (byte*)this->pn;
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline const byte* uint<size, bits>::end() const {
+        return begin() + size;
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline byte* uint<size, bits>::data() {  
+        return begin();
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline const byte* uint<size, bits>::data() const {
+        return begin();
     }
 
 }
