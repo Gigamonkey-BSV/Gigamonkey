@@ -16,6 +16,8 @@
 
 #include <data/data.hpp>
 
+#include <data/encoding/hex.hpp>
+
 inline bool implies(bool a, bool b) {
     return (!a) || b;
 }

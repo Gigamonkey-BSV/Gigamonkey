@@ -171,13 +171,13 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
             return secret();
         bytes_reader reader(view.begin() + 3, view.end());
 
-        data::endian::arithmetic<boost::endian::order::big, byte, 8> depth;
+        data::endian::arithmetic<boost::endian::order::big, false, 1> depth;
         reader = reader >> depth;
         secret1.Depth = depth;
-        data::endian::arithmetic<boost::endian::order::big, uint32_t, 32> parent;
+        data::endian::arithmetic<boost::endian::order::big, false, 4> parent;
         reader = reader >> parent;
         secret1.Parent = parent;
-        data::endian::arithmetic<boost::endian::order::big, uint32_t, 32> sequence;
+        data::endian::arithmetic<boost::endian::order::big, false, 4> sequence;
         reader = reader >> sequence;
         secret1.Sequence = sequence;
         bytes_view chain_code = view.substr(12, 32);
@@ -333,13 +333,13 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
             return pubkey();
         bytes_reader reader(view.begin() + 3, view.end());
 
-        data::endian::arithmetic<boost::endian::order::big, byte, 8> depth;
+        data::endian::arithmetic<boost::endian::order::big, false, 1> depth;
         reader = reader >> depth;
         pubkey1.Depth = depth;
-        data::endian::arithmetic<boost::endian::order::big, uint32_t, 32> parent;
+        data::endian::arithmetic<boost::endian::order::big, false, 4> parent;
         reader = reader >> parent;
         pubkey1.Parent = parent;
-        data::endian::arithmetic<boost::endian::order::big, uint32_t, 32> sequence;
+        data::endian::arithmetic<boost::endian::order::big, false, 4> sequence;
         reader = reader >> sequence;
         pubkey1.Sequence = sequence;
         //sequence |= view[12] & 0xff;

@@ -20,7 +20,7 @@ namespace Gigamonkey::base58 {
     check check::decode(string_view s) {
         size_t leading_ones = 0;
         while(leading_ones < s.size() && s[leading_ones] == '1') leading_ones++;
-        encoding::base58::string b58(s.substr(leading_ones));
+        encoding::base58::view b58(s.substr(leading_ones));
         if (!b58.valid()) return {};
         bytes_view decoded = bytes_view(b58);
         return {Bitcoin::remove_checksum(write(leading_ones + decoded.size(), bytes(leading_ones, 0x00), decoded))};

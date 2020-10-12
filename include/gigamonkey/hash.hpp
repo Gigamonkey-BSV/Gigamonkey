@@ -251,7 +251,7 @@ namespace Gigamonkey {
     inline uint<size, bits>::uint(string_view hex) : uint(0) {
         if (hex.size() != size * 2 + 2) return;
         if (!data::encoding::hexidecimal::valid(hex)) return;
-        bytes read = bytes_view(encoding::hex::string{hex.substr(2)});
+        bytes read = bytes_view(encoding::hex::view{hex.substr(2)});
         std::reverse_copy(read.begin(), read.end(), begin());
     }
     

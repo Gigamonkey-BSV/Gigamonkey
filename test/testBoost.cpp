@@ -2,7 +2,7 @@
 #include <gigamonkey/script.hpp>
 #include <gigamonkey/address.hpp>
 #include <gigamonkey/wif.hpp>
-#include <gigamonkey/stratum/stratum.hpp>
+#include <gigamonkey/stratum/mining_notify.hpp>
 
 #include "gtest/gtest.h"
 
@@ -104,8 +104,8 @@ namespace Gigamonkey::Boost {
                 const Stratum::worker& worker, 
                 uint64_little n2, uint64 key) {
                 Bitcoin::secret s(Bitcoin::secret::main, secp256k1::secret(secp256k1::coordinate(key)));
-                puzzle Puzzle{o, s.address().Digest, worker.ExtraNonce1};
-                return test_case{Puzzle, o, Stratum::job{jobID, Puzzle, worker, Stratum::timestamp(start), true}, n2, s};
+                puzzle Puzzle{o, s.address().Digest, worker.extra_nonce_1()};
+                return test_case{Puzzle, o, Stratum::job{jobID, Puzzle, worker, Bitcoin::timestamp(start), true}, n2, s};
             }
             
             static test_case build(Boost::type type, 
@@ -121,11 +121,11 @@ namespace Gigamonkey::Boost {
                 uint64 key) { 
                 Bitcoin::secret s(Bitcoin::secret::main, secp256k1::secret(secp256k1::coordinate(key)));
                 digest160 address = s.address().Digest;
-                puzzle Puzzle{type, 1, content, target, tag, user_nonce, data, address, worker.ExtraNonce1};
+                puzzle Puzzle{type, 1, content, target, tag, user_nonce, data, address, worker.extra_nonce_1()};
                 
                 return test_case(Puzzle, 
                     output_script{type, 1, content, target, tag, user_nonce, data, address}, 
-                    Stratum::job{jobID, Puzzle, worker, Stratum::timestamp(start), true}, 
+                    Stratum::job{jobID, Puzzle, worker, Bitcoin::timestamp(start), true}, 
                     n2, s);
             }
             
@@ -313,7 +313,7 @@ namespace Gigamonkey::Boost {
             auto Stratum_shares = data::for_each([WorkerName, JobID](work::proof x) -> Stratum::share {
                 return Stratum::share{1, WorkerName, JobID, 
                     x.Solution.ExtraNonce, 
-                    Stratum::timestamp(x.Solution.Timestamp), 
+                    Bitcoin::timestamp(x.Solution.Timestamp), 
                     x.Solution.Nonce};
             }, proofs);
             

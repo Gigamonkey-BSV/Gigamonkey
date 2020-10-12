@@ -24,7 +24,7 @@ namespace Gigamonkey::Bitcoin {
             // nonce 
             "1DAC2B7C";
         
-        encoding::hex::string genesis_header_hex(genesis_header_string);
+        encoding::hex::view genesis_header_hex(genesis_header_string);
         
         ASSERT_TRUE(genesis_header_hex.valid());
         

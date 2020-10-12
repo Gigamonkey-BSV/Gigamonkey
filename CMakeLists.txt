@@ -138,6 +138,7 @@ add_library(gigamonkey STATIC
     src/gigamonkey/wallet.cpp
     src/gigamonkey/stratum/stratum.cpp
     src/gigamonkey/stratum/difficulty.cpp
+    src/gigamonkey/stratum/mining_notify.cpp
     src/gigamonkey/boost/boost.cpp
     #src/bitcoin_sv/sv.cpp 
 )
