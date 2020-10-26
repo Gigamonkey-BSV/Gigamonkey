@@ -48,22 +48,20 @@ namespace Gigamonkey::Bitcoin {
         
         duration operator-(const timestamp& t) const;
     };
-}
 
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::timestamp& s) {
-    time_t t = static_cast<time_t>(uint32_t(s));
-    return o << ctime(&t);
-}
+    inline std::ostream& operator<<(std::ostream& o, const timestamp& s) {
+        time_t t = static_cast<time_t>(uint32_t(s));
+        return o << ctime(&t);
+    }
 
-inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::Bitcoin::timestamp& s) {
-    return w << s.Value;
-}
+    inline bytes_writer operator<<(bytes_writer w, const timestamp& s) {
+        return w << s.Value;
+    }
 
-inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::Bitcoin::timestamp& s) {
-    return r >> s.Value;
-}
+    inline bytes_reader operator>>(bytes_reader r, timestamp& s) {
+        return r >> s.Value;
+    }
 
-namespace Gigamonkey::Bitcoin {
     inline timestamp::timestamp() : nonzero<uint32_little>{} {}
     
     inline timestamp::timestamp(string_view s) : timestamp{read(s)} {}

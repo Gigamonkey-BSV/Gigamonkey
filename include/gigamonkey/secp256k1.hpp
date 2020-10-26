@@ -179,27 +179,27 @@ namespace Gigamonkey::Bitcoin {
     using pubkey = secp256k1::pubkey;
 }
 
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::secp256k1::secret& s) {
-    return o << "secret{" << s.Value << "}";
-}
-
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::secp256k1::pubkey& p) {
-    return o << "pubkey{" << data::encoding::hexidecimal::write(p.Value, data::endian::little) << "}";
-}
-
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::secp256k1::signature& p) {
-    return o << "pubkey{" << data::encoding::hexidecimal::write(data::bytes_view(p), data::endian::little) << "}";
-}
-
-inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::secp256k1::secret& x) {
-    return w << x.Value;
-}
-
-inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::secp256k1::secret& x) {
-    return r >> x.Value;
-}
-
 namespace Gigamonkey::secp256k1 {
+    
+    inline std::ostream& operator<<(std::ostream& o, const secret& s) {
+        return o << "secret{" << s.Value << "}";
+    }
+
+    inline std::ostream& operator<<(std::ostream& o, const pubkey& p) {
+        return o << "pubkey{" << data::encoding::hexidecimal::write(p.Value, data::endian::little) << "}";
+    }
+
+    inline std::ostream& operator<<(std::ostream& o, const signature& p) {
+        return o << "pubkey{" << data::encoding::hexidecimal::write(data::bytes_view(p), data::endian::little) << "}";
+    }
+
+    inline Gigamonkey::bytes_writer operator<<(bytes_writer w, const secret& x) {
+        return w << x.Value;
+    }
+
+    inline Gigamonkey::bytes_reader operator>>(bytes_reader r, secret& x) {
+        return r >> x.Value;
+    }
     
     inline bool valid(const secret& s) {
         return s.valid();

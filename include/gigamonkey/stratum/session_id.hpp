@@ -42,10 +42,10 @@ namespace Gigamonkey::Stratum {
         p = session_id{encoding::hex::fixed<4>(string(j))};
     }
     
-}
+    inline std::ostream& operator<<(std::ostream& o, const session_id id) {
+        return o << data::encoding::hex::fixed<4>(id);
+    }
 
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Stratum::session_id id) {
-    return o << data::encoding::hex::fixed<4>(id);
 }
 
 #endif

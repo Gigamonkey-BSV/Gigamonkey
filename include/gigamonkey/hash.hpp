@@ -160,6 +160,39 @@ namespace Gigamonkey {
         }
     
     }
+
+    template <size_t size, unsigned int bits> 
+    inline std::ostream& operator<<(std::ostream& o, const uint<size, bits>& s) {
+        return o << data::encoding::hexidecimal::write((data::bytes_view)(s), data::endian::little);
+    }
+
+    template <size_t size> 
+    inline std::ostream& operator<<(std::ostream& o, const digest<size>& s) {
+        return o << "digest{" << s.Value << "}";
+    }
+
+    template <size_t size, unsigned int bits> 
+    inline bytes_writer operator<<(bytes_writer w, const uint<size, bits>& s) {
+        return w << data::bytes_view(s);
+    }
+
+    template <size_t size, unsigned int bits>
+    inline bytes_reader operator>>(bytes_reader r, uint<size, bits>& s) {
+        data::bytes b(size);
+        bytes_reader rx = r >> b;
+        std::copy(b.begin(), b.end(), s.begin());
+        return rx;
+    }
+
+    template <size_t size> 
+    inline bytes_writer operator<<(bytes_writer w, const digest<size>& s) {
+        return w << s.Value;
+    }
+
+    template <size_t size> 
+    inline bytes_reader operator>>(bytes_reader r, digest<size>& s) {
+        return r >> s.Value;
+    }
     
 }
 
@@ -191,39 +224,6 @@ namespace data::encoding::integer {
         return o << write(n);
     }
     
-}
-
-template <size_t size, unsigned int bits> 
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::uint<size, bits>& s) {
-    return o << data::encoding::hexidecimal::write((data::bytes_view)(s), data::endian::little);
-}
-
-template <size_t size> 
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::digest<size>& s) {
-    return o << "digest{" << s.Value << "}";
-}
-
-template <size_t size, unsigned int bits> 
-inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::uint<size, bits>& s) {
-    return w << data::bytes_view(s);
-}
-
-template <size_t size, unsigned int bits>
-inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::uint<size, bits>& s) {
-    data::bytes b(size);
-    Gigamonkey::bytes_reader rx = r >> b;
-    std::copy(b.begin(), b.end(), s.begin());
-    return rx;
-}
-
-template <size_t size> 
-inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::digest<size>& s) {
-    return w << s.Value;
-}
-
-template <size_t size> 
-inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::digest<size>& s) {
-    return r >> s.Value;
 }
 
 namespace Gigamonkey {

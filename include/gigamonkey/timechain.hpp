@@ -89,15 +89,15 @@ namespace Gigamonkey::Bitcoin {
         bool operator==(const header& h) const;
         bool operator!=(const header& h) const;
     };
-}
 
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::header& h) {
-    return o << "header{Version : " << h.Version <<
-        ", Previous : " << h.Previous << 
-        ", MerkleRoot : " << h.MerkleRoot << 
-        ", Timestamp : " << h.Timestamp << 
-        ", Target : " << h.Target << 
-        ", Nonce : " << h.Nonce << "}";
+    inline std::ostream& operator<<(std::ostream& o, const header& h) {
+        return o << "header{Version : " << h.Version <<
+            ", Previous : " << h.Previous << 
+            ", MerkleRoot : " << h.MerkleRoot << 
+            ", Timestamp : " << h.Timestamp << 
+            ", Target : " << h.Target << 
+            ", Nonce : " << h.Nonce << "}";
+    }
 }
 
 namespace Gigamonkey::outpoint {
@@ -121,10 +121,11 @@ namespace Gigamonkey::Bitcoin {
         bool operator==(const outpoint& o) const;
         bool operator!=(const outpoint& o) const;
     };
-}
 
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::outpoint& p) {
-    return o << "outpoint{Reference : " << p.Reference << ", Index : " << p.Index << "}";
+    inline std::ostream& operator<<(std::ostream& o, const outpoint& p) {
+        return o << "outpoint{Reference : " << p.Reference << ", Index : " << p.Index << "}";
+    }
+
 }
 
 namespace Gigamonkey::input {
@@ -150,10 +151,11 @@ namespace Gigamonkey::Bitcoin {
         bool operator==(const input& i) const;
         bool operator!=(const input& i) const;
     };
-}
+    
+    inline std::ostream& operator<<(std::ostream& o, const input& p) {
+        return o << "input{Outpoint : " << p.Outpoint << ", Script : " << p.Script << ", Sequence : " << p.Sequence << "}";
+    }
 
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::input& p) {
-    return o << "input{Outpoint : " << p.Outpoint << ", Script : " << p.Script << ", Sequence : " << p.Sequence << "}";
 }
 
 namespace Gigamonkey::output {
@@ -164,7 +166,7 @@ namespace Gigamonkey::output {
 
 namespace Gigamonkey::Bitcoin {
     struct output {
-        satoshi Value; 
+        uint64_little Value; 
         bytes Script;
         
         bool valid() const;
@@ -177,10 +179,11 @@ namespace Gigamonkey::Bitcoin {
         bool operator==(const output& o) const;
         bool operator!=(const output& o) const;
     };
-}
 
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::output& p) {
-    return o << "output{Value : " << p.Value << ", Script : " << p.Script << "}";
+    inline std::ostream& operator<<(std::ostream& o, const output& p) {
+        return o << "output{Value : " << p.Value << ", Script : " << p.Script << "}";
+    }
+
 }
 
 namespace Gigamonkey::transaction {
@@ -292,52 +295,56 @@ namespace Gigamonkey::block {
     }
 }
 
-inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::Bitcoin::header& h) {
-    return h.write(w);
-}
+namespace Gigamonkey::Bitcoin { 
 
-inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r,  Gigamonkey::Bitcoin::header& h) {
-    return h.read(r);
-}
+    inline bytes_writer operator<<(bytes_writer w, const header& h) {
+        return h.write(w);
+    }
 
-inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::Bitcoin::outpoint& o) {
-    return o.write(w);
-}
+    inline bytes_reader operator>>(bytes_reader r, header& h) {
+        return h.read(r);
+    }
 
-inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::Bitcoin::outpoint& o) {
-    return o.read(r);
-}
+    inline bytes_writer operator<<(bytes_writer w, const outpoint& o) {
+        return o.write(w);
+    }
 
-inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::Bitcoin::input& in) {
-    return in.write(w);
-}
+    inline bytes_reader operator>>(bytes_reader r, outpoint& o) {
+        return o.read(r);
+    }
 
-inline Gigamonkey::bytes_reader operator<<(Gigamonkey::bytes_reader r, Gigamonkey::Bitcoin::input& in) {
-    return in.read(r);
-}
+    inline bytes_writer operator<<(bytes_writer w, const input& in) {
+        return in.write(w);
+    }
 
-inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::Bitcoin::output& out) {
-    return out.write(w);
-}
+    inline bytes_reader operator<<(bytes_reader r, input& in) {
+        return in.read(r);
+    }
 
-inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::Bitcoin::output& out) {
-    return out.read(r);
-}
+    inline bytes_writer operator<<(bytes_writer w, const output& out) {
+        return out.write(w);
+    }
 
-inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::Bitcoin::transaction& t) {
-    return t.write(w);
-}
+    inline bytes_reader operator>>(bytes_reader r, output& out) {
+        return out.read(r);
+    }
 
-inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::Bitcoin::transaction& t) {
-    return t.read(r);
-}
+    inline bytes_writer operator<<(bytes_writer w, const transaction& t) {
+        return t.write(w);
+    }
 
-inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::Bitcoin::block& b) {
-    return b.write(w);
-}
+    inline bytes_reader operator>>(bytes_reader r, transaction& t) {
+        return t.read(r);
+    }
 
-inline Gigamonkey::bytes_reader operator>>(Gigamonkey::bytes_reader r, Gigamonkey::Bitcoin::block& b) {
-    return b.read(r);
+    inline bytes_writer operator<<(bytes_writer w, const block& b) {
+        return b.write(w);
+    }
+
+    inline bytes_reader operator>>(bytes_reader r, block& b) {
+        return b.read(r);
+    }
+
 }
 
 namespace Gigamonkey::header {    

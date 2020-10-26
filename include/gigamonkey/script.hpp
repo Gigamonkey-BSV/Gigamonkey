@@ -537,16 +537,12 @@ namespace Gigamonkey::Bitcoin {
             return compile(program{} << push_data(s) << push_data(p));
         }
     };
-    
-}
 
-std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::instruction i);
+    std::ostream& operator<<(std::ostream& o, const instruction i);
 
-inline Gigamonkey::bytes_writer operator<<(Gigamonkey::bytes_writer w, const Gigamonkey::Bitcoin::instruction i) {
-    return i.write(w);
-}
-
-namespace Gigamonkey::Bitcoin { 
+    inline bytes_writer operator<<(bytes_writer w, const instruction i) {
+        return i.write(w);
+    }
     
     template <typename X, typename... P>
     pattern::pattern(X x, P... p) : Pattern(std::make_shared<sequence>(x, p...)) {}

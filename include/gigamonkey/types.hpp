@@ -35,7 +35,7 @@ namespace Gigamonkey {
     // in the protocol, satoshi amounts are written as uint64_littles. 
     // However, we need to be able to think in terms of negative amounts
     // for accounting purposes. 
-    using satoshi = boost::endian::native_int64_t;
+    using satoshi = int64;
     
     using nonce = uint32_little;
     

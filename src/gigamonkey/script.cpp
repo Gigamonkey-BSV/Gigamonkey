@@ -242,101 +242,100 @@ namespace Gigamonkey::Bitcoin {
         }
         throw fail{};
     };
-    
-}
 
-std::ostream& write_op_code(std::ostream& o, Gigamonkey::Bitcoin::op x) {
-    using namespace Gigamonkey::Bitcoin;
-    if (x == OP_FALSE) return o << "push_empty";
-    if (is_push(x)) {
-        switch(x) {
-            case OP_PUSHDATA1 : return o << "push_data_1";
-            case OP_PUSHDATA2 : return o << "push_data_2";
-            case OP_PUSHDATA4 : return o << "push_data_4";
-            case OP_FALSE : return o << "(0)";
-            case OP_1NEGATE: return o << "(-1)";
-            case OP_1: return o << "(1)";
-            case OP_2: return o << "(2)";
-            case OP_3: return o << "(3)";
-            case OP_4: return o << "(4)";
-            case OP_5: return o << "(5)";
-            case OP_6: return o << "(6)";
-            case OP_7: return o << "(7)";
-            case OP_8: return o << "(8)";
-            case OP_9: return o << "(9)";
-            case OP_10: return o << "(10)";
-            case OP_11: return o << "(11)";
-            case OP_12: return o << "(12)";
-            case OP_13: return o << "(13)";
-            case OP_14: return o << "(14)";
-            case OP_15: return o << "(15)";
-            case OP_16: return o << "(16)";
-            default : return o << "push_size_" << int{x};
+    std::ostream& write_op_code(std::ostream& o, op x) {
+        if (x == OP_FALSE) return o << "push_empty";
+        if (is_push(x)) {
+            switch(x) {
+                case OP_PUSHDATA1 : return o << "push_data_1";
+                case OP_PUSHDATA2 : return o << "push_data_2";
+                case OP_PUSHDATA4 : return o << "push_data_4";
+                case OP_FALSE : return o << "(0)";
+                case OP_1NEGATE: return o << "(-1)";
+                case OP_1: return o << "(1)";
+                case OP_2: return o << "(2)";
+                case OP_3: return o << "(3)";
+                case OP_4: return o << "(4)";
+                case OP_5: return o << "(5)";
+                case OP_6: return o << "(6)";
+                case OP_7: return o << "(7)";
+                case OP_8: return o << "(8)";
+                case OP_9: return o << "(9)";
+                case OP_10: return o << "(10)";
+                case OP_11: return o << "(11)";
+                case OP_12: return o << "(12)";
+                case OP_13: return o << "(13)";
+                case OP_14: return o << "(14)";
+                case OP_15: return o << "(15)";
+                case OP_16: return o << "(16)";
+                default : return o << "push_size_" << int{x};
+            }
+        }
+        
+        switch (x) {
+            default : return o << "***unknown op code***";
+            case OP_CHECKSIG: return o << "checksig";
+            case OP_CHECKSIGVERIFY: return o << "checksig_verify";
+            case OP_EQUALVERIFY: return o << "equal_verify";
+            
+            case OP_HASH256: return o << "hash256";
+            
+            case OP_RESERVED: return o << "reserved";
+            
+            case OP_NOP: return o << "nop";
+            case OP_VER: return o << "ver";
+            case OP_IF: return o << "if";
+            case OP_NOTIF: return o << "not_if";
+            case OP_VERIF: return o << "ver_if";
+            case OP_VERNOTIF: return o << "ver_not_if";
+            case OP_ELSE: return o << "else";
+            case OP_ENDIF: return o << "end_if";
+            case OP_VERIFY: return o << "verify";
+            case OP_RETURN: return o << "return";
+
+            case OP_TOALTSTACK: return o << "to_alt_stack";
+            case OP_FROMALTSTACK: return o << "from_alt_stack";
+            case OP_2DROP: return o << "2_drop";
+            case OP_2DUP: return o << "2_dup";
+            case OP_3DUP: return o << "3_dup";
+            case OP_2OVER: return o << "2_over";
+            case OP_2ROT: return o << "2_rot";
+            case OP_2SWAP: return o << "2_swap";
+            case OP_IFDUP: return o << "if_dup";
+            case OP_DEPTH: return o << "depth";
+            case OP_DROP: return o << "drop";
+            case OP_DUP: return o << "dup";
+            case OP_NIP: return o << "nip";
+            case OP_OVER: return o << "over";
+            case OP_PICK: return o << "pick";
+            case OP_ROLL: return o << "roll";
+            case OP_ROT: return o << "rot";
+            case OP_SWAP: return o << "swap";
+            case OP_TUCK: return o << "tuck";
+            
+            case OP_SIZE: return o << "size";
+            case OP_CAT: return o << "cat";
+            case OP_SPLIT: return o << "split";
+            
+            case OP_LESSTHAN : return o << "less";
+            case OP_GREATERTHAN : return o << "greater";
+            case OP_LESSTHANOREQUAL : return o << "less_equal";
+            case OP_GREATERTHANOREQUAL : return o << "greater_equal";
+            case OP_WITHIN : return o << "within";
+            
+            case OP_SUB : return o << "subtract";
+            case OP_ADD : return o << "add";
+            case OP_MUL : return o << "mul";
+            
+            case OP_RSHIFT : return o << "rshift";
+            case OP_LSHIFT : return o << "lshift";
+            
         }
     }
-    
-    switch (x) {
-        default : return o << "***unknown op code***";
-        case OP_CHECKSIG: return o << "checksig";
-        case OP_CHECKSIGVERIFY: return o << "checksig_verify";
-        case OP_EQUALVERIFY: return o << "equal_verify";
-        
-        case OP_HASH256: return o << "hash256";
-        
-        case OP_RESERVED: return o << "reserved";
-        
-        case OP_NOP: return o << "nop";
-        case OP_VER: return o << "ver";
-        case OP_IF: return o << "if";
-        case OP_NOTIF: return o << "not_if";
-        case OP_VERIF: return o << "ver_if";
-        case OP_VERNOTIF: return o << "ver_not_if";
-        case OP_ELSE: return o << "else";
-        case OP_ENDIF: return o << "end_if";
-        case OP_VERIFY: return o << "verify";
-        case OP_RETURN: return o << "return";
 
-        case OP_TOALTSTACK: return o << "to_alt_stack";
-        case OP_FROMALTSTACK: return o << "from_alt_stack";
-        case OP_2DROP: return o << "2_drop";
-        case OP_2DUP: return o << "2_dup";
-        case OP_3DUP: return o << "3_dup";
-        case OP_2OVER: return o << "2_over";
-        case OP_2ROT: return o << "2_rot";
-        case OP_2SWAP: return o << "2_swap";
-        case OP_IFDUP: return o << "if_dup";
-        case OP_DEPTH: return o << "depth";
-        case OP_DROP: return o << "drop";
-        case OP_DUP: return o << "dup";
-        case OP_NIP: return o << "nip";
-        case OP_OVER: return o << "over";
-        case OP_PICK: return o << "pick";
-        case OP_ROLL: return o << "roll";
-        case OP_ROT: return o << "rot";
-        case OP_SWAP: return o << "swap";
-        case OP_TUCK: return o << "tuck";
-        
-        case OP_SIZE: return o << "size";
-        case OP_CAT: return o << "cat";
-        case OP_SPLIT: return o << "split";
-        
-        case OP_LESSTHAN : return o << "less";
-        case OP_GREATERTHAN : return o << "greater";
-        case OP_LESSTHANOREQUAL : return o << "less_equal";
-        case OP_GREATERTHANOREQUAL : return o << "greater_equal";
-        case OP_WITHIN : return o << "within";
-        
-        case OP_SUB : return o << "subtract";
-        case OP_ADD : return o << "add";
-        case OP_MUL : return o << "mul";
-        
-        case OP_RSHIFT : return o << "rshift";
-        case OP_LSHIFT : return o << "lshift";
-        
+    std::ostream& operator<<(std::ostream& o, instruction i) {
+        if (!is_push_data(i.Op)) return write_op_code(o, i.Op);
+        return write_op_code(o, i.Op) << "{" << data::encoding::hex::write(i.Data) << "}";
     }
-}
 
-std::ostream& operator<<(std::ostream& o, Gigamonkey::Bitcoin::instruction i) {
-    if (!Gigamonkey::Bitcoin::is_push_data(i.Op)) return write_op_code(o, i.Op);
-    return write_op_code(o, i.Op) << "{" << data::encoding::hex::write(i.Data) << "}";
 }

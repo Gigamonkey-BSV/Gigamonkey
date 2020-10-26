@@ -68,13 +68,10 @@ namespace Gigamonkey::work {
         }
     };
     
-}
+    inline std::ostream& operator<<(std::ostream& o, const string& work_string) {
+        return o << "work_string{" << data::encoding::hex::write(work_string.write()) << "}";
+    }
 
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::string& work_string) {
-    return o << "work_string{" << data::encoding::hex::write(work_string.write()) << "}";
-}
-
-namespace Gigamonkey::work {
     inline bool string::valid() const {
         return hash() < Target.expand();
     }
