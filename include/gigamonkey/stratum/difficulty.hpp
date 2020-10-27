@@ -1,3 +1,6 @@
+// Copyright (c) 2020 Daniel Krawisz
+// Distributed under the Open BSV software license, see the accompanying file LICENSE.
+
 #ifndef GIGAMONKEY_STRATUM_DIFFICULTY
 #define GIGAMONKEY_STRATUM_DIFFICULTY
 
