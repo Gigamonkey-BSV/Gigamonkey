@@ -23,8 +23,8 @@ namespace Gigamonkey {
         explicit uint(const base_uint<bits>& b) : base_uint<bits>{b} {}
         explicit uint(const N& n);
         
-        explicit uint(::uint256);
-        explicit uint(arith_uint256);
+        explicit uint(const ::uint256&);
+        explicit uint(const arith_uint256&);
         
         explicit operator N() const;
         explicit operator double() const;
@@ -34,12 +34,16 @@ namespace Gigamonkey {
         operator const slice<size>() const;
         
         uint& operator=(uint64_t b);
+        uint& operator=(const base_uint<bits>& b);
         
         uint& operator^=(const uint& b);
         uint& operator&=(const uint& b);
         uint& operator|=(const uint& b);
         uint& operator^=(uint64 b);
         uint& operator|=(uint64 b);
+        
+        uint operator<<(unsigned int shift);
+        uint operator>>(unsigned int shift);
         
         uint& operator<<=(unsigned int shift);
         uint& operator>>=(unsigned int shift);
@@ -289,6 +293,12 @@ namespace Gigamonkey {
     }
     
     template <size_t size, unsigned int bits>
+    inline uint<size, bits>& uint<size, bits>::operator=(const base_uint<bits>& b) {
+        base_uint<bits>::operator=(b);
+        return *this;
+    }
+    
+    template <size_t size, unsigned int bits>
     inline uint<size, bits>& uint<size, bits>::operator^=(const uint& b) {
         base_uint<bits>::operator^=(b);
         return *this;
@@ -328,6 +338,16 @@ namespace Gigamonkey {
     inline uint<size, bits>& uint<size, bits>::operator>>=(unsigned int shift) {
         base_uint<bits>::operator>>=(shift);
         return *this;
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits> uint<size, bits>::operator<<(unsigned int shift) {
+        return uint<size, bits>(*this) <<= shift;
+    }
+    
+    template <size_t size, unsigned int bits>
+    inline uint<size, bits> uint<size, bits>::operator>>(unsigned int shift) {
+        return uint<size, bits>(*this) >>= shift;
     }
     
     template <size_t size, unsigned int bits>

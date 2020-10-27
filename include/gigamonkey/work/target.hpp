@@ -64,7 +64,7 @@ namespace Gigamonkey::work {
         double operator/(const difficulty& x) const;
         
         static uint256& unit() {
-            static uint256 Unit{"0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"};
+            static uint256 Unit{"0x00000000FFFF0000000000000000000000000000000000000000000000000000"};
             return Unit;
         }
         
