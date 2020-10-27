@@ -3,11 +3,17 @@
 #include <btcpool/difficulty.hpp>
 
 namespace Gigamonkey::Stratum {
-    difficulty::difficulty(const work::compact& t) {
-        ::uint256 targ;
-        auto d = t.expand();
-        std::copy(d.begin(), d.end(), targ.begin());
-        *this = BitcoinDifficulty::TargetToDiff(targ);
+    
+    difficulty::difficulty(const uint256& d) {
+        *this = BitcoinDifficulty::TargetToDiff(d);
+    }
+        
+    difficulty::operator uint256() const {
+        uint256 t;
+        ::uint256 x;
+        BitcoinDifficulty::DiffToTarget(*this, x);
+        std::copy(x.begin(), x.end(), t.begin());
+        return t;
     }
 
 }

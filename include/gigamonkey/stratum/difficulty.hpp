@@ -13,9 +13,11 @@ namespace Gigamonkey::Stratum {
     struct difficulty : nonzero<uint64> {
         using nonzero<uint64>::nonzero;
         
-        explicit difficulty(const work::difficulty& d) : nonzero<uint64>{static_cast<uint64>(double(d))} {}
-        explicit difficulty(const work::compact&);
         explicit difficulty(const uint256&);
+        explicit difficulty(const work::compact& t) : difficulty{t.expand()} {}
+        explicit difficulty(const work::difficulty& d) : nonzero<uint64>{static_cast<uint64>(double(d))} {}
+        
+        explicit operator uint256() const;
 
     };
 }

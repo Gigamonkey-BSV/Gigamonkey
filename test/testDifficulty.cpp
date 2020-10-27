@@ -61,26 +61,42 @@ namespace Gigamonkey::work {
 
 //taken from btc pool
 
-using string = std::string;
+namespace Gigamonkey::Stratum {
+    TEST(DifficultyTest, DiffTargetDiff) {
+        for (uint32_t i = 0; i < 64; i++) {
+            difficulty diff{1 << i};
+            ASSERT_EQ(diff, difficulty(uint256(diff)));
+        }
+    }
 
-TEST(DifficultyTest, BitsToTarget) {
-  uint32_t bits;
-  uint256 targ;
+    TEST(DifficultyTest, BitsToTarget) {
+        ASSERT_EQ(
+            work::compact{0x1b0404cb}.expand(),
+            uint256(
+                "0x00000000000404CB000000000000000000000000000000000000000000000000"));
+    }
 
-  bits = 0x1b0404cb;
-  BitsToTarget(target{bits}, targ);
-  ASSERT_EQ(
-      targ,
-      uint256S(
-          "00000000000404CB000000000000000000000000000000000000000000000000"));
+    TEST(DifficultyTest, TargetToDiff) {
+
+        // 0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF /
+        // 0x00000000000404CB000000000000000000000000000000000000000000000000
+        // = 16307.669773817162 (pdiff)
+
+        ASSERT_EQ(
+            BitcoinDifficulty::TargetToDiff(
+                uint256{"0x00000000000404CB000000000000000000000000000000000000000000000000"}),
+            difficulty{16307ULL});
+    }
 }
 
+using string = std::string;
+
 static void TestDiffToTarget(uint64_t diff, string target) {
-  uint256 targetWithoutTable, targetWithTable;
-  BitcoinDifficulty::DiffToTarget(difficulty{diff}, targetWithoutTable, false);
-  BitcoinDifficulty::DiffToTarget(difficulty{diff}, targetWithTable, true);
-  ASSERT_EQ(targetWithoutTable.ToString(), target);
-  ASSERT_EQ(targetWithTable.ToString(), target);
+    uint256 targetWithoutTable, targetWithTable;
+    BitcoinDifficulty::DiffToTarget(difficulty{diff}, targetWithoutTable, false);
+    BitcoinDifficulty::DiffToTarget(difficulty{diff}, targetWithTable, true);
+    ASSERT_EQ(targetWithoutTable.ToString(), target);
+    ASSERT_EQ(targetWithTable.ToString(), target);
 }
 
 TEST(DifficultyTest, DiffToTargetBitcoin) {
@@ -110,70 +126,47 @@ TEST(DifficultyTest, DiffToTargetBitcoin) {
 }
 
 TEST(DifficultyTest, DiffToTargetTable) {
-  uint256 t1, t2;
+    uint256 t1, t2;
 
-  for (uint64_t i = 0; i < 10240; i++) {
-    BitcoinDifficulty::DiffToTarget(difficulty{i}, t1, false);
-    BitcoinDifficulty::DiffToTarget(difficulty{i}, t2, true);
-    ASSERT_EQ(t1, t2);
-  }
+    for (uint64_t i = 0; i < 10240; i++) {
+        BitcoinDifficulty::DiffToTarget(difficulty{i}, t1, false);
+        BitcoinDifficulty::DiffToTarget(difficulty{i}, t2, true);
+        ASSERT_EQ(t1, t2);
+    }
 
-  for (uint32_t i = 0; i < 64; i++) {
-    difficulty diff{1 << i};
-    BitcoinDifficulty::DiffToTarget(diff, t1, false);
-    BitcoinDifficulty::DiffToTarget(diff, t2, true);
-    ASSERT_EQ(t1, t2);
-  }
-}
-
-TEST(DifficultyTest, DiffTargetDiff) {
-  for (uint32_t i = 0; i < 64; i++) {
-    difficulty diff{1 << i};
-    uint256 target;
-    BitcoinDifficulty::DiffToTarget(diff, target);
-    ASSERT_EQ(diff, BitcoinDifficulty::TargetToDiff(target));
-  }
+    for (uint32_t i = 0; i < 64; i++) {
+        difficulty diff{1 << i};
+        BitcoinDifficulty::DiffToTarget(diff, t1, false);
+        BitcoinDifficulty::DiffToTarget(diff, t2, true);
+        ASSERT_EQ(t1, t2);
+    }
 }
 
 TEST(DifficultyTest, uint256) {
-  uint256 u1, u2;
+    uint256 u1, u2;
 
-  u1 = uint256S(
-      "00000000000000000392381eb1be66cd8ef9e2143a0e13488875b3e1649a3dc9");
-  u2 = uint256S(
-      "00000000000000000392381eb1be66cd8ef9e2143a0e13488875b3e1649a3dc9");
-  ASSERT_EQ(UintToArith256(u1) == UintToArith256(u2), true);
-  ASSERT_EQ(UintToArith256(u1) >= UintToArith256(u2), true);
-  ASSERT_EQ(UintToArith256(u1) < UintToArith256(u2), false);
+    u1 = uint256S(
+        "00000000000000000392381eb1be66cd8ef9e2143a0e13488875b3e1649a3dc9");
+    u2 = uint256S(
+        "00000000000000000392381eb1be66cd8ef9e2143a0e13488875b3e1649a3dc9");
+    ASSERT_EQ(UintToArith256(u1) == UintToArith256(u2), true);
+    ASSERT_EQ(UintToArith256(u1) >= UintToArith256(u2), true);
+    ASSERT_EQ(UintToArith256(u1) < UintToArith256(u2), false);
 
-  u1 = uint256S(
-      "00000000000000000392381eb1be66cd8ef9e2143a0e13488875b3e1649a3dc9");
-  u2 = uint256S(
-      "000000000000000000cc35a4f0ebd7b5c8165b28d73e6369f49098c1a632d1a9");
-  ASSERT_EQ(UintToArith256(u1) > UintToArith256(u2), true);
-}
-
-TEST(DifficultyTest, TargetToDiff) {
-
-  // 0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF /
-  // 0x00000000000404CB000000000000000000000000000000000000000000000000
-  // = 16307.669773817162 (pdiff)
-  difficulty diff{16307ULL};
-
-
-  ASSERT_EQ(
-      BitcoinDifficulty::TargetToDiff(
-          "0x00000000000404CB000000000000000000000000000000000000000000000000"),
-      diff);
+    u1 = uint256S(
+        "00000000000000000392381eb1be66cd8ef9e2143a0e13488875b3e1649a3dc9");
+    u2 = uint256S(
+        "000000000000000000cc35a4f0ebd7b5c8165b28d73e6369f49098c1a632d1a9");
+    ASSERT_EQ(UintToArith256(u1) > UintToArith256(u2), true);
 }
 
 TEST(DifficultyTest, BitsToDifficulty) {
-  uint64_t diff = 163074209ull;
+    uint64_t diff = 163074209ull;
 
-  // 0x1b0404cb: https://en.bitcoin.it/wiki/Difficulty
-  double d;
-  BitcoinDifficulty::BitsToDifficulty(0x1b0404cbu, &d); // diff = 16307.420939
-  ASSERT_EQ((uint64_t)(d * 10000.0), diff);
+    // 0x1b0404cb: https://en.bitcoin.it/wiki/Difficulty
+    double d;
+    BitcoinDifficulty::BitsToDifficulty(0x1b0404cbu, &d); // diff = 16307.420939
+    ASSERT_EQ((uint64_t)(d * 10000.0), diff);
 }
 
 
