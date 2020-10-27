@@ -6,6 +6,7 @@
 
 #include "primitives/block.h"
 #include <gigamonkey/txid.hpp>
+#include <gigamonkey/satoshi.hpp>
 #include <gigamonkey/merkle.hpp>
 #include <gigamonkey/work/target.hpp>
 
@@ -166,7 +167,7 @@ namespace Gigamonkey::output {
 
 namespace Gigamonkey::Bitcoin {
     struct output {
-        uint64_little Value; 
+        satoshi Value; 
         bytes Script;
         
         bool valid() const;
