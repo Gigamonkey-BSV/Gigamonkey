@@ -1,17 +1,17 @@
 #include <gigamonkey/hash.hpp>
-#include <hash.h>
+#include <sv/hash.h>
 
 namespace Gigamonkey {
     
     digest256 sha256(bytes_view b) {
         digest256 result;
-        CSHA256().Write(b.data(), b.size()).Finalize(result.Value.data());
+        sv::CSHA256().Write(b.data(), b.size()).Finalize(result.Value.data());
         return result;
     } 
     
     digest160 ripemd160(bytes_view b) {
         digest160 result;
-        CRIPEMD160().Write(b.data(), b.size()).Finalize(result.Value.data());
+        sv::CRIPEMD160().Write(b.data(), b.size()).Finalize(result.Value.data());
         return result;
     }
 
@@ -29,13 +29,13 @@ namespace Gigamonkey::Bitcoin {
     
     digest256 hash256(bytes_view b) {
         digest256 result;
-        CHash256().Write(b.data(), b.size()).Finalize(result.Value.data());
+        sv::CHash256().Write(b.data(), b.size()).Finalize(result.Value.data());
         return result;
     } 
     
     digest160 hash160(bytes_view b) {
         digest160 result;
-        CHash160().Write(b.data(), b.size()).Finalize(result.Value.data());
+        sv::CHash160().Write(b.data(), b.size()).Finalize(result.Value.data());
         return result;
     }
 
@@ -48,5 +48,6 @@ namespace Gigamonkey::Bitcoin {
     }
     
 }
+
 
 

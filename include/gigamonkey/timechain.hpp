@@ -4,7 +4,7 @@
 #ifndef GIGAMONKEY_TIMECHAIN
 #define GIGAMONKEY_TIMECHAIN
 
-#include "primitives/block.h"
+#include <sv/primitives/block.h>
 #include <gigamonkey/hash.hpp>
 #include <gigamonkey/satoshi.hpp>
 #include <gigamonkey/merkle.hpp>
@@ -125,9 +125,9 @@ namespace Gigamonkey::Bitcoin {
         
         explicit header(slice<80> x) : header(read(x)) {}
         
-        explicit header(const CBlockHeader&);
+        explicit header(const sv::CBlockHeader&);
         
-        explicit operator CBlockHeader() const;
+        explicit operator sv::CBlockHeader() const;
         
         uint<80> write() const;
         

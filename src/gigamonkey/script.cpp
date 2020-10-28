@@ -44,15 +44,15 @@ namespace Gigamonkey::Bitcoin {
     // We already know that o has size at least 1 
     // when we call this function. 
     uint32 next_instruction_size(bytes_view o) {
-        opcodetype op = opcodetype(o[0]);
-        if (op == OP_INVALIDOPCODE) return 0;
-        if (!is_push_data(opcodetype(op))) return 1;
-        if (op <= OP_PUSHSIZE75) return (op + 1);
-        if (op == OP_PUSHDATA1) {
+        op p = op(o[0]);
+        if (p == OP_INVALIDOPCODE) return 0;
+        if (!is_push_data(p)) return 1;
+        if (p <= OP_PUSHSIZE75) return (p + 1);
+        if (p == OP_PUSHDATA1) {
             if (o.size() < 2) return 0;
             return o[1] + 2;
         }
-        if (op == OP_PUSHDATA2) {
+        if (p == OP_PUSHDATA2) {
             if (o.size() < 3) return 0;
             return boost::endian::load_little_u16(&o[1]) + 3;
         }
@@ -65,7 +65,7 @@ namespace Gigamonkey::Bitcoin {
     instruction push_value(int z) {
         if (z == 0) return OP_FALSE;
         if (z == -1) return OP_1NEGATE;
-        if (z > 0 && z <= 16) return opcodetype(0x50 + z);
+        if (z > 0 && z <= 16) return op(0x50 + z);
         if (z < 0 || z > 127) throw method::unimplemented{"push_value"};
         data::math::number::N_bytes<data::endian::little> zz{static_cast<uint64>(z)};
         bytes b(1);

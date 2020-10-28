@@ -4,28 +4,28 @@
 #ifndef GIGAMONKEY_HASH
 #define GIGAMONKEY_HASH
 
-#include "types.hpp"
-#include <data/data.hpp>
+#include <sv/arith_uint256.h>
+
+#include <gigamonkey/types.hpp>
+
 #include <data/encoding/integer.hpp>
 #include <data/math/number/bytes/N.hpp>
-
-#include "arith_uint256.h"
 
 namespace Gigamonkey {
     
     // a representation of uints of any size. 
-    template <size_t size, unsigned int bits = 8 * size> struct uint : base_uint<bits> {
-        uint(uint64 u) : base_uint<bits>(u) {}
+    template <size_t size, unsigned int bits = 8 * size> struct uint : sv::base_uint<bits> {
+        uint(uint64 u) : sv::base_uint<bits>(u) {}
         uint() : uint(0) {}
         
         uint(const slice<size>);
         
         explicit uint(string_view hex);
-        explicit uint(const base_uint<bits>& b) : base_uint<bits>{b} {}
+        explicit uint(const sv::base_uint<bits>& b) : sv::base_uint<bits>{b} {}
         explicit uint(const N& n);
         
-        explicit uint(const ::uint256&);
-        explicit uint(const arith_uint256&);
+        explicit uint(const sv::uint256&);
+        explicit uint(const sv::arith_uint256&);
         
         explicit operator N() const;
         explicit operator double() const;
@@ -35,7 +35,7 @@ namespace Gigamonkey {
         operator const slice<size>() const;
         
         uint& operator=(uint64_t b);
-        uint& operator=(const base_uint<bits>& b);
+        uint& operator=(const sv::base_uint<bits>& b);
         
         uint& operator^=(const uint& b);
         uint& operator&=(const uint& b);
@@ -297,55 +297,55 @@ namespace Gigamonkey {
     
     template <size_t size, unsigned int bits>
     inline uint<size, bits>& uint<size, bits>::operator=(uint64_t b) {
-        base_uint<bits>::operator=(b);
+        sv::base_uint<bits>::operator=(b);
         return *this;
     }
     
     template <size_t size, unsigned int bits>
-    inline uint<size, bits>& uint<size, bits>::operator=(const base_uint<bits>& b) {
-        base_uint<bits>::operator=(b);
+    inline uint<size, bits>& uint<size, bits>::operator=(const sv::base_uint<bits>& b) {
+        sv::base_uint<bits>::operator=(b);
         return *this;
     }
     
     template <size_t size, unsigned int bits>
     inline uint<size, bits>& uint<size, bits>::operator^=(const uint& b) {
-        base_uint<bits>::operator^=(b);
+        sv::base_uint<bits>::operator^=(b);
         return *this;
     }
 
     template <size_t size, unsigned int bits>
     inline uint<size, bits>& uint<size, bits>::operator&=(const uint& b) {
-        base_uint<bits>::operator&=(b);
+        sv::base_uint<bits>::operator&=(b);
         return *this;
     }
 
     template <size_t size, unsigned int bits>
     inline uint<size, bits>& uint<size, bits>::operator|=(const uint& b) {
-        base_uint<bits>::operator|=(b);
+        sv::base_uint<bits>::operator|=(b);
         return *this;
     }
 
     template <size_t size, unsigned int bits>
     inline uint<size, bits>& uint<size, bits>::operator^=(uint64 b) {
-        base_uint<bits>::operator^=(b);
+        sv::base_uint<bits>::operator^=(b);
         return *this;
     }
     
     template <size_t size, unsigned int bits>
     inline uint<size, bits>& uint<size, bits>::operator|=(uint64 b) {
-        base_uint<bits>::operator|=(b);
+        sv::base_uint<bits>::operator|=(b);
         return *this;
     }
     
     template <size_t size, unsigned int bits>
     inline uint<size, bits>& uint<size, bits>::operator<<=(unsigned int shift) {
-        base_uint<bits>::operator<<=(shift);
+        sv::base_uint<bits>::operator<<=(shift);
         return *this;
     }
     
     template <size_t size, unsigned int bits>
     inline uint<size, bits>& uint<size, bits>::operator>>=(unsigned int shift) {
-        base_uint<bits>::operator>>=(shift);
+        sv::base_uint<bits>::operator>>=(shift);
         return *this;
     }
     
@@ -361,49 +361,49 @@ namespace Gigamonkey {
     
     template <size_t size, unsigned int bits>
     inline uint<size, bits>& uint<size, bits>::operator+=(const uint& b) {
-        base_uint<bits>::operator+=(b);
+        sv::base_uint<bits>::operator+=(b);
         return *this;
     }
     
     template <size_t size, unsigned int bits>
     inline uint<size, bits>& uint<size, bits>::operator-=(const uint& b) {
-        base_uint<bits>::operator-=(b);
+        sv::base_uint<bits>::operator-=(b);
         return *this;
     }
     
     template <size_t size, unsigned int bits>
     inline uint<size, bits>& uint<size, bits>::operator+=(uint64 b) {
-        base_uint<bits>::operator+=(b);
+        sv::base_uint<bits>::operator+=(b);
         return *this;
     }
     
     template <size_t size, unsigned int bits>
     inline uint<size, bits>& uint<size, bits>::operator-=(uint64 b) {
-        base_uint<bits>::operator-=(b);
+        sv::base_uint<bits>::operator-=(b);
         return *this;
     }
     
     template <size_t size, unsigned int bits>
     inline uint<size, bits>& uint<size, bits>::operator*=(uint32 b) {
-        base_uint<bits>::operator*=(b);
+        sv::base_uint<bits>::operator*=(b);
         return *this;
     }
     
     template <size_t size, unsigned int bits>
     inline uint<size, bits>& uint<size, bits>::operator*=(const uint& b) {
-        base_uint<bits>::operator*=(b);
+        sv::base_uint<bits>::operator*=(b);
         return *this;
     }
     
     template <size_t size, unsigned int bits>
     inline uint<size, bits>& uint<size, bits>::operator/=(const uint& b) {
-        base_uint<bits>::operator/=(b);
+        sv::base_uint<bits>::operator/=(b);
         return *this;
     }
     
     template <size_t size, unsigned int bits>
     inline uint<size, bits>& uint<size, bits>::operator++() {
-        base_uint<bits>::operator++();
+        sv::base_uint<bits>::operator++();
         return *this;
     }
     
@@ -417,7 +417,7 @@ namespace Gigamonkey {
     
     template <size_t size, unsigned int bits>
     inline uint<size, bits>& uint<size, bits>::operator--() {
-        base_uint<bits>::operator--();
+        sv::base_uint<bits>::operator--();
         return *this;
     }
     
@@ -431,12 +431,12 @@ namespace Gigamonkey {
     
     template <size_t size, unsigned int bits>
     inline uint<size, bits> uint<size, bits>::operator*(const uint& ret) {
-        return base_uint<bits>::operator*(ret);
+        return sv::base_uint<bits>::operator*(ret);
     }
     
     template <size_t size, unsigned int bits>
     inline byte* uint<size, bits>::begin() {
-        return (byte*)base_uint<bits>::pn;
+        return (byte*)sv::base_uint<bits>::pn;
     }
     
     template <size_t size, unsigned int bits>
