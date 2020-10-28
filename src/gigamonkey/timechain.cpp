@@ -107,13 +107,13 @@ namespace Gigamonkey::block {
 
 namespace Gigamonkey::Bitcoin {
     
-    Gigamonkey::uint256 satoshi_uint256_to_uint256(::uint256 x) {
+    Gigamonkey::uint256 satoshi_uint256_to_uint256(sv::uint256 x) {
         Gigamonkey::uint256 y;
         std::copy(x.begin(), x.end(), y.begin());
         return y;
     }
     
-    header::header(const CBlockHeader& b) : 
+    header::header(const sv::CBlockHeader& b) : 
         Version{int32_little{b.nVersion}}, 
         Previous{satoshi_uint256_to_uint256(b.hashPrevBlock)}, 
         MerkleRoot{satoshi_uint256_to_uint256(b.hashMerkleRoot)}, 
@@ -121,8 +121,8 @@ namespace Gigamonkey::Bitcoin {
         Target{uint32_little{b.nBits}}, 
         Nonce{b.nNonce} {};
         
-    header::operator CBlockHeader() const {
-        CBlockHeader h;
+    header::operator sv::CBlockHeader() const {
+        sv::CBlockHeader h;
         h.nVersion = Version;
         h.nTime = Timestamp.Value;
         h.nBits = Target;
