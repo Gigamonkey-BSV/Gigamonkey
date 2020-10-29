@@ -171,7 +171,7 @@ namespace Gigamonkey::Stratum {
                 Version, 
                 Notify.Digest, 
                 Notify.Target, 
-                Merkle::path{Notify.Path, 0}, 
+                Merkle::path{0, Notify.Path}, 
                 Notify.GenerationTx1, 
                 Worker.ExtraNonce1.Value,
                 Notify.GenerationTx2};

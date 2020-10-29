@@ -206,7 +206,7 @@ namespace data::encoding::hexidecimal {
     
     template <size_t size, unsigned int bits> 
     inline std::string write(const Gigamonkey::uint<size, bits>& n) {
-        return write((N)(n));
+        return write((math::number::gmp::N)(n));
     }
     
     template <size_t size, unsigned int bits> 

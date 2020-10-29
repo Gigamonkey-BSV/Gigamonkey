@@ -14,99 +14,74 @@ namespace Gigamonkey::Merkle {
     
     using leaves = list<digest256>;
     
-    leaves round(leaves l);
-    
     digest256 root(list<digest256> l);
     
     struct path {
-        list<digest256> Hashes;
         uint32 Index;
+        list<digest256> Hashes;
         
-        path();
-        path(list<digest256> p, uint32 i);
+        path() : Index{0}, Hashes{} {}
+        path(uint32 i, list<digest256> p);
         
         digest256 derive_root(digest256 leaf) const;
     
-        bool check(digest256 merkle_root, digest256 leaf) const;
+        bool check(digest256 leaf, digest256 root) const;
         
         bool operator==(const path& p) const;
         
         bool operator!=(const path& p) const;
         
-        // serialize and deserialize. 
-        explicit operator bytes();
+    };
+    
+    struct branch {
+        digest256 Leaf;
+        path Path;
+        digest256 Root;
         
-        explicit path(bytes_view b);
+        branch() : Leaf{}, Path{}, Root{} {}
+        branch(const digest256& leaf, path p, const digest256& root) : Leaf{leaf}, Path{p}, Root{root} {}
+        
+        bool valid() const {
+            return Leaf.valid() && Path.check(Leaf, Root);
+        }
     };
     
     class tree {
-        using digest_tree = Gigamonkey::tree<digest256>;
-        
-        static digest_tree deserialize(bytes_view);
-        static bytes serialize(digest_tree);
-        
-        struct incomplete {
-            list<digest_tree> Trees;
-            ordered_list<uint32> Leaves;
-            
-            incomplete pairwise_concatinate() const;
-        };
-        
-        static data::map<digest256&, path> paths(digest_tree) {
-            throw method::unimplemented{"Merkle::tree::paths"};
-        }
-        
-        static digest_tree build(list<digest256> q, ordered_list<uint32> leaves) {
-            throw method::unimplemented{"Merkle::tree::build"};
-        }
-        
-        tree(digest_tree t, data::map<digest256&, path> p) : Tree{t}, Paths{p} {}
-        tree(digest_tree t) : Tree{t}, Paths{paths(t)} {}
-        tree() : Tree{}, Paths{} {}
+        size_t Size;
+        cross<digest256> Hashes;
         
     public:
-        digest_tree Tree;
-        data::map<digest256&, path> Paths;
-        
-        tree(list<digest256> q,              // All txs in a block in order.
-             ordered_list<uint32> leaves   // all indicies of txs that we want to remember. 
-        ) : tree{build(q, leaves)} {}
-        
-        tree(list<digest256> q) : tree{q, ordered_list<uint32>{}} {}
-        
-        tree add(path) const;
-        
-        tree remove(list<digest256>) const;
-        
-        tree remove(const digest256& d) const {
-            return remove(list<digest256>{} << d);
-        }
+        tree(leaves);
         
         digest256 root() const {
-            if (Tree.empty()) return {};
-            return Tree.root();
+            return Hashes[Hashes.size() - 1];
         }
+        
+        size_t size() const {
+            return Size;
+        }
+        
+        Merkle::branch branch(uint32 index) const;
     };
     
-}
-
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Merkle::path& p) {
-    return o << "path{Index: " << p.Index << ", Hashes: " << p.Hashes << "}";
-}
-
-namespace Gigamonkey::Merkle {
-    
-    inline path::path() : Hashes{}, Index{} {}
-    inline path::path(list<digest256> p, uint32 i) : Hashes{p}, Index{i} {};
-    
-    inline digest256 path::derive_root(digest256 leaf) const {
-        return Hashes.size() == 0 ? leaf : 
-            path{Hashes.rest(),  Index / 2}.derive_root(
-                Index & 1 ? hash_concatinated(Hashes.first(), leaf) : hash_concatinated(leaf, Hashes.first()));
+    inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Merkle::path& p) {
+        return o << "path{" << p.Index << ", " << p.Hashes << "}";
     }
     
-    inline bool path::check(digest256 merkle_root, digest256 leaf) const {
-        return merkle_root == derive_root(leaf);
+    inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Merkle::branch& p) {
+        return o << "branch{Leaf: " << p.Leaf << ", Path: " << p.Path << ", Root: " << p.Root << "}";
+    }
+    
+    inline path::path(uint32 i, list<digest256> p) : Index{i}, Hashes{p} {};
+    
+    inline digest256 path::derive_root(digest256 leaf) const {
+        if (Hashes.size() == 0) return leaf; 
+        return path{Index >> 1, Hashes.rest()}.derive_root(
+            Index & 1 ? hash_concatinated(Hashes.first(), leaf) : hash_concatinated(leaf, Hashes.first()));
+    }
+    
+    inline bool path::check(digest256 leaf, digest256 root) const {
+        return root == derive_root(leaf);
     }
     
     inline bool path::operator==(const path& p) const {

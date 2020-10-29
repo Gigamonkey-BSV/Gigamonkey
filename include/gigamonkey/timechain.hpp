@@ -292,7 +292,7 @@ namespace Gigamonkey::block {
         for (bytes_view b : txs) {
             leaves = leaves << Bitcoin::hash256(b);
         }
-        return Merkle::tree(leaves).root();
+        return Merkle::root(leaves);
     }
 }
 
