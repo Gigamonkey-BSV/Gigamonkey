@@ -2,14 +2,14 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef SV_CRYPTO_SHA256_H
-#define SV_CRYPTO_SHA256_H
+#ifndef BSV_CRYPTO_SHA256_H
+#define BSV_CRYPTO_SHA256_H
 
 #include <cstdint>
 #include <cstdlib>
 #include <string>
 
-namespace sv {
+namespace bsv {
 
 /** A hasher class for SHA-256. */
 class CSHA256 {
@@ -35,5 +35,5 @@ std::string SHA256AutoDetect();
 
 }
 
-#endif // BITCOIN_CRYPTO_SHA256_H
+#endif // BSV_CRYPTO_SHA256_H
 

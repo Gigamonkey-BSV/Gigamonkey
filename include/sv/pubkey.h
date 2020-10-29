@@ -3,8 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef SV_PUBKEY_H
-#define SV_PUBKEY_H
+#ifndef BSV_PUBKEY_H
+#define BSV_PUBKEY_H
 
 #include <sv/hash.h>
 #include <sv/serialize.h>
@@ -13,7 +13,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace sv {
+namespace bsv {
 
 /**
  * secp256k1:
@@ -97,11 +97,11 @@ public:
     //! Implement serialization, as if this was a byte vector.
     template <typename Stream> void Serialize(Stream &s) const {
         unsigned int len = size();
-        sv::WriteCompactSize(s, len);
+        bsv::WriteCompactSize(s, len);
         s.write((char *)vch, len);
     }
     template <typename Stream> void Unserialize(Stream &s) {
-        unsigned int len = sv::ReadCompactSize(s);
+        unsigned int len = bsv::ReadCompactSize(s);
         if (len <= 65) {
             s.read((char *)vch, len);
         } else {
@@ -182,13 +182,13 @@ struct CExtPubKey {
     }
     template <typename Stream> void Serialize(Stream &s) const {
         unsigned int len = BIP32_EXTKEY_SIZE;
-        sv::WriteCompactSize(s, len);
+        bsv::WriteCompactSize(s, len);
         uint8_t code[BIP32_EXTKEY_SIZE];
         Encode(code);
         s.write((const char *)&code[0], len);
     }
     template <typename Stream> void Unserialize(Stream &s) {
-        unsigned int len = sv::ReadCompactSize(s);
+        unsigned int len = bsv::ReadCompactSize(s);
         uint8_t code[BIP32_EXTKEY_SIZE];
         if (len != BIP32_EXTKEY_SIZE)
             throw std::runtime_error("Invalid extended key size\n");
@@ -211,5 +211,5 @@ public:
 
 }
 
-#endif // SV_PUBKEY_H
+#endif // BSV_PUBKEY_H
 

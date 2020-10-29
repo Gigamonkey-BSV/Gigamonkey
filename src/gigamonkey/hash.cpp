@@ -5,13 +5,13 @@ namespace Gigamonkey {
     
     digest256 sha256(bytes_view b) {
         digest256 result;
-        sv::CSHA256().Write(b.data(), b.size()).Finalize(result.Value.data());
+        bsv::CSHA256().Write(b.data(), b.size()).Finalize(result.Value.data());
         return result;
     } 
     
     digest160 ripemd160(bytes_view b) {
         digest160 result;
-        sv::CRIPEMD160().Write(b.data(), b.size()).Finalize(result.Value.data());
+        bsv::CRIPEMD160().Write(b.data(), b.size()).Finalize(result.Value.data());
         return result;
     }
 
@@ -29,13 +29,13 @@ namespace Gigamonkey::Bitcoin {
     
     digest256 hash256(bytes_view b) {
         digest256 result;
-        sv::CHash256().Write(b.data(), b.size()).Finalize(result.Value.data());
+        bsv::CHash256().Write(b.data(), b.size()).Finalize(result.Value.data());
         return result;
     } 
     
     digest160 hash160(bytes_view b) {
         digest160 result;
-        sv::CHash160().Write(b.data(), b.size()).Finalize(result.Value.data());
+        bsv::CHash160().Write(b.data(), b.size()).Finalize(result.Value.data());
         return result;
     }
 

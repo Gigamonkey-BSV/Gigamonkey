@@ -3,11 +3,11 @@
 // Copyright (c) 2018-2019 Bitcoin Association
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#ifndef SV_SCRIPT_SCRIPT_H
-#define SV_SCRIPT_SCRIPT_H
+#ifndef BSV_SCRIPT_SCRIPT_H
+#define BSV_SCRIPT_SCRIPT_H
 
-#include <consensus/consensus.h>
-#include <crypto/common.h>
+#include <sv/consensus/consensus.h>
+#include <sv/crypto/common.h>
 #include <sv/prevector.h>
 #include <sv/serialize.h>
 #include <sv/span.h>
@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-namespace sv {
+namespace bsv {
 
 // Maximum number of bytes pushable to the stack -- replaced with DEFAULT_STACK_MEMORY_USAGE after Genesis
 static const unsigned int MAX_SCRIPT_ELEMENT_SIZE_BEFORE_GENESIS = 520;
@@ -42,10 +42,7 @@ class CScriptNum;
 
 typedef prevector<28, uint8_t> CScriptBase;
 
-namespace bsv
-{
-    class instruction_iterator;
-}
+class instruction_iterator;
 
 /** Serialized script, used inside transaction inputs and outputs */
 class CScript : public CScriptBase {
@@ -127,8 +124,8 @@ public:
         return *this;
     }
 
-    bsv::instruction_iterator begin_instructions() const;
-    bsv::instruction_iterator end_instructions() const;
+    instruction_iterator begin_instructions() const;
+    instruction_iterator end_instructions() const;
 
     bool GetOp(iterator &pc, opcodetype &opcodeRet,
                std::vector<uint8_t> &vchRet) {

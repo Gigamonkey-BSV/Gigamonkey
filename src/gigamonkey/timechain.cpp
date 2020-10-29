@@ -82,14 +82,14 @@ namespace Gigamonkey::Bitcoin {
     bool header::valid(const slice<80> h) {
         return header_valid(Bitcoin::header::read(h)) && header_valid_work(h);
     }
-    
-    Gigamonkey::uint256 satoshi_uint256_to_uint256(sv::uint256 x) {
+       
+    Gigamonkey::uint256 satoshi_uint256_to_uint256(bsv::uint256 x) {
         Gigamonkey::uint256 y;
         std::copy(x.begin(), x.end(), y.begin());
         return y;
     }
     
-    header::header(const sv::CBlockHeader& b) : 
+    header::header(const bsv::CBlockHeader& b) : 
         Version{int32_little{b.nVersion}}, 
         Previous{satoshi_uint256_to_uint256(b.hashPrevBlock)}, 
         MerkleRoot{satoshi_uint256_to_uint256(b.hashMerkleRoot)}, 
@@ -97,8 +97,8 @@ namespace Gigamonkey::Bitcoin {
         Target{uint32_little{b.nBits}}, 
         Nonce{b.nNonce} {};
         
-    header::operator sv::CBlockHeader() const {
-        sv::CBlockHeader h;
+    header::operator bsv::CBlockHeader() const {
+        bsv::CBlockHeader h;
         h.nVersion = Version;
         h.nTime = Timestamp.Value;
         h.nBits = Target;

@@ -125,9 +125,9 @@ namespace Gigamonkey::Bitcoin {
         
         explicit header(slice<80> x) : header(read(x)) {}
         
-        explicit header(const sv::CBlockHeader&);
+        explicit header(const bsv::CBlockHeader&);
         
-        explicit operator sv::CBlockHeader() const;
+        explicit operator bsv::CBlockHeader() const;
         
         uint<80> write() const;
         

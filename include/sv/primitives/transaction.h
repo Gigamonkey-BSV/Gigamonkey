@@ -3,15 +3,15 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef SV_PRIMITIVES_TRANSACTION_H
-#define SV_PRIMITIVES_TRANSACTION_H
+#ifndef BSV_PRIMITIVES_TRANSACTION_H
+#define BSV_PRIMITIVES_TRANSACTION_H
 
 #include <sv/amount.h>
 #include <sv/script/script.h>
 #include <sv/serialize.h>
 #include <sv/uint256.h>
 
-namespace sv {
+namespace bsv {
 
 struct TxId;
 /**
@@ -22,10 +22,10 @@ struct TxId;
 
 namespace std
 {
-    template<> class hash<sv::TxId> : public hash<sv::uint256> {};
+    template<> class hash<bsv::TxId> : public hash<bsv::uint256> {};
 }
 
-namespace sv {
+namespace bsv {
 
 static const int SERIALIZE_TRANSACTION = 0x00;
 
@@ -414,5 +414,5 @@ struct PrecomputedTransactionData {
 
 }
 
-#endif // SV_PRIMITIVES_TRANSACTION_H
+#endif // BSV_PRIMITIVES_TRANSACTION_H
 

@@ -3,15 +3,15 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef SV_SUPPORT_ALLOCATORS_ZEROAFTERFREE_H
-#define SV_SUPPORT_ALLOCATORS_ZEROAFTERFREE_H
+#ifndef BSV_SUPPORT_ALLOCATORS_ZEROAFTERFREE_H
+#define BSV_SUPPORT_ALLOCATORS_ZEROAFTERFREE_H
 
 #include <sv/support/cleanse.h>
 
 #include <memory>
 #include <vector>
 
-namespace sv {
+namespace bsv {
 
 template <typename T>
 struct zero_after_free_allocator : public std::allocator<T> {
@@ -19,10 +19,10 @@ struct zero_after_free_allocator : public std::allocator<T> {
     typedef std::allocator<T> base;
     typedef typename base::size_type size_type;
     typedef typename base::difference_type difference_type;
-    typedef typename base::pointer pointer;
-    typedef typename base::const_pointer const_pointer;
-    typedef typename base::reference reference;
-    typedef typename base::const_reference const_reference;
+    typedef T* pointer;
+    typedef const T* const_pointer;
+    typedef T& reference;
+    typedef const T& const_reference;
     typedef typename base::value_type value_type;
     zero_after_free_allocator() throw() {}
     zero_after_free_allocator(const zero_after_free_allocator &a) throw()
@@ -46,4 +46,4 @@ typedef std::vector<char, zero_after_free_allocator<char>> CSerializeData;
 
 }
 
-#endif // SV_SUPPORT_ALLOCATORS_ZEROAFTERFREE_H
+#endif // BSV_SUPPORT_ALLOCATORS_ZEROAFTERFREE_H

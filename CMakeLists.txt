@@ -49,7 +49,6 @@ include(GoogleTest)
 
 endif()
 
-
 # Include libraries
 
 # Boost settings
@@ -94,14 +93,6 @@ if(NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/data/CMakeLists.txt")
     message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
 endif()
 
-if(NOT CHAIN_SRC_ROOT)
-	message(FATAL_ERROR "Root dir of chain's source code not defined! (-DCHAIN_SRC_ROOT=<path>)")
-endif()
-message("-- Root Dir of ${CHAIN_NAME}: ${CHAIN_SRC_ROOT} (-DCHAIN_SRC_ROOT=${CHAIN_SRC_ROOT})")
-if (NOT EXISTS "${CHAIN_SRC_ROOT}/src/version.h")
-	message(FATAL_ERROR "The source code of bitcoin SV does not exist!")
-endif()
-
 ## Enable testing
 include(CTest)
 
@@ -121,6 +112,17 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/extern/data/")
 add_subdirectory("${CHAIN_SRC_ROOT}" bitcoin-sv)
 
 add_library(gigamonkey STATIC 
+    src/sv/support/cleanse.cpp
+    src/sv/crypto/sha1.cpp
+    src/sv/crypto/sha256.cpp
+    src/sv/crypto/ripemd160.cpp
+    src/sv/utilstrencodings.cpp
+    src/sv/arith_uint256.cpp
+    src/sv/primitives/transaction.cpp
+    
+    src/sv/script/interpreter.cpp
+    #src/sv/uint256.cpp
+
     src/gigamonkey/hash.cpp
     src/gigamonkey/signature.cpp
     src/gigamonkey/script/script.cpp
@@ -130,7 +132,6 @@ add_library(gigamonkey STATIC
     src/gigamonkey/script.cpp
     src/gigamonkey/address.cpp
     src/gigamonkey/wif.cpp
-    #src/gigamonkey/spv.cpp
     src/gigamonkey/timechain.cpp
     src/gigamonkey/work.cpp
     src/gigamonkey/redeem.cpp
@@ -146,7 +147,7 @@ add_library(gigamonkey STATIC
     src/gigamonkey/boost/boost.cpp
 )
 
-target_link_libraries(gigamonkey PUBLIC data common util ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} nlohmann_json::nlohmann_json )
+target_link_libraries(gigamonkey PUBLIC data common util ${OPENSSL_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} nlohmann_json::nlohmann_json )
 
 target_include_directories(gigamonkey PUBLIC include)
 

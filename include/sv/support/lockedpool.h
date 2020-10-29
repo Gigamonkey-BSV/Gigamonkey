@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef SV_SUPPORT_LOCKEDPOOL_H
-#define SV_SUPPORT_LOCKEDPOOL_H
+#ifndef BSV_SUPPORT_LOCKEDPOOL_H
+#define BSV_SUPPORT_LOCKEDPOOL_H
 
 #include <cstdint>
 #include <list>
@@ -11,7 +11,7 @@
 #include <memory>
 #include <mutex>
 
-namespace sv {
+namespace bsv {
 
 /**
  * OS-dependent allocation and deallocation of locked/pinned memory pages.
@@ -250,5 +250,5 @@ private:
 
 }
 
-#endif // SV_SUPPORT_LOCKEDPOOL_H
+#endif // BSV_SUPPORT_LOCKEDPOOL_H
 

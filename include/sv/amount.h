@@ -3,8 +3,8 @@
 // Copyright (c) 2019 Bitcoin Association
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#ifndef SV_AMOUNT_H
-#define SV_AMOUNT_H
+#ifndef BSV_AMOUNT_H
+#define BSV_AMOUNT_H
 
 #include <sv/serialize.h>
 
@@ -13,7 +13,7 @@
 #include <string>
 #include <type_traits>
 
-namespace sv {
+namespace bsv {
 
 struct Amount {
 private:
@@ -221,5 +221,5 @@ public:
 
 }
 
-#endif //  BITCOIN_AMOUNT_H
+#endif //  BSV_AMOUNT_H
 

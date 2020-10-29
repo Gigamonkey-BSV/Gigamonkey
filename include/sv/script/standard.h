@@ -3,8 +3,8 @@
 // Copyright (c) 2019 Bitcoin Association
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#ifndef SV_SCRIPT_STANDARD_H
-#define SV_SCRIPT_STANDARD_H
+#ifndef BSV_SCRIPT_STANDARD_H
+#define BSV_SCRIPT_STANDARD_H
 
 #include <sv/script/interpreter.h>
 #include <sv/uint256.h>
@@ -13,7 +13,7 @@
 
 #include <cstdint>
 
-namespace sv {
+namespace bsv {
 
 static const bool DEFAULT_ACCEPT_DATACARRIER = true;
 
@@ -101,5 +101,5 @@ CScript GetScriptForMultisig(int nRequired, const std::vector<CPubKey> &keys);
 
 }
 
-#endif // BITCOIN_SCRIPT_STANDARD_H
+#endif // BSV_SCRIPT_STANDARD_H
 

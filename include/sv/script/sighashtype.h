@@ -2,15 +2,15 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef SV_SCRIPT_HASH_TYPE_H
-#define SV_SCRIPT_HASH_TYPE_H
+#ifndef BSV_SCRIPT_HASH_TYPE_H
+#define BSV_SCRIPT_HASH_TYPE_H
 
 #include <sv/serialize.h>
 
 #include <cstdint>
 #include <stdexcept>
 
-namespace sv {
+namespace bsv {
 
 /** Signature hash types/flags */
 enum {
@@ -85,11 +85,11 @@ public:
     uint32_t getRawSigHashType() const { return sigHash; }
 
     template <typename Stream> void Serialize(Stream &s) const {
-        sv::Serialize(s, getRawSigHashType());
+        bsv::Serialize(s, getRawSigHashType());
     }
 };
 
 }
 
-#endif // SV_SCRIPT_HASH_TYPE_H
+#endif // BSV_SCRIPT_HASH_TYPE_H
 
