@@ -3,15 +3,15 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef SV_SUPPORT_ALLOCATORS_SECURE_H
-#define SV_SUPPORT_ALLOCATORS_SECURE_H
+#ifndef BSV_SUPPORT_ALLOCATORS_SECURE_H
+#define BSV_SUPPORT_ALLOCATORS_SECURE_H
 
 #include <sv/support/cleanse.h>
 #include <sv/support/lockedpool.h>
 
 #include <string>
 
-namespace sv {
+namespace bsv {
 
 //
 // Allocator that locks its contents from being paged
@@ -22,10 +22,10 @@ template <typename T> struct secure_allocator : public std::allocator<T> {
     typedef std::allocator<T> base;
     typedef typename base::size_type size_type;
     typedef typename base::difference_type difference_type;
-    typedef typename base::pointer pointer;
-    typedef typename base::const_pointer const_pointer;
-    typedef typename base::reference reference;
-    typedef typename base::const_reference const_reference;
+    typedef T* pointer;
+    typedef const T* const_pointer;
+    typedef T& reference;
+    typedef const T& const_reference;
     typedef typename base::value_type value_type;
     secure_allocator() throw() {}
     secure_allocator(const secure_allocator &a) throw() : base(a) {}
@@ -55,5 +55,5 @@ typedef std::basic_string<char, std::char_traits<char>, secure_allocator<char>>
     
 }
 
-#endif // SV_SUPPORT_ALLOCATORS_SECURE_H
+#endif // BSV_SUPPORT_ALLOCATORS_SECURE_H
 

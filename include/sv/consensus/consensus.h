@@ -3,12 +3,12 @@
 // Copyright (c) 2018-2019 Bitcoin Association
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#ifndef BITCOIN_CONSENSUS_CONSENSUS_H
-#define BITCOIN_CONSENSUS_CONSENSUS_H
+#ifndef SV_CONSENSUS_CONSENSUS_H
+#define SV_CONSENSUS_CONSENSUS_H
 
 #include <cstdint>
 
-namespace sv {
+namespace bsv {
 
 /** 1KB */
 static const uint64_t ONE_KILOBYTE = 1000;
@@ -90,5 +90,5 @@ enum {
 
 }
 
-#endif // BITCOIN_CONSENSUS_CONSENSUS_H
+#endif // SV_CONSENSUS_CONSENSUS_H
 

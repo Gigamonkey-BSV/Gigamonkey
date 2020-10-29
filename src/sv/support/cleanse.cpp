@@ -3,16 +3,14 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BSV_SUPPORT_CLEANSE_H
-#define BSV_SUPPORT_CLEANSE_H
+#include <sv/support/cleanse.h>
 
-#include <cstdlib>
+#include <openssl/crypto.h>
 
 namespace bsv {
 
-void memory_cleanse(void *ptr, size_t len);
-
+void memory_cleanse(void *ptr, size_t len) {
+    OPENSSL_cleanse(ptr, len);
 }
 
-#endif // BSV_SUPPORT_CLEANSE_H
-
+} 

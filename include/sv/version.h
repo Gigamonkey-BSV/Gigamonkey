@@ -5,7 +5,7 @@
 #ifndef SV_VERSION_H
 #define SV_VERSION_H
 
-namespace sv {
+namespace bsv {
 
 /**
  * network protocol versioning

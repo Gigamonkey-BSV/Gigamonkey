@@ -3,12 +3,12 @@
 // Copyright (c) 2019 Bitcoin Association
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#ifndef SV_SCRIPT_SCRIPT_ERROR_H
-#define SV_SCRIPT_SCRIPT_ERROR_H
+#ifndef BSV_SCRIPT_SCRIPT_ERROR_H
+#define BSV_SCRIPT_SCRIPT_ERROR_H
 
 #include <iosfwd>
 
-namespace sv {
+namespace bsv {
 
 typedef enum ScriptError_t
 {
@@ -90,5 +90,5 @@ std::ostream& operator<<(std::ostream&, const ScriptError);
 
 }
 
-#endif // SV_SCRIPT_SCRIPT_ERROR_H
+#endif // BSV_SCRIPT_SCRIPT_ERROR_H
 

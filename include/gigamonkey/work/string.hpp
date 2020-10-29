@@ -31,7 +31,7 @@ namespace Gigamonkey::work {
         }
         
         explicit string(const slice<80>& x) : string(read(x)) {}
-        explicit string(const sv::CBlockHeader&);
+        explicit string(const bsv::CBlockHeader&);
         
         uint<80> write() const;
         
@@ -52,7 +52,7 @@ namespace Gigamonkey::work {
             return Target.difficulty();
         }
         
-        explicit operator sv::CBlockHeader() const;
+        explicit operator bsv::CBlockHeader() const;
         
         bool operator==(const string& x) const {
             return Category == x.Category && 

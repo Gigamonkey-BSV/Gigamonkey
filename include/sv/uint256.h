@@ -3,8 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef SV_UINT256_H
-#define SV_UINT256_H
+#ifndef BSV_UINT256_H
+#define BSV_UINT256_H
 
 #include <sv/crypto/common.h>
 
@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-namespace sv {
+namespace bsv {
 
 /** Template base class for fixed-sized opaque blobs. */
 template <unsigned int BITS> class base_blob {
@@ -123,16 +123,16 @@ public:
 namespace std
 {
     template<>
-    class hash<sv::uint256> {
+    class hash<bsv::uint256> {
       public:
-        size_t operator()(const sv::uint256& u) const
+        size_t operator()(const bsv::uint256& u) const
         {
             return static_cast<size_t>(u.GetCheapHash());
         }
     };
 }
 
-namespace sv {
+namespace bsv {
 
 /**
  * uint256 from const char *.
@@ -167,6 +167,75 @@ inline uint160 uint160S(const std::string &str) {
     rv.SetHex(str);
     return rv;
 }
+
+}
+
+#include <sv/utilstrencodings.h>
+
+namespace bsv {
+
+template <unsigned int BITS>
+base_blob<BITS>::base_blob(const std::vector<uint8_t> &vch) {
+    assert(vch.size() == sizeof(data));
+    memcpy(data, &vch[0], sizeof(data));
+}
+
+template <unsigned int BITS> std::string base_blob<BITS>::GetHex() const {
+    constexpr auto buf_len{sizeof(data) * 2 + 1};
+    char psz[buf_len];
+    for(unsigned int i = 0; i < sizeof(data); i++)
+        snprintf(psz + i * 2, buf_len, "%02x", data[sizeof(data) - i - 1]);
+    return std::string(psz, psz + sizeof(data) * 2);
+}
+
+template <unsigned int BITS> void base_blob<BITS>::SetHex(const char *psz) {
+    memset(data, 0, sizeof(data));
+
+    // skip leading spaces
+    while (isspace(*psz))
+        psz++;
+
+    // skip 0x
+    if (psz[0] == '0' && tolower(psz[1]) == 'x') psz += 2;
+
+    // hex string to uint
+    const char *pbegin = psz;
+    while (bsv::HexDigit(*psz) != -1)
+        psz++;
+    psz--;
+    uint8_t *p1 = (uint8_t *)data;
+    uint8_t *pend = p1 + WIDTH;
+    while (psz >= pbegin && p1 < pend) {
+        *p1 = bsv::HexDigit(*psz--);
+        if (psz >= pbegin) {
+            *p1 |= uint8_t(bsv::HexDigit(*psz--) << 4);
+            p1++;
+        }
+    }
+}
+
+template <unsigned int BITS>
+void base_blob<BITS>::SetHex(const std::string &str) {
+    SetHex(str.c_str());
+}
+
+template <unsigned int BITS> std::string base_blob<BITS>::ToString() const {
+    return (GetHex());
+}
+
+// Explicit instantiations for base_blob<160>
+template base_blob<160>::base_blob(const std::vector<uint8_t> &);
+template std::string base_blob<160>::GetHex() const;
+template std::string base_blob<160>::ToString() const;
+template void base_blob<160>::SetHex(const char *);
+template void base_blob<160>::SetHex(const std::string &);
+
+// Explicit instantiations for base_blob<256>
+template base_blob<256>::base_blob(const std::vector<uint8_t> &);
+template std::string base_blob<256>::GetHex() const;
+template std::string base_blob<256>::ToString() const;
+template void base_blob<256>::SetHex(const char *);
+template void base_blob<256>::SetHex(const std::string &);
 
 }
 

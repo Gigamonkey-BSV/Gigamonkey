@@ -17,17 +17,17 @@
 
 namespace Gigamonkey::Bitcoin { 
     
-    using script_error = sv::ScriptError;
+    using script_error = bsv::ScriptError;
     
     struct evaluated {
         script_error Error;
         bool Return;
         
-        evaluated() : Error{sv::SCRIPT_ERR_OK}, Return{false} {}
+        evaluated() : Error{bsv::SCRIPT_ERR_OK}, Return{false} {}
         evaluated(script_error err) : Error{err}, Return{false} {}
         
         bool valid() const {
-            return Error == sv::SCRIPT_ERR_OK;
+            return Error == bsv::SCRIPT_ERR_OK;
         }
         
         bool operator==(const evaluated e) const {
@@ -45,7 +45,7 @@ namespace Gigamonkey::Bitcoin {
     // Evaluate script with real signature operations. 
     evaluated evaluate_script(const script& unlock, const script& lock, const input_index& tx);
     
-    using op = sv::opcodetype;
+    using op = bsv::opcodetype;
     
     const op OP_0 = op(0x00);
     
@@ -274,11 +274,11 @@ namespace Gigamonkey::Bitcoin {
     const op OP_INVALIDOPCODE = op(0xff);
 
     inline bool is_push(op o) {
-        return o <= sv::OP_16 && o != sv::OP_RESERVED;
+        return o <= OP_16 && o != OP_RESERVED;
     }
     
     inline bool is_push_data(op o) {
-        return o <= sv::OP_PUSHDATA4;
+        return o <= OP_PUSHDATA4;
     }
     
     // Representation of a Bitcoin script instruction, which is either an op code

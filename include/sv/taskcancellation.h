@@ -1,8 +1,8 @@
 // Copyright (c) 2019 Bitcoin Association.
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#ifndef SV_TASKCANCELLATION_H
-#define SV_TASKCANCELLATION_H
+#ifndef BSV_TASKCANCELLATION_H
+#define BSV_TASKCANCELLATION_H
 
 #include <algorithm>
 #include <atomic>
@@ -10,7 +10,7 @@
 #include <memory>
 #include <vector>
 
-namespace sv {
+namespace bsv {
 
 namespace task
 {
@@ -149,4 +149,4 @@ namespace task
 
 }
 
-#endif // SV_TASKCANCELLATION_H
+#endif // BSV_TASKCANCELLATION_H

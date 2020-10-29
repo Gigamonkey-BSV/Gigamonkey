@@ -4,10 +4,10 @@
 // Copyright (c) 2018-2019 Bitcoin Association
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#ifndef SV_SCRIPT_SCRIPTFLAGS_H
-#define SV_SCRIPT_SCRIPTFLAGS_H
+#ifndef BSV_SCRIPT_SCRIPTFLAGS_H
+#define BSV_SCRIPT_SCRIPTFLAGS_H
 
-namespace sv {
+namespace bsv {
 
 /** Script verification flags */
 enum {
@@ -109,5 +109,5 @@ enum {
 
 }
 
-#endif // SV_SCRIPT_SCRIPTFLAGS_H
+#endif // BSV_SCRIPT_SCRIPTFLAGS_H
 

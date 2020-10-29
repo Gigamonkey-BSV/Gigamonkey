@@ -1,15 +1,15 @@
 // Copyright (c) 2019 Bitcoin Association
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#ifndef SV_SCRIPT_LIMITEDSTACK_H
-#define SV_SCRIPT_LIMITEDSTACK_H
+#ifndef BSV_SCRIPT_LIMITEDSTACK_H
+#define BSV_SCRIPT_LIMITEDSTACK_H
 
 #include <cstdint>
 #include <functional>
 #include <stdexcept>
 #include <vector>
 
-namespace sv {
+namespace bsv {
 
 typedef std::vector<uint8_t> valtype;
 

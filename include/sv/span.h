@@ -2,12 +2,12 @@
 // Distributed under the Open BSV software license, see the accompanying file
 // LICENSE.
 
-#ifndef SV_SPAN
-#define SV_SPAN
+#ifndef BSV_SPAN
+#define BSV_SPAN
 
 #include <cstddef>
 
-namespace sv {
+namespace bsv {
 
     // Simplified version of std::span (C++20)
     // Replace with std::span when available

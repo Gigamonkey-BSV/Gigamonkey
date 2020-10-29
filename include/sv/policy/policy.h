@@ -3,8 +3,8 @@
 // Copyright (c) 2019-2020 Bitcoin Association
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#ifndef SV_POLICY_POLICY_H
-#define SV_POLICY_POLICY_H
+#ifndef BSV_POLICY_POLICY_H
+#define BSV_POLICY_POLICY_H
 
 #include <sv/consensus/consensus.h>
 #include <sv/script/interpreter.h>
@@ -13,7 +13,7 @@
 #include <optional>
 #include <string>
 
-namespace sv {
+namespace bsv {
 
 class Config;
 class CCoinsViewCache;
@@ -205,5 +205,5 @@ extern CFeeRate dustRelayFee;
 
 }
 
-#endif // SV_POLICY_POLICY_H
+#endif // BSV_POLICY_POLICY_H
 

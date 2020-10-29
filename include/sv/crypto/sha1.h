@@ -2,16 +2,16 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BSV_CRYPTO_RIPEMD160_H
-#define BSV_CRYPTO_RIPEMD160_H
+#ifndef BSV_CRYPTO_SHA1_H
+#define BSV_CRYPTO_SHA1_H
 
 #include <cstdint>
 #include <cstdlib>
 
 namespace bsv {
 
-/** A hasher class for RIPEMD-160. */
-class CRIPEMD160 {
+/** A hasher class for SHA1. */
+class CSHA1 {
 private:
     uint32_t s[5];
     uint8_t buf[64];
@@ -20,13 +20,12 @@ private:
 public:
     static const size_t OUTPUT_SIZE = 20;
 
-    CRIPEMD160();
-    CRIPEMD160 &Write(const uint8_t *data, size_t len);
+    CSHA1();
+    CSHA1 &Write(const uint8_t *data, size_t len);
     void Finalize(uint8_t hash[OUTPUT_SIZE]);
-    CRIPEMD160 &Reset();
+    CSHA1 &Reset();
 };
 
 }
 
-#endif // SV_CRYPTO_RIPEMD160_H
-
+#endif // BSV_CRYPTO_SHA1_H
