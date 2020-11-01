@@ -69,7 +69,7 @@ namespace Gigamonkey::Stratum::mining {
         bytes GenerationTx2;
         
         // The path is always index zero, so we don't need to store an index. 
-        list<digest256> Path;
+        Merkle::digests Path;
         
         work::compact Target;
         Bitcoin::timestamp Now;
@@ -77,7 +77,7 @@ namespace Gigamonkey::Stratum::mining {
         bool Clean;
         
         notify() : ID{}, Digest{}, GenerationTx1{}, GenerationTx2{}, Path{}, Target{}, Now{}, Clean{} {}
-        notify(job_id id, uint256 d, bytes tx1, bytes tx2, list<digest256> p, work::compact t, Bitcoin::timestamp n, bool c) : 
+        notify(job_id id, uint256 d, bytes tx1, bytes tx2, Merkle::digests p, work::compact t, Bitcoin::timestamp n, bool c) : 
             ID{id}, Digest{d}, GenerationTx1{tx1}, GenerationTx2{tx2}, Path{p}, Target{t}, Now{n}, Clean{c} {};
         
         explicit notify(const notification&);
@@ -151,7 +151,7 @@ namespace Gigamonkey::Stratum {
             Version{v}, Worker{w}, Notify{n} {}
         job(job_id i, const work::puzzle& puzzle, const worker& w, Bitcoin::timestamp now, bool clean) : 
             Version{puzzle.Category}, Worker{w}, 
-            Notify{i, puzzle.Digest, puzzle.Header, puzzle.Body, puzzle.Path.Hashes, puzzle.Target, now, clean} {}
+            Notify{i, puzzle.Digest, puzzle.Header, puzzle.Body, puzzle.Path.Digests, puzzle.Target, now, clean} {}
         
         bool valid() const {
             return Notify.valid();
