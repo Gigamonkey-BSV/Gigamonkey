@@ -17,7 +17,7 @@ namespace Gigamonkey::Merkle {
             return r;
         }
     
-        bool check_proofs(list<proof> x) {
+        bool check_proofs(ordered_list<proof> x) {
             if (x.size() == 0) return true;
             set<leaf> g;
             for (proof p : x) {
@@ -170,7 +170,7 @@ namespace Gigamonkey::Merkle {
         return p.Leaf.Digest;
     }
     
-    list<proof> tree::proofs() const {
+    const list<proof> tree::proofs() const {
         
         if (Height == 0 || Width == 0) return {};
         if (Height == 1) return {proof{data::tree<digest256>::root()}};
@@ -211,7 +211,6 @@ namespace Gigamonkey::Merkle {
         return proof{branch{leaf{t.root(), i}, digests}, data::tree<digest256>::root()};
     }
     /*
-    
     namespace {
     
         dual dual_insert(const dual& d, const proof& p, uint32 nearest) {
@@ -278,28 +277,6 @@ namespace Gigamonkey::Merkle {
         
     }
     
-    list<proof> dual::proofs() const {
-        list<proof> p;
-        for (const entry& e : Paths.values()) {
-            proof x = proof{branch{leaf{e.Value.first(), e.Key}, e.Value.rest()}, Root};
-            if (e.Value.size() == 0) return {};
-            p = p << proof{branch{leaf{e.Value.first(), e.Key}, e.Value.rest()}, Root};
-        }
-        return p;
-    }
-    
-    dual::dual(const tree& t) : dual{} {
-        if (t.Width == 0) return;
-        Root = t.root();
-        list<proof> p = t.proofs();
-        for (const proof& x : p) Paths = Paths.insert(x.Branch.Leaf.Index, x.Branch.Digests << x.Branch.Leaf.Digest);
-    }
-    
-    bool dual::valid() const {
-        //return Root.valid() && Paths.valid() && proofs().valid();
-        return Root.valid() && Paths.valid() && check_proofs(proofs());
-    }
-    
     dual dual::operator+(const dual& d) const {
         if (!valid()) return d;
         if (Root != d.Root) return {};
@@ -307,6 +284,23 @@ namespace Gigamonkey::Merkle {
         for (const proof& x : d.proofs()) a = dual_insert(a, x);
         return a;
     }*/
+    
+    dual::dual(const tree& t) : dual{} {
+        if (t.Width == 0) return;
+        Root = t.root();
+        list<proof> p = t.proofs();
+        for (const proof& x : p) Paths = Paths.insert(entry(x.Branch));
+    }
+    
+    const ordered_list<proof> dual::proofs() const {
+        ordered_list<proof> p{};
+        for (const auto& e : Paths.values()) p = p << proof{branch(e), Root};
+        return p;
+    }
+    
+    bool dual::valid() const {
+        return Root.valid() && Paths.valid() && check_proofs(proofs());
+    }
     
     server::server(const tree& t) : server {} {
         if (t.Width == 0 || t.Height == 0) return;
@@ -389,28 +383,45 @@ namespace Gigamonkey::Merkle {
                 x = x.rest();
                 i++;
             }
-            if (i == total) return;
+            if (i == total) break;
             v = round(v);
         } 
         
+        auto a = Digests[total - 1];
+        auto b = Digests[-1];
+        
+        for (uint32 x = 0; x < Width; x++) Indices = Indices.insert(Digests[x], x + 1);
+        
     }
     
-    proof server::operator[](uint32 index) const {
-        if (index >= Width) return {};
-        
-        digests p;
-        uint32 i = index;
-        uint32 cumulative = 0;
-        size_t width = Width;
-        
-        while (width > 1) {
-            p = p << Digests[cumulative + i + (i & 1 ? - 1 : i == width - 1 ? 0 : 1)];
-            cumulative += width;
-            width = (width + 1) / 2;
-            i >>= 1;
+    namespace {
+        proof get_server_proof(const cross<digest>& x, uint32 width, uint32 index) {
+            digests p;
+            uint32 i = index;
+            uint32 cumulative = 0;
+            
+            while (width > 1) {
+                p = p << x[cumulative + i + (i & 1 ? - 1 : i == width - 1 ? 0 : 1)];
+                cumulative += width;
+                width = (width + 1) / 2;
+                i >>= 1;
+            }
+            
+            return proof{branch{leaf{x[index], index}, data::reverse(p)}, x[-1]};
         }
+    }
+    
+    proof server::operator[](const digest& d) const {
+        uint32 index = Indices[d];
+        if (index == 0) return {};
         
-        return proof{branch{leaf{Digests[index], index}, data::reverse(p)}, root()};
+        return get_server_proof(Digests, Width, index - 1);
+    }
+        
+    list<proof> server::proofs() const {
+        list<proof> p;
+        for (uint32 i = 0; i < Width; i++) p = p << get_server_proof(Digests, Width, i);
+        return p;
     }
     
 }
