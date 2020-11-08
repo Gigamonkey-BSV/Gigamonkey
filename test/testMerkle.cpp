@@ -52,7 +52,7 @@ namespace Gigamonkey::Merkle {
             
             EXPECT_EQ(server(Tree), Server);
             
-            //dual ReconstructedLeft{};
+            dual ReconstructedLeft{};
             
             for (const leaf& j : Dual.leaves()) {
                 proof p = Dual[j.Digest];
@@ -60,37 +60,34 @@ namespace Gigamonkey::Merkle {
                 EXPECT_TRUE(p.valid());
                 
                 proof q = Server[j.Digest];
-                /*
+                
                 EXPECT_FALSE(ReconstructedLeft[j.Digest].valid());
                 
                 ReconstructedLeft = ReconstructedLeft + p;
                 
-                EXPECT_TRUE(ReconstructedLeft[j.Digest].valid());*/
+                EXPECT_TRUE(ReconstructedLeft[j.Digest].valid());
                 
                 EXPECT_TRUE(q.valid());
                 EXPECT_EQ(p, q);
                 q.Root = fail;
                 EXPECT_FALSE(q.valid());
             }
-            /*
+            
             EXPECT_EQ(Dual, ReconstructedLeft);
             
             dual ReconstructedRight{};
             
-            uint32 j = i;
-            while (j > 0) {
-                j--;
+            for (const leaf& j : reverse(Dual.leaves())) {
+                proof p = Dual[j.Digest];
                 
-                proof p = Dual[j];
-                
-                EXPECT_FALSE(ReconstructedRight[j].valid());
+                EXPECT_FALSE(ReconstructedRight[j.Digest].valid());
                 
                 ReconstructedRight = ReconstructedRight + p;
                 
-                EXPECT_TRUE(ReconstructedRight[j].valid());
+                EXPECT_TRUE(ReconstructedRight[j.Digest].valid());
             }
             
-            EXPECT_EQ(Dual, ReconstructedRight);*/
+            EXPECT_EQ(Dual, ReconstructedRight);
             
             Dual.Root = fail;
             EXPECT_FALSE(Dual.valid());

@@ -2,6 +2,7 @@
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/merkle.hpp>
+#include <algorithm>
 
 namespace Gigamonkey::Merkle {
     
@@ -210,80 +211,115 @@ namespace Gigamonkey::Merkle {
         
         return proof{branch{leaf{t.root(), i}, digests}, data::tree<digest256>::root()};
     }
-    /*
+    
     namespace {
-    
-        dual dual_insert(const dual& d, const proof& p, uint32 nearest) {
+        
+        class dual_by_index {
+            std::map<uint32, digests> Branches;
+            digest Root;
             
-            uint32 index = p.Branch.Leaf.Index;
-            uint32 height = p.Branch.Digests.size() - 1;
+            bool add_nearest(uint32 index, digests d, uint32 nearest) {
+                uint32 height = d.size() - 1;
+                
+                while(index >> height == nearest >> height && height > 0) height--;
+                height += 1;
+                
+                digests z{};
+                digests x = Branches[nearest];
+                digests b = d;
             
-            while(index >> height == nearest >> height) height--;
+                for (int i = 0; i <= height; i++) {
+                    x = x.rest();
+                    z = z << b.first();
+                    b = b.rest();
+                }
             
-            digests z{};
-            digests x = d.Paths[nearest];
-            digests b = p.Branch.Digests << p.Branch.Leaf.Digest;
-            
-            for (int i = 0; i <= height; i++) {
-                x = x.rest();
-                z = z << b.first();
-                b = b.rest();
+                while(!z.empty()) {
+                    x = x << z.first();
+                    z = z.rest();
+                }
+                
+                Branches.insert_or_assign(index, x);
+                return true;
             }
             
-            while(!z.empty()) {
-                x = x << z.first();
-                z = z.rest();
+            bool add(const branch& p) {
+                
+                uint32 index = p.Leaf.Index;
+                digests d = p.Digests << p.Leaf.Digest;
+                
+                auto it = Branches.find(index);
+                if (it != Branches.end()) {
+                    if (it->second != d) return false;
+                    return true;
+                }
+                
+                uint32 height = d.size();
+                
+                cross<uint32> leaves;
+                leaves.resize(Branches.size());
+                {
+                    int i = 0;
+                    for (const auto& b : Branches) {
+                        leaves[i] = b.first;
+                        i++;
+                    }
+                }
+                
+                uint32 min = 0;
+                uint32 max = leaves.size() - 1;
+                
+                if (index < leaves[min]) {
+                    if (leaves[min] >> (height - 2) == index >> (height - 2)) return add_nearest(index, d, leaves[min]);
+                    Branches.insert_or_assign(index, d);
+                    return true;
+                }
+                
+                if (index > leaves[max]) {
+                    if (leaves[max] >> (height - 2) == index >> (height - 2)) return add_nearest(index, d, leaves[max]);
+                    Branches.insert_or_assign(index, d);
+                    return true;
+                }
+                
+                while (max - min > 1) {
+                    uint32 mid = (max - min) / 2 + min;
+                    if (index > leaves[mid]) min = mid;
+                    else max = mid;
+                }
+                
+                if (leaves[min] >> (height - 2) == index >> (height - 2)) return add_nearest(index, d, leaves[min]);
+                return add_nearest(index, d, leaves[max]);
+            
             }
             
-            return dual{d.Paths.insert(p.Branch.Leaf.Index, x), d.Root};
-        }
-    
-        dual dual_insert(const dual& d, const proof& p) {
-            if (!p.Branch.Digests.valid()) return {};
-            
-            uint32 index = p.Branch.Leaf.Index;
-            
-            if (d.Paths.contains(index) && d[index] == p) return d;
-            else return dual{};
-            
-            uint32 height = p.Branch.Digests.size() - 1;
-            
-            if (height == 0) return dual{map{p.Branch.Leaf.Index, digests{p.Branch.Leaf.Digest}}, p.Root};
-            
-            cross<uint32> leaves(d.Paths.keys());
-            
-            uint32 min = 0;
-            uint32 max = leaves.size() - 1;
-            
-            if (index < leaves[min]) {
-                if (leaves[min] >> (height - 1) == index >> (height - 1)) return dual_insert(d, p, leaves[min]);
-                return dual{d.Paths.insert(p.Branch.Leaf.Index, p.Branch.Digests << p.Branch.Leaf.Digest), d.Root};
+        public:
+            dual_by_index(const dual& d) {
+                Root = d.Root;
+                for (const entry& e : d.Paths) Branches.insert_or_assign(e.Value.Index, e.Value.Digests << e.Key);
             }
             
-            if (index > leaves[max]) {
-                if (leaves[max] >> (height - 1) == index >> (height - 1)) return dual_insert(d, p, leaves[max]);
-                return dual{d.Paths.insert(p.Branch.Leaf.Index, p.Branch.Digests << p.Branch.Leaf.Digest), d.Root};
+            operator dual() const {
+                map m;
+                for (const auto& b : Branches) m = m.insert(b.second.first(), path{b.first, b.second.rest()});
+                return dual{m, Root};
             }
             
-            while (max - min > 1) {
-                uint32 mid = (max - min) / 2 + min;
-                if (index > leaves[mid]) min = mid;
-                else max = mid;
+            bool add_all(ordered_list<proof> p) {
+                for (const proof& x : p) if (!add(x.Branch)) return false;
+                return true;
             }
             
-            if (leaves[min] >> (height - 1) == index >> (height - 1)) return dual_insert(d, p, leaves[min]);
-            return dual_insert(d, p, leaves[max]);
-        }
+        };
         
     }
     
     dual dual::operator+(const dual& d) const {
         if (!valid()) return d;
         if (Root != d.Root) return {};
-        dual a = *this;
-        for (const proof& x : d.proofs()) a = dual_insert(a, x);
-        return a;
-    }*/
+        dual_by_index x(*this);
+        if (!x.add_all(d.proofs())) return {};
+        return dual(x);
+    }
     
     dual::dual(const tree& t) : dual{} {
         if (t.Width == 0) return;

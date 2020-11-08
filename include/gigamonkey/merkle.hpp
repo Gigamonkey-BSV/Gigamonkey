@@ -156,12 +156,12 @@ namespace Gigamonkey::Merkle {
         
         const ordered_list<proof> proofs() const;
         
-        //dual operator+(const dual& d) const;
+        dual operator+(const dual& d) const;
     };
-    /*
+    
     inline dual operator+(const proof& a, const proof& b) {
         return dual{a} + b;
-    }*/
+    }
     
     // for serving branches. Would be on a miner's computer. 
     class server {
@@ -202,6 +202,10 @@ namespace Gigamonkey::Merkle {
     
     inline std::ostream& operator<<(std::ostream& o, const proof& p) {
         return o << "proof{" << p.Branch << ", " << p.Root << "}";
+    }
+    
+    inline std::ostream& operator<<(std::ostream& o, const dual& d) {
+        return o << "dual{" << d.Paths << ", " << d.Root << "}";
     }
     
     inline bool operator==(const path& a, const path& b) {
