@@ -7,8 +7,7 @@
 
 #include <cstdint>
 #include <cstring>
-
-#include <endian.h>
+#include <sv/compat/endian.h>
 
 namespace bsv {
 

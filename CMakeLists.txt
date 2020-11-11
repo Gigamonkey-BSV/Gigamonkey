@@ -109,7 +109,6 @@ if(nlohmann_json_FOUND)
 endif()
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/extern/data/")
-add_subdirectory("${CHAIN_SRC_ROOT}" bitcoin-sv)
 
 add_library(gigamonkey STATIC 
     src/sv/support/cleanse.cpp
@@ -121,6 +120,7 @@ add_library(gigamonkey STATIC
     src/sv/primitives/transaction.cpp
     
     src/sv/script/interpreter.cpp
+	src/sv/big_int.cpp
     #src/sv/uint256.cpp
 
     src/gigamonkey/hash.cpp
