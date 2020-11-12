@@ -1740,7 +1740,7 @@ public:
                 nCodeSeparators++;
             }
         }
-        ::WriteCompactSize(s, scriptCode.size() - nCodeSeparators);
+        bsv::WriteCompactSize(s, scriptCode.size() - nCodeSeparators);
         it = itBegin;
         while (scriptCode.GetOp(it, opcode)) {
             if (opcode == OP_CODESEPARATOR) {
@@ -1761,11 +1761,11 @@ public:
             nInput = nIn;
         }
         // Serialize the prevout
-        ::Serialize(s, txTo.vin[nInput].prevout);
+        bsv::Serialize(s, txTo.vin[nInput].prevout);
         // Serialize the script
         if (nInput != nIn) {
             // Blank out other inputs' signatures
-            ::Serialize(s, CScript());
+            bsv::Serialize(s, CScript());
         } else {
             SerializeScriptCode(s);
         }
@@ -1774,9 +1774,9 @@ public:
             (sigHashType.getBaseType() == BaseSigHashType::SINGLE ||
              sigHashType.getBaseType() == BaseSigHashType::NONE)) {
             // let the others update at will
-            ::Serialize(s, (int)0);
+            bsv::Serialize(s, (int)0);
         } else {
-            ::Serialize(s, txTo.vin[nInput].nSequence);
+            bsv::Serialize(s, txTo.vin[nInput].nSequence);
         }
     }
 
@@ -1786,20 +1786,20 @@ public:
         if (sigHashType.getBaseType() == BaseSigHashType::SINGLE &&
             nOutput != nIn) {
             // Do not lock-in the txout payee at other indices as txin
-            ::Serialize(s, CTxOut());
+            bsv::Serialize(s, CTxOut());
         } else {
-            ::Serialize(s, txTo.vout[nOutput]);
+            bsv::Serialize(s, txTo.vout[nOutput]);
         }
     }
 
     /** Serialize txTo */
     template <typename S> void Serialize(S &s) const {
         // Serialize nVersion
-        ::Serialize(s, txTo.nVersion);
+        bsv::Serialize(s, txTo.nVersion);
         // Serialize vin
         unsigned int nInputs =
             sigHashType.hasAnyoneCanPay() ? 1 : txTo.vin.size();
-        ::WriteCompactSize(s, nInputs);
+        bsv::WriteCompactSize(s, nInputs);
         for (unsigned int nInput = 0; nInput < nInputs; nInput++) {
             SerializeInput(s, nInput);
         }
@@ -1810,12 +1810,12 @@ public:
                 : ((sigHashType.getBaseType() == BaseSigHashType::SINGLE)
                        ? nIn + 1
                        : txTo.vout.size());
-        ::WriteCompactSize(s, nOutputs);
+        bsv::WriteCompactSize(s, nOutputs);
         for (unsigned int nOutput = 0; nOutput < nOutputs; nOutput++) {
             SerializeOutput(s, nOutput);
         }
         // Serialize nLockTime
-        ::Serialize(s, txTo.nLockTime);
+        bsv::Serialize(s, txTo.nLockTime);
     }
 };
 

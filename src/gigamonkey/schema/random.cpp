@@ -11,7 +11,7 @@ namespace Gigamonkey {
             initialized = true;
         }
         
-        GetStrongRandBytes(x, size);
+        bsv::GetStrongRandBytes(x, size);
     } 
 
 }

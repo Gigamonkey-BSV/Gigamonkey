@@ -186,7 +186,7 @@ namespace bsv
     }
 
     template <typename I>
-    bint deserialize(I first, I last)
+    bint deserialize_bint(I first, I last)
     {
         std::vector<uint8_t> v(first, last);
         return bint::deserialize(v);

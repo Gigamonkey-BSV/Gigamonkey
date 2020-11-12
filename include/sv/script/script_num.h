@@ -15,7 +15,7 @@
 #include <sv/span.h>
 #include <sv/big_int.h>
 
-namespace sv {
+namespace bsv {
 
 class scriptnum_overflow_error : public std::overflow_error
 {

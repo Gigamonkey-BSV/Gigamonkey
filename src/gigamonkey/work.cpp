@@ -4,7 +4,7 @@
 #include <gigamonkey/work/proof.hpp>
 #include <gigamonkey/hash.hpp>
 
-#include "arith_uint256.h"
+#include <sv/arith_uint256.h>
 
 namespace Gigamonkey::work {
     
