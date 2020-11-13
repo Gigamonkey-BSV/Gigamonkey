@@ -93,7 +93,7 @@ namespace Gigamonkey::work {
         
         explicit operator work::difficulty() const;
         
-        operator bytes_view() const;
+        explicit operator bytes_view() const;
     };
     
     uint256 expand(const compact&);

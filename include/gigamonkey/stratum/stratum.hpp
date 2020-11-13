@@ -4,8 +4,7 @@
 #ifndef GIGAMONKEY_STRATUM_STRATUM
 #define GIGAMONKEY_STRATUM_STRATUM
 
-#include <gigamonkey/work/proof.hpp>
-#include <gigamonkey/stratum/difficulty.hpp>
+#include <gigamonkey/stratum/error.hpp>
 
 namespace Gigamonkey::Stratum {
     using request_id = uint64;
@@ -17,7 +16,7 @@ namespace Gigamonkey::Stratum {
         mining_configure, 
         mining_subscribe, 
         mining_notify, 
-        mining_set_target, 
+        mining_set_difficulty, 
         mining_submit, 
         client_get_version,
         client_reconnect
@@ -27,16 +26,18 @@ namespace Gigamonkey::Stratum {
     
     method method_from_string(std::string st);
     
-    // Stratum error codes (incomplete)
-    enum error_code {
-        none
-    };
-    
-    std::string error_message_from_code(error_code);
-    
     struct request;
     struct response;
     struct notification;
+    
+    inline bool operator==(const request& a, const request& b);
+    inline bool operator!=(const request& a, const request& b);
+    
+    inline bool operator==(const notification& a, const notification& b);
+    inline bool operator!=(const notification& a, const notification& b);
+    
+    inline bool operator==(const response& a, const response& b);
+    inline bool operator!=(const response& a, const response& b);
     
     void to_json(json& j, const request& p); 
     void from_json(const json& j, request& p); 
@@ -47,28 +48,24 @@ namespace Gigamonkey::Stratum {
     void to_json(json& j, const notification& p); 
     void from_json(const json& j, notification& p); 
     
+    std::ostream& operator<<(std::ostream&, const request&);
+    std::ostream& operator<<(std::ostream&, const response&);
+    std::ostream& operator<<(std::ostream&, const notification&);
+    
+    using params = json::array_t;
+    
     struct request {
         
         request_id ID;
         
         method Method;
         
-        std::vector<json> Params;
+        params Params;
         
-        request() : ID{0}, Method{unset}, Params{} {}
-        request(request_id id, method m, const std::vector<json>& p) : ID{id}, Method{m}, Params{p} {}
+        request();
+        request(request_id id, method m, const params& p);
         
-        bool valid() const {
-            return Method != unset;
-        }
-        
-        bool operator==(const request& r) const {
-            return ID == r.ID && Method == r.Method && Params == r.Params;
-        }
-        
-        bool operator!=(const request& r) const {
-            return !operator==(r);
-        }
+        bool valid() const;
         
     };
     
@@ -76,22 +73,12 @@ namespace Gigamonkey::Stratum {
         
         method Method;
         
-        std::vector<json> Params;
+        params Params;
         
-        notification() : Method{unset}, Params{} {}
-        notification(method m, const std::vector<json>& p) : Method{m}, Params{p} {}
+        notification();
+        notification(method m, const params& p);
         
-        bool valid() const {
-            return Method != unset;
-        }
-        
-        bool operator==(const notification& r) const {
-            return Method == r.Method && Params == r.Params;
-        }
-        
-        bool operator!=(const notification& r) const {
-            return !operator==(r);
-        }
+        bool valid() const;
     };
     
     struct response {
@@ -100,29 +87,92 @@ namespace Gigamonkey::Stratum {
         
         json Result;
         
-        error_code ErrorCode;
+        error Error;
         
-        std::string ErrorMessage;
-        
-        response() : ID{0}, Result{}, ErrorCode{none}{}
-        response(request_id id, json p) : ID{id}, Result{p}, ErrorCode{none}, ErrorMessage{} {}
-        response(request_id id, json p, error_code c) : 
-            ID{id}, Result{p}, ErrorCode{c}, ErrorMessage{error_message_from_code(c)} {}
-        
-        bool operator==(const response& r) const {
-            return ID == r.ID && Result == r.Result && ErrorCode == r.ErrorCode;
-        }
-        
-        bool operator!=(const response& r) const {
-            return !operator==(r);
-        }
-        
-    private:
-        response(request_id id, json p, error_code c, std::string error_message) : 
-            ID{id}, Result{p}, ErrorCode{c}, ErrorMessage{error_message} {}
+        response();
+        response(request_id id, const json& p);
+        response(request_id id, const json& p, const error& e);
             
-        friend void from_json(const json& j, response& p);
+        bool is_error() const;
+        bool valid() const;
+        
     };
+    
+    using job_id = uint32;
+    
+    using worker_name = std::string;
+    
+    inline bool operator==(const request& a, const request& b) {
+        return a.ID == b.ID && a.Method == b.Method && a.Params == b.Params;
+    }
+    
+    inline bool operator!=(const request& a, const request& b) {
+        return !(a == b);
+    }
+    
+    inline bool operator==(const notification& a, const notification& b) {
+        return a.Method == b.Method && a.Params == b.Params;
+    }
+    
+    inline bool operator!=(const notification& a, const notification& b) {
+        return ! (a == b);
+    }
+    
+    inline bool operator==(const response& a, const response& b) {
+        return a.ID == b.ID && a.Result == b.Result && a.Error == b.Error;
+    }
+    
+    inline bool operator!=(const response& a, const response& b) {
+        return ! (a == b);
+    }
+    
+    inline std::ostream& operator<<(std::ostream& o, const request& r) {
+        json j;
+        to_json(j, r);
+        return o << j;
+    }
+    
+    inline std::ostream& operator<<(std::ostream& o, const response& r) {
+        json j;
+        to_json(j, r);
+        return o << j;
+    }
+    
+    inline std::ostream& operator<<(std::ostream& o, const notification& r) {
+        json j;
+        to_json(j, r);
+        return o << j;
+    }
+    
+    inline request::request() : ID{0}, Method{unset}, Params{} {}
+    
+    inline request::request(request_id id, method m, const params& p) : ID{id}, Method{m}, Params(p) {}
+    
+    inline bool request::valid() const {
+        return Method != unset;
+    }
+    
+    inline notification::notification() : Method{unset}, Params{} {}
+    
+    inline notification::notification(method m, const params& p) : Method{m}, Params(p) {}
+    
+    inline bool notification::valid() const {
+        return Method != unset;
+    }
+    
+    inline response::response() : ID{0}, Result{}, Error{none} {}
+    
+    inline response::response(request_id id, const json& p) : ID{id}, Result(p), Error{none} {}
+    
+    inline response::response(request_id id, const json& p, const error& e) : ID{id}, Result(p), Error{e} {}
+    
+    inline bool response::is_error() const {
+        return Error.Code == none;
+    }
+    
+    inline bool response::valid() const {
+        return data::valid(Error);
+    }
     
 }
 

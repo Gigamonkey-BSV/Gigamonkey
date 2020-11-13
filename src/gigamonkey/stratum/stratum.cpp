@@ -1,3 +1,6 @@
+// Copyright (c) 2020 Daniel Krawisz
+// Distributed under the Open BSV software license, see the accompanying file LICENSE.
+
 #include <gigamonkey/stratum/stratum.hpp>
 
 namespace Gigamonkey::Stratum {
@@ -8,6 +11,12 @@ namespace Gigamonkey::Stratum {
                 return "mining.notify";
             case mining_submit :
                 return "mining.submit";
+            case mining_authorize :
+                return "mining.authorize";
+            case mining_subscribe :
+                return "mining.subscribe";
+            case mining_set_difficulty :
+                return "mining.set_difficulty";
             default: 
                 return "";
         }
@@ -16,11 +25,10 @@ namespace Gigamonkey::Stratum {
     method method_from_string(std::string st) {
         if (st == "mining.notify") return mining_notify;
         if (st == "mining.submit") return mining_submit;
+        if (st == "mining.authorize") return mining_authorize;
+        if (st == "mining.subscribe") return mining_subscribe;
+        if (st == "mining.set_difficulty") return mining_set_difficulty;
         return unset;
-    }
-    
-    std::string error_message_from_code(error_code) {
-        return "";
     }
     
     void to_json(json& j, const request& p) {
@@ -29,10 +37,7 @@ namespace Gigamonkey::Stratum {
             return;
         }
         
-        j = {{"id", p.ID}, {"method", method_to_string(p.Method)}, {"params", json::array()}};
-        for (auto i = p.Params.begin(); i != p.Params.end(); i++) {
-            j["params"].push_back(*i);
-        }
+        j = {{"id", p.ID}, {"method", method_to_string(p.Method)}, {"params", p.Params}};
     }
     
     void from_json(const json& j, request& p) {
@@ -42,15 +47,16 @@ namespace Gigamonkey::Stratum {
             return;
         }
         
-        std::vector<json> params{};
-        for (auto i = j["params"].begin(); i != j["params"].end(); i++) params.push_back(*i);
-        p = request{j["id"], method_from_string(j["method"]), params};
+        p = request{j["id"], method_from_string(j["method"]), j["params"]};
     }
     
     void to_json(json& j, const response& p) {
-        if (p.ErrorCode == none) j = {{"id", p.ID}, {"result", p.Result}, {"error", nullptr}};
-        else j = {{"id", p.ID}, {"result", p.Result}, {"error", {uint32(p.ErrorCode),
-            error_message_from_code(p.ErrorCode)}}};
+        if (p.Error == error{none}) j = {{"id", p.ID}, {"result", p.Result}, {"error", nullptr}};
+        else {
+            json errj;
+            to_json(errj, p.Error);
+            j = {{"id", p.ID}, {"result", p.Result}, {"error", errj}};
+        }
     }
     
     void from_json(const json& j, response& p) {
@@ -61,7 +67,11 @@ namespace Gigamonkey::Stratum {
         }
         
         if (j["error"].is_null()) p = response{j["id"], j["result"]};
-        else p = response{j["id"], j["result"], j["error"][0], j["error"][1]};
+        else {
+            error e;
+            from_json(j["error"], e);
+            p = response{j["id"], j["result"], e};
+        }
     }
     
     void to_json(json& j, const notification& p) {
@@ -70,11 +80,7 @@ namespace Gigamonkey::Stratum {
             return;
         }
         
-        j = {{"id", nullptr}, {"method", method_to_string(p.Method)}, {"params", json::array()}};
-        
-        for (auto i = p.Params.begin(); i != p.Params.end(); i++) {
-            j["params"].push_back(*i);
-        }
+        j = {{"id", nullptr}, {"method", method_to_string(p.Method)}, {"params", p.Params}};
     }
     
     void from_json(const json& j, notification& p) {
@@ -84,9 +90,7 @@ namespace Gigamonkey::Stratum {
             return;
         }
         
-        std::vector<json> params{};
-        for (auto i = j["params"].begin(); i != j["params"].end(); i++) params.push_back(*i);
-        p = notification{method_from_string(j["method"]), params};
+        p = notification{method_from_string(j["method"]), j["params"]};
     }
     
 }

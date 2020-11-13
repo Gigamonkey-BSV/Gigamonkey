@@ -71,22 +71,18 @@ namespace Gigamonkey::work {
     
     proof cpu_solve(puzzle p, solution initial);
     
-}
+    inline std::ostream& operator<<(std::ostream& o, const solution& p) {
+        return o << "solution{Timestamp: " << p.Timestamp << ", Nonce: " << p.Nonce << ", ExtraNonce: " << p.ExtraNonce << "}";
+    }
 
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::solution& p) {
-    return o << "solution{Timestamp: " << p.Timestamp << ", Nonce: " << p.Nonce << ", ExtraNonce: " << p.ExtraNonce << "}";
-}
+    inline std::ostream& operator<<(std::ostream& o, const puzzle& p) {
+        return o << "puzzle{Category: " << p.Category << ", Digest: " << p.Digest << ", Target: " << 
+            p.Target << ", Path: " << p.Path << ", Header: " << p.Header << ", ExtraNonce: " << p.ExtraNonce << ", Body: " << p.Body << "}";
+    }
 
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::puzzle& p) {
-    return o << "puzzle{Category: " << p.Category << ", Digest: " << p.Digest << ", Target: " << 
-        p.Target << ", Path: " << p.Path << ", Header: " << p.Header << ", ExtraNonce: " << p.ExtraNonce << ", Body: " << p.Body << "}";
-}
-
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::proof& p) {
-    return o << "proof{Puzzle: " << p.Puzzle << ", Solution: " << p.Solution << "}";
-}
-
-namespace Gigamonkey::work {
+    inline std::ostream& operator<<(std::ostream& o, const proof& p) {
+        return o << "proof{Puzzle: " << p.Puzzle << ", Solution: " << p.Solution << "}";
+    }
     
     inline solution::solution(Bitcoin::timestamp t, nonce n, uint64_little b) : Timestamp{t}, Nonce{n}, ExtraNonce{b} {}
     inline solution::solution() : Timestamp{}, Nonce{}, ExtraNonce{} {};

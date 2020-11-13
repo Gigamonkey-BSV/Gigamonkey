@@ -20,6 +20,10 @@ namespace Gigamonkey::Stratum {
         explicit operator uint256() const;
 
     };
+
+    inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Stratum::difficulty d) {
+        return o << d.Value;
+    }
 }
 
 #endif

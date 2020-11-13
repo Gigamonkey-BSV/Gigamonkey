@@ -58,6 +58,13 @@ namespace Gigamonkey::work {
                 std::string{"0x1000000000000000000000000000000000000000000000000000000000000000"}};
                 
         EXPECT_TRUE(check(tests));
+        
+        // TODO
+        /*
+        uint32_big a(work::compact{32, 0x0080ff});
+        uint32_big b{536903935};
+        
+        EXPECT_EQ(a, b);*/
     }
 
 }
