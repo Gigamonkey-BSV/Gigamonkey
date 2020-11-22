@@ -7,7 +7,7 @@
 #include <sv/arith_uint256.h>
 
 #include <gigamonkey/types.hpp>
-
+#include <data/data.hpp>
 #include <data/encoding/integer.hpp>
 #include <data/math/number/bytes/N.hpp>
 
@@ -229,7 +229,7 @@ namespace data::encoding::integer {
     
     template <size_t size, unsigned int bits> 
     inline std::string write(const Gigamonkey::uint<size, bits>& n) {
-        return write((N)(n));
+        return write((Gigamonkey::N)(n));
     }
     
     template <size_t size, unsigned int bits> 
