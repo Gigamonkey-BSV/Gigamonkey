@@ -21,7 +21,7 @@ namespace Gigamonkey::Merkle {
     
     using digests = stack<digest>;
     
-    struct path {
+    struct path final {
         uint32 Index;
         digests Digests;
         
@@ -33,7 +33,7 @@ namespace Gigamonkey::Merkle {
         digest derive_root(const digest& leaf) const;
     };
     
-    struct leaf {
+    struct leaf final {
         digest Digest;
         uint32 Index;
         
@@ -46,7 +46,7 @@ namespace Gigamonkey::Merkle {
     
     using entry = data::entry<digest, path>;
     
-    struct branch {
+    struct branch final {
         leaf Leaf;
         digests Digests;
         
@@ -77,7 +77,7 @@ namespace Gigamonkey::Merkle {
         return branch{leaf, *this}.root();
     }
     
-    struct proof {
+    struct proof final {
         branch Branch;
         digest Root;
     
@@ -95,7 +95,7 @@ namespace Gigamonkey::Merkle {
     struct dual;
     class server;
     
-    struct tree : data::tree<digest> {
+    struct tree final : data::tree<digest> {
         uint32 Width;
         uint32 Height;
         
@@ -126,7 +126,7 @@ namespace Gigamonkey::Merkle {
     
     // dual to the Merkle tree. Prunable. 
     // would be good in a wallet. 
-    struct dual {
+    struct dual final {
         map Paths;
         digest Root;
         
@@ -164,7 +164,7 @@ namespace Gigamonkey::Merkle {
     }
     
     // for serving branches. Would be on a miner's computer. 
-    class server {
+    class server final {
         cross<digest> Digests;
         data::map<digest, uint32> Indices;
         

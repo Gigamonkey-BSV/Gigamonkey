@@ -30,11 +30,11 @@ namespace Gigamonkey::Stratum {
         
         job();
         job(const worker&, const mining::notify::parameters&);
-        job(job_id, const worker_name&, const work::puzzle&, Bitcoin::timestamp, bool clean);
+        job(job_id, const worker_name&, const work::job&, Bitcoin::timestamp, bool clean);
         
         bool valid() const;
         
-        work::puzzle puzzle() const;
+        explicit operator work::job() const;
         Bitcoin::timestamp timestamp() const;
         
     };
@@ -72,24 +72,23 @@ namespace Gigamonkey::Stratum {
     
     inline job::job(const worker& w, const mining::notify::parameters& n) : Worker{w}, Notify{n} {}
     
-    inline job::job(job_id i, const worker_name& name, const work::puzzle& puzzle, Bitcoin::timestamp now, bool clean) : 
-        Worker{name, puzzle.ExtraNonce1}, 
-        Notify{i, puzzle.Digest, puzzle.Header, puzzle.Body, puzzle.Path.Digests, puzzle.Category, puzzle.Target, now, clean} {}
+    inline job::job(job_id i, const worker_name& name, const work::job& j, Bitcoin::timestamp now, bool clean) : 
+        Worker{name, j.ExtraNonce1}, Notify{i, j.Puzzle, now, clean} {}
     
     inline bool job::valid() const {
         return data::valid(Worker) && data::valid(Notify);
     }
     
-    inline work::puzzle job::puzzle() const {
-        if (!valid()) return work::puzzle{};
-        return work::puzzle{
-            Notify.Version, 
-            Notify.Digest, 
-            Notify.Target, 
-            Merkle::path{0, Notify.Path}, 
-            Notify.GenerationTx1, 
-            Worker.ExtraNonce1,
-            Notify.GenerationTx2};
+    inline job::operator work::job() const {
+        if (!valid()) return work::job{};
+        return work::job{work::puzzle{
+                Notify.Version, 
+                Notify.Digest, 
+                Notify.Target, 
+                Merkle::path{0, Notify.Path}, 
+                Notify.GenerationTx1,
+                Notify.GenerationTx2}, 
+            Worker.ExtraNonce1};
     }
     
     inline Bitcoin::timestamp job::timestamp() const {
@@ -99,11 +98,11 @@ namespace Gigamonkey::Stratum {
     inline solved::solved(const job& j, const share&sh) : Job{j}, Share{sh} {}
     
     inline solved::solved(job_id i, const worker_name& name, const work::proof& p, bool clean) : 
-        Job{i, name, p.Puzzle, p.Solution.Timestamp, clean}, 
-        Share{name, i, p.Solution} {}
+        Job{i, name, p.job(), p.Solution.Share.Timestamp, clean}, 
+        Share{name, i, p.Solution.Share} {}
     
     inline work::proof solved::proof() const {
-        return work::proof{Job.puzzle(), Share.Solution};
+        return work::proof{work::job(Job), Share.Share};
     }
     
     inline bool solved::valid() const {

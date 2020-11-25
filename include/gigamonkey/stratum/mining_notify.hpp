@@ -42,9 +42,15 @@ namespace Gigamonkey::Stratum::mining {
             parameters();
             parameters(job_id id, const uint256& u, const bytes& t1, const bytes& t2, 
                 Merkle::digests p, int32_little v, work::compact c, Bitcoin::timestamp t, bool b);
+            parameters(job_id id, const work::puzzle& p, Bitcoin::timestamp t, bool b) : 
+                parameters{id, p.Candidate.Digest, p.Header, p.Body, p.Candidate.Path.Digests, p.Candidate.Category, p.Candidate.Target, t, b} {}
     
             bool operator==(const parameters& b) const;
             bool operator!=(const parameters& b) const;
+            
+            explicit operator work::puzzle() const {
+                return work::puzzle{Version, Digest, Target, Merkle::path{0, Path}, GenerationTx1, GenerationTx2};
+            }
             
         };
         
@@ -57,6 +63,9 @@ namespace Gigamonkey::Stratum::mining {
             job_id id, const uint256& u, const bytes& t1, const bytes& t2, 
             Merkle::digests p, int32_little v, work::compact c, Bitcoin::timestamp t, bool b) :
             notify{parameters{id, u, t1, t2, p, v, c, t, b}} {}
+        notify(
+            job_id id, const work::puzzle& p, Bitcoin::timestamp t, bool b) :
+            notify{parameters{id, p, t, b}} {}
     };
     
     inline notify::parameters::parameters() : 

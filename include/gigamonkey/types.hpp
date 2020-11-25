@@ -54,6 +54,10 @@ namespace Gigamonkey {
     using string_writer = data::writer<string::iterator>;
     using string_reader = data::reader<const char*>;
     
+    template<typename x> using optional = std::optional<x>;
+    
+    using ostream = std::ostream;
+    
     template <typename X> bytes_writer 
     inline write(bytes_writer b, X x) {
         return b << x;

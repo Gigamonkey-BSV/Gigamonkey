@@ -43,7 +43,7 @@ namespace Gigamonkey::Boost {
             push_size{4, Timestamp}, 
             push_size{8, ExtraNonce2}, 
             push_size{4, ExtraNonce1}, 
-            optional{push_size{20, MinerAddress}}}.match(b)) return {};
+            Bitcoin::optional{push_size{20, MinerAddress}}}.match(b)) return {};
         
         x.Type = MinerAddress.size() == 0 ? Boost::contract : Boost::bounty;
         
@@ -92,7 +92,7 @@ namespace Gigamonkey::Boost {
         
         pattern output_script_pattern = pattern{
             push{bytes{0x62, 0x6F, 0x6F, 0x73, 0x74, 0x70, 0x6F, 0x77}}, OP_DROP, 
-            optional{push_size{20, MinerAddress}},
+            Bitcoin::optional{push_size{20, MinerAddress}},
             push_size{4, Category},
             push_size{32, Content},
             push_size{4, Target},
@@ -225,28 +225,26 @@ namespace Gigamonkey::Boost {
     }
     
     input_script from_solution(
-                Bitcoin::signature signature, 
-                Bitcoin::pubkey pubkey, 
-                Stratum::session_id nonce1, 
-                work::solution x, Boost::type t) {
+                const Bitcoin::signature& signature, 
+                const Bitcoin::pubkey& pubkey, 
+                const work::solution& x, Boost::type t) {
         if (t == Boost::invalid || !x.valid()) return input_script{};
         
-        if (t == Boost::bounty) return input_script::bounty(signature, pubkey, x.Nonce, x.Timestamp, x.ExtraNonce2, nonce1, pubkey.hash()); 
+        if (t == Boost::bounty) return input_script::bounty(signature, pubkey, x.Share.Nonce, x.Share.Timestamp, x.Share.ExtraNonce2, x.ExtraNonce1, pubkey.hash()); 
         
-        return input_script::contract(signature, pubkey, x.Nonce, x.Timestamp, x.ExtraNonce2, nonce1);
+        return input_script::contract(signature, pubkey, x.Share.Nonce, x.Share.Timestamp, x.Share.ExtraNonce2, x.ExtraNonce1);
     }
     
     input_script::input_script(
-        Bitcoin::signature signature, 
-        Bitcoin::pubkey pubkey, 
-        Stratum::session_id nonce1, 
-        work::solution x, Boost::type t) : input_script{from_solution(signature, pubkey, nonce1, x, t)} {}
+        const Bitcoin::signature& signature, 
+        const Bitcoin::pubkey& pubkey, 
+        const work::solution& x, Boost::type t) : input_script{from_solution(signature, pubkey, x, t)} {}
     
-    Boost::output_script puzzle::output_script() const {
+    Boost::output_script job::output_script() const {
         if (Type == invalid) return Boost::output_script();
         
-        size_t puzzle_header_size = puzzle::Header.size();
-        size_t puzzle_body_size = puzzle::Body.size();
+        size_t puzzle_header_size = job::Puzzle.Header.size();
+        size_t puzzle_body_size = job::Puzzle.Body.size();
         
         if (puzzle_header_size < 20) return Boost::output_script();
         if (puzzle_body_size < 4) return Boost::output_script();
@@ -254,23 +252,23 @@ namespace Gigamonkey::Boost {
         size_t tag_size = puzzle_header_size - 20;
         size_t data_size = puzzle_body_size - 4;
         
-        Boost::output_script out{Type, puzzle::Category, puzzle::Digest, puzzle::Target, 
+        Boost::output_script out{Type, job::Puzzle.Candidate.Category, job::Puzzle.Candidate.Digest, job::Puzzle.Candidate.Target, 
             bytes(tag_size), 0, bytes(puzzle_body_size - 4), 
             Type == contract ? miner_address() : digest160{}};
         
-        std::copy(puzzle::Header.begin(), puzzle::Header.begin() + tag_size, out.Tag.begin());
-        std::copy(puzzle::Body.begin(), puzzle::Body.begin() + 4, out.UserNonce.begin());
-        std::copy(puzzle::Body.begin() + 4, puzzle::Body.end(), out.AdditionalData.begin());
+        std::copy(job::Puzzle.Header.begin(), job::Puzzle.Header.begin() + tag_size, out.Tag.begin());
+        std::copy(job::Puzzle.Body.begin(), job::Puzzle.Body.begin() + 4, out.UserNonce.begin());
+        std::copy(job::Puzzle.Body.begin() + 4, job::Puzzle.Body.end(), out.AdditionalData.begin());
         
         return out;
     }
     
-    digest160 puzzle::miner_address() const {
-        size_t puzzle_header_size = puzzle::Header.size();
+    digest160 job::miner_address() const {
+        size_t puzzle_header_size = job::Puzzle.Header.size();
         if (puzzle_header_size < 20) return {};
         digest160 x;
-        std::copy(puzzle::Header.end() - 20, 
-                  puzzle::Header.end(), 
+        std::copy(job::Puzzle.Header.end() - 20, 
+                  job::Puzzle.Header.end(), 
                   x.begin());
         return x;
     }

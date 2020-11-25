@@ -10,6 +10,13 @@
 
 namespace Gigamonkey::Bitcoin {
     
+    struct secret;
+        
+    bool operator==(const secret&, const secret&);
+    bool operator!=(const secret&, const secret&);
+    
+    ostream& operator<<(ostream&, const secret&);
+    
     struct secret {
         
         enum type : byte {
@@ -45,10 +52,6 @@ namespace Gigamonkey::Bitcoin {
         
         string write() const;
         
-        bool operator==(const secret& w) const;
-        
-        bool operator!=(const secret& w) const;
-        
         pubkey to_public() const;
         
         Bitcoin::address address() const;
@@ -63,6 +66,18 @@ namespace Gigamonkey::Bitcoin {
     private:
         static Bitcoin::address::type to_address_type(type t);
     };
+    
+    bool inline operator==(const secret& a, const secret& b) {
+        return a.Prefix == b.Prefix && a.Secret == b.Secret && a.Compressed == b.Compressed;
+    }
+    
+    bool inline operator!=(const secret& a, const secret& b) {
+        return !(a == b);
+    }
+    
+    inline ostream& operator<<(ostream& o, const secret& s) {
+        return o << s.write();
+    }
         
     inline size_t secret::size() const {
         return 33 + (Compressed ? 1 : 0); 
@@ -84,14 +99,6 @@ namespace Gigamonkey::Bitcoin {
         
     inline string secret::write() const {
         return write(Prefix, Secret, Compressed);
-    }
-    
-    inline bool secret::operator==(const secret& w) const {
-        return Prefix == w.Prefix && Secret == w.Secret && Compressed == w.Compressed;
-    }
-    
-    inline bool secret::operator!=(const secret& w) const {
-        return !operator==(w);
     }
     
     inline pubkey secret::to_public() const {

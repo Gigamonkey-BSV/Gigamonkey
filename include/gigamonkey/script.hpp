@@ -412,7 +412,7 @@ namespace Gigamonkey::Bitcoin {
         
         virtual bytes_view scan(bytes_view p) const final override;
     };
-        
+    
     inline pattern::pattern(op o) : pattern{instruction{o}} {}
     
     inline pattern::pattern(instruction i) : Pattern{ptr<pattern>(std::make_shared<atom>(i))} {}

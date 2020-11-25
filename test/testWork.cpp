@@ -45,13 +45,13 @@ namespace Gigamonkey::work {
         auto puzzles = outer<puzzle>([](std::string m, compact t) -> puzzle {
             digest256 message_hash = sha256(m);
             return puzzle(1, message_hash, t, 
-                Merkle::path{}, bytes{}, 353, bytes(m));
+                Merkle::path{}, bytes{}, bytes(m));
         }, messages, targets);
         
         uint64_big extra_nonce = 90983;
         
         auto proofs = data::for_each([&extra_nonce](puzzle p) -> proof {
-            return cpu_solve(p, solution(Bitcoin::timestamp(1), 0, extra_nonce++));
+            return cpu_solve(p, solution(Bitcoin::timestamp(1), 0, extra_nonce++, 353));
         }, puzzles); 
         
         EXPECT_TRUE(dot_cross([](puzzle p, solution x) -> bool {

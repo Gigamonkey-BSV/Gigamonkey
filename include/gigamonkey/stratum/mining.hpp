@@ -37,10 +37,10 @@ namespace Gigamonkey::Stratum {
     struct share {
         worker_name Name;
         job_id JobID;
-        work::solution Solution; 
+        work::share Share; 
         
         share();
-        share(worker_name name, job_id jid, const work::solution& x);
+        share(worker_name name, job_id jid, const work::share& x);
         share(worker_name name, job_id jid, uint64_big en2, Bitcoin::timestamp t, nonce n);
         
         bool valid() const;
@@ -60,20 +60,20 @@ namespace Gigamonkey::Stratum {
     
     inline bool operator==(const share& a, const share& b) {
         return a.Name == b.Name && 
-            a.JobID == b.JobID && a.Solution == b.Solution;
+            a.JobID == b.JobID && a.Share == b.Share;
     }
     
     inline bool operator!=(const share& a, const share& b) {
         return !(a == b);
     }
     
-    inline share::share() : Name{}, JobID{}, Solution{} {}
+    inline share::share() : Name{}, JobID{}, Share{} {}
     
-    inline share::share(worker_name name, job_id jid, const work::solution& x) : 
-        Name{name}, JobID{jid}, Solution{x} {}
+    inline share::share(worker_name name, job_id jid, const work::share& x) : 
+        Name{name}, JobID{jid}, Share{x} {}
     
     inline share::share(worker_name name, job_id jid, uint64_big en2, Bitcoin::timestamp t, nonce n) : 
-        Name{name}, JobID{jid}, Solution{t, n, en2} {}
+        Name{name}, JobID{jid}, Share{t, n, en2} {}
     
     inline bool share::valid() const {
         return Name != std::string{};

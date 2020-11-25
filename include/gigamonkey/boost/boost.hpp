@@ -46,6 +46,7 @@ namespace Gigamonkey {
         struct redeem_boost;
         
         struct output_script {
+            
             Boost::type Type;
             int32_little Category;
             uint256 Content;
@@ -60,16 +61,16 @@ namespace Gigamonkey {
             output_script(
                 Boost::type type, 
                 int32_little category, 
-                uint256 content, 
+                const uint256& content, 
                 work::compact target, 
-                bytes tag, 
+                bytes_view tag, 
                 uint32_little user_nonce, 
-                bytes data, 
-                digest160 miner_address);
+                bytes_view data, 
+                const digest160& miner_address);
             
             static output_script bounty(
                 int32_little category,
-                uint256 content,
+                const uint256& content,
                 work::compact target, 
                 bytes_view tag, 
                 uint32_little user_nonce, 
@@ -77,12 +78,12 @@ namespace Gigamonkey {
             
             static output_script contract(
                 int32_little category,
-                uint256 content,
+                const uint256& content,
                 work::compact target, 
                 bytes_view tag, 
                 uint32_little user_nonce, 
                 bytes_view data, 
-                digest160 miner_address);
+                const digest160& miner_address);
             
             bool valid() const;
             
@@ -109,7 +110,7 @@ namespace Gigamonkey {
         private:
             output_script(
                 int32_little category, 
-                uint256 content,
+                const uint256& content,
                 work::compact target, 
                 bytes_view tag, 
                 uint32_little user_nonce, 
@@ -117,26 +118,27 @@ namespace Gigamonkey {
             
             output_script(
                 int32_little category, 
-                uint256 content,
+                const uint256& content,
                 work::compact target, 
                 bytes_view tag, 
                 uint32_little user_nonce, 
                 bytes_view data,
-                digest160 miner_address);
+                const digest160& miner_address);
                 
             static output_script from_data(
                 Boost::type type, 
                 int32_little category, 
-                uint256 content, 
+                const uint256& content, 
                 work::compact target, 
-                bytes tag, 
+                bytes_view tag, 
                 uint32_little user_nonce, 
-                bytes data, 
-                digest160 miner_address);
+                bytes_view data, 
+                const digest160& miner_address);
             
         };
         
         struct input_script {
+            
             Boost::type Type;
             Bitcoin::signature Signature;
             Bitcoin::pubkey Pubkey;
@@ -148,17 +150,17 @@ namespace Gigamonkey {
             
         private:
             input_script(
-                Bitcoin::signature signature, 
-                Bitcoin::pubkey pubkey, 
+                const Bitcoin::signature& signature, 
+                const Bitcoin::pubkey& pubkey, 
                 uint32_little nonce,
                 Bitcoin::timestamp timestamp,
                 uint64_big extra_nonce_2,
                 Stratum::session_id extra_nonce_1,
-                digest160 miner_address);
+                const digest160& miner_address);
             
             input_script(
-                Bitcoin::signature signature, 
-                Bitcoin::pubkey pubkey, 
+                const Bitcoin::signature& signature, 
+                const Bitcoin::pubkey& pubkey, 
                 uint32_little nonce,
                 Bitcoin::timestamp timestamp,
                 uint64_big extra_nonce_2,
@@ -177,18 +179,18 @@ namespace Gigamonkey {
             
             // construct a Boost bounty input script. 
             static input_script bounty(
-                Bitcoin::signature signature, 
-                Bitcoin::pubkey pubkey,  
+                const Bitcoin::signature& signature, 
+                const Bitcoin::pubkey& pubkey,  
                 uint32_little nonce,
                 Bitcoin::timestamp timestamp,
                 uint64_big extra_nonce_2,
                 Stratum::session_id extra_nonce_1, 
-                digest160 miner_address);
+                const digest160& miner_address);
             
             // construct a Boost contract input script.
             static input_script contract(
-                Bitcoin::signature signature, 
-                Bitcoin::pubkey pubkey,  
+                const Bitcoin::signature& signature, 
+                const Bitcoin::pubkey& pubkey,  
                 uint32_little nonce,
                 Bitcoin::timestamp timestamp,
                 uint64_big extra_nonce_2,
@@ -207,15 +209,15 @@ namespace Gigamonkey {
             static digest160 miner_address(script x);
             
             input_script(
-                Bitcoin::signature signature, 
-                Bitcoin::pubkey pubkey, 
-                Stratum::session_id nonce1,
-                work::solution, Boost::type);
+                const Bitcoin::signature& signature, 
+                const Bitcoin::pubkey& pubkey, 
+                const work::solution&, Boost::type);
         };
         
-        // A job is a work::puzzle without ExtraNonce1 and with a Boost type. 
+        // A job is a work::puzzle and with a Boost type. 
         // Both an address and key are associated with it.  
-        struct job {
+        struct puzzle {
+            
             type Type;
             int32_little Category;
             uint256 Content;
@@ -227,27 +229,6 @@ namespace Gigamonkey {
             
             bool valid() const;
             
-            job();
-            job(Boost::type type, 
-                int32_little category, 
-                const uint256& content, 
-                work::compact target, 
-                const bytes& tag, 
-                uint32_little user_nonce, 
-                const bytes& data, 
-                const Bitcoin::secret& miner_key);
-            job(const Boost::output_script& x, const Bitcoin::secret& addr);
-            
-            Boost::output_script output_script() const;
-            digest160 miner_address() const;
-        };
-        
-        // A puzzle is created after ExtraNonce is assigned by the mining pool. 
-        struct puzzle : work::puzzle {
-            type Type;
-            
-            bool valid() const;
-            
             puzzle();
             puzzle(Boost::type type, 
                 int32_little category, 
@@ -256,17 +237,60 @@ namespace Gigamonkey {
                 const bytes& tag, 
                 uint32_little user_nonce, 
                 const bytes& data, 
+                const Bitcoin::secret& miner_key);
+            puzzle(const Boost::output_script& x, const Bitcoin::secret& addr);
+            
+            Boost::output_script output_script() const;
+            digest160 miner_address() const;
+            
+            static bytes header(const bytes& tag, const digest160& miner_address) {
+                return write(tag.size() + 20, tag, miner_address);
+            }
+            
+            static bytes body(uint32_little user_nonce, const bytes& data) {
+                return write(data.size() + 4, user_nonce, data);
+            }
+            
+            bytes header() const {
+                return header(Tag, miner_address());
+            }
+            
+            bytes body() const {
+                return body(UserNonce, AdditionalData);
+            }
+            
+            explicit operator work::puzzle() const {
+                if (!valid()) return {};
+                return {Category, Content, Target, Merkle::path{}, header(), body()};
+            }
+        };
+        
+        // A job is created after ExtraNonce is assigned by the mining pool. 
+        struct job : work::job {
+            type Type;
+            
+            bool valid() const;
+            
+            job();
+            job(Boost::type type, 
+                int32_little category, 
+                const uint256& content, 
+                work::compact target, 
+                const bytes& tag, 
+                uint32_little user_nonce, 
+                const bytes& data, 
                 const digest160& miner_address, 
                 Stratum::session_id extra_nonce_1);
-            puzzle(const Boost::output_script& x, const digest160& miner_address, Stratum::session_id extra_nonce_1);
+            job(const Boost::output_script& x, const digest160& miner_address, Stratum::session_id extra_nonce_1);
             
             Boost::output_script output_script() const; 
             digest160 miner_address() const;
 
         private:
-            puzzle(work::puzzle p, type t);
+            job(const work::puzzle&, Stratum::session_id, type);
+            job(const work::job& j, type t) : work::job{j}, Type{t} {}
             
-            static puzzle make(Boost::type type, 
+            static job make(Boost::type type, 
                 int32_little category, 
                 const uint256& content, 
                 work::compact target, 
@@ -283,17 +307,19 @@ namespace Gigamonkey {
             type Type;
             
             proof();
-            proof(const Boost::puzzle& p, const work::solution& x);
+            proof(const Boost::job& p, const work::share& x);
+            proof(const Boost::puzzle& p, const work::solution& x) : work::proof{work::puzzle(p), x}, Type{p.Type} {}
             proof(const Boost::output_script& out, const Boost::input_script& in);
             proof(type t, const work::string& w, const bytes& h, 
                 const Stratum::session_id& n1, const uint64_big& n2, const bytes& b);
                 
-            Boost::puzzle puzzle() const;
+            Boost::job job() const;
             Boost::output_script output_script() const;
             Boost::input_script input_script() const;
         };
         
         struct output {
+            
             Bitcoin::outpoint Reference;
             output_script Script;
             satoshi Value;
@@ -315,12 +341,12 @@ namespace Gigamonkey {
         struct redeem_boost final : Bitcoin::redeemable {
             Bitcoin::secret Secret;
             Bitcoin::pubkey Pubkey;
-            Stratum::session_id ExtraNonce1;
             work::solution Solution;
             type Type;
             
             Bitcoin::redemption::incomplete redeem(Bitcoin::sighash::directive d) const override {
-                Bitcoin::program p = input_script{Bitcoin::signature{}, Pubkey, ExtraNonce1, Solution, Type}.program();
+                throw method::unimplemented{"redeem_boost"};
+                Bitcoin::program p = input_script{Bitcoin::signature{}, Pubkey, Solution, Type}.program();
                 if (p.empty()) return {};
                 return {Bitcoin::redemption::element{&Secret, d}, compile(p.rest())};
             }
@@ -360,22 +386,22 @@ namespace Gigamonkey {
             return !(a == b);
         }
         
-        inline bool operator==(const job& a, const job& b) {
+        inline bool operator==(const puzzle& a, const puzzle& b) {
             return a.Type == b.Type && a.Category == b.Category && a.Content == b.Content && 
                 a.Target == b.Target && a.Tag == b.Tag && a.UserNonce == b.UserNonce && 
                 a.AdditionalData == b.AdditionalData && a.MinerKey == b.MinerKey;
         }
         
-        inline bool operator!=(const job& a, const job& b) {
+        inline bool operator!=(const puzzle& a, const puzzle& b) {
             return !(a == b);
         }
         
-        inline bool operator==(const puzzle& a, const puzzle& b) {
+        inline bool operator==(const job& a, const job& b) {
             return a.Type == b.Type && 
-                work::operator==(static_cast<const work::puzzle&>(a), static_cast<const work::puzzle&>(b));
+                work::operator==(static_cast<const work::job&>(a), static_cast<const work::job&>(b));
         }
         
-        inline bool operator!=(const puzzle& a, const puzzle& b) {
+        inline bool operator!=(const job& a, const job& b) {
             return !(a == b);
         }
         
@@ -395,17 +421,17 @@ namespace Gigamonkey {
         inline output_script::output_script(
             Boost::type type, 
             int32_little category, 
-            uint256 content, 
+            const uint256& content, 
             work::compact target, 
-            bytes tag, 
+            bytes_view tag, 
             uint32_little user_nonce, 
-            bytes data, 
-            digest160 miner_address) : 
+            bytes_view data, 
+            const digest160& miner_address) : 
             output_script{from_data(type, category, content, target, tag, user_nonce, data, miner_address)} {}
         
         output_script inline output_script::bounty(
             int32_little category,
-            uint256 content,
+            const uint256& content,
             work::compact target, 
             bytes_view tag, 
             uint32_little user_nonce, 
@@ -417,12 +443,12 @@ namespace Gigamonkey {
         
         output_script inline output_script::contract(
             int32_little category,
-            uint256 content,
+            const uint256& content,
             work::compact target, 
             bytes_view tag, 
             uint32_little user_nonce, 
             bytes_view data, 
-            digest160 miner_address) {
+            const digest160& miner_address) {
             return output_script{category, 
                 content, target, tag, user_nonce, data, 
                 miner_address}; 
@@ -484,7 +510,7 @@ namespace Gigamonkey {
         
         inline output_script::output_script(
             int32_little category, 
-            uint256 content,
+            const uint256& content,
             work::compact target, 
             bytes_view tag, 
             uint32_little user_nonce, 
@@ -499,12 +525,12 @@ namespace Gigamonkey {
         
         inline output_script::output_script(
             int32_little category, 
-            uint256 content,
+            const uint256& content,
             work::compact target, 
             bytes_view tag, 
             uint32_little user_nonce, 
             bytes_view data,
-            digest160 miner_address) : Type{Boost::contract}, 
+            const digest160& miner_address) : Type{Boost::contract}, 
             Category{category},
             Content{content}, 
             Target{target}, 
@@ -516,25 +542,25 @@ namespace Gigamonkey {
         output_script inline output_script::from_data(
             Boost::type type, 
             int32_little category, 
-            uint256 content, 
+            const uint256& content, 
             work::compact target, 
-            bytes tag, 
+            bytes_view tag, 
             uint32_little user_nonce, 
-            bytes data, 
-            digest160 miner_address) {
+            bytes_view data, 
+            const digest160& miner_address) {
             if (type == Boost::invalid) return {};
             if (type == Boost::bounty) return output_script::bounty(category, content, target, tag, user_nonce, data);
             return output_script::contract(category, content, target, tag, user_nonce, data, miner_address);
         }
         
         inline input_script::input_script(
-            Bitcoin::signature signature, 
-            Bitcoin::pubkey pubkey, 
+            const Bitcoin::signature& signature, 
+            const Bitcoin::pubkey& pubkey, 
             uint32_little nonce,
             Bitcoin::timestamp timestamp,
             uint64_big extra_nonce_2,
             Stratum::session_id extra_nonce_1,
-            digest160 miner_address) : Type{Boost::bounty}, 
+            const digest160& miner_address) : Type{Boost::bounty}, 
             Signature{signature}, 
             Pubkey{pubkey}, 
             Nonce{nonce},
@@ -544,8 +570,8 @@ namespace Gigamonkey {
             MinerAddress{miner_address} {}
         
         inline input_script::input_script(
-            Bitcoin::signature signature, 
-            Bitcoin::pubkey pubkey, 
+            const Bitcoin::signature& signature, 
+            const Bitcoin::pubkey& pubkey, 
             uint32_little nonce,
             Bitcoin::timestamp timestamp,
             uint64_big extra_nonce_2,
@@ -572,20 +598,20 @@ namespace Gigamonkey {
         
         // construct a Boost bounty input script. 
         input_script inline input_script::bounty(
-            Bitcoin::signature signature, 
-            Bitcoin::pubkey pubkey,  
+            const Bitcoin::signature& signature, 
+            const Bitcoin::pubkey& pubkey,  
             uint32_little nonce,
             Bitcoin::timestamp timestamp,
             uint64_big extra_nonce_2,
             Stratum::session_id extra_nonce_1, 
-            digest160 miner_address) {
+            const digest160& miner_address) {
             return input_script{signature, pubkey, nonce, timestamp, extra_nonce_2, extra_nonce_1, miner_address};
         }
         
         // construct a Boost contract input script.
         input_script inline input_script::contract(
-            Bitcoin::signature signature, 
-            Bitcoin::pubkey pubkey,  
+            const Bitcoin::signature& signature, 
+            const Bitcoin::pubkey& pubkey,  
             uint32_little nonce,
             Bitcoin::timestamp timestamp,
             uint64_big extra_nonce_2,
@@ -623,14 +649,14 @@ namespace Gigamonkey {
             return read(x).MinerAddress;
         }
         
-        bool inline job::valid() const { 
+        bool inline puzzle::valid() const { 
             return Target.valid() && MinerKey.valid() && 
                 (Type == Boost::bounty || Type == Boost::contract);
         }
         
-        inline job::job() : Type{invalid}, Category{}, Content{}, Target{}, Tag{}, UserNonce{}, AdditionalData{}, MinerKey{} {}
+        inline puzzle::puzzle() : Type{invalid}, Category{}, Content{}, Target{}, Tag{}, UserNonce{}, AdditionalData{}, MinerKey{} {}
         
-        inline job::job(Boost::type type, 
+        inline puzzle::puzzle(Boost::type type, 
             int32_little category, 
             const uint256& content, 
             work::compact target, 
@@ -641,13 +667,13 @@ namespace Gigamonkey {
             Type{type}, Category{category}, Content{content}, Target{target}, Tag{tag}, UserNonce{user_nonce}, 
             AdditionalData{data}, MinerKey{miner_key} {}
         
-        inline job::job(const Boost::output_script& x, const Bitcoin::secret& addr) : job{} {
+        inline puzzle::puzzle(const Boost::output_script& x, const Bitcoin::secret& addr) : puzzle{} {
             if (x.Type == invalid) return;
             if (x.Type == contract && x.MinerAddress != addr.address().Digest) return;
-            *this = job{x.Type, x.Category, x.Content, x.Target, x.Tag, x.UserNonce, x.AdditionalData, addr};
+            *this = puzzle{x.Type, x.Category, x.Content, x.Target, x.Tag, x.UserNonce, x.AdditionalData, addr};
         }
         
-        Boost::output_script inline job::output_script() const {
+        Boost::output_script inline puzzle::output_script() const {
             switch (Type) {
                 case bounty : 
                     return Boost::output_script::bounty(
@@ -661,17 +687,17 @@ namespace Gigamonkey {
             }
         }
             
-        digest160 inline job::miner_address() const {
+        digest160 inline puzzle::miner_address() const {
             return MinerKey.address().Digest;
         }
         
-        bool inline puzzle::valid() const {
-            return Type != Boost::invalid && work::puzzle::valid();
+        bool inline job::valid() const {
+            return Type != Boost::invalid && work::job::valid();
         }
         
-        inline puzzle::puzzle() : work::puzzle{}, Type{invalid} {}
+        inline job::job() : work::job{}, Type{invalid} {}
         
-        inline puzzle::puzzle(Boost::type type, 
+        inline job::job(Boost::type type, 
             int32_little category, 
             const uint256& content, 
             work::compact target, 
@@ -680,18 +706,18 @@ namespace Gigamonkey {
             const bytes& data, 
             const digest160& miner_address, 
             Stratum::session_id extra_nonce_1) : 
-            puzzle(make(type, category, content, target, tag, user_nonce, data, miner_address, extra_nonce_1)) {}
+            job(make(type, category, content, target, tag, user_nonce, data, miner_address, extra_nonce_1)) {}
         
-        inline puzzle::puzzle(const Boost::output_script& x, const digest160& miner_address, Stratum::session_id extra_nonce_1) {
+        inline job::job(const Boost::output_script& x, const digest160& miner_address, Stratum::session_id extra_nonce_1) {
             if (x.Type == invalid) return;
             if (x.Type == contract && x.MinerAddress != miner_address) return;
-            *this = puzzle{x.Type, x.Category, x.Content, x.Target, 
+            *this = job{x.Type, x.Category, x.Content, x.Target, 
                 x.Tag, x.UserNonce, x.AdditionalData, miner_address, extra_nonce_1};
         }
         
-        inline puzzle::puzzle(work::puzzle p, type t) : work::puzzle{p}, Type{t} {}
+        inline job::job(const work::puzzle& p, Stratum::session_id n1, type t) : work::job{p, n1}, Type{t} {}
         
-        puzzle inline puzzle::make(Boost::type type, 
+        job inline job::make(Boost::type type, 
             int32_little category, 
             const uint256& content, 
             work::compact target, 
@@ -701,30 +727,30 @@ namespace Gigamonkey {
             const digest160& miner_address, 
             Stratum::session_id extra_nonce_1) {
             if (type == invalid) return {};
-            return puzzle{work::puzzle{category, content, target, Merkle::path{}, 
-                write(tag.size() + 20, tag, miner_address), extra_nonce_1, 
-                write(data.size() + 4, user_nonce, data)}, type};
+            return job{work::puzzle{category, content, target, Merkle::path{}, 
+                puzzle::header(tag, miner_address),  
+                puzzle::body(user_nonce, data)}, extra_nonce_1, type};
         }
         
         inline proof::proof() : work::proof{}, Type{invalid} {}
         
-        inline proof::proof(const Boost::puzzle& p, const work::solution& x) : 
-            work::proof{static_cast<const work::puzzle&>(p), x}, Type{p.Type} {}
+        inline proof::proof(const Boost::job& j, const work::share& x) : 
+            work::proof{static_cast<const work::job&>(j), x}, Type{j.Type} {}
         
         inline proof::proof(const Boost::output_script& out, const Boost::input_script& in) : proof{} {
             if (out.Type == invalid || in.Type != out.Type) return;
-            *this = proof{Boost::puzzle{out.Type, out.Category, out.Content, 
+            *this = proof{Boost::job{out.Type, out.Category, out.Content, 
                     out.Target, out.Tag, out.UserNonce, out.AdditionalData, 
                     out.Type == bounty ? in.MinerAddress : out.MinerAddress, in.ExtraNonce1},
-                work::solution{in.Timestamp, in.Nonce, in.ExtraNonce2}};
+                work::share{in.Timestamp, in.Nonce, in.ExtraNonce2}};
         }
         
         inline proof::proof(type t, const work::string& w, const bytes& h, 
             const Stratum::session_id& n1, const uint64_big& n2, const bytes& b) : 
             work::proof{w, {}, h, n1, n2, b}, Type{t} {}
             
-        puzzle inline proof::puzzle() const {
-            return Boost::puzzle{work::proof::Puzzle, Type};
+        job inline proof::job() const {
+            return Boost::job{work::job{work::proof::Puzzle, work::proof::Solution.ExtraNonce1}, Type};
         }
         
         output_script inline proof::output_script() const {
@@ -736,4 +762,3 @@ namespace Gigamonkey {
 }
 
 #endif
-
