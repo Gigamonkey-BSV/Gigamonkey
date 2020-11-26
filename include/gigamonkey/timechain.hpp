@@ -214,12 +214,12 @@ namespace Gigamonkey::Bitcoin {
         int32_little Version;
         list<Bitcoin::input> Inputs;
         list<Bitcoin::output> Outputs;
-        int32_little Locktime;
+        uint32_little Locktime;
         
-        transaction(int32_little v, list<Bitcoin::input> i,  list<Bitcoin::output> o, int32_little t) : 
+        transaction(int32_little v, list<Bitcoin::input> i,  list<Bitcoin::output> o, uint32_little t) : 
             Version{v}, Inputs{i}, Outputs{o}, Locktime{t} {}
         
-        transaction(list<Bitcoin::input> i, list<Bitcoin::output> o, int32_little t) : 
+        transaction(list<Bitcoin::input> i, list<Bitcoin::output> o, uint32_little t) : 
             transaction{int32_little{2}, i, o, t} {}
             
         transaction() : Version{}, Inputs{}, Outputs{}, Locktime{} {};
@@ -259,7 +259,7 @@ namespace Gigamonkey::Bitcoin {
         }
         
         static const slice<80> header(bytes_view);
-        static cross<bytes_view> transactions(bytes_view);
+        static std::vector<bytes_view> transactions(bytes_view);
         
         static digest256 inline merkle_root(bytes_view b) {
             list<txid> ids{};
@@ -382,7 +382,7 @@ namespace Gigamonkey::Bitcoin {
         return in.write(w);
     }
 
-    bytes_reader inline operator<<(bytes_reader r, input& in) {
+    bytes_reader inline operator>>(bytes_reader r, input& in) {
         return in.read(r);
     }
 
@@ -422,6 +422,55 @@ namespace Gigamonkey::Bitcoin {
         return Bitcoin::hash256(h);
     }
     
+    inline bytes_writer header::write(bytes_writer w) const {
+        return w << Version << Previous << MerkleRoot << Timestamp << Target << Nonce;
+    }
+    
+    inline bytes_reader header::read(bytes_reader r) {
+        return r >> Version >> Previous >> MerkleRoot >> Timestamp >> Target >> Nonce;
+    }
+    
+    inline uint<80> header::write() const {
+        uint<80> x; // inefficient: unnecessary copy. 
+        bytes b = Gigamonkey::write(80, Version, Previous, MerkleRoot, Timestamp, Target, Nonce);
+        std::copy(b.begin(), b.end(), x.data());
+        return x;
+    }
+    
+    inline bytes_writer outpoint::write(bytes_writer w) const {
+        return w << Reference << Index;
+    }
+    
+    inline bytes_reader outpoint::read(bytes_reader r) {
+        return r >> Reference >> Index;
+    }
+    
+    inline bool transaction::valid() const {
+        return Inputs.size() > 0 && Outputs.size() > 0 && 
+            fold([](bool b, Bitcoin::input i) -> bool {
+                return b && i.valid();
+            }, true, Inputs) && 
+            fold([](bool b, Bitcoin::output o) -> bool {
+                return b && o.valid();
+            }, true, Outputs);
+    }
+        
+    txid inline transaction::id() const {
+        return Bitcoin::id(*this);
+    }
+    
+    inline block block::read(bytes_view b) {
+        block bl;
+        bytes_reader(b.data(), b.data() + b.size()) >> bl;
+        return bl;
+    }
+    
+    inline bytes block::write() const {
+        bytes b(serialized_size());
+        write(bytes_writer(b.begin(), b.end()));
+        return b;
+    }
+    
     bytes_writer write_var_int(bytes_writer, uint64);
     
     bytes_reader read_var_int(bytes_reader, uint64&);
@@ -446,108 +495,23 @@ namespace Gigamonkey::Bitcoin {
     }
     
     template <typename X> 
-    bytes_reader read_sequence(bytes_reader r, list<X>& l);
-    
-    inline bytes_writer header::write(bytes_writer w) const {
-        return w << Version << Previous << MerkleRoot << Timestamp << Target << Nonce;
+    bytes_reader read_sequence(bytes_reader r, list<X>& l) {
+        uint64 size;
+        r = read_var_int(r, size);
+        for (int i = 0; i < size; i++) {
+            X x;
+            r = r >> x;
+            l = l << x;
+        }
+        return r;
     }
     
-    inline bytes_reader header::read(bytes_reader r) {
-        return r >> Version >> Previous >> MerkleRoot >> Timestamp >> Target >> Nonce;
+    bytes_reader inline block::read(bytes_reader r) {
+        return read_sequence(r >> Header, Transactions);
     }
     
-    inline uint<80> header::write() const {
-        uint<80> x; // inefficient: unnecessary copy. 
-        bytes b = Gigamonkey::write(80, Version, Previous, MerkleRoot, Timestamp, Target, Nonce);
-        std::copy(b.begin(), b.end(), x.data());
-        return x;
-    }
-    
-    inline bytes_writer outpoint::write(bytes_writer w) const {
-        return w << Reference << Index;
-    }
-    
-    inline bytes_reader outpoint::read(bytes_reader r) {
-        return r >> Reference >> Index;
-    }
-    
-    inline size_t input::serialized_size() const {
-        return 40 + var_int_size(Script.size()) + Script.size();
-    }
-    
-    inline bytes_writer input::write(bytes_writer w) const {
-        return write_data(w << Outpoint, Script) << Sequence;
-    }
-    
-    inline bytes_reader input::read(bytes_reader r) {
-        return read_data(r >> Outpoint, Script) >> Sequence;
-    }
-    
-    inline bytes_writer output::write(bytes_writer w) const {
-        return write_data(w << Value, Script);
-    }
-    
-    inline bytes_reader output::read(bytes_reader r) {
-        return read_data(r >> Value, Script);
-    }
-    
-    inline size_t output::serialized_size() const {
-        return 8 + var_int_size(Script.size()) + Script.size();
-    }
-    
-    inline bool transaction::valid() const {
-        return Inputs.size() > 0 && Outputs.size() > 0 && 
-            fold([](bool b, Bitcoin::input i) -> bool {
-                return b && i.valid();
-            }, true, Inputs) && 
-            fold([](bool b, Bitcoin::output o) -> bool {
-                return b && o.valid();
-            }, true, Outputs);
-    }
-    
-    inline bytes_writer transaction::write(bytes_writer w) const {
-        return write_sequence(write_sequence(w << Version, Inputs), Outputs) << Locktime;
-    }
-    
-    inline bytes_reader transaction::read(bytes_reader r) {
-        return read_sequence(read_sequence(r >> Version, Inputs), Outputs) >> Locktime;
-    }
-    
-    inline transaction transaction::read(bytes_view b) {
-        transaction t;
-        bytes_reader(b.data(), b.data() + b.size()) >> t;
-        return t;
-    }
-    
-    inline bytes transaction::write() const {
-        bytes b(serialized_size());
-        bytes_writer w{b.begin(), b.end()};
-        w = w << *this;
-        return b;
-    }
-        
-    txid inline transaction::id() const {
-        return Bitcoin::id(*this);
-    }
-    
-    inline bytes_writer block::write(bytes_writer w) const {
-        throw data::method::unimplemented{"block::write"};
-    }
-    
-    inline bytes_reader block::read(bytes_reader r) {
-        throw data::method::unimplemented{"block::read"};
-    }
-    
-    inline block block::read(bytes_view b) {
-        block bl;
-        bytes_reader(b.data(), b.data() + b.size()) >> bl;
-        return bl;
-    }
-    
-    inline bytes block::write() const {
-        bytes b(serialized_size());
-        write(bytes_writer(b.begin(), b.end()));
-        return b;
+    bytes_writer inline block::write(bytes_writer w) const {
+        return write_sequence(w << Header, Transactions);
     }
 }
 

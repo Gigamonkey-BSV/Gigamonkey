@@ -31,7 +31,7 @@ namespace Gigamonkey::Bitcoin::redemption {
 
 namespace Gigamonkey::Bitcoin {
     
-    vertex redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out, int32_little locktime) {
+    vertex redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out, uint32_little locktime) {
         satoshi spent = fold([](satoshi s, data::entry<spendable, sighash::directive> v) -> satoshi {
             return s + v.Key.Prevout.Output.Value;
         }, 0, prev);

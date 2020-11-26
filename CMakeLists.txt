@@ -145,7 +145,6 @@ add_library(gigamonkey STATIC
     src/gigamonkey/stratum/mining_authorize.cpp
     src/gigamonkey/stratum/mining.cpp
     src/gigamonkey/boost/boost.cpp
-    #src/gigamonkey/rpc/getminingcandidate.cpp
 )
 
 target_link_libraries(gigamonkey PUBLIC data common util bitcoinconsensus ${LIB_BITCOIN_LIBRARIES} ${OPENSSL_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} nlohmann_json::nlohmann_json )

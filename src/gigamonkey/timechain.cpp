@@ -15,6 +15,42 @@ namespace Gigamonkey {
 }
 
 namespace Gigamonkey::Bitcoin {
+    
+    bytes_writer write_var_int(bytes_writer r, uint64 x) {
+        if (x <= 0xfc) return r << static_cast<byte>(x);
+        else if (x <= 0xffff) return r << byte(0xfd) << uint16_little{static_cast<uint16>(x)};
+        else if (x <= 0xffffffff) return r << byte(0xfe) << uint32_little{static_cast<uint32>(x)};
+        else return r << byte(0xff) << uint64_little{x};
+    }
+    
+    bytes_reader read_var_int(bytes_reader r, uint64& x) {
+        byte b;
+        r = r >> b;
+        if (b <= 0xfc) {
+            x = b;
+        } else if (b == 0xfd) {
+            uint16_little n;
+            r = r >> n;
+            x = uint16(n);
+        } else if (b == 0xfe) {
+            uint32_little n;
+            r = r >> n;
+            x = uint32(n);
+        } else {
+            uint64_little n;
+            r = r >> n;
+            x = uint64(n);
+        } 
+        return r;
+    }
+    
+    size_t var_int_size(uint64 x) {
+        if (x <= 0xfc) return 1;
+        if (x <= 0xffff) return 3;
+        if (x <= 0xffffffff) return 5;
+        return 9;
+    }
+    
     int32_little header::version(const slice<80> x) {
         int32_little version;
         slice<4> v = x.range<0, 4>();
@@ -71,18 +107,6 @@ namespace Gigamonkey::Bitcoin {
         std::copy(MerkleRoot.Value.begin(), MerkleRoot.Value.end(), h.hashMerkleRoot.begin());
         return h;
     }
-    
-    bytes_writer write_var_int(bytes_writer, uint64) {
-        throw data::method::unimplemented{"write_var_int"};
-    }
-    
-    bytes_reader read_var_int(bytes_reader, uint64&) {
-        throw data::method::unimplemented{"read_var_int"};
-    }
-    
-    size_t var_int_size(uint64) {
-        throw data::method::unimplemented{"var_int_size"};
-    }
         
     bool header::valid() const {
         return header_valid_work(write()) && header_valid(*this);
@@ -111,6 +135,70 @@ namespace Gigamonkey::Bitcoin {
         data::fold([](size_t size, transaction x)->size_t{
             return size + x.serialized_size();
         }, 0, Transactions);
+    }
+    
+    inline size_t input::serialized_size() const {
+        return 40 + var_int_size(Script.size()) + Script.size();
+    }
+    
+    inline bytes_writer input::write(bytes_writer w) const {
+        return write_data(w << Outpoint, Script) << Sequence;
+    }
+    
+    inline bytes_reader input::read(bytes_reader r) {
+        return read_data(r >> Outpoint, Script) >> Sequence;
+    }
+    
+    inline bytes_writer output::write(bytes_writer w) const {
+        return write_data(w << Value, Script);
+    }
+    
+    inline bytes_reader output::read(bytes_reader r) {
+        return read_data(r >> Value, Script);
+    }
+    
+    inline size_t output::serialized_size() const {
+        return 8 + var_int_size(Script.size()) + Script.size();
+    }
+    
+    bytes_writer transaction::write(bytes_writer w) const {
+        return write_sequence(write_sequence(w << Version, Inputs), Outputs) << Locktime;
+    }
+    
+    bytes_reader transaction::read(bytes_reader r) {
+        return read_sequence(read_sequence(r >> Version, Inputs), Outputs) >> Locktime;
+    }
+    
+    transaction transaction::read(bytes_view b) {
+        transaction t;
+        bytes_reader(b.data(), b.data() + b.size()) >> t;
+        return t;
+    }
+    
+    bytes transaction::write() const {
+        bytes b(serialized_size());
+        bytes_writer w{b.begin(), b.end()};
+        w = w << *this;
+        return b;
+    }
+    
+    std::vector<bytes_view> block::transactions(bytes_view b) {
+        bytes_reader r(b.data(), b.data() + b.size());
+        Bitcoin::header h;
+        r = r >> h;
+        uint64 num_txs;
+        r = read_var_int(r, num_txs);
+        std::vector<bytes_view> x;
+        x.resize(num_txs);
+        auto prev = r.Reader.Begin;
+        for (int i = 0; i < num_txs; i++) {
+            transaction tx;
+            r = r >> tx;
+            auto next = r.Reader.Begin;
+            x[i] = bytes_view{prev, static_cast<size_t>(next - prev)};
+            prev = next;
+        }
+        return x;
     }
     
 }

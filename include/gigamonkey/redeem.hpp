@@ -85,7 +85,7 @@ namespace Gigamonkey::Bitcoin {
         uint32 sigops() const;
     };
     
-    vertex redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out, int32_little locktime);
+    vertex redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out, uint32_little locktime);
     
     inline vertex redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out) {
         return redeem(prev, out, 0);
