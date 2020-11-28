@@ -83,7 +83,7 @@ namespace Gigamonkey::Stratum::mining {
             auto request_j = authorize_request(j);
             auto deserialized_i = authorize_request::deserialize(request_i.params());
             auto deserialized_j = authorize_request::deserialize(request_j.params());
-            EXPECT_EQ(authorize_request::valid(request_i), deserialized_i.valid());
+            EXPECT_EQ(request_i.valid(), deserialized_i.valid());
             if (i.ID == j.ID) {
                 EXPECT_EQ(i.ID, request_j.id());
                 EXPECT_EQ(request_i, request_j);
@@ -130,7 +130,7 @@ namespace Gigamonkey::Stratum::mining {
             auto request_j = subscribe_request(j);
             auto deserialized_i = subscribe_request::deserialize(request_i.params());
             auto deserialized_j = subscribe_request::deserialize(request_j.params());
-            EXPECT_EQ(subscribe_request::valid(request_i), deserialized_i.valid());
+            EXPECT_EQ(request_i.valid(), deserialized_i.valid());
             if (i.ID == j.ID) {
                 EXPECT_EQ(i.ID, request_j.id());
                 EXPECT_EQ(request_i, request_j);
@@ -149,7 +149,7 @@ namespace Gigamonkey::Stratum::mining {
             auto response_j = subscribe_response(j);
             auto deserialized_i = subscribe_response::deserialize(response_i.result());
             auto deserialized_j = subscribe_response::deserialize(response_j.result());
-            EXPECT_EQ(subscribe_response::valid(response_i), deserialized_i.valid());
+            EXPECT_EQ(response_i.valid(), deserialized_i.valid());
             if (i.ID == j.ID) {
                 EXPECT_EQ(i.ID, response_j.id());
                 EXPECT_EQ(response_i, response_j);
@@ -182,7 +182,7 @@ namespace Gigamonkey::Stratum::mining {
             auto notify_j = notify(j);
             auto deserialized_i = notify::deserialize(notify_i.params());
             auto deserialized_j = notify::deserialize(notify_j.params());
-            EXPECT_EQ(notify::valid(notify_i), deserialized_i.valid());
+            EXPECT_EQ(notify_i.valid(), deserialized_i.valid());
             if (i.ID == j.ID) {
                 EXPECT_EQ(notify_i, notify_j);
                 EXPECT_EQ(deserialized_i, deserialized_j);
