@@ -1,10 +1,45 @@
 // Copyright (c) 2019 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#include <gigamonkey/script.hpp>
+#include <gigamonkey/script/pattern.hpp>
 #include <data/math/number/bytes/N.hpp>
 
 namespace Gigamonkey::Bitcoin {
+    
+    bool valid_program(program p, stack<op> x) {
+        if (p.empty()) return false;
+        if (!p.first().valid()) return false;
+        op o = p.first().Op;
+        if (o == OP_ENDIF) {
+            if (x.empty()) return false;
+            op prev = x.first();
+            x = x.rest();
+            if (prev == OP_ELSE) {
+                if (x.empty()) return false;
+                prev = x.first();
+                x = x.rest();
+            }
+            if (prev != OP_IF && prev != OP_NOTIF) return false;
+        } else if (o == OP_ELSE || o == OP_IF || o == OP_NOTIF) x = x << o;
+        if (p.size() == 1) return x.empty();
+        if (o == OP_RETURN && p.first().Data.size() != 0) return false;
+        return valid_program(p.rest(), x);
+    }
+    
+    bool valid(program p) {
+        return valid_program(p, {});
+    }
+    
+    bool provably_prunable_recurse(program p) {
+        if (p.size() < 2) return false;
+        if (p.size() == 2) return p.first().Op == OP_FALSE && p.rest().first() == OP_RETURN;
+        return provably_prunable_recurse(p);
+    }
+    
+    bool provably_prunable(program p) {
+        if (!p.valid()) return false;
+        return provably_prunable_recurse(p);
+    }
     
     // We already know that o has size at least 1 
     // when we call this function. 

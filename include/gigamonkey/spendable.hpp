@@ -6,6 +6,7 @@
 
 #include "redeem.hpp"
 #include <gigamonkey/schema/keysource.hpp>
+#include <gigamonkey/script/pattern.hpp>
 
 namespace Gigamonkey::Bitcoin {
     

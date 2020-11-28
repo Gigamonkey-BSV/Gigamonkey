@@ -1,7 +1,7 @@
 #ifndef GIGAMONKEY_BOOST_BOOST
 #define GIGAMONKEY_BOOST_BOOST
 
-#include <gigamonkey/script.hpp>
+#include <gigamonkey/script/script.hpp>
 #include <gigamonkey/address.hpp>
 #include <gigamonkey/work/proof.hpp>
 #include <gigamonkey/redeem.hpp>

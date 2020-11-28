@@ -10,7 +10,7 @@
 #include <gigamonkey/spendable.hpp>
 #include <gigamonkey/address.hpp>
 #include <gigamonkey/signature.hpp>
-#include <gigamonkey/script.hpp>
+#include <gigamonkey/script/pattern.hpp>
 #include "gtest/gtest.h"
 #include <iostream>
 

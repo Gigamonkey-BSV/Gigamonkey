@@ -1,5 +1,5 @@
 #include <gigamonkey/boost/boost.hpp>
-#include <gigamonkey/script.hpp>
+#include <gigamonkey/script/pattern.hpp>
 #include <data/encoding/halves.hpp>
 #include <iostream>
 

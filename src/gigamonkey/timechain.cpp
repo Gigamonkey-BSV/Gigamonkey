@@ -2,7 +2,7 @@
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/work/proof.hpp>
-#include <gigamonkey/script.hpp>
+#include <gigamonkey/script/script.hpp>
 
 namespace Gigamonkey {
     bool header_valid_work(slice<80> h) {

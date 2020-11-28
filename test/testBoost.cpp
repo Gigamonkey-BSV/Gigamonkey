@@ -1,5 +1,5 @@
 #include <gigamonkey/boost/boost.hpp>
-#include <gigamonkey/script.hpp>
+#include <gigamonkey/script/script.hpp>
 #include <gigamonkey/address.hpp>
 #include <gigamonkey/wif.hpp>
 #include <gigamonkey/stratum/job.hpp>

@@ -4,9 +4,9 @@
 #ifndef GIGAMONKEY_REDEEM
 #define GIGAMONKEY_REDEEM
 
-#include "timechain.hpp"
-#include "script.hpp"
-#include "wif.hpp"
+#include <gigamonkey/timechain.hpp>
+#include <gigamonkey/script/script.hpp>
+#include <gigamonkey/wif.hpp>
 
 namespace Gigamonkey::Bitcoin::redemption {
     
