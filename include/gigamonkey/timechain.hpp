@@ -30,8 +30,8 @@ namespace Gigamonkey::Bitcoin {
     bool operator==(const outpoint&, const outpoint&);
     bool operator!=(const outpoint&, const outpoint&);
     
-    bytes_writer operator<<(bytes_writer w, const outpoint& h);
-    bytes_reader operator>>(bytes_reader r, outpoint& h);
+    writer operator<<(writer w, const outpoint& h);
+    reader operator>>(reader r, outpoint& h);
 
     std::ostream& operator<<(std::ostream& o, const outpoint& p);
     
@@ -40,8 +40,8 @@ namespace Gigamonkey::Bitcoin {
     bool operator==(const input&, const input&);
     bool operator!=(const input&, const input&);
     
-    bytes_writer operator<<(bytes_writer w, const input& h);
-    bytes_reader operator>>(bytes_reader r, input& h);
+    writer operator<<(writer w, const input& h);
+    reader operator>>(reader r, input& h);
 
     std::ostream& operator<<(std::ostream& o, const input& p);
     
@@ -50,8 +50,8 @@ namespace Gigamonkey::Bitcoin {
     bool operator==(const output&, const output&);
     bool operator!=(const output&, const output&);
     
-    bytes_writer operator<<(bytes_writer w, const output& h);
-    bytes_reader operator>>(bytes_reader r, output& h);
+    writer operator<<(writer w, const output& h);
+    reader operator>>(reader r, output& h);
 
     std::ostream& operator<<(std::ostream& o, const output& p);
     
@@ -60,8 +60,8 @@ namespace Gigamonkey::Bitcoin {
     bool operator==(const transaction&, const transaction&);
     bool operator!=(const transaction&, const transaction&);
     
-    bytes_writer operator<<(bytes_writer w, const transaction& h);
-    bytes_reader operator>>(bytes_reader r, transaction& h);
+    writer operator<<(writer w, const transaction& h);
+    reader operator>>(reader r, transaction& h);
 
     std::ostream& operator<<(std::ostream& o, const transaction& p);
     
@@ -70,8 +70,8 @@ namespace Gigamonkey::Bitcoin {
     bool operator==(const header& a, const header& b);
     bool operator!=(const header& a, const header& b);
     
-    bytes_writer operator<<(bytes_writer w, const header& h);
-    bytes_reader operator>>(bytes_reader r, header& h);
+    writer operator<<(writer w, const header& h);
+    reader operator>>(reader r, header& h);
 
     std::ostream& operator<<(std::ostream& o, const header& h);
     
@@ -80,8 +80,8 @@ namespace Gigamonkey::Bitcoin {
     bool operator==(const block&, const block&);
     bool operator!=(const block&, const block&);
     
-    bytes_writer operator<<(bytes_writer w, const block& h);
-    bytes_reader operator>>(bytes_reader r, block& h);
+    writer operator<<(writer w, const block& h);
+    reader operator>>(reader r, block& h);
 
     std::ostream& operator<<(std::ostream& o, const block& p);
 
@@ -129,9 +129,6 @@ namespace Gigamonkey::Bitcoin {
         
         explicit operator CBlockHeader() const;
         
-        bytes_reader read(bytes_reader r);
-        bytes_writer write(bytes_writer w) const;
-        
         uint<80> write() const;
         
         digest<32> hash() const {
@@ -149,9 +146,6 @@ namespace Gigamonkey::Bitcoin {
         
         txid Reference; 
         Gigamonkey::index Index;
-        
-        bytes_writer write(bytes_writer w) const;
-        bytes_reader read(bytes_reader r);
         
         static outpoint coinbase() {
             static outpoint Coinbase{txid{}, 0xffffffff};
@@ -176,9 +170,6 @@ namespace Gigamonkey::Bitcoin {
         input(const outpoint&, const Gigamonkey::script&, const uint32_little&);
         input(const outpoint&, const Gigamonkey::script&);
         
-        bytes_writer write(bytes_writer w) const;
-        bytes_reader read(bytes_reader r);
-        
         size_t serialized_size() const;
     };
     
@@ -192,9 +183,6 @@ namespace Gigamonkey::Bitcoin {
         Gigamonkey::script Script;
         
         bool valid() const;
-        
-        bytes_writer write(bytes_writer w) const;
-        bytes_reader read(bytes_reader r);
         
         size_t serialized_size() const;
     };
@@ -225,9 +213,6 @@ namespace Gigamonkey::Bitcoin {
         transaction() : Version{}, Inputs{}, Outputs{}, Locktime{} {};
         
         bool valid() const;
-        
-        bytes_writer write(bytes_writer w) const;
-        bytes_reader read(bytes_reader r);
         
         static transaction read(bytes_view);
         bytes write() const;
@@ -282,9 +267,6 @@ namespace Gigamonkey::Bitcoin {
             }
             return true;
         }
-        
-        bytes_writer write(bytes_writer w) const;
-        bytes_reader read(bytes_reader r);
         
         static block read(bytes_view b);
         bytes write() const;
@@ -362,52 +344,52 @@ namespace Gigamonkey::Bitcoin {
         return o << "output{Value : " << p.Value << ", Script : " << p.Script << "}";
     }
 
-    bytes_writer inline operator<<(bytes_writer w, const header& h) {
-        return h.write(w);
+    writer inline operator<<(writer w, const header& h) {
+        return w << h.Version << h.Previous << h.MerkleRoot << h.Timestamp << h.Target << h.Nonce;
     }
 
-    bytes_reader inline operator>>(bytes_reader r, header& h) {
-        return h.read(r);
+    reader inline operator>>(reader r, header& h) {
+        return r >> h.Version >> h.Previous >> h.MerkleRoot >> h.Timestamp >> h.Target >> h.Nonce;
     }
 
-    bytes_writer inline operator<<(bytes_writer w, const outpoint& o) {
-        return o.write(w);
+    writer inline operator<<(writer w, const outpoint& o) {
+        return w << o.Reference << o.Index;
     }
 
-    bytes_reader inline operator>>(bytes_reader r, outpoint& o) {
-        return o.read(r);
+    reader inline operator>>(reader r, outpoint& o) {
+        return r >> o.Reference >> o.Index;
     }
 
-    bytes_writer inline operator<<(bytes_writer w, const input& in) {
-        return in.write(w);
+    writer inline operator<<(writer w, const input& in) {
+        return w << in.Outpoint << in.Script << in.Sequence;
     }
 
-    bytes_reader inline operator>>(bytes_reader r, input& in) {
-        return in.read(r);
+    reader inline operator>>(reader r, input& in) {
+        return r >> in.Outpoint >> in.Script >> in.Sequence;
     }
 
-    bytes_writer inline operator<<(bytes_writer w, const output& out) {
-        return out.write(w);
+    writer inline operator<<(writer w, const output& out) {
+        return w << out.Value << out.Script;
     }
 
-    bytes_reader inline operator>>(bytes_reader r, output& out) {
-        return out.read(r);
+    reader inline operator>>(reader r, output& out) {
+        return r >> out.Value >> out.Script;
     }
 
-    bytes_writer inline operator<<(bytes_writer w, const transaction& t) {
-        return t.write(w);
+    writer inline operator<<(writer w, const transaction& t) {
+        return w << t.Version << t.Inputs << t.Outputs << t.Locktime;
     }
 
-    bytes_reader inline operator>>(bytes_reader r, transaction& t) {
-        return t.read(r);
+    reader inline operator>>(reader r, transaction& t) {
+        return r >> t.Version >> t.Inputs >> t.Outputs >> t.Locktime;
     }
 
-    bytes_writer inline operator<<(bytes_writer w, const block& b) {
-        return b.write(w);
+    writer inline operator<<(writer w, const block& b) {
+        return w << b.Header << b.Transactions;
     }
 
-    bytes_reader inline operator>>(bytes_reader r, block& b) {
-        return b.read(r);
+    reader inline operator>>(reader r, block& b) {
+        return r >> b.Header >> b.Transactions;
     }
    
     digest<32> inline header::previous(const slice<80> x) {
@@ -422,27 +404,12 @@ namespace Gigamonkey::Bitcoin {
         return Bitcoin::hash256(h);
     }
     
-    inline bytes_writer header::write(bytes_writer w) const {
-        return w << Version << Previous << MerkleRoot << Timestamp << Target << Nonce;
-    }
-    
-    inline bytes_reader header::read(bytes_reader r) {
-        return r >> Version >> Previous >> MerkleRoot >> Timestamp >> Target >> Nonce;
-    }
-    
     inline uint<80> header::write() const {
         uint<80> x; // inefficient: unnecessary copy. 
-        bytes b = Gigamonkey::write(80, Version, Previous, MerkleRoot, Timestamp, Target, Nonce);
+        bytes b(80);
+        writer{b} << Version << Previous << MerkleRoot << Timestamp << Target << Nonce;
         std::copy(b.begin(), b.end(), x.data());
         return x;
-    }
-    
-    inline bytes_writer outpoint::write(bytes_writer w) const {
-        return w << Reference << Index;
-    }
-    
-    inline bytes_reader outpoint::read(bytes_reader r) {
-        return r >> Reference >> Index;
     }
     
     inline bool transaction::valid() const {
@@ -461,57 +428,14 @@ namespace Gigamonkey::Bitcoin {
     
     inline block block::read(bytes_view b) {
         block bl;
-        bytes_reader(b.data(), b.data() + b.size()) >> bl;
+        reader(b) >> bl;
         return bl;
     }
     
     inline bytes block::write() const {
         bytes b(serialized_size());
-        write(bytes_writer(b.begin(), b.end()));
+        writer(b) << *this;
         return b;
-    }
-    
-    bytes_writer write_var_int(bytes_writer, uint64);
-    
-    bytes_reader read_var_int(bytes_reader, uint64&);
-    
-    size_t var_int_size(uint64);
-    
-    bytes_writer inline write_data(bytes_writer w, bytes_view b) {
-        return write_var_int(w, b.size()) << b;
-    }
-    
-    bytes_reader inline read_data(bytes_reader r, bytes& b) {
-        uint64 size;
-        r = read_var_int(r, size);
-        b = bytes(size);
-        return r >> b;
-    }
-    
-    template <typename X> 
-    bytes_writer inline write_sequence(bytes_writer w, list<X> l) {
-        return data::fold([](bytes_writer w, X x)->bytes_writer{return w << x;}, 
-            write_var_int(w, data::size(l)), l);
-    }
-    
-    template <typename X> 
-    bytes_reader read_sequence(bytes_reader r, list<X>& l) {
-        uint64 size;
-        r = read_var_int(r, size);
-        for (int i = 0; i < size; i++) {
-            X x;
-            r = r >> x;
-            l = l << x;
-        }
-        return r;
-    }
-    
-    bytes_reader inline block::read(bytes_reader r) {
-        return read_sequence(r >> Header, Transactions);
-    }
-    
-    bytes_writer inline block::write(bytes_writer w) const {
-        return write_sequence(w << Header, Transactions);
     }
 }
 

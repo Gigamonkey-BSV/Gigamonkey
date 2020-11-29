@@ -198,6 +198,16 @@ namespace Gigamonkey {
     inline bytes_reader operator>>(bytes_reader r, digest<size>& s) {
         return r >> s.Value;
     }
+
+    template <size_t size> 
+    inline Bitcoin::writer operator<<(Bitcoin::writer w, const digest<size>& s) {
+        return Bitcoin::writer{w.Writer << s};
+    }
+
+    template <size_t size>
+    inline Bitcoin::reader operator>>(Bitcoin::reader r, digest<size>& s) {
+        return Bitcoin::reader{r.Reader >> s};
+    }
     
 }
 

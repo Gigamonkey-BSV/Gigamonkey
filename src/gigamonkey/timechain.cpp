@@ -16,14 +16,14 @@ namespace Gigamonkey {
 
 namespace Gigamonkey::Bitcoin {
     
-    bytes_writer write_var_int(bytes_writer r, uint64 x) {
+    bytes_writer writer::write_var_int(bytes_writer r, uint64 x) {
         if (x <= 0xfc) return r << static_cast<byte>(x);
         else if (x <= 0xffff) return r << byte(0xfd) << uint16_little{static_cast<uint16>(x)};
         else if (x <= 0xffffffff) return r << byte(0xfe) << uint32_little{static_cast<uint32>(x)};
         else return r << byte(0xff) << uint64_little{x};
     }
     
-    bytes_reader read_var_int(bytes_reader r, uint64& x) {
+    bytes_reader reader::read_var_int(bytes_reader r, uint64& x) {
         byte b;
         r = r >> b;
         if (b <= 0xfc) {
@@ -44,7 +44,7 @@ namespace Gigamonkey::Bitcoin {
         return r;
     }
     
-    size_t var_int_size(uint64 x) {
+    size_t writer::var_int_size(uint64 x) {
         if (x <= 0xfc) return 1;
         if (x <= 0xffff) return 3;
         if (x <= 0xffffffff) return 5;
@@ -121,7 +121,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     size_t transaction::serialized_size() const {
-        return 8 + var_int_size(Inputs.size()) + var_int_size(Inputs.size()) + 
+        return 8 + writer::var_int_size(Inputs.size()) + writer::var_int_size(Inputs.size()) + 
             data::fold([](size_t size, const Bitcoin::input& i)->size_t{
                 return size + i.serialized_size();
             }, 0, Inputs) + 
@@ -131,42 +131,18 @@ namespace Gigamonkey::Bitcoin {
     }
     
     size_t block::serialized_size() const {
-        return 80 + var_int_size(Transactions.size()) + 
+        return 80 + writer::var_int_size(Transactions.size()) + 
         data::fold([](size_t size, transaction x)->size_t{
             return size + x.serialized_size();
         }, 0, Transactions);
     }
     
     inline size_t input::serialized_size() const {
-        return 40 + var_int_size(Script.size()) + Script.size();
-    }
-    
-    inline bytes_writer input::write(bytes_writer w) const {
-        return write_data(w << Outpoint, Script) << Sequence;
-    }
-    
-    inline bytes_reader input::read(bytes_reader r) {
-        return read_data(r >> Outpoint, Script) >> Sequence;
-    }
-    
-    inline bytes_writer output::write(bytes_writer w) const {
-        return write_data(w << Value, Script);
-    }
-    
-    inline bytes_reader output::read(bytes_reader r) {
-        return read_data(r >> Value, Script);
+        return 40 + writer::var_int_size(Script.size()) + Script.size();
     }
     
     inline size_t output::serialized_size() const {
-        return 8 + var_int_size(Script.size()) + Script.size();
-    }
-    
-    bytes_writer transaction::write(bytes_writer w) const {
-        return write_sequence(write_sequence(w << Version, Inputs), Outputs) << Locktime;
-    }
-    
-    bytes_reader transaction::read(bytes_reader r) {
-        return read_sequence(read_sequence(r >> Version, Inputs), Outputs) >> Locktime;
+        return 8 + writer::var_int_size(Script.size()) + Script.size();
     }
     
     transaction transaction::read(bytes_view b) {
@@ -177,7 +153,7 @@ namespace Gigamonkey::Bitcoin {
     
     bytes transaction::write() const {
         bytes b(serialized_size());
-        bytes_writer w{b.begin(), b.end()};
+        writer w{b};
         w = w << *this;
         return b;
     }
@@ -185,15 +161,15 @@ namespace Gigamonkey::Bitcoin {
     std::vector<bytes_view> block::transactions(bytes_view b) {
         bytes_reader r(b.data(), b.data() + b.size());
         Bitcoin::header h;
-        r = r >> h;
+        r = (reader{r} >> h).Reader;
         uint64 num_txs;
-        r = read_var_int(r, num_txs);
+        r = reader::read_var_int(r, num_txs);
         std::vector<bytes_view> x;
         x.resize(num_txs);
         auto prev = r.Reader.Begin;
         for (int i = 0; i < num_txs; i++) {
             transaction tx;
-            r = r >> tx;
+            r = (reader{r} >> tx).Reader;
             auto next = r.Reader.Begin;
             x[i] = bytes_view{prev, static_cast<size_t>(next - prev)};
             prev = next;

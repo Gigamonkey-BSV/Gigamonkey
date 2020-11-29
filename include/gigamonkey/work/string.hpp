@@ -33,7 +33,9 @@ namespace Gigamonkey::work {
         explicit string(const slice<80>& x) : string(read(x)) {}
         explicit string(const CBlockHeader&);
         
-        uint<80> write() const;
+        uint<80> write() const {
+            return operator Bitcoin::header().write();
+        }
         
         uint256 hash() const {
             return Bitcoin::hash256(write());
@@ -54,25 +56,29 @@ namespace Gigamonkey::work {
         
         explicit operator CBlockHeader() const;
         
-        bool operator==(const string& x) const {
-            return Category == x.Category && 
-                Digest == x.Digest && 
-                MerkleRoot == x.MerkleRoot && 
-                Timestamp == x.Timestamp && 
-                Target == x.Target && 
-                Nonce == x.Nonce;
-        }
-        
-        bool operator!=(const string& x) const {
-            return !operator==(x);
+        explicit operator Bitcoin::header() const {
+            return {Category, digest256{Digest}, digest256{MerkleRoot}, Timestamp, Target, Nonce};
         }
     };
+        
+    bool inline operator==(const string& x, const string& y) {
+        return y.Category == x.Category && 
+            y.Digest == x.Digest && 
+            y.MerkleRoot == x.MerkleRoot && 
+            y.Timestamp == x.Timestamp && 
+            y.Target == x.Target && 
+            y.Nonce == x.Nonce;
+    }
+    
+    bool inline operator!=(const string& x, const string& y) {
+        return !(x == y);
+    }
     
     inline std::ostream& operator<<(std::ostream& o, const string& work_string) {
         return o << "work_string{" << data::encoding::hex::write(work_string.write()) << "}";
     }
 
-    inline bool string::valid() const {
+    bool inline string::valid() const {
         return hash() < Target.expand();
     }
 }

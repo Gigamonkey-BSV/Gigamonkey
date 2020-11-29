@@ -51,11 +51,11 @@ namespace Gigamonkey::Bitcoin {
 
     std::ostream& operator<<(std::ostream& o, const timestamp& s);
 
-    inline bytes_writer operator<<(bytes_writer w, const timestamp& s) {
+    inline writer operator<<(writer w, const timestamp& s) {
         return w << s.Value;
     }
 
-    inline bytes_reader operator>>(bytes_reader r, timestamp& s) {
+    inline reader operator>>(reader r, timestamp& s) {
         return r >> s.Value;
     }
 
