@@ -29,7 +29,7 @@ namespace Gigamonkey::Bitcoin::redemption {
         };
         
         uint32 expected_size() const {
-            return Secret == nullptr ? Script.size() : DerSignatureExpectedSize;
+            return Secret == nullptr ? Script.size() : signature::MaxSignatureSize;
         };
     };
     

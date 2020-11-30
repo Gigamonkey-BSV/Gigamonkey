@@ -3,6 +3,7 @@
 
 #include <gigamonkey/secp256k1.hpp>
 #include <data/encoding/integer.hpp>
+#include <secp256k1.h>
 
 namespace Gigamonkey::secp256k1 {
     
@@ -89,32 +90,36 @@ namespace Gigamonkey::secp256k1 {
     }
     
     signature secret::sign(bytes_view sk, const digest& d) {
-        signature sig;
-        const auto context = Signing();
-
-        if (secp256k1_ecdsa_sign(context, &sig.Data, d.Value.data(), sk.data(),
+        secp256k1_ecdsa_signature x;
+        auto context = Signing();
+        if (secp256k1_ecdsa_sign(context, &x, d.Value.data(), sk.data(),
             secp256k1_nonce_function_rfc6979, nullptr) != 1)
             return {};
-
+        
+        signature sig{};
+        
+        size_t size = sig.size();
+        secp256k1_ecdsa_signature_serialize_der(context, sig.data(), &size, &x);
+        sig.resize(size);
         return sig;
     }
     
     bool verify_signature(const secp256k1_context* context,
         const secp256k1_pubkey point, bytes_view hash,
-        const signature& s) {
-        secp256k1_ecdsa_signature parsed;
-        std::copy_n(s.begin(), signature::Size, std::begin(parsed.data));
+        const secp256k1_ecdsa_signature& s) {
         
         secp256k1_ecdsa_signature normal;
-        secp256k1_ecdsa_signature_normalize(context, &normal, &parsed);
+        secp256k1_ecdsa_signature_normalize(context, &normal, &s);
         return secp256k1_ecdsa_verify(context, &normal, hash.data(), &point) == 1;
     }
     
     bool pubkey::verify(bytes_view pk, const digest& d, const signature& s) {
         secp256k1_pubkey pubkey;
         const auto context = Verification();
+        secp256k1_ecdsa_signature parsed;
+        secp256k1_ecdsa_signature_parse_der(context, &parsed, s.data(), s.size());
         return parse(context, pubkey, pk) &&
-            verify_signature(context, pubkey, d, s);
+            verify_signature(context, pubkey, d, parsed);
     }
     
     coordinate secret::negate(const coordinate& sk) {

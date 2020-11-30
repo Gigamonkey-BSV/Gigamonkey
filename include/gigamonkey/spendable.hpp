@@ -30,7 +30,7 @@ namespace Gigamonkey::Bitcoin {
         }
         
         uint32 expected_size() const override {
-            return DerSignatureExpectedSize + 1;
+            return signature::MaxSignatureSize + 1;
         };
         
         uint32 sigops() const override {
@@ -50,7 +50,7 @@ namespace Gigamonkey::Bitcoin {
         }
         
         uint32 expected_size() const override {
-            return DerSignatureExpectedSize + Pubkey.size() + 2;
+            return signature::MaxSignatureSize + Pubkey.size() + 2;
         };
         
         uint32 sigops() const override {

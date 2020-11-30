@@ -82,7 +82,7 @@ namespace Gigamonkey {
         }
         return b;
     }
-
+    
 }
 
 namespace Gigamonkey::Bitcoin {

@@ -7,7 +7,6 @@
 #include "hash.hpp"
 #include <data/encoding/integer.hpp>
 #include <data/crypto/encrypted.hpp>
-#include <secp256k1.h>
 
 namespace Gigamonkey::secp256k1 {
     
@@ -50,25 +49,13 @@ namespace Gigamonkey::secp256k1 {
     class secret;
     class pubkey;
     
-    class signature {
+    class signature : public bytes {
         friend class secret;
-        secp256k1_ecdsa_signature Data;
         
     public:
-        constexpr static size_t Size = 64;
+        constexpr static size_t MaxSignatureSize = 70;
         
-        signature() : Data{} {}
-        
-        bool operator==(const signature& s) const;
-        bool operator!=(const signature& s) const;
-        
-        operator bytes_view() const;
-        
-        byte* begin();
-        byte* end();
-        
-        const byte* begin() const;
-        const byte* end() const;
+        signature() : bytes{MaxSignatureSize} {}
         
         secp256k1::point point() const;
     };
@@ -247,35 +234,6 @@ namespace Gigamonkey::secp256k1 {
     
     inline pubkey times(const pubkey& a, const secret& b) {
         return a * b;
-    }
-    
-    inline bool signature::operator==(const signature& s) const {
-        for (size_t i = 0; i < Size; i ++) if (Data.data[i] != s.Data.data[i]) return false;
-        return true;
-    }
-    
-    inline bool signature::operator!=(const signature& s) const {
-        return !operator==(s);
-    }
-    
-    inline signature::operator bytes_view() const {
-        return bytes_view(Data.data, 64);
-    }
-    
-    inline byte* signature::begin() {
-        return Data.data;
-    }
-    
-    inline byte* signature::end() {
-        return Data.data + Size;
-    }
-    
-    inline const byte* signature::begin() const {
-        return Data.data;
-    }
-    
-    inline const byte* signature::end() const {
-        return Data.data + Size;
     }
         
     inline bool secret::valid() const {

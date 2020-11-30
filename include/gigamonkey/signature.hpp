@@ -41,36 +41,31 @@ namespace Gigamonkey::Bitcoin {
         return sighash::directive(t + sighash::fork_id * fork_id + sighash::anyone_can_pay * anyone_can_pay);
     }
     
-    constexpr uint32 DerSignatureExpectedSize{72};
-    
-    struct signature {
+    struct signature : bytes {
+        constexpr static size_t MaxSignatureSize = 71;
+        
         bytes Data;
         
-        signature();
+        signature() : bytes{} {}
         explicit signature(const bytes_view data) : Data{data} {}
-        signature(const secp256k1::signature raw, sighash::directive d) : Data{65} {
-            bytes_writer(Data.begin(), Data.end()) << raw << d;
+        
+        signature(const secp256k1::signature raw, sighash::directive d) : bytes(raw.size() + 1) {
+            bytes_writer(bytes::begin(), bytes::end()) << raw << d;
         } 
         
-        bool DER() const;
-        
         Bitcoin::sighash::directive sighash() const {
-            return Data[Data.size() - 1];
-        }
+            return bytes::operator[](-1);
+        } 
         
-        secp256k1::signature raw() const;
+        secp256k1::signature raw() const {
+            secp256k1::signature x;
+            if (bytes::size() != 0) {
+                x.resize(bytes::size() - 1);
+                std::copy(bytes::begin(), bytes::end() - 1, x.begin());
+            }
+            return x;
+        } 
         
-        operator bytes_view() const {
-            return Data;
-        }
-        
-        bool operator==(const signature& s) const {
-            return Data == s.Data;
-        }
-        
-        bool operator!=(const signature& s) const {
-            return Data != s.Data;
-        }
     };
     
     struct input_index {
@@ -81,34 +76,16 @@ namespace Gigamonkey::Bitcoin {
     
     digest256 signature_hash(const input_index& v, sighash::directive d);
     
-    signature sign(const digest256&, const secp256k1::secret&);
-    
-    bool verify(const signature&, const digest256&, const pubkey&);
-    
     inline signature sign(const input_index& i, sighash::directive d, const secp256k1::secret& s) {
-        return sign(signature_hash(i, d), s);
+        return signature{s.sign(signature_hash(i, d)), d};
     }
     
     inline bool verify(const signature& x, const input_index& i, sighash::directive d, const pubkey& p) {
-        return verify(x, signature_hash(i, d), p);
-    }
-
-    inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::signature& x) {
-        return o << "signature{" << data::encoding::hex::write(x.Data) << "}";
+        return p.verify(signature_hash(i, d), x.raw());
     }
     
-    inline signature::signature() : Data(72) {
-        Data[0] = 0x30;
-        Data[1] = 69;
-        Data[2] = 0x02;
-        Data[3] = 33;
-        Data[4] = 0x01;
-        // everything in between here will be zero
-        Data[37] = 0x02;
-        Data[38] = 32;
-        Data[39] = 0x01;
-        // here too. 
-        Data[71] = byte(directive(sighash::all));
+    inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::signature& x) {
+        return o << "signature{" << data::encoding::hex::write(x.Data) << "}";
     }
 }
 
