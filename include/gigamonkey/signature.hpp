@@ -18,10 +18,12 @@ namespace Gigamonkey::Bitcoin {
             unsupported = 0,
             all = 1,
             none = 2,
-            single = 3,
-            fork_id = 0x40,
-            anyone_can_pay = 0x80
+            single = 3
         };
+        
+        const byte anyone_can_pay = 0x80;
+        
+        const byte fork_id = 0x40;
         
         inline type base(directive d) {
             return type(uint32(d) & 0x1f);
@@ -37,7 +39,7 @@ namespace Gigamonkey::Bitcoin {
         
     };
     
-    inline sighash::directive directive(sighash::type t, bool fork_id = true, bool anyone_can_pay = false) {
+    inline sighash::directive directive(sighash::type t, bool anyone_can_pay = false, bool fork_id = true) {
         return sighash::directive(t + sighash::fork_id * fork_id + sighash::anyone_can_pay * anyone_can_pay);
     }
     
@@ -74,7 +76,13 @@ namespace Gigamonkey::Bitcoin {
         index Index;
     };
     
-    digest256 signature_hash(const input_index& v, sighash::directive d);
+    digest256 signature_hash_original(const input_index& v, sighash::directive d);
+    digest256 signature_hash_forkid(const input_index& v, sighash::directive d);
+    
+    inline digest256 signature_hash(const input_index& v, sighash::directive d) {
+        if (sighash::has_fork_id(d)) return signature_hash_forkid(v, d);
+        return signature_hash_original(v, d);
+    }
     
     inline signature sign(const input_index& i, sighash::directive d, const secp256k1::secret& s) {
         return signature{s.sign(signature_hash(i, d)), d};

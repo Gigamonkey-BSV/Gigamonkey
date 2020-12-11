@@ -24,15 +24,27 @@ namespace Gigamonkey::Bitcoin {
         return bsv::CPubKey{p.Value.begin(), p.Value.end()}.Verify(hash, static_cast<const std::vector<uint8_t> &>(x.Data));
     }
     
-    digest256 signature_hash(const input_index &v, sighash::directive d) {
+    digest256 signature_hash_original(const input_index &v, sighash::directive d) {
         bsv::CScript script(v.Output.Script.begin(),v.Output.Script.end());
         bsv::CDataStream stream{static_cast<const std::vector<uint8_t>&>(v.Transaction), bsv::SER_NETWORK, bsv::PROTOCOL_VERSION};
         bsv::CTransaction tx{bsv::deserialize, stream};
         bsv::SigHashType hashType(d);
         bsv::Amount amount((long)v.Output.Value);
-        bsv::uint256 tmp = bsv::SignatureHash(script, tx, v.Index, hashType, amount);
+        bsv::uint256 tmp = bsv::SignatureHash(script, tx, v.Index, hashType, amount, nullptr, false);
         digest<32> output;
-        std::copy(output.begin(),tmp.begin(),tmp.end());
+        std::copy(output.begin(), tmp.begin(), tmp.end());
+        return output;
+    }
+    
+    digest256 signature_hash_forkid(const input_index &v, sighash::directive d) {
+        bsv::CScript script(v.Output.Script.begin(),v.Output.Script.end());
+        bsv::CDataStream stream{static_cast<const std::vector<uint8_t>&>(v.Transaction), bsv::SER_NETWORK, bsv::PROTOCOL_VERSION};
+        bsv::CTransaction tx{bsv::deserialize, stream};
+        bsv::SigHashType hashType(d);
+        bsv::Amount amount((long)v.Output.Value);
+        bsv::uint256 tmp = bsv::SignatureHash(script, tx, v.Index, hashType, amount, nullptr, true);
+        digest<32> output;
+        std::copy(output.begin(), tmp.begin(), tmp.end());
         return output;
     }
 

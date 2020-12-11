@@ -7,8 +7,8 @@
 #ifndef GIGAMONKEY_SCRIPT_SCRIPT
 #define GIGAMONKEY_SCRIPT_SCRIPT
 
-#include <script/script.h>
-#include <script/script_error.h>
+#include <sv/script/script.h>
+#include <sv/script/script_error.h>
 
 #include <boost/endian/conversion.hpp>
 
@@ -18,14 +18,14 @@
 namespace Gigamonkey::Bitcoin { 
     
     struct evaluated {
-        ScriptError Error;
+        bsv::ScriptError Error;
         bool Return;
         
-        evaluated() : Error{SCRIPT_ERR_OK}, Return{false} {}
-        evaluated(ScriptError err) : Error{err}, Return{false} {}
+        evaluated() : Error{bsv::SCRIPT_ERR_OK}, Return{false} {}
+        evaluated(bsv::ScriptError err) : Error{err}, Return{false} {}
         
         bool valid() const {
-            return Error == SCRIPT_ERR_OK;
+            return Error == bsv::SCRIPT_ERR_OK;
         }
         
         bool operator==(const evaluated e) const {

@@ -1,7 +1,7 @@
 // Copyright (c) 2019-2020 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#include <gigamonkey/script.hpp>
+#include <gigamonkey/script/script.hpp>
 
 #include <sv/script/interpreter.h>
 #include <sv/taskcancellation.h>

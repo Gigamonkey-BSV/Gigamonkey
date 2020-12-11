@@ -6,8 +6,6 @@
 
 #include <iosfwd>
 
-namespace bsv {
-
 /** Script opcodes */
 enum opcodetype 
 {
@@ -159,7 +157,5 @@ enum opcodetype
 
 const char *GetOpName(opcodetype);
 std::ostream& operator<<(std::ostream&, const opcodetype&);
-
-}
 
 #endif
