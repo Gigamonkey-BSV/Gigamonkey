@@ -25,7 +25,7 @@ macro(package_add_test TESTNAME)
     set_target_properties(${TESTNAME} PROPERTIES FOLDER tests)
 endmacro()
 
-package_add_test(testBase58 testBase58.cpp)
+package_add_test(testGBase58 testBase58.cpp)
 package_add_test(testFormat testFormat.cpp)
 package_add_test(testTimestamp testTimestamp.cpp)
 package_add_test(testAddress testAddress.cpp)
