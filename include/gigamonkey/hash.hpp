@@ -86,7 +86,7 @@ namespace Gigamonkey {
         digest() : nonzero<uint<size>>{} {}
         
         explicit digest(const uint<size>& u) : nonzero<uint<size>>{u} {}
-        explicit digest(string_view s) : nonzero<uint<size>>{uint<size>{s}} {}
+        explicit digest(string_view s);
         explicit digest(const slice<size>& x) : digest{uint<size>(x)} {}
         
         operator bytes_view() const {
@@ -462,6 +462,15 @@ namespace Gigamonkey {
     template <size_t size, unsigned int bits>
     inline const byte* uint<size, bits>::data() const {
         return begin();
+    }
+    
+    template <size_t size>
+    digest<size>::digest(string_view s) {
+        data::encoding::hex::view v{s};
+        if (v.valid()) {
+            bytes_view b = (bytes_view)v;
+            std::copy(b.begin(), b.end(), begin());
+        } else *this = digest{uint<size>{s}};
     }
 
 }
