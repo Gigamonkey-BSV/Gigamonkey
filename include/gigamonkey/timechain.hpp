@@ -76,7 +76,7 @@ namespace Gigamonkey::Bitcoin {
     
     struct timechain {
         
-        bool broadcast(const bytes);
+        bool broadcast(const bytes&);
         
         virtual list<uint<80>> headers(uint64 since_height) const = 0;
         
@@ -89,13 +89,13 @@ namespace Gigamonkey::Bitcoin {
             }
         };
         
-        virtual tx transaction(const digest<32>&) const = 0;
+        virtual tx transaction(const digest256&) const = 0;
         
         // next 2 should work for both header hash and merkle root.
-        virtual uint<80> header(const digest<32>&) const = 0; 
+        virtual uint<80> header(const digest256&) const = 0; 
         
         // get block by hash. 
-        virtual bytes block(const digest<32>&) const = 0; 
+        virtual bytes block(const digest256&) const = 0; 
     };
 
     struct header {
@@ -110,8 +110,8 @@ namespace Gigamonkey::Bitcoin {
         static bool valid(const slice<80> h);
         
         int32_little Version;
-        digest<32> Previous;
-        digest<32> MerkleRoot;
+        digest256 Previous;
+        digest256 MerkleRoot;
         Bitcoin::timestamp Timestamp;
         Bitcoin::target Target;
         uint32_little Nonce;
@@ -120,8 +120,8 @@ namespace Gigamonkey::Bitcoin {
         
         header(
             int32_little v,
-            digest<32> p,
-            digest<32> mr,
+            digest256 p,
+            digest256 mr,
             Bitcoin::timestamp ts,
             Bitcoin::target t,
             uint32_little n) : Version{v}, Previous{p}, MerkleRoot{mr}, Timestamp{ts}, Target{t}, Nonce{n} {}
@@ -129,8 +129,8 @@ namespace Gigamonkey::Bitcoin {
         static header read(slice<80> x) {
             return header{
                 version(x), 
-                digest<32>{previous(x)}, 
-                digest<32>{merkle_root(x)}, 
+                digest256{previous(x)}, 
+                digest256{merkle_root(x)}, 
                 Bitcoin::timestamp{timestamp(x)}, 
                 Bitcoin::target{target(x)}, 
                 nonce(x)};
@@ -144,7 +144,7 @@ namespace Gigamonkey::Bitcoin {
         
         uint<80> write() const;
         
-        digest<32> hash() const {
+        digest256 hash() const {
             return hash256(write());
         }
         
@@ -405,15 +405,15 @@ namespace Gigamonkey::Bitcoin {
         return r >> b.Header >> b.Transactions;
     }
    
-    digest<32> inline header::previous(const slice<80> x) {
-        return digest<32>(x.range<4, 36>());
+    digest256 inline header::previous(const slice<80> x) {
+        return digest256(x.range<4, 36>());
     }
     
-    digest<32> inline header::merkle_root(const slice<80> x) {
-        return digest<32>(x.range<36, 68>());
+    digest256 inline header::merkle_root(const slice<80> x) {
+        return digest256(x.range<36, 68>());
     }
     
-    digest<32> inline header::hash(const slice<80> h) {
+    digest256 inline header::hash(const slice<80> h) {
         return Bitcoin::hash256(h);
     }
     

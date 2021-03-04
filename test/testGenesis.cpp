@@ -1,7 +1,7 @@
 // Copyright (c) 2019 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#include <gigamonkey/timechain.hpp>
+#include <gigamonkey/spv.hpp>
 #include "gtest/gtest.h"
 
 namespace Gigamonkey::Bitcoin {
@@ -21,15 +21,15 @@ namespace Gigamonkey::Bitcoin {
         
         digest<32> genesis_header_hash{"0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"};
         
-        block genesis = block::read(genesis_serialized);
+        block genesis_block = genesis();
         
         EXPECT_TRUE(block::valid(genesis_serialized));
-        EXPECT_TRUE(genesis.valid());
-        EXPECT_EQ(genesis_serialized, genesis.write());
-        EXPECT_EQ(block::read(genesis_serialized), genesis);
-        EXPECT_EQ(genesis.Header.hash(), genesis_header_hash);
-        EXPECT_EQ(genesis.Header.hash(), genesis_header_hash);
-        EXPECT_EQ(genesis.Header.MerkleRoot, block::merkle_root(genesis_serialized));
+        EXPECT_TRUE(genesis_block.valid());
+        EXPECT_EQ(genesis_serialized, genesis_block.write());
+        EXPECT_EQ(block::read(genesis_serialized), genesis_block);
+        EXPECT_EQ(genesis_block.Header.hash(), genesis_header_hash);
+        EXPECT_EQ(genesis_block.Header.hash(), genesis_header_hash);
+        EXPECT_EQ(genesis_block.Header.MerkleRoot, block::merkle_root(genesis_serialized));
     }
 
 }

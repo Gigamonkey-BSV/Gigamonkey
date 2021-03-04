@@ -4,31 +4,19 @@
 #include <gigamonkey/spv.hpp>
 
 namespace Gigamonkey::Bitcoin {
-        
-    headers headers::attach(const Bitcoin::header& h) const {
-        auto d = digest<32>(h.Previous);
-        list<header> prev = Headers[d];
-        if (data::empty(prev)) return {};
-        ordered_list<chain> chains = Chains;
-        list<chain> chx{};
-        chain next;
-        while(true) {
-            if (data::empty(chains)) {
-                next = chain{prev}.add(h);
-                chains = Chains;
-                break;
-            }
-            if (chains.first().Chain == prev) {
-                next = chains.first().add(h);
-                chains = chains.rest();
-                while (!data::empty(chx)) {
-                    chains = chains.insert(chx.first());
-                    chx = chx.rest();
-                }
-                break;
-            }
-        }
-        return headers{chains.insert(next), Headers.insert(next.Chain.first().Hash, next.Chain)};
+    
+    block genesis() {
+        static block Genesis = block::read(bytes(encoding::hex::string{std::string{} + 
+            "0100000000000000000000000000000000000000000000000000000000000000" +
+            "000000003BA3EDFD7A7B12B27AC72C3E67768F617FC81BC3888A51323A9FB8AA" +
+            "4B1E5E4A29AB5F49FFFF001D1DAC2B7C01010000000100000000000000000000" +
+            "00000000000000000000000000000000000000000000FFFFFFFF4D04FFFF001D" +
+            "0104455468652054696D65732030332F4A616E2F32303039204368616E63656C" +
+            "6C6F72206F6E206272696E6B206F66207365636F6E64206261696C6F75742066" +
+            "6F722062616E6B73FFFFFFFF0100F2052A01000000434104678AFDB0FE554827" +
+            "1967F1A67130B7105CD6A828E03909A67962E0EA1F61DEB649F6BC3F4CEF38C4" +
+            "F35504E51EC112DE5C384DF7BA0B8D578A4C702B6BF11D5FAC00000000"}));
+        return Genesis;
     }
     
 }

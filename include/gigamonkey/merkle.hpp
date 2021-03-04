@@ -165,6 +165,11 @@ namespace Gigamonkey::Merkle {
         const ordered_list<proof> proofs() const;
         
         dual operator+(const dual& d) const;
+        
+        dual& operator=(const dual& d);
+        
+        bytes serialize() const;
+        static dual deserialize(const bytes&);
     };
     
     inline dual operator+(const proof& a, const proof& b) {
@@ -386,6 +391,12 @@ namespace Gigamonkey::Merkle {
         
     inline bool server::operator==(const server& s) const {
         return Width == s.Width && Height == s.Height && Digests == s.Digests;
+    }
+    
+    inline dual& dual::operator=(const dual& d) {
+        Paths = d.Paths;
+        Root = d.Root;
+        return *this;
     }
 }
 

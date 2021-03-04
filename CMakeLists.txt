@@ -138,6 +138,7 @@ add_library(gigamonkey STATIC
     src/gigamonkey/schema/hd.cpp
     src/gigamonkey/schema/random.cpp
     src/gigamonkey/wallet.cpp
+    src/gigamonkey/spv.cpp
     src/gigamonkey/stratum/error.cpp
     src/gigamonkey/stratum/stratum.cpp
     src/gigamonkey/stratum/difficulty.cpp
