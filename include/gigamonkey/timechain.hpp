@@ -14,17 +14,6 @@ namespace Gigamonkey::Bitcoin {
     
     using txid = digest256;
     
-    struct timechain {
-        virtual list<uint<80>> headers(uint64 since_height) const = 0;
-        virtual bytes transaction(const digest<32>&) const = 0;
-        virtual Merkle::path merkle_path(const digest<32>&) const = 0;
-        // next 3 should work for both header hash and merkle root.
-        virtual uint<80> header(const digest<32>&) const = 0; 
-        virtual list<txid> transactions(const digest<32>&) const = 0;
-        virtual bytes block(const digest<32>&) const = 0; 
-        bool broadcast(const bytes tx);
-    };
-    
     struct outpoint;
     
     bool operator==(const outpoint&, const outpoint&);
@@ -84,6 +73,30 @@ namespace Gigamonkey::Bitcoin {
     reader operator>>(reader r, block& h);
 
     std::ostream& operator<<(std::ostream& o, const block& p);
+    
+    struct timechain {
+        
+        bool broadcast(const bytes);
+        
+        virtual list<uint<80>> headers(uint64 since_height) const = 0;
+        
+        struct tx {
+            bytes Transaction;
+            Merkle::proof Proof;
+            
+            bool confirmed() const {
+                return Proof != Merkle::proof{};
+            }
+        };
+        
+        virtual tx transaction(const digest<32>&) const = 0;
+        
+        // next 2 should work for both header hash and merkle root.
+        virtual uint<80> header(const digest<32>&) const = 0; 
+        
+        // get block by hash. 
+        virtual bytes block(const digest<32>&) const = 0; 
+    };
 
     struct header {
         

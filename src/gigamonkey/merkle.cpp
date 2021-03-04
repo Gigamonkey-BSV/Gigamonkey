@@ -151,10 +151,18 @@ namespace Gigamonkey::Merkle {
         return tree{Trees.first(), width, height};
     }
     
-    digest256 root(list<digest256> l) {
+    digest root(list<digest> l) {
         if (l.size() == 0) return {};
         while (l.size() > 1) l = round(l); 
         return l.first();
+    }
+    
+    digest root(leaf l, digests d) {
+        while (d.size() > 0) {
+            l = leaf{l.Index & 1 ? hash_concatinated(d.first(), l.Digest) : hash_concatinated(l.Digest, d.first()), l.Index >> 1};
+            d = d.rest();
+        }
+        return l.Digest;
     }
         
     branch branch::rest() const {
@@ -163,12 +171,6 @@ namespace Gigamonkey::Merkle {
         if (Leaf.Index & 1) next = hash_concatinated(Digests.first(), Leaf.Digest);
         else next = hash_concatinated(Leaf.Digest, Digests.first());
         return branch{leaf{next, Leaf.Index >> 1}, Digests.rest()};
-    }
-    
-    digest256 branch::root() const {
-        branch p = *this;
-        while(!p.Digests.empty()) p = p.rest();
-        return p.Leaf.Digest;
     }
     
     const list<proof> tree::proofs() const {

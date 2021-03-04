@@ -9,7 +9,8 @@
 namespace Gigamonkey::Merkle {
     
     using digest = digest256;
-        
+    
+    // the function that is used to compute successive nodes in the Merkle tree. 
     inline digest hash_concatinated(const digest& a, const digest& b) {
         return Bitcoin::hash256(write(64, a, b));
     }
@@ -17,10 +18,12 @@ namespace Gigamonkey::Merkle {
     // all hashes for the leaves of a given tree in order starting from zero.
     using leaf_digests = list<digest>;
     
-    digest root(leaf_digests l);
-    
     using digests = stack<digest>;
     
+    digest root(leaf_digests l);
+    
+    // path is an index and a sequence of hashes not 
+    // including the leaf hash or root. 
     struct path final {
         uint32 Index;
         digests Digests;
@@ -30,7 +33,7 @@ namespace Gigamonkey::Merkle {
         
         bool valid() const;
         
-        digest derive_root(const digest& leaf) const;
+        digest derive_root(const digest& l) const;
     };
     
     struct leaf final {
@@ -44,8 +47,15 @@ namespace Gigamonkey::Merkle {
         bool valid() const;
     };
     
+    digest root(leaf, digests);
+    
+    inline digest path::derive_root(const digest& l) const {
+        return root(leaf{l, Index}, Digests);
+    }
+    
     using entry = data::entry<digest, path>;
     
+    // branch has a leaf and a path but not a root. 
     struct branch final {
         leaf Leaf;
         digests Digests;
@@ -66,16 +76,14 @@ namespace Gigamonkey::Merkle {
         
         branch rest() const;
         
-        digest root() const;
+        digest root() const {
+            return Merkle::root(Leaf, Digests);
+        }
         
         explicit operator path() const;
         
         explicit operator entry() const;
     };
-    
-    inline digest path::derive_root(const digest& leaf) const {
-        return branch{leaf, *this}.root();
-    }
     
     struct proof final {
         branch Branch;
