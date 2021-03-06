@@ -4,8 +4,8 @@
 #ifndef GIGAMONKEY_SPV
 #define GIGAMONKEY_SPV
 
-#include "timechain.hpp"
-#include "merkle.hpp"
+#include <gigamonkey/timechain.hpp>
+#include <gigamonkey/merkle/dual.hpp>
 
 namespace Gigamonkey::Bitcoin {
     

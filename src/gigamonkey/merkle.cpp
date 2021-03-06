@@ -1,7 +1,9 @@
-// Copyright (c) 2019 Daniel Krawisz
+// Copyright (c) 2019-2021 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#include <gigamonkey/merkle.hpp>
+#include <gigamonkey/merkle/tree.hpp>
+#include <gigamonkey/merkle/dual.hpp>
+#include <gigamonkey/merkle/server.hpp>
 #include <algorithm>
 
 namespace Gigamonkey::Merkle {

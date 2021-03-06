@@ -7,7 +7,7 @@
 #include "primitives/block.h"
 #include <gigamonkey/hash.hpp>
 #include <gigamonkey/satoshi.hpp>
-#include <gigamonkey/merkle.hpp>
+#include <gigamonkey/merkle/proof.hpp>
 #include <gigamonkey/work/target.hpp>
 
 namespace Gigamonkey::Bitcoin {
