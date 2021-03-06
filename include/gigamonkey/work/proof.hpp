@@ -61,13 +61,13 @@ namespace Gigamonkey::work {
         // second part of the coinbase tx. 
         bytes Body;
         
-        uint32_little VersionMask;
+        int32_little VersionMask;
         
         puzzle();
         puzzle(int32_little v, const uint256& d, compact g,
-            Merkle::path mp, const bytes& h, const bytes& b, uint32_little mask = 0) : puzzle{candidate{v, d, g, mp}, h, b, mask} {} 
+            Merkle::path mp, const bytes& h, const bytes& b, int32_little mask = 0) : puzzle{candidate{v, d, g, mp}, h, b, mask} {} 
         
-        puzzle(const candidate& x, const bytes& h, const bytes& b, uint32_little mask = 0) : Candidate{x}, Header{h}, Body{b}, VersionMask{mask} {} 
+        puzzle(const candidate& x, const bytes& h, const bytes& b, int32_little mask = 0) : Candidate{x}, Header{h}, Body{b}, VersionMask{mask} {} 
         
         bool valid() const;
     };
@@ -100,7 +100,7 @@ namespace Gigamonkey::work {
         
         bool valid() const;
         
-        int32_little version(uint32_little mask) const {
+        int32_little version(int32_little mask) const {
             return (bool(VersionBits) ? (*VersionBits) : int32_little{0}) & mask;
         }
     };

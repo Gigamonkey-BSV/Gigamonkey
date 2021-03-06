@@ -12,8 +12,8 @@ namespace Gigamonkey::work::ASICBoost {
     // This page implements general purpose nVersion bits, 
     // as described by https://en.bitcoin.it/wiki/BIP_0320. 
     
-    const uint32_little Mask{0xe0001fff};
-    const uint32_little Bits{0x1fffe000};
+    const int32_little Mask{static_cast<int32>(0xe0001fff)};
+    const int32_little Bits{static_cast<int32>(0x1fffe000)};
     
     inline int32_little version(int32_little version_field) {
         return Mask & version_field;
