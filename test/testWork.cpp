@@ -42,10 +42,21 @@ namespace Gigamonkey::work {
             target_256 << 
             target_512; 
         
+        // puzzle format from before ASICBoost was developed. 
         auto puzzles = outer<puzzle>([](std::string m, compact t) -> puzzle {
             digest256 message_hash = sha256(m);
             return puzzle(1, message_hash, t, 
                 Merkle::path{}, bytes{}, bytes(m));
+        }, messages, targets);
+        
+        // use standard mask for general purpose version bits that are used with ASICBoost. 
+        auto mask = ASICBoost::Mask;
+        
+        // puzzle format from after ASICBoost. 
+        auto puzzles_with_mask = outer<puzzle>([mask](std::string m, compact t) -> puzzle {
+            digest256 message_hash = sha256(m);
+            return puzzle(1, message_hash, t, 
+                Merkle::path{}, bytes{}, bytes(m), mask);
         }, messages, targets);
         
         uint64_big extra_nonce = 90983;
@@ -54,6 +65,12 @@ namespace Gigamonkey::work {
             return cpu_solve(p, solution(Bitcoin::timestamp(1), 0, extra_nonce++, 353));
         }, puzzles); 
         
+        // we add a non-trivial version mask. 
+        auto proofs_with_mask = data::for_each([&extra_nonce](puzzle p) -> proof {
+            // add a non-trivial version bits field. 
+            return cpu_solve(p, solution(share{Bitcoin::timestamp(1), 0, extra_nonce++, 0xffffff}, 353));
+        }, puzzles_with_mask); 
+        
         EXPECT_TRUE(dot_cross([](puzzle p, solution x) -> bool {
             return proof{p, x}.valid();
         }, data::for_each([](proof p) -> puzzle {
@@ -61,6 +78,28 @@ namespace Gigamonkey::work {
         }, proofs), data::for_each([](proof p) -> solution {
             return p.Solution;
         }, proofs)));
+        
+        EXPECT_TRUE(dot_cross([](puzzle p, solution x) -> bool {
+            return proof{p, x}.valid();
+        }, data::for_each([](proof p) -> puzzle {
+            return p.Puzzle;
+        }, proofs_with_mask), data::for_each([](proof p) -> solution {
+            return p.Solution;
+        }, proofs_with_mask)));
+        
+        // apply mask and the result should still be valid;
+        // we have just converted back to the old format. 
+        EXPECT_TRUE(dot_cross([](puzzle p, solution x) -> bool {
+            return proof{p, x}.valid();
+        }, data::for_each([](proof p) -> puzzle {
+            auto p_fixed = p.Puzzle;
+            p_fixed.Candidate.Category = (p_fixed.Candidate.Category & ~p_fixed.VersionMask) | (p.Solution.Share.version(p_fixed.VersionMask));
+            return p.Puzzle;
+        }, proofs_with_mask), data::for_each([](proof p) -> solution {
+            auto x_fixed = p.Solution;
+            x_fixed.Share.VersionBits = {};
+            return p.Solution;
+        }, proofs_with_mask)));
         
     }
 

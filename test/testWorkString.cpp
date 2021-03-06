@@ -7,7 +7,6 @@
 
 namespace Gigamonkey::Bitcoin {
 
-    // can result in stack smashing
     TEST(WorkStringTest, TestWorkSTring) {
         
         std::string genesis_header_string = std::string{} + 
@@ -53,6 +52,10 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_TRUE(work_string.valid());
         
         EXPECT_TRUE(header.valid());
+        
+    }
+    
+    TEST(MagicNumberTest, TestWorkSTring) {
         
     }
 

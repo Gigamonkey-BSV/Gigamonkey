@@ -1,10 +1,11 @@
-// Copyright (c) 2019-2020 Daniel Krawisz
+// Copyright (c) 2019-2021 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #ifndef GIGAMONKEY_WORK_STRING
 #define GIGAMONKEY_WORK_STRING
 
 #include <gigamonkey/timechain.hpp>
+#include <gigamonkey/work/ASICBoost.hpp>
 
 namespace Gigamonkey::work {
     
@@ -19,6 +20,8 @@ namespace Gigamonkey::work {
         string() : Category(0), Digest(0), MerkleRoot(0), Timestamp(), Target(0), Nonce(0) {}
         string(int32_little v, uint256 d, uint256 mp, Bitcoin::timestamp ts, compact tg, nonce n) : 
             Category{v}, Digest{d}, MerkleRoot{mp}, Timestamp{ts}, Target{tg}, Nonce{n} {}
+        string(uint16_little m, uint16_little b, uint256 d, uint256 mp, Bitcoin::timestamp ts, compact tg, nonce n) : 
+            Category{ASICBoost::category(m, b)}, Digest{d}, MerkleRoot{mp}, Timestamp{ts}, Target{tg}, Nonce{n} {}
         
         static string read(const slice<80> x) {
             return string{
@@ -58,6 +61,18 @@ namespace Gigamonkey::work {
         
         explicit operator Bitcoin::header() const {
             return {Category, digest256{Digest}, digest256{MerkleRoot}, Timestamp, Target, Nonce};
+        }
+        
+        int32_little version() const {
+            return ASICBoost::version(Category);
+        }
+        
+        uint16_little magic_number() const {
+            return ASICBoost::magic_number(Category);
+        }
+        
+        uint16_little ASICBoost_bits() const {
+            return ASICBoost::bits(Category);
         }
     };
         

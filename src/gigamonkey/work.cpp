@@ -11,11 +11,18 @@ namespace Gigamonkey::work {
     proof cpu_solve(const puzzle& p, const solution& initial) {
         uint256 target = p.Candidate.Target.expand();
         if (target == 0) return {};
+        
         // This is for test purposes only. Therefore we do not
         // accept difficulties that are above the ordinary minimum. 
         if (p.Candidate.Target.difficulty() > difficulty::minimum()) return {}; 
+        
         proof pr{p, initial};
-        while(!pr.valid()) pr.Solution.Share.Nonce++;
+        
+        while(!pr.valid()) {
+            pr.Solution.Share.Nonce++;
+            if (pr.Solution.Share.Nonce == 0) pr.Solution.Share.ExtraNonce2++;
+        }
+        
         return pr;
     }
     

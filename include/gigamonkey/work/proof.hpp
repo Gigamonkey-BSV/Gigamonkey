@@ -61,11 +61,13 @@ namespace Gigamonkey::work {
         // second part of the coinbase tx. 
         bytes Body;
         
+        uint32_little VersionMask;
+        
         puzzle();
         puzzle(int32_little v, const uint256& d, compact g,
-            Merkle::path mp, const bytes& h, const bytes& b) : puzzle{candidate{v, d, g, mp}, h, b} {} 
+            Merkle::path mp, const bytes& h, const bytes& b, uint32_little mask = 0) : puzzle{candidate{v, d, g, mp}, h, b, mask} {} 
         
-        puzzle(const candidate& x, const bytes& h, const bytes& b) : Candidate{x}, Header{h}, Body{b} {}
+        puzzle(const candidate& x, const bytes& h, const bytes& b, uint32_little mask = 0) : Candidate{x}, Header{h}, Body{b}, VersionMask{mask} {} 
         
         bool valid() const;
     };
@@ -90,10 +92,17 @@ namespace Gigamonkey::work {
         // Extra nonce is a part of Stratum but not part of the Bitcoin protocol. That is why we use big-endian. 
         uint64_big ExtraNonce2;
         
+        std::optional<int32_little> VersionBits;
+        
+        share(Bitcoin::timestamp t, nonce n, uint64_big b, int32_little version);
         share(Bitcoin::timestamp t, nonce n, uint64_big b);
         share();
         
         bool valid() const;
+        
+        int32_little version(uint32_little mask) const {
+            return (bool(VersionBits) ? (*VersionBits) : int32_little{0}) & mask;
+        }
     };
     
     struct solution final {
@@ -226,7 +235,12 @@ namespace Gigamonkey::work {
         return o << "proof{Puzzle: " << p.Puzzle << ", Solution: " << p.Solution << "}";
     }
     
-    inline share::share(Bitcoin::timestamp t, nonce n, uint64_big b) : Timestamp{t}, Nonce{n}, ExtraNonce2{b} {}
+    inline share::share(Bitcoin::timestamp t, nonce n, uint64_big b)
+        : Timestamp{t}, Nonce{n}, ExtraNonce2{b}, VersionBits{} {}
+    
+    inline share::share(Bitcoin::timestamp t, nonce n, uint64_big b, int32_little version)
+        : Timestamp{t}, Nonce{n}, ExtraNonce2{b}, VersionBits{version} {}
+    
     inline share::share() : Timestamp{}, Nonce{}, ExtraNonce2{} {};
     
     bool inline share::valid() const {
@@ -276,7 +290,7 @@ namespace Gigamonkey::work {
     
     string inline proof::string() const {
         return work::string{
-            Puzzle.Candidate.Category, 
+            (Puzzle.Candidate.Category & ~Puzzle.VersionMask) | Solution.Share.version(Puzzle.VersionMask), 
             Puzzle.Candidate.Digest, 
             merkle_root(), 
             Solution.Share.Timestamp, 
