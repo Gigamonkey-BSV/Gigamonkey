@@ -1,7 +1,9 @@
 // Copyright (c) 2019 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#include <gigamonkey/merkle.hpp>
+#include <gigamonkey/merkle/tree.hpp>
+#include <gigamonkey/merkle/dual.hpp>
+#include <gigamonkey/merkle/server.hpp>
 #include "gtest/gtest.h"
 
 namespace Gigamonkey::Merkle {
@@ -21,7 +23,6 @@ namespace Gigamonkey::Merkle {
         digest256 fail = Bitcoin::hash256("Z");
         
         for (int i = 1; i <= leaves.size(); i++) {
-            
             leaf_digests l = take(leaves, i);
             
             tree Tree{l};
@@ -71,6 +72,10 @@ namespace Gigamonkey::Merkle {
                 EXPECT_EQ(p, q);
                 q.Root = fail;
                 EXPECT_FALSE(q.valid());
+                
+                json serialized = ReconstructedLeft.serialize();
+                auto DeserializedLeft = dual::deserialize(serialized);
+                ASSERT_EQ(ReconstructedLeft, DeserializedLeft);
             }
             
             EXPECT_EQ(Dual, ReconstructedLeft);

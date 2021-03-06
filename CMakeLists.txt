@@ -127,10 +127,10 @@ add_library(gigamonkey STATIC
     #src/bitcoin_sv/sv.cpp 
     src/gigamonkey/timestamp.cpp
     src/gigamonkey/secp256k1.cpp
-    src/gigamonkey/merkle.cpp
     src/gigamonkey/script.cpp
     src/gigamonkey/address.cpp
     src/gigamonkey/wif.cpp
+    src/gigamonkey/merkle.cpp
     src/gigamonkey/timechain.cpp
     src/gigamonkey/work.cpp
     src/gigamonkey/redeem.cpp
@@ -139,6 +139,7 @@ add_library(gigamonkey STATIC
     src/gigamonkey/wallet.cpp
     src/gigamonkey/spv.cpp
     src/gigamonkey/accounts.cpp
+    src/gigamonkey/merkle/dual.cpp
     src/gigamonkey/stratum/error.cpp
     src/gigamonkey/stratum/stratum.cpp
     src/gigamonkey/stratum/difficulty.cpp

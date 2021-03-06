@@ -339,7 +339,7 @@ namespace Gigamonkey::Merkle {
     }
     
     bool dual::valid() const {
-        return Root.valid() && Paths.valid() && check_proofs(proofs());
+        return Root.valid() && Paths.valid() && Paths.size() > 0 && check_proofs(proofs());
     }
     
     server::server(const tree& t) : server {} {
