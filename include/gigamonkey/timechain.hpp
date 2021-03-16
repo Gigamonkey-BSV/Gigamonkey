@@ -19,6 +19,11 @@ namespace Gigamonkey::Bitcoin {
     bool operator==(const outpoint&, const outpoint&);
     bool operator!=(const outpoint&, const outpoint&);
     
+    bool operator>(const outpoint&, const outpoint&);
+    bool operator<(const outpoint&, const outpoint&);
+    bool operator>=(const outpoint&, const outpoint&);
+    bool operator<=(const outpoint&, const outpoint&);
+    
     writer operator<<(writer w, const outpoint& h);
     reader operator>>(reader r, outpoint& h);
 
@@ -205,6 +210,8 @@ namespace Gigamonkey::Bitcoin {
             transaction{int32_little{2}, i, o, t} {}
             
         transaction() : Version{}, Inputs{}, Outputs{}, Locktime{} {};
+        
+        transaction(bytes_view);
         
         bool valid() const;
         
@@ -430,6 +437,22 @@ namespace Gigamonkey::Bitcoin {
         bytes b(serialized_size());
         writer(b) << *this;
         return b;
+    }
+    
+    inline bool operator>(const outpoint& a, const outpoint& b) {
+        return a.Reference == b.Reference ? a.Index > b.Index : a.Reference > b.Reference;
+    }
+    
+    inline bool operator<(const outpoint& a, const outpoint& b) {
+        return a.Reference == b.Reference ? a.Index < b.Index : a.Reference < b.Reference;
+    }
+    
+    inline bool operator>=(const outpoint& a, const outpoint& b) {
+        return a.Reference == b.Reference ? a.Index >= b.Index : a.Reference >= b.Reference;
+    }
+    
+    inline bool operator<=(const outpoint& a, const outpoint& b) {
+        return a.Reference == b.Reference ? a.Index <= b.Index : a.Reference <= b.Reference;
     }
 }
 

@@ -34,6 +34,9 @@ namespace Gigamonkey::Bitcoin {
             bool operator>=(const double_entry& t) const;
             bool operator<(const double_entry& t) const;
             bool operator>(const double_entry& t) const;
+            
+            Bitcoin::output output(index) const;
+            Bitcoin::input input(index) const;
         };
         
         virtual data::entry<txid, double_entry> transaction(const digest256&) const = 0;
@@ -72,15 +75,21 @@ namespace Gigamonkey::Bitcoin {
     };
     
     struct prevout {
-        data::entry<txid, ledger::double_entry> Entry;
-        input Input;
+        data::entry<txid, ledger::double_entry> Previous;
+        ledger::double_entry Transaction;
+        index Index;
         
         bytes_view output() const {
             return operator input_index().output();
         }
         
+        Bitcoin::input input() const {
+            return Transaction.input(Index);
+        }
+        
         bool valid() const {
-            return Entry.Key == Input.Outpoint.Reference && Entry.Value.valid();
+            Bitcoin::input in = input();
+            return in.valid() && Previous.Key == in.Outpoint.Reference && Previous.Value.valid();
         }
         
         satoshi value() const {
@@ -88,7 +97,7 @@ namespace Gigamonkey::Bitcoin {
         }
         
         explicit operator input_index() const {
-            return valid() ? input_index{bytes_view{Entry.Value->data(), Entry.Value->size()}, Input.Outpoint.Index} : input_index{};
+            return valid() ? input_index{bytes_view{Previous.Value->data(), Previous.Value->size()}, input().Outpoint.Index} : input_index{};
         }
     };
     
