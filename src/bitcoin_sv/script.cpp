@@ -45,12 +45,11 @@ namespace Gigamonkey::Bitcoin {
         return evaluate_script(unlock, lock, DummySignatureChecker{});
     }
     
-    evaluated evaluate_script(const script& unlock, const script& lock, const input_index& transaction) {
-        // transaction needs to be made into some stream but I don't know what that is. It's a
-        // template parameter in this constructor. 
-        CDataStream stream{static_cast<const std::vector<uint8_t>&>(transaction.Transaction), SER_NETWORK, PROTOCOL_VERSION};
-        CTransaction tx{deserialize, stream}; 
-        return evaluate_script(lock, unlock, TransactionSignatureChecker(&tx, transaction.Index, Amount(int64(transaction.Output.Value))));
+    evaluated evaluate_script(const script& unlock, const script& lock, const input_index& v) {
+        CDataStream stream{(const char*)(v.Transaction.data()), 
+            (const char*)(v.Transaction.data() + v.Transaction.size()), SER_NETWORK, PROTOCOL_VERSION};
+        CTransaction ctx{deserialize, stream}; 
+        return evaluate_script(lock, unlock, TransactionSignatureChecker(&ctx, v.Index, Amount(int64(v.value()))));
     }
 
 }

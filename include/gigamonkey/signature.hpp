@@ -6,7 +6,7 @@
 
 #include "secp256k1.hpp"
 #include "hash.hpp"
-#include "timechain.hpp"
+#include "ledger.hpp"
 
 namespace Gigamonkey::Bitcoin {
     
@@ -66,12 +66,6 @@ namespace Gigamonkey::Bitcoin {
             return x;
         } 
         
-    };
-    
-    struct input_index {
-        output Output;
-        bytes Transaction;
-        index Index;
     };
     
     digest256 signature_hash(const input_index& v, sighash::directive d);

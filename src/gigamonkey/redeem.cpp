@@ -33,24 +33,24 @@ namespace Gigamonkey::Bitcoin {
     
     vertex redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out, uint32_little locktime) {
         satoshi spent = fold([](satoshi s, data::entry<spendable, sighash::directive> v) -> satoshi {
-            return s + v.Key.Prevout.Output.Value;
+            return s + v.Key.Prevout.value();
         }, 0, prev);
         satoshi redeemed = fold([](satoshi s, output o) -> satoshi {
             return s + o.Value;
         }, 0, out);
         if (spent > redeemed) return {};
         bytes incomplete = transaction{data::for_each([](data::entry<spendable, sighash::directive> s) -> input {
-                    return input{s.Key.Prevout.Outpoint, {}, s.Key.Sequence};
-                }, prev), out, locktime}.write();
+            return input{s.Key.Prevout.Input.Outpoint, {}, s.Key.Sequence};
+        }, prev), out, locktime}.write();
         uint32 ind{0};
         list<input> in;
         list<prevout> prevouts;
         list<data::entry<spendable, sighash::directive>> p = prev;
         while (!p.empty()) {
             data::entry<spendable, sighash::directive> entry = p.first();
-            in = in << input{entry.Key.Prevout.Outpoint, 
+            in = in << input{entry.Key.Prevout.Input.Outpoint, 
                 redemption::redeem(entry.Key.Redeemer->redeem(entry.Value), 
-                    input_index{entry.Key.Prevout.Output, incomplete, ind++}), 
+                    input_index{incomplete, ind++}), 
                 entry.Key.Sequence};
             prevouts = prevouts << entry.Key.Prevout;
         }
@@ -59,7 +59,7 @@ namespace Gigamonkey::Bitcoin {
     
     satoshi vertex::spent() const {
         return fold([](satoshi x, const prevout& p) -> satoshi {
-            return x + p.Output.Value;
+            return x + p.value();
         }, satoshi{0}, Previous);
     }
     

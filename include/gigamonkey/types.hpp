@@ -100,6 +100,7 @@ namespace Gigamonkey::Bitcoin {
         bytes_reader Reader;
         reader(bytes_view b) : Reader{b.data(), b.data() + b.size()} {}
         reader(bytes_reader r) : Reader{r} {}
+        reader() : Reader{nullptr, 0} {}
         
         reader operator>>(byte& b) const {
             return reader{Reader >> b};

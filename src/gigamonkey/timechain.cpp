@@ -3,6 +3,7 @@
 
 #include <gigamonkey/work/proof.hpp>
 #include <gigamonkey/script/script.hpp>
+#include <gigamonkey/work/ASICBoost.hpp>
 
 namespace Gigamonkey {
     bool header_valid_work(slice<80> h) {
@@ -175,6 +176,66 @@ namespace Gigamonkey::Bitcoin {
             prev = next;
         }
         return x;
+    }
+    
+    reader read_transaction_version(reader r, int32_little& v) {
+        r = r >> v;
+        if (v == 1) return r;
+        if ((v & work::ASICBoost::Mask) == 2) {
+            v = 2;
+            return r;
+        }
+        v = -1;
+        return {};
+    }
+    
+    reader transaction_outputs(reader r) {
+        int32_little v;
+        r = read_transaction_version(r, v);
+        if (v < 1) return {};
+        return r;
+    }
+    
+    reader scan_output(reader r, bytes_view& o) {
+        satoshi value;
+        bytes_reader b = r.Reader >> value;
+        uint64 script_size;
+        b = reader::read_var_int(b, script_size);
+        o = bytes_view{r.Reader.Reader.Begin, script_size};
+        return reader{b.skip(script_size)};
+    }
+    
+    bytes_view transaction::output(bytes_view b, index i) {
+        reader r{b};
+        try {
+            r = transaction_outputs(r);
+            uint64 num_outputs;
+            r = reader::read_var_int(r.Reader, num_outputs);
+            if (num_outputs == 0 || num_outputs <= i) return {};
+            bytes_view output;
+            do {
+                r = scan_output(r, output);
+                if (output.size() == 0) return {};
+                if (i == 0) return output;
+                i--;
+            } while(true);
+        } catch (data::end_of_stream) {
+            return {};
+        }
+    }
+    
+    output::output(bytes_view b) {
+        reader r{b};
+        try {
+            bytes_reader b = r.Reader >> Value;
+            uint64 script_size;
+            b = reader::read_var_int(b, script_size);
+            Script.resize(script_size);
+            b >> Script;
+        } catch (data::end_of_stream) {
+            Value = -1;
+            Script = {};
+        }
     }
     
 }

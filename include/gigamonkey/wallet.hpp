@@ -30,7 +30,7 @@ namespace Gigamonkey::Bitcoin {
         funds(list<spendable> e) : funds{funds{}.insert(e)} {}
         
         funds insert(spendable s) const {
-            return {Entries << s, Value + s.Prevout.Output.Value, Valid && s.valid()};
+            return {Entries << s, Value + s.Prevout.value(), Valid && s.valid()};
         }
         
         funds insert(list<spendable> s) const {

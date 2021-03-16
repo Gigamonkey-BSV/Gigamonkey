@@ -4,7 +4,7 @@
 #ifndef GIGAMONKEY_REDEEM
 #define GIGAMONKEY_REDEEM
 
-#include <gigamonkey/timechain.hpp>
+#include <gigamonkey/ledger.hpp>
 #include <gigamonkey/script/script.hpp>
 #include <gigamonkey/wif.hpp>
 
@@ -47,15 +47,6 @@ namespace Gigamonkey::Bitcoin {
         virtual redemption::incomplete redeem(sighash::directive) const = 0;
         virtual uint32 expected_size() const = 0;
         virtual uint32 sigops() const = 0;
-    };
-    
-    struct prevout {
-        output Output;
-        outpoint Outpoint;
-        
-        bool valid() const {
-            return Output.valid() && Outpoint != outpoint::coinbase();
-        }
     };
     
     struct spendable {

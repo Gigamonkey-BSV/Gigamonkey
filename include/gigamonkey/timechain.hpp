@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Daniel Krawisz
+// Copyright (c) 2019-2021 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #ifndef GIGAMONKEY_TIMECHAIN
@@ -73,30 +73,6 @@ namespace Gigamonkey::Bitcoin {
     reader operator>>(reader r, block& h);
 
     std::ostream& operator<<(std::ostream& o, const block& p);
-    
-    struct timechain {
-        
-        bool broadcast(const bytes&);
-        
-        virtual list<uint<80>> headers(uint64 since_height) const = 0;
-        
-        struct tx {
-            bytes Transaction;
-            Merkle::proof Proof;
-            
-            bool confirmed() const {
-                return Proof != Merkle::proof{};
-            }
-        };
-        
-        virtual tx transaction(const digest256&) const = 0;
-        
-        // next 2 should work for both header hash and merkle root.
-        virtual uint<80> header(const digest256&) const = 0; 
-        
-        // get block by hash. 
-        virtual bytes block(const digest256&) const = 0; 
-    };
 
     struct header {
         
@@ -194,6 +170,11 @@ namespace Gigamonkey::Bitcoin {
     
         satoshi Value; 
         Gigamonkey::script Script;
+        
+        output() : Value{-1}, Script{} {}
+        output(satoshi v, const Gigamonkey::script& x) : Value{v}, Script{x} {}
+        
+        explicit output(bytes_view);
         
         bool valid() const;
         
