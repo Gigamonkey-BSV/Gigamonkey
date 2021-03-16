@@ -131,7 +131,6 @@ add_library(gigamonkey STATIC
     src/gigamonkey/script.cpp
     src/gigamonkey/address.cpp
     src/gigamonkey/wif.cpp
-    #src/gigamonkey/spv.cpp
     src/gigamonkey/timechain.cpp
     src/gigamonkey/work.cpp
     src/gigamonkey/redeem.cpp
@@ -139,6 +138,7 @@ add_library(gigamonkey STATIC
     src/gigamonkey/schema/random.cpp
     src/gigamonkey/wallet.cpp
     src/gigamonkey/spv.cpp
+    src/gigamonkey/accounts.cpp
     src/gigamonkey/stratum/error.cpp
     src/gigamonkey/stratum/stratum.cpp
     src/gigamonkey/stratum/difficulty.cpp

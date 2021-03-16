@@ -76,8 +76,8 @@ namespace Gigamonkey::Bitcoin {
     
     struct prevout {
         data::entry<txid, ledger::double_entry> Previous;
-        ledger::double_entry Transaction;
         index Index;
+        ledger::double_entry Transaction;
         
         bytes_view output() const {
             return operator input_index().output();
