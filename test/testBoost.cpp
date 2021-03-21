@@ -89,8 +89,24 @@ namespace Gigamonkey::Boost {
     }
     
     class test_case {
-        test_case(puzzle j, const output_script& x, const Stratum::job& sj, Stratum::session_id n1, uint64_big n2, Bitcoin::secret key) : 
-            Puzzle{j}, Script{x}, Job{sj}, ExtraNonce1{n1}, ExtraNonce2{n2}, Key{key} {}
+        test_case(
+            puzzle j, 
+            const output_script& x, 
+            const Stratum::job& sj, 
+            Stratum::session_id n1, 
+            uint64_big n2, 
+            Bitcoin::secret key) : 
+            Puzzle{j}, Script{x}, Job{sj}, ExtraNonce1{n1}, ExtraNonce2{n2}, Key{key}, Bits{} {}
+            
+        test_case(
+            puzzle j, 
+            const output_script& x, 
+            const Stratum::job& sj, 
+            Stratum::session_id n1, 
+            uint64_big n2, 
+            Bitcoin::secret key, 
+            int32_little bits) : 
+            Puzzle{j}, Script{x}, Job{sj}, ExtraNonce1{n1}, ExtraNonce2{n2}, Key{key}, Bits{bits} {}
         
         static test_case build(
             const output_script& o, 
@@ -119,12 +135,40 @@ namespace Gigamonkey::Boost {
             uint64 key) { 
             Bitcoin::secret s(Bitcoin::secret::main, secp256k1::secret(secp256k1::coordinate(key)));
             digest160 address = s.address().Digest;
-            puzzle Puzzle{type, 1, content, target, tag, user_nonce, data, s};
+            puzzle Puzzle{type, 1, content, target, tag, user_nonce, data, s, false};
             
-            return test_case(Puzzle, 
-                output_script{type, 1, content, target, tag, user_nonce, data, address}, 
+            output_script o = type == contract ? 
+                output_script::contract(1, content, target, tag, user_nonce, data, address, false) : 
+                output_script::bounty(1, content, target, tag, user_nonce, data, false);
+            
+            return test_case(Puzzle, o, 
                 Stratum::job{jobID, worker.Name, work::job{work::puzzle(Puzzle), worker.ExtraNonce1}, start, true}, 
                 worker.ExtraNonce1, n2, s);
+        }
+        
+        static test_case build(Boost::type type, 
+            const uint256& content, 
+            work::compact target, 
+            bytes tag, 
+            uint32_little user_nonce, 
+            bytes data, 
+            int32_little bits, 
+            const Stratum::job_id jobID, 
+            Bitcoin::timestamp start, 
+            const Stratum::worker& worker, 
+            uint64_big n2, 
+            uint64 key) { 
+            Bitcoin::secret s(Bitcoin::secret::main, secp256k1::secret(secp256k1::coordinate(key)));
+            digest160 address = s.address().Digest;
+            puzzle Puzzle{type, 1, content, target, tag, user_nonce, data, s, true};
+            
+            output_script o = type == contract ? 
+                output_script::contract(1, content, target, tag, user_nonce, data, address, true) : 
+                output_script::bounty(1, content, target, tag, user_nonce, data, true);
+            
+            return test_case(Puzzle, o, 
+                Stratum::job{jobID, worker.Name, work::job{work::puzzle(Puzzle), worker.ExtraNonce1}, start, true}, 
+                worker.ExtraNonce1, n2, s, bits);
         }
         
     public:
@@ -134,6 +178,7 @@ namespace Gigamonkey::Boost {
         Stratum::session_id ExtraNonce1;
         uint64_big ExtraNonce2;
         Bitcoin::secret Key;
+        std::optional<int32_little> Bits;
         
         test_case(
             output_script o, 
@@ -153,9 +198,27 @@ namespace Gigamonkey::Boost {
             Stratum::job_id jobID, 
             Bitcoin::timestamp start,
             const Stratum::worker& worker,
-            uint64_big n2, 
-            uint64 key) : 
+            uint64_big n2, uint64 key) : 
             test_case(build(type, content, target, tag, user_nonce, data, jobID, start, worker, n2, key)) {}
+        
+        test_case(Boost::type type, 
+            uint256 content, 
+            work::compact target, 
+            bytes tag, 
+            uint32_little user_nonce, 
+            bytes data, 
+            int32_little bits, 
+            Stratum::job_id jobID, 
+            Bitcoin::timestamp start,
+            const Stratum::worker& worker,
+            uint64_big n2, uint64 key) : 
+            test_case(build(type, content, target, tag, user_nonce, data, bits, jobID, start, worker, n2, key)) {}
+        
+        work::solution initial_solution() const {
+            return work::solution(
+                Bits ? work::share(Job.timestamp(), 0, ExtraNonce2, *Bits) : 
+                work::share(Job.timestamp(), 0, ExtraNonce2), ExtraNonce1);
+        }
     };
 
     TEST(BoostTest, TestBoost) {
@@ -199,7 +262,7 @@ namespace Gigamonkey::Boost {
                 Stratum::worker{WorkerName, 97979}, 
                 302203233,
                 InitialKey} << 
-            // We vary test cases over bounty/contract and over contents.
+            // We vary test cases over bounty/contract, contents, and version bits.
             test_case{
                 Boost::bounty, 
                 ContentsA, 
@@ -240,7 +303,52 @@ namespace Gigamonkey::Boost {
                 JobID, Start, 
                 Stratum::worker{WorkerName, 97983}, 
                 302203237,
-                InitialKey + 4};
+                InitialKey + 4}/* << 
+            test_case{
+                Boost::bounty, 
+                ContentsA, 
+                Target, 
+                bytes_view(Tag), 
+                UserNonce, 
+                AdditionalData, 
+                0xffffff,
+                JobID, Start, 
+                Stratum::worker{WorkerName, 97980}, 
+                302203234,
+                InitialKey + 5} << 
+            test_case{
+                Boost::contract, 
+                ContentsA, 
+                Target, bytes_view(Tag), 
+                UserNonce + 1, 
+                AdditionalData, 
+                0xffffff,
+                JobID, Start, 
+                Stratum::worker{WorkerName, 97981}, 
+                302203235,
+                InitialKey + 6} << 
+            test_case{
+                Boost::bounty, 
+                ContentsB, 
+                Target, bytes_view(Tag), 
+                UserNonce + 2, 
+                AdditionalData,
+                0xffffff,
+                JobID, Start, 
+                Stratum::worker{WorkerName, 97982}, 
+                302203236,
+                InitialKey + 7} << 
+            test_case{
+                Boost::contract, 
+                ContentsB, 
+                Target, bytes_view(Tag), 
+                UserNonce + 3, 
+                AdditionalData,
+                0xffffff,
+                JobID, Start, 
+                Stratum::worker{WorkerName, 97983}, 
+                302203237,
+                InitialKey + 8}*/;
                 
         // Phase 1: Test whether all the different representations of puzzles have the same values of valid/invalid. 
         
@@ -299,7 +407,7 @@ namespace Gigamonkey::Boost {
         // Phase 4: generate solutions and check validity. 
         
         auto proofs = data::for_each([](const test_case t) -> work::proof {
-            return work::cpu_solve(work::puzzle(t.Puzzle), work::solution(work::share(t.Job.timestamp(), 0, t.ExtraNonce2), t.ExtraNonce1));
+            return work::cpu_solve(work::puzzle(t.Puzzle), t.initial_solution());
         }, test_cases);
         
         auto proof_validity = data::for_each([](work::proof p) -> bool {
@@ -312,7 +420,7 @@ namespace Gigamonkey::Boost {
         
         // here are the input scripts. 
         auto input_scripts = map_thread<input_script>([Signature](const test_case t, work::proof i) -> input_script {
-            return input_script{Signature, t.Key.to_public(), i.Solution, t.Puzzle.Type};
+            return input_script{Signature, t.Key.to_public(), i.Solution, t.Puzzle.Type, bool(i.Solution.Share.Bits)};
         }, test_cases, proofs);
         
         auto proofs_from_scripts = map_thread<work::proof>([](output_script o, input_script i) -> work::proof {

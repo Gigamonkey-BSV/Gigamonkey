@@ -158,6 +158,7 @@ namespace Gigamonkey::Boost {
     Bitcoin::program input_script::program() const {
         using namespace Bitcoin;
         if (Type == Boost::invalid) return {};
+        if (CategoryBits) throw 0; // TODO
         Bitcoin::program p{
             push_data(bytes_view(Signature)), 
             push_data(Pubkey),
@@ -176,6 +177,8 @@ namespace Gigamonkey::Boost {
         
         if (Type == Boost::contract) 
             boost_output_script = boost_output_script.append(push_data(MinerAddress));
+        
+        if (MaskedCategory) throw 0; // TODO
         
         boost_output_script = boost_output_script.append(
             push_data(Category),
@@ -227,21 +230,31 @@ namespace Gigamonkey::Boost {
     input_script from_solution(
                 const Bitcoin::signature& signature, 
                 const Bitcoin::pubkey& pubkey, 
-                const work::solution& x, Boost::type t) {
-        if (t == Boost::invalid || !x.valid()) return input_script{};
+                const work::solution& x, Boost::type t, 
+                bool category_mask) {
         
-        if (t == Boost::bounty) return input_script::bounty(signature, pubkey, x.Share.Nonce, x.Share.Timestamp, x.Share.ExtraNonce2, x.ExtraNonce1, pubkey.hash()); 
+        input_script in{};
         
-        return input_script::contract(signature, pubkey, x.Share.Nonce, x.Share.Timestamp, x.Share.ExtraNonce2, x.ExtraNonce1);
+        if (t == Boost::invalid || !x.valid() || (!category_mask && x.Share.Bits)) return in;
+        
+        in = t == Boost::bounty ? 
+            input_script::bounty(signature, pubkey, x.Share.Nonce, x.Share.Timestamp, x.Share.ExtraNonce2, x.ExtraNonce1, pubkey.hash()) : 
+            input_script::contract(signature, pubkey, x.Share.Nonce, x.Share.Timestamp, x.Share.ExtraNonce2, x.ExtraNonce1);
+        
+        if (category_mask) in.CategoryBits = x.Share.Bits ? work::ASICBoost::bits(*x.Share.Bits) : uint16_little{0};
+            
+        return in;
     }
     
     input_script::input_script(
         const Bitcoin::signature& signature, 
         const Bitcoin::pubkey& pubkey, 
-        const work::solution& x, Boost::type t) : input_script{from_solution(signature, pubkey, x, t)} {}
+        const work::solution& x, Boost::type t, 
+        bool category_mask) : input_script{from_solution(signature, pubkey, x, t, category_mask)} {}
     
     Boost::output_script job::output_script() const {
-        if (Type == invalid) return Boost::output_script();
+        
+        if (!valid()) return Boost::output_script();
         
         size_t puzzle_header_size = job::Puzzle.Header.size();
         size_t puzzle_body_size = job::Puzzle.Body.size();
@@ -252,15 +265,20 @@ namespace Gigamonkey::Boost {
         size_t tag_size = puzzle_header_size - 20;
         size_t data_size = puzzle_body_size - 4;
         
-        Boost::output_script out{Type, job::Puzzle.Candidate.Category, job::Puzzle.Candidate.Digest, job::Puzzle.Candidate.Target, 
-            bytes(tag_size), 0, bytes(puzzle_body_size - 4), 
-            Type == contract ? miner_address() : digest160{}};
+        Boost::output_script out = Type == bounty ? 
+            Boost::output_script::bounty(job::Puzzle.Candidate.Category, 
+                job::Puzzle.Candidate.Digest, job::Puzzle.Candidate.Target, 
+                bytes(tag_size), 0, bytes(data_size), masked_category()) :
+            Boost::output_script::contract(job::Puzzle.Candidate.Category, 
+                job::Puzzle.Candidate.Digest, job::Puzzle.Candidate.Target, 
+                bytes(tag_size), 0, bytes(data_size), miner_address(), masked_category());
         
         std::copy(job::Puzzle.Header.begin(), job::Puzzle.Header.begin() + tag_size, out.Tag.begin());
         std::copy(job::Puzzle.Body.begin(), job::Puzzle.Body.begin() + 4, out.UserNonce.begin());
         std::copy(job::Puzzle.Body.begin() + 4, job::Puzzle.Body.end(), out.AdditionalData.begin());
         
         return out;
+        
     }
     
     digest160 job::miner_address() const {
@@ -300,6 +318,23 @@ namespace Gigamonkey::Boost {
             ", ExtraNonce1 : " << s.ExtraNonce1;
         if (s.Type == bounty) o << ", MinerAddress: " << s.MinerAddress;
         return o << "}";
+    }
+        
+    proof::proof(const Boost::output_script& out, const Boost::input_script& in) : proof{} {
+        if (out.Type == invalid || in.Type != out.Type) return;
+        if (out.MaskedCategory && bool(in.CategoryBits)) {
+            *this = proof{Boost::job{out.Type, out.Category, out.Content, 
+                    out.Target, out.Tag, out.UserNonce, out.AdditionalData, 
+                    out.Type == bounty ? in.MinerAddress : out.MinerAddress, in.ExtraNonce1, true},
+                work::share{in.Timestamp, in.Nonce, in.ExtraNonce2, (*in.CategoryBits) << 13}, in.Signature, in.Pubkey};
+            return; 
+        } else if (!out.MaskedCategory && !bool(in.CategoryBits)) {
+            *this = proof{Boost::job{out.Type, out.Category, out.Content, 
+                    out.Target, out.Tag, out.UserNonce, out.AdditionalData, 
+                    out.Type == bounty ? in.MinerAddress : out.MinerAddress, in.ExtraNonce1, false},
+                work::share{in.Timestamp, in.Nonce, in.ExtraNonce2}, in.Signature, in.Pubkey};
+            return;
+        }
     }
 
 }

@@ -54,10 +54,6 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_TRUE(header.valid());
         
     }
-    
-    TEST(MagicNumberTest, TestWorkSTring) {
-        
-    }
 
 }
 

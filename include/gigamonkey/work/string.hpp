@@ -71,7 +71,7 @@ namespace Gigamonkey::work {
             return ASICBoost::magic_number(Category);
         }
         
-        uint16_little ASICBoost_bits() const {
+        uint16_little general_purpose_bits() const {
             return ASICBoost::bits(Category);
         }
     };

@@ -181,8 +181,8 @@ namespace Gigamonkey::Stratum::mining {
     }
         
     parameters submit_request::serialize(const share& Share) {
-        if (Share.Share.VersionBits) return parameters{Share.Name, write_job_id(Share.JobID), write(Share.Share.ExtraNonce2), 
-                write(Share.Share.Timestamp), write(Share.Share.Nonce), write(*Share.Share.VersionBits)};
+        if (Share.Share.Bits) return parameters{Share.Name, write_job_id(Share.JobID), write(Share.Share.ExtraNonce2), 
+                write(Share.Share.Timestamp), write(Share.Share.Nonce), write(*Share.Share.Bits)};
         
         return parameters{Share.Name, write_job_id(Share.JobID), write(Share.Share.ExtraNonce2), 
                 write(Share.Share.Timestamp), write(Share.Share.Nonce)};
@@ -198,8 +198,8 @@ namespace Gigamonkey::Stratum::mining {
             !read(n[4], Share.Share.Nonce)) return {};
         
         if (n.size() == 6) {
-            Share.Share.VersionBits = 0;
-            if (!read(n[5], *Share.Share.VersionBits)) return {};
+            Share.Share.Bits = 0;
+            if (!read(n[5], *Share.Share.Bits)) return {};
         }
         
         Share.Name = string(n[0]);

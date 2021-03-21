@@ -26,7 +26,7 @@ namespace Gigamonkey::work::ASICBoost {
     inline uint16_little magic_number(int32_little version_field) {
         static const uint32_little MaskLeft{0xe0000000};
         static const uint32_little MaskRight{0x00001fff};
-        return ((MaskLeft & version_field) >> 28) + (MaskRight & version_field);
+        return ((MaskLeft & version_field) >> 16) | (MaskRight & version_field);
     }
     
     inline int32_little category(uint16_little magic_number, uint16_little bits) {

@@ -35,17 +35,22 @@ namespace Gigamonkey::work {
         const compact target_128{32, 0x020000};
         const compact target_256{32, 0x010000};
         const compact target_512{32, 0x008000};
+        const compact target_1024{32, 0x004000};
         
         auto targets = list<compact>{} <<   
-            target_64 << 
             target_128 << 
             target_256 << 
-            target_512; 
+            target_512 <<
+            target_1024; 
+        
+        uint16_little magic_number = 0x21e8;
+        uint16_little gpb = 0xffff;
+        int32_little category = ASICBoost::category(magic_number, 0);
         
         // puzzle format from before ASICBoost was developed. 
-        auto puzzles = outer<puzzle>([](std::string m, compact t) -> puzzle {
+        auto puzzles = outer<puzzle>([category](std::string m, compact t) -> puzzle {
             digest256 message_hash = sha256(m);
-            return puzzle(1, message_hash, t, 
+            return puzzle(category, message_hash, t, 
                 Merkle::path{}, bytes{}, bytes(m));
         }, messages, targets);
         
@@ -53,9 +58,9 @@ namespace Gigamonkey::work {
         auto mask = ASICBoost::Mask;
         
         // puzzle format from after ASICBoost. 
-        auto puzzles_with_mask = outer<puzzle>([mask](std::string m, compact t) -> puzzle {
+        auto puzzles_with_mask = outer<puzzle>([category, mask](std::string m, compact t) -> puzzle {
             digest256 message_hash = sha256(m);
-            return puzzle(1, message_hash, t, 
+            return puzzle(category, message_hash, t, 
                 Merkle::path{}, bytes{}, bytes(m), mask);
         }, messages, targets);
         
@@ -68,7 +73,7 @@ namespace Gigamonkey::work {
         // we add a non-trivial version mask. 
         auto proofs_with_mask = data::for_each([&extra_nonce](puzzle p) -> proof {
             // add a non-trivial version bits field. 
-            return cpu_solve(p, solution(share{Bitcoin::timestamp(1), 0, extra_nonce++, 0xffffff}, 353));
+            return cpu_solve(p, solution(share{Bitcoin::timestamp(1), 0, extra_nonce++, -1}, 353));
         }, puzzles_with_mask); 
         
         EXPECT_TRUE(dot_cross([](puzzle p, solution x) -> bool {
@@ -93,13 +98,19 @@ namespace Gigamonkey::work {
             return proof{p, x}.valid();
         }, data::for_each([](proof p) -> puzzle {
             auto p_fixed = p.Puzzle;
-            p_fixed.Candidate.Category = (p_fixed.Candidate.Category & ~p_fixed.VersionMask) | (p.Solution.Share.version(p_fixed.VersionMask));
-            return p.Puzzle;
+            p_fixed.Candidate.Category = (p_fixed.Candidate.Category & p_fixed.Mask) | (p.Solution.Share.general_purpose_bits(~p_fixed.Mask));
+            p_fixed.Mask = -1;
+            return p_fixed;
         }, proofs_with_mask), data::for_each([](proof p) -> solution {
             auto x_fixed = p.Solution;
-            x_fixed.Share.VersionBits = {};
-            return p.Solution;
+            x_fixed.Share.Bits = {};
+            return x_fixed;
         }, proofs_with_mask)));
+        
+        for (proof p : proofs_with_mask) {
+            EXPECT_EQ(p.string().magic_number(), magic_number);
+            EXPECT_EQ(p.string().general_purpose_bits(), gpb);
+        }
         
     }
 
