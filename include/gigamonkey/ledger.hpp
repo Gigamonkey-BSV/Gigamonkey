@@ -5,14 +5,14 @@
 #define GIGAMONKEY_LEDGER
 
 #include "timechain.hpp"
+#include "spv.hpp"
 
 namespace Gigamonkey::Bitcoin {
     
     struct ledger {
+        using block_header = Bitcoin::headers::header;
         
-        bool broadcast(const bytes&);
-        
-        virtual list<uint<80>> headers(uint64 since_height) const = 0;
+        virtual list<block_header> headers(uint64 since_height) const = 0;
         
         struct double_entry : ptr<bytes> {
             Merkle::proof Proof;
@@ -41,10 +41,10 @@ namespace Gigamonkey::Bitcoin {
         
         virtual data::entry<txid, double_entry> transaction(const digest256&) const = 0;
         
-        // next 2 should work for both header hash and merkle root.
-        virtual uint<80> header(const digest256&) const = 0; 
+        // get header by header hash and merkle root.
+        virtual block_header header(const digest256&) const = 0; 
         
-        // get block by hash. 
+        // get block by header hash and merkle root. 
         virtual bytes block(const digest256&) const = 0; 
     };
     
