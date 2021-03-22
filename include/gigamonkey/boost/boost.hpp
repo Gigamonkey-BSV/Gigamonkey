@@ -45,6 +45,8 @@ namespace Gigamonkey {
         struct output;
         struct redeem_boost;
         
+        
+        
         struct output_script {
             
             // if the miner address is provided then this is a contract script
@@ -58,7 +60,7 @@ namespace Gigamonkey {
             // which allowed some of the version bits to be overwritten. 
             // The original version of the Boost PoW script didn't allow for this. 
             int32_little Category;
-            bool MaskedCategory;
+            bool UseGeneralPurposeBits;
             
             // The content that is boosted. 
             uint256 Content;
@@ -84,7 +86,7 @@ namespace Gigamonkey {
                 bytes_view tag, 
                 uint32_little user_nonce, 
                 bytes_view data,
-                bool category_mask = true);
+                bool use_general_purpose_bits = true);
             
             static output_script contract(
                 int32_little category,
@@ -94,7 +96,7 @@ namespace Gigamonkey {
                 uint32_little user_nonce, 
                 bytes_view data, 
                 const digest160& miner_address, 
-                bool category_mask = true);
+                bool use_general_purpose_bits = true);
             
             bool valid() const;
             
@@ -133,7 +135,7 @@ namespace Gigamonkey {
                 bytes_view tag, 
                 uint32_little user_nonce, 
                 bytes_view data, 
-                bool category_mask = true);
+                bool use_general_purpose_bits = true);
             
             output_script(
                 int32_little category, 
@@ -143,7 +145,7 @@ namespace Gigamonkey {
                 uint32_little user_nonce, 
                 bytes_view data,
                 const digest160& miner_address, 
-                bool category_mask = true);
+                bool use_general_purpose_bits = true);
             
             output_script(
                 Boost::type type, 
@@ -154,7 +156,7 @@ namespace Gigamonkey {
                 uint32_little user_nonce, 
                 bytes_view data, 
                 const digest160& miner_address, 
-                bool masked_category = true);
+                bool use_general_purpose_bitss = true);
             
         };
         
@@ -167,7 +169,7 @@ namespace Gigamonkey {
             Bitcoin::timestamp Timestamp;
             uint64_big ExtraNonce2;
             Stratum::session_id ExtraNonce1;
-            std::optional<uint16_little> CategoryBits;
+            std::optional<uint16_little> GeneralPurposeBits;
             digest160 MinerAddress;
             
         private:
@@ -198,7 +200,7 @@ namespace Gigamonkey {
                 Bitcoin::timestamp timestamp,
                 uint64_big extra_nonce_2,
                 Stratum::session_id extra_nonce_1,
-                uint16_little category_bits, 
+                uint16_little general_purpose_bits, 
                 const digest160& miner_address);
             
             // contract type compatible with ASICBoost;
@@ -209,7 +211,7 @@ namespace Gigamonkey {
                 Bitcoin::timestamp timestamp,
                 uint64_big extra_nonce_2,
                 Stratum::session_id extra_nonce_1,
-                uint16_little category_bits);
+                uint16_little general_purpose_bits);
                 
         public:
             input_script() = default;
@@ -288,7 +290,7 @@ namespace Gigamonkey {
             
             type Type;
             int32_little Category;
-            bool MaskedCategory;
+            bool UseGeneralPurposeBits;
             uint256 Content;
             work::compact Target;
             bytes Tag;
@@ -308,7 +310,7 @@ namespace Gigamonkey {
                 uint32_little user_nonce, 
                 const bytes& data, 
                 const Bitcoin::secret& miner_key, 
-                bool masked = true);
+                bool use_general_purpose_bits = true);
             
             puzzle(const Boost::output_script& x, const Bitcoin::secret& addr);
             
@@ -333,7 +335,8 @@ namespace Gigamonkey {
             
             explicit operator work::puzzle() const {
                 if (!valid()) return {};
-                return {Category, Content, Target, Merkle::path{}, header(), body()};
+                return {Category, Content, Target, Merkle::path{}, header(), body(), 
+                    UseGeneralPurposeBits ? work::ASICBoost::Mask : int32_little{-1}};
             }
             
             
@@ -452,7 +455,7 @@ namespace Gigamonkey {
         inline bool operator==(const output_script& a, const output_script& b) {
             return a.Type == b.Type && 
                 a.Category == b.Category && 
-                a.MaskedCategory == b.MaskedCategory && 
+                a.UseGeneralPurposeBits == b.UseGeneralPurposeBits && 
                 a.Content == b.Content && 
                 a.Target == b.Target && 
                 a.Tag == b.Tag && 
@@ -473,7 +476,7 @@ namespace Gigamonkey {
                 a.Timestamp == b.Timestamp && 
                 a.ExtraNonce1 == b.ExtraNonce1 && 
                 a.ExtraNonce2 == b.ExtraNonce2 && 
-                a.CategoryBits == b.CategoryBits && 
+                a.GeneralPurposeBits == b.GeneralPurposeBits && 
                 a.MinerAddress == b.MinerAddress;
         }
         
@@ -483,7 +486,7 @@ namespace Gigamonkey {
         
         inline bool operator==(const puzzle& a, const puzzle& b) {
             return a.Type == b.Type && 
-                a.Category == b.Category && a.MaskedCategory == b.MaskedCategory && 
+                a.Category == b.Category && a.UseGeneralPurposeBits == b.UseGeneralPurposeBits && 
                 a.Content == b.Content && a.Target == b.Target && 
                 a.Tag == b.Tag && a.UserNonce == b.UserNonce && 
                 a.AdditionalData == b.AdditionalData && a.MinerKey == b.MinerKey;
@@ -511,7 +514,7 @@ namespace Gigamonkey {
         }
         
         inline output_script::output_script() : Type{Boost::invalid}, 
-            MinerAddress{}, Category{}, MaskedCategory{}, 
+            MinerAddress{}, Category{}, UseGeneralPurposeBits{}, 
             Content{}, Target{}, Tag{}, UserNonce{}, 
             AdditionalData{} {} 
             
@@ -613,10 +616,10 @@ namespace Gigamonkey {
             work::compact target, 
             bytes_view tag, 
             uint32_little user_nonce, 
-            bytes_view data, bool masked_category) : Type{Boost::bounty},  
+            bytes_view data, bool use_general_purpose_bits) : Type{Boost::bounty},  
             MinerAddress{}, 
             Category{category},
-            MaskedCategory{}, 
+            UseGeneralPurposeBits{use_general_purpose_bits}, 
             Content{content}, 
             Target{target}, 
             Tag{tag}, 
@@ -631,10 +634,10 @@ namespace Gigamonkey {
             uint32_little user_nonce, 
             bytes_view data,
             const digest160& miner_address, 
-            bool masked_category) : Type{Boost::contract}, 
+            bool use_general_purpose_bits) : Type{Boost::contract}, 
             MinerAddress{miner_address}, 
             Category{category},
-            MaskedCategory{masked_category}, 
+            UseGeneralPurposeBits{use_general_purpose_bits}, 
             Content{content}, 
             Target{target}, 
             Tag{tag}, 
@@ -655,7 +658,7 @@ namespace Gigamonkey {
             Timestamp{timestamp},
             ExtraNonce2{extra_nonce_2},
             ExtraNonce1{extra_nonce_1},
-            CategoryBits{}, 
+            GeneralPurposeBits{}, 
             MinerAddress{miner_address} {}
         
         inline input_script::input_script(
@@ -671,7 +674,7 @@ namespace Gigamonkey {
             Timestamp{timestamp},
             ExtraNonce2{extra_nonce_2},
             ExtraNonce1{extra_nonce_1},
-            CategoryBits{}, 
+            GeneralPurposeBits{}, 
             MinerAddress{} {}
         
         bool inline input_script::valid() const {
@@ -746,7 +749,7 @@ namespace Gigamonkey {
         
         inline puzzle::puzzle() : 
             Type{invalid}, Category{}, 
-            MaskedCategory{}, Content{}, 
+            UseGeneralPurposeBits{}, Content{}, 
             Target{}, Tag{}, UserNonce{}, 
             AdditionalData{}, MinerKey{} {}
         
@@ -759,13 +762,14 @@ namespace Gigamonkey {
             const bytes& data, 
             const Bitcoin::secret& miner_key, 
             bool masked) : 
-            Type{type}, Category{category}, MaskedCategory{masked}, Content{content}, Target{target}, Tag{tag}, UserNonce{user_nonce}, 
+            Type{type}, Category{category}, UseGeneralPurposeBits{masked}, Content{content}, Target{target}, Tag{tag}, UserNonce{user_nonce}, 
             AdditionalData{data}, MinerKey{miner_key} {}
         
         inline puzzle::puzzle(const Boost::output_script& x, const Bitcoin::secret& addr) : puzzle{} {
             if (x.Type == invalid) return;
             if (x.Type == contract && x.MinerAddress != addr.address().Digest) return;
-            *this = puzzle{x.Type, x.Category, x.Content, x.Target, x.Tag, x.UserNonce, x.AdditionalData, addr, x.MaskedCategory};
+            *this = puzzle{x.Type, x.Category, x.Content, x.Target, x.Tag, x.UserNonce, 
+                x.AdditionalData, addr, x.UseGeneralPurposeBits};
         }
         
         Boost::output_script inline puzzle::output_script() const {
@@ -773,11 +777,11 @@ namespace Gigamonkey {
                 case bounty : 
                     return Boost::output_script::bounty(
                         Category, Content, Target, Tag, 
-                        UserNonce, AdditionalData, MaskedCategory);
+                        UserNonce, AdditionalData, UseGeneralPurposeBits);
                 case contract : 
                     return Boost::output_script::contract(
                         Category, Content, Target, Tag, 
-                        UserNonce, AdditionalData, miner_address(), MaskedCategory);
+                        UserNonce, AdditionalData, miner_address(), UseGeneralPurposeBits);
                 default: return Boost::output_script{};
             }
         }
@@ -809,7 +813,7 @@ namespace Gigamonkey {
             if (x.Type == invalid) return;
             if (x.Type == contract && x.MinerAddress != miner_address) return;
             *this = job{x.Type, x.Category, x.Content, x.Target, 
-                x.Tag, x.UserNonce, x.AdditionalData, miner_address, extra_nonce_1, x.MaskedCategory};
+                x.Tag, x.UserNonce, x.AdditionalData, miner_address, extra_nonce_1, x.UseGeneralPurposeBits};
         }
         
         inline job::job(const work::puzzle& p, Stratum::session_id n1, type t) : work::job{p, n1}, Type{t} {}

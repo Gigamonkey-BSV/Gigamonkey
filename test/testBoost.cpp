@@ -117,8 +117,7 @@ namespace Gigamonkey::Boost {
             Bitcoin::secret s(Bitcoin::secret::main, secp256k1::secret(secp256k1::coordinate(key)));
             puzzle Puzzle{o, s};
             return test_case{Puzzle, o, 
-                Stratum::job{jobID, worker.Name, 
-                    work::job{work::puzzle(Puzzle), worker.ExtraNonce1}, start, true}, 
+                Stratum::job{worker, Stratum::mining::notify::parameters{jobID, work::puzzle(Puzzle), start, true}}, 
                 worker.ExtraNonce1, n2, s};
         }
         
@@ -142,7 +141,7 @@ namespace Gigamonkey::Boost {
                 output_script::bounty(1, content, target, tag, user_nonce, data, false);
             
             return test_case(Puzzle, o, 
-                Stratum::job{jobID, worker.Name, work::job{work::puzzle(Puzzle), worker.ExtraNonce1}, start, true}, 
+                Stratum::job{worker, Stratum::mining::notify::parameters{jobID, work::puzzle(Puzzle), start, true}}, 
                 worker.ExtraNonce1, n2, s);
         }
         
@@ -167,7 +166,7 @@ namespace Gigamonkey::Boost {
                 output_script::bounty(1, content, target, tag, user_nonce, data, true);
             
             return test_case(Puzzle, o, 
-                Stratum::job{jobID, worker.Name, work::job{work::puzzle(Puzzle), worker.ExtraNonce1}, start, true}, 
+                Stratum::job{worker, Stratum::mining::notify::parameters{jobID, work::puzzle(Puzzle), start, true}}, 
                 worker.ExtraNonce1, n2, s, bits);
         }
         
@@ -311,9 +310,9 @@ namespace Gigamonkey::Boost {
                 bytes_view(Tag), 
                 UserNonce, 
                 AdditionalData, 
-                0xffffff,
+                16769024,
                 JobID, Start, 
-                Stratum::worker{WorkerName, 97980}, 
+                Stratum::worker{WorkerName, 97980, work::ASICBoost::Mask}, 
                 302203234,
                 InitialKey + 5} << 
             test_case{
@@ -322,9 +321,9 @@ namespace Gigamonkey::Boost {
                 Target, bytes_view(Tag), 
                 UserNonce + 1, 
                 AdditionalData, 
-                0xffffff,
+                16769024,
                 JobID, Start, 
-                Stratum::worker{WorkerName, 97981}, 
+                Stratum::worker{WorkerName, 97981, work::ASICBoost::Mask}, 
                 302203235,
                 InitialKey + 6} << 
             test_case{
@@ -333,9 +332,9 @@ namespace Gigamonkey::Boost {
                 Target, bytes_view(Tag), 
                 UserNonce + 2, 
                 AdditionalData,
-                0xffffff,
+                16769024,
                 JobID, Start, 
-                Stratum::worker{WorkerName, 97982}, 
+                Stratum::worker{WorkerName, 97982, work::ASICBoost::Mask}, 
                 302203236,
                 InitialKey + 7} << 
             test_case{
@@ -344,9 +343,9 @@ namespace Gigamonkey::Boost {
                 Target, bytes_view(Tag), 
                 UserNonce + 3, 
                 AdditionalData,
-                0xffffff,
+                16769024,
                 JobID, Start, 
-                Stratum::worker{WorkerName, 97983}, 
+                Stratum::worker{WorkerName, 97983, work::ASICBoost::Mask}, 
                 302203237,
                 InitialKey + 8}*/;
                 

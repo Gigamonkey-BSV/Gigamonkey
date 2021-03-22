@@ -168,8 +168,7 @@ namespace Gigamonkey::work {
     }
     
     bool inline operator==(const solution& a, const solution& b) {
-        return a.Share == b.Share && 
-            a.ExtraNonce1 == b.ExtraNonce1;
+        return a.Share == b.Share && a.ExtraNonce1 == b.ExtraNonce1;
     }
     
     bool inline operator!=(const solution& a, const solution& b) {
@@ -213,7 +212,9 @@ namespace Gigamonkey::work {
     }
     
     inline std::ostream& operator<<(std::ostream& o, const share& p) {
-        return o << "share{Timestamp: " << p.Timestamp << ", Nonce: " << p.Nonce << ", ExtraNonce2: " << p.ExtraNonce2 << "}";
+        o << "share{Timestamp: " << p.Timestamp << ", Nonce: " << p.Nonce << ", ExtraNonce2: " << p.ExtraNonce2;
+        if (p.Bits) o << ", Bits: " << *p.Bits; 
+        return o << "}";
     }
     
     inline std::ostream& operator<<(std::ostream& o, const candidate& p) {
