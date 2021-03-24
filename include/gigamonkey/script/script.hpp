@@ -7,7 +7,7 @@
 #ifndef GIGAMONKEY_SCRIPT_SCRIPT
 #define GIGAMONKEY_SCRIPT_SCRIPT
 
-#include <script/script.h>
+#include <script/opcodes.h>
 #include <script/script_error.h>
 
 #include <boost/endian/conversion.hpp>
@@ -272,6 +272,8 @@ namespace Gigamonkey::Bitcoin {
     }
     
     bool provably_prunable(program p);
+    
+    std::ostream& operator<<(std::ostream&, instruction);
     
 }
 

@@ -45,8 +45,6 @@ namespace Gigamonkey {
         struct output;
         struct redeem_boost;
         
-        
-        
         struct output_script {
             
             // if the miner address is provided then this is a contract script

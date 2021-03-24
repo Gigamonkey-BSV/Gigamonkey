@@ -308,7 +308,7 @@ namespace Gigamonkey::Bitcoin {
         }
         
         switch (x) {
-            default : return o << "***unknown op code***";
+            default : return o << x;
             case OP_CHECKSIG: return o << "checksig";
             case OP_CHECKSIGVERIFY: return o << "checksig_verify";
             case OP_EQUALVERIFY: return o << "equal_verify";
