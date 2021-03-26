@@ -1,5 +1,5 @@
 #include <gigamonkey/boost/boost.hpp>
-#include <gigamonkey/script/script.hpp>
+#include <gigamonkey/script/machine.hpp>
 #include <gigamonkey/address.hpp>
 #include <gigamonkey/wif.hpp>
 #include <gigamonkey/stratum/job.hpp>
@@ -262,7 +262,7 @@ namespace Gigamonkey::Boost {
                 302203233,
                 InitialKey} << 
             // We vary test cases over bounty/contract, contents, and version bits.
-            test_case{
+            test_case{ // bounty v1 
                 Boost::bounty, 
                 ContentsA, 
                 Target, 
@@ -273,7 +273,7 @@ namespace Gigamonkey::Boost {
                 Stratum::worker{WorkerName, 97980}, 
                 302203234,
                 InitialKey + 1} << 
-            test_case{
+            test_case{ // contract v1
                 Boost::contract, 
                 ContentsA, 
                 Target, bytes_view(Tag), 
@@ -283,7 +283,7 @@ namespace Gigamonkey::Boost {
                 Stratum::worker{WorkerName, 97981}, 
                 302203235,
                 InitialKey + 2} << 
-            test_case{
+            test_case{ // bounty v1
                 Boost::bounty, 
                 ContentsB, 
                 Target, bytes_view(Tag), 
@@ -293,7 +293,7 @@ namespace Gigamonkey::Boost {
                 Stratum::worker{WorkerName, 97982}, 
                 302203236,
                 InitialKey + 3} << 
-            test_case{
+            test_case{ // contract v1
                 Boost::contract, 
                 ContentsB, 
                 Target, bytes_view(Tag), 
@@ -302,52 +302,52 @@ namespace Gigamonkey::Boost {
                 JobID, Start, 
                 Stratum::worker{WorkerName, 97983}, 
                 302203237,
-                InitialKey + 4}/* << 
-            test_case{
+                InitialKey + 4} << 
+            test_case{ // bounty v2
                 Boost::bounty, 
                 ContentsA, 
                 Target, 
                 bytes_view(Tag), 
                 UserNonce, 
                 AdditionalData, 
-                16769024,
+                0xabcd,
                 JobID, Start, 
                 Stratum::worker{WorkerName, 97980, work::ASICBoost::Mask}, 
                 302203234,
                 InitialKey + 5} << 
-            test_case{
+            test_case{ // contract v2
                 Boost::contract, 
                 ContentsA, 
                 Target, bytes_view(Tag), 
                 UserNonce + 1, 
                 AdditionalData, 
-                16769024,
+                0xabcd,
                 JobID, Start, 
                 Stratum::worker{WorkerName, 97981, work::ASICBoost::Mask}, 
                 302203235,
                 InitialKey + 6} << 
-            test_case{
+            test_case{ // bounty v2
                 Boost::bounty, 
                 ContentsB, 
                 Target, bytes_view(Tag), 
                 UserNonce + 2, 
                 AdditionalData,
-                16769024,
+                0xabcd,
                 JobID, Start, 
                 Stratum::worker{WorkerName, 97982, work::ASICBoost::Mask}, 
                 302203236,
                 InitialKey + 7} << 
-            test_case{
+            test_case{ // contract v2
                 Boost::contract, 
                 ContentsB, 
                 Target, bytes_view(Tag), 
                 UserNonce + 3, 
                 AdditionalData,
-                16769024,
+                0xabcd,
                 JobID, Start, 
                 Stratum::worker{WorkerName, 97983, work::ASICBoost::Mask}, 
                 302203237,
-                InitialKey + 8}*/;
+                InitialKey + 8};
                 
         // Phase 1: Test whether all the different representations of puzzles have the same values of valid/invalid. 
         

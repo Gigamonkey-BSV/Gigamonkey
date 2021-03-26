@@ -44,7 +44,7 @@ namespace Gigamonkey::Boost {
             push_size{4, Timestamp}, 
             push_size{8, ExtraNonce2}, 
             push_size{4, ExtraNonce1}, 
-            Bitcoin::optional{push_size{2, GeneralPurposeBits}}, 
+            Bitcoin::optional{push_size{4, GeneralPurposeBits}}, 
             Bitcoin::optional{push_size{20, MinerAddress}}}.match(b)) return {};
         
         x.Type = MinerAddress.size() == 0 ? Boost::contract : Boost::bounty;
@@ -146,7 +146,7 @@ namespace Gigamonkey::Boost {
             // create metadata document and hash it.
             OP_SWAP, OP_CAT, OP_HASH256,                       
             OP_SWAP, OP_TOALTSTACK, OP_CAT, OP_TOALTSTACK, // target and content + merkleroot to altstack. 
-            push_hex("ff1f00e0"), OP_DUP, OP_NOT, OP_TOALTSTACK, OP_AND, 
+            push_hex("ff1f00e0"), OP_DUP, OP_INVERT, OP_TOALTSTACK, OP_AND, 
             // check size of general purpose bits 
             OP_SWAP, OP_SIZE, push{4}, OP_EQUALVERIFY, OP_FROMALTSTACK, OP_AND, OP_OR, 
             OP_FROMALTSTACK, OP_CAT,                             // attach content + merkleroot
@@ -242,7 +242,7 @@ namespace Gigamonkey::Boost {
             OP_SWAP, OP_CAT, OP_HASH256,    
             // target and content + merkleroot to altstack. 
             OP_SWAP, OP_TOALTSTACK, OP_CAT, OP_TOALTSTACK, 
-            push_hex("ff1f00e0"), OP_DUP, OP_NOT, OP_TOALTSTACK, OP_AND, 
+            push_hex("ff1f00e0"), OP_DUP, OP_INVERT, OP_TOALTSTACK, OP_AND, 
             // check size of general purpose bits 
             OP_SWAP, OP_SIZE, OP_4, OP_EQUALVERIFY, OP_FROMALTSTACK, OP_AND, OP_OR, 
             OP_FROMALTSTACK, OP_CAT,                                // attach content + merkleroot
@@ -401,11 +401,11 @@ namespace Gigamonkey::Boost {
     proof::proof(const Boost::output_script& out, const Boost::input_script& in) : proof{} {
         if (out.Type == invalid || in.Type != out.Type) return;
         if (out.UseGeneralPurposeBits && bool(in.GeneralPurposeBits)) {
-            int32_little gpr = uint16(*in.GeneralPurposeBits);
+            int32_little gpr = *in.GeneralPurposeBits;
             *this = proof{Boost::job{out.Type, out.Category, out.Content, 
                     out.Target, out.Tag, out.UserNonce, out.AdditionalData, 
                     out.Type == bounty ? in.MinerAddress : out.MinerAddress, in.ExtraNonce1, true},
-                work::share{in.Timestamp, in.Nonce, in.ExtraNonce2, gpr << 13}, in.Signature, in.Pubkey};
+                work::share{in.Timestamp, in.Nonce, in.ExtraNonce2, gpr}, in.Signature, in.Pubkey};
             return; 
         } else if (!out.UseGeneralPurposeBits && !bool(in.GeneralPurposeBits)) {
             *this = proof{Boost::job{out.Type, out.Category, out.Content, 
