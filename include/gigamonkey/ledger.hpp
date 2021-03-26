@@ -50,7 +50,7 @@ namespace Gigamonkey::Bitcoin {
     
     struct timechain : ledger {
         
-        virtual bool broadcast(const bytes_view&);
+        virtual bool broadcast(const bytes_view&) = 0;
         
     };
     
