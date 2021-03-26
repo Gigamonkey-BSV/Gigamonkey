@@ -218,6 +218,10 @@ namespace Gigamonkey::Boost {
                 Bits ? work::share(Job.timestamp(), 0, ExtraNonce2, *Bits) : 
                 work::share(Job.timestamp(), 0, ExtraNonce2), ExtraNonce1);
         }
+        
+        work::proof solve() const {
+            return work::cpu_solve(work::puzzle(Puzzle), initial_solution());
+        }
     };
 
     TEST(BoostTest, TestBoost) {
@@ -406,7 +410,7 @@ namespace Gigamonkey::Boost {
         // Phase 4: generate solutions and check validity. 
         
         auto proofs = data::for_each([](const test_case t) -> work::proof {
-            return work::cpu_solve(work::puzzle(t.Puzzle), t.initial_solution());
+            return t.solve();
         }, test_cases);
         
         auto proof_validity = data::for_each([](work::proof p) -> bool {

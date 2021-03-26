@@ -148,7 +148,7 @@ namespace Gigamonkey::Boost {
             OP_SWAP, OP_TOALTSTACK, OP_CAT, OP_TOALTSTACK, // target and content + merkleroot to altstack. 
             push_hex("ff1f00e0"), OP_DUP, OP_INVERT, OP_TOALTSTACK, OP_AND, 
             // check size of general purpose bits 
-            OP_SWAP, OP_SIZE, push{4}, OP_EQUALVERIFY, OP_FROMALTSTACK, OP_AND, OP_OR, 
+            OP_SWAP, OP_FROMALTSTACK, OP_AND, OP_OR, 
             OP_FROMALTSTACK, OP_CAT,                             // attach content + merkleroot
             OP_SWAP, OP_SIZE, push{4}, OP_EQUALVERIFY, OP_CAT,   // check size of timestamp.
             OP_FROMALTSTACK, OP_CAT,                             // attach target
@@ -243,8 +243,8 @@ namespace Gigamonkey::Boost {
             // target and content + merkleroot to altstack. 
             OP_SWAP, OP_TOALTSTACK, OP_CAT, OP_TOALTSTACK, 
             push_hex("ff1f00e0"), OP_DUP, OP_INVERT, OP_TOALTSTACK, OP_AND, 
-            // check size of general purpose bits 
-            OP_SWAP, OP_SIZE, OP_4, OP_EQUALVERIFY, OP_FROMALTSTACK, OP_AND, OP_OR, 
+            // general purpose bits 
+            OP_SWAP, OP_FROMALTSTACK, OP_AND, OP_OR, 
             OP_FROMALTSTACK, OP_CAT,                                // attach content + merkleroot
             OP_SWAP, OP_SIZE, OP_4, OP_EQUALVERIFY, OP_CAT,         // check size of timestamp.
             OP_FROMALTSTACK, OP_CAT,                                // attach target
