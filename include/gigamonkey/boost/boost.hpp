@@ -167,7 +167,7 @@ namespace Gigamonkey {
             Bitcoin::timestamp Timestamp;
             uint64_big ExtraNonce2;
             Stratum::session_id ExtraNonce1;
-            std::optional<uint16_little> GeneralPurposeBits;
+            std::optional<int32_little> GeneralPurposeBits;
             digest160 MinerAddress;
             
         private:
@@ -198,7 +198,7 @@ namespace Gigamonkey {
                 Bitcoin::timestamp timestamp,
                 uint64_big extra_nonce_2,
                 Stratum::session_id extra_nonce_1,
-                uint16_little general_purpose_bits, 
+                int32_little general_purpose_bits, 
                 const digest160& miner_address);
             
             // contract type compatible with ASICBoost;
@@ -209,7 +209,7 @@ namespace Gigamonkey {
                 Bitcoin::timestamp timestamp,
                 uint64_big extra_nonce_2,
                 Stratum::session_id extra_nonce_1,
-                uint16_little general_purpose_bits);
+                int32_little general_purpose_bits);
                 
         public:
             input_script() = default;
@@ -249,7 +249,7 @@ namespace Gigamonkey {
                 Bitcoin::timestamp timestamp,
                 uint64_big extra_nonce_2,
                 Stratum::session_id extra_nonce_1, 
-                uint16_little category_bits, 
+                int32_little category_bits, 
                 const digest160& miner_address);
             
             // construct a Boost contract input script.
@@ -260,7 +260,7 @@ namespace Gigamonkey {
                 Bitcoin::timestamp timestamp,
                 uint64_big extra_nonce_2,
                 Stratum::session_id extra_nonce_1, 
-                uint16_little category_bits);
+                int32_little category_bits);
             
             static input_script read(bytes); 
             

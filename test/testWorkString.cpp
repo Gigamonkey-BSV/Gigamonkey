@@ -54,6 +54,28 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_TRUE(header.valid());
         
     }
+    
+    TEST(WorkStringTest, TestASICBoost) {
+        
+        int32 VERSIONBITS_IGNORE_MASK = 0xE0001FFFUL;
+        int32 VERSIONBITS_IGNORE_LEFT = 0xE0000000UL;
+        int32 VERSIONBITS_IGNORE_RIGHT = 0x00001FFFUL;
+        int32 combined = 0x63E2BC85UL;
+        int32 version = combined & VERSIONBITS_IGNORE_MASK;
+        int32 general_purpose_bits = (combined & ~VERSIONBITS_IGNORE_MASK) >> 13;
+        int32 magic_number = ((combined & VERSIONBITS_IGNORE_LEFT) >> 16) + (combined & VERSIONBITS_IGNORE_RIGHT);
+        
+        int32_little combined_little = combined;
+        int32_little version_little = work::ASICBoost::version(combined);
+        uint16_little gpurpose_little = work::ASICBoost::bits(combined);
+        uint16_little magicnum_little = work::ASICBoost::magic_number(combined);
+        
+        EXPECT_EQ(version_little, version);
+        EXPECT_EQ(gpurpose_little, general_purpose_bits);
+        EXPECT_EQ(magicnum_little, magic_number);
+        EXPECT_EQ(combined_little, work::ASICBoost::category(magicnum_little, gpurpose_little));
+        
+    }
 
 }
 

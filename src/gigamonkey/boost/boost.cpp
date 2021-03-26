@@ -146,9 +146,9 @@ namespace Gigamonkey::Boost {
             // create metadata document and hash it.
             OP_SWAP, OP_CAT, OP_HASH256,                       
             OP_SWAP, OP_TOALTSTACK, OP_CAT, OP_TOALTSTACK, // target and content + merkleroot to altstack. 
-            push_hex("ff1f00e0"), OP_BOOLAND, 
+            push_hex("ff1f00e0"), OP_DUP, OP_NOT, OP_TOALTSTACK, OP_AND, 
             // check size of general purpose bits 
-            OP_SWAP, OP_SIZE, push{2}, OP_EQUALVERIFY, push{13}, OP_RSHIFT, OP_BOOLAND, 
+            OP_SWAP, OP_SIZE, push{4}, OP_EQUALVERIFY, OP_FROMALTSTACK, OP_AND, OP_OR, 
             OP_FROMALTSTACK, OP_CAT,                             // attach content + merkleroot
             OP_SWAP, OP_SIZE, push{4}, OP_EQUALVERIFY, OP_CAT,   // check size of timestamp.
             OP_FROMALTSTACK, OP_CAT,                             // attach target
@@ -242,9 +242,9 @@ namespace Gigamonkey::Boost {
             OP_SWAP, OP_CAT, OP_HASH256,    
             // target and content + merkleroot to altstack. 
             OP_SWAP, OP_TOALTSTACK, OP_CAT, OP_TOALTSTACK, 
-            push_data(work::ASICBoost::Mask), OP_BOOLAND, 
+            push_hex("ff1f00e0"), OP_DUP, OP_NOT, OP_TOALTSTACK, OP_AND, 
             // check size of general purpose bits 
-            OP_SWAP, OP_SIZE, OP_2, OP_EQUALVERIFY, OP_13, OP_RSHIFT, OP_BOOLAND, 
+            OP_SWAP, OP_SIZE, OP_4, OP_EQUALVERIFY, OP_FROMALTSTACK, OP_AND, OP_OR, 
             OP_FROMALTSTACK, OP_CAT,                                // attach content + merkleroot
             OP_SWAP, OP_SIZE, OP_4, OP_EQUALVERIFY, OP_CAT,         // check size of timestamp.
             OP_FROMALTSTACK, OP_CAT,                                // attach target
@@ -318,7 +318,7 @@ namespace Gigamonkey::Boost {
             input_script::bounty(signature, pubkey, x.Share.Nonce, x.Share.Timestamp, x.Share.ExtraNonce2, x.ExtraNonce1, pubkey.hash()) : 
             input_script::contract(signature, pubkey, x.Share.Nonce, x.Share.Timestamp, x.Share.ExtraNonce2, x.ExtraNonce1);
         
-        if (category_mask) in.GeneralPurposeBits = x.Share.Bits ? work::ASICBoost::bits(*x.Share.Bits) : uint16_little{0};
+        if (category_mask) in.GeneralPurposeBits = x.Share.Bits ? *x.Share.Bits : int32_little{0};
             
         return in;
     }
@@ -401,10 +401,11 @@ namespace Gigamonkey::Boost {
     proof::proof(const Boost::output_script& out, const Boost::input_script& in) : proof{} {
         if (out.Type == invalid || in.Type != out.Type) return;
         if (out.UseGeneralPurposeBits && bool(in.GeneralPurposeBits)) {
+            int32_little gpr = uint16(*in.GeneralPurposeBits);
             *this = proof{Boost::job{out.Type, out.Category, out.Content, 
                     out.Target, out.Tag, out.UserNonce, out.AdditionalData, 
                     out.Type == bounty ? in.MinerAddress : out.MinerAddress, in.ExtraNonce1, true},
-                work::share{in.Timestamp, in.Nonce, in.ExtraNonce2, (*in.GeneralPurposeBits) << 13}, in.Signature, in.Pubkey};
+                work::share{in.Timestamp, in.Nonce, in.ExtraNonce2, gpr << 13}, in.Signature, in.Pubkey};
             return; 
         } else if (!out.UseGeneralPurposeBits && !bool(in.GeneralPurposeBits)) {
             *this = proof{Boost::job{out.Type, out.Category, out.Content, 

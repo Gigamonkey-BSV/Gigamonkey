@@ -38,14 +38,14 @@ namespace Gigamonkey::work {
         const compact target_1024{32, 0x004000};
         
         auto targets = list<compact>{} <<   
-            target_128 << 
+            //target_128 << 
             target_256 << 
             target_512 <<
             target_1024; 
         
         uint16_little magic_number = 0x21e8;
         uint16_little gpb = 0xffff;
-        int32_little category = ASICBoost::category(magic_number, 0);
+        int32_little category = ASICBoost::category(magic_number, gpb);
         
         // puzzle format from before ASICBoost was developed. 
         auto puzzles = outer<puzzle>([category](std::string m, compact t) -> puzzle {
@@ -76,36 +76,24 @@ namespace Gigamonkey::work {
             return cpu_solve(p, solution(share{Bitcoin::timestamp(1), 0, extra_nonce++, -1}, 353));
         }, puzzles_with_mask); 
         
-        EXPECT_TRUE(dot_cross([](puzzle p, solution x) -> bool {
-            return proof{p, x}.valid();
-        }, data::for_each([](proof p) -> puzzle {
-            return p.Puzzle;
-        }, proofs), data::for_each([](proof p) -> solution {
-            return p.Solution;
-        }, proofs)));
+        EXPECT_TRUE(dot_cross([](proof a, proof b) -> bool {
+            return proof{a.Puzzle, b.Solution}.valid();
+        }, proofs, proofs));
         
-        EXPECT_TRUE(dot_cross([](puzzle p, solution x) -> bool {
-            return proof{p, x}.valid();
-        }, data::for_each([](proof p) -> puzzle {
-            return p.Puzzle;
-        }, proofs_with_mask), data::for_each([](proof p) -> solution {
-            return p.Solution;
-        }, proofs_with_mask)));
+        EXPECT_TRUE(dot_cross([](proof a, proof b) -> bool {
+            return proof{a.Puzzle, b.Solution}.valid();
+        }, proofs_with_mask, proofs_with_mask));
         
         // apply mask and the result should still be valid;
         // we have just converted back to the old format. 
-        EXPECT_TRUE(dot_cross([](puzzle p, solution x) -> bool {
-            return proof{p, x}.valid();
-        }, data::for_each([](proof p) -> puzzle {
-            auto p_fixed = p.Puzzle;
-            p_fixed.Candidate.Category = (p_fixed.Candidate.Category & p_fixed.Mask) | (p.Solution.Share.general_purpose_bits(~p_fixed.Mask));
+        EXPECT_TRUE(dot_cross([](proof a, proof b) -> bool {
+            auto p_fixed = a.Puzzle;
+            p_fixed.Candidate.Category = (p_fixed.Candidate.Category & p_fixed.Mask) | (a.Solution.Share.general_purpose_bits(~p_fixed.Mask));
             p_fixed.Mask = -1;
-            return p_fixed;
-        }, proofs_with_mask), data::for_each([](proof p) -> solution {
-            auto x_fixed = p.Solution;
+            auto x_fixed = b.Solution;
             x_fixed.Share.Bits = {};
-            return x_fixed;
-        }, proofs_with_mask)));
+            return proof{p_fixed, x_fixed}.valid();
+        }, proofs_with_mask, proofs_with_mask));
         
         for (proof p : proofs_with_mask) {
             EXPECT_EQ(p.string().magic_number(), magic_number);

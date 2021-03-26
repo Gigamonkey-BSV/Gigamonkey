@@ -101,7 +101,7 @@ namespace Gigamonkey::Bitcoin {
         
         virtual bytes_view scan(bytes_view p) const final override;
         
-        operator instruction() const;
+        //operator instruction() const;
     };
     
     class push_size final : public pattern {

@@ -12,15 +12,27 @@ namespace Gigamonkey::work::ASICBoost {
     // This page implements general purpose nVersion bits, 
     // as described by https://en.bitcoin.it/wiki/BIP_0320. 
     
-    const int32_little Mask{static_cast<int32>(0xe0001fff)};
-    const int32_little Bits{static_cast<int32>(0x1fffe000)};
+    // confusingly, the masks are given in a byte-reversed
+    // order from what they should actually be. This is
+    // because the version field is handled in the original
+    // bitcoin core code as a big-endian number and is
+    // converted to little endian when written to p2p messages.
+    
+    // the nature of the general purpose bits is also
+    // discussed in terms of a big-endian number even though
+    // version is actually written in little-endian. Thus the 
+    // 13th through 28th bits are not as the number is written, 
+    // but as the number is represented in big-endian. 
+    
+    static const int32_little Mask = 0xE0001FFFUL;
+    static const int32_little Bits = ~Mask;
     
     inline int32_little version(int32_little version_field) {
         return Mask & version_field;
     }
     
     inline uint16_little bits(int32_little version_field) {
-        return (Bits & version_field) >> 13;
+        return int32(Bits & version_field) >> 13;
     }
     
     inline uint16_little magic_number(int32_little version_field) {
