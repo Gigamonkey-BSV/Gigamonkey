@@ -10,6 +10,6 @@ namespace Gigamonkey::Bitcoin {
         std::stringstream ss;
         ss << ctime(&t);
         string str = ss.str();
-        return o << "\"" << str.substr(0, str.size() - 2) << "\"";
+        return o << "\"" << str.substr(0, str.size() - 1) << "\"";
     }
 }
