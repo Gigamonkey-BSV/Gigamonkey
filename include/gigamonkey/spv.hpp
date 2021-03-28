@@ -44,7 +44,7 @@ namespace Gigamonkey::Bitcoin {
         
         virtual Merkle::proof proof(const txid&) const = 0;
         
-        virtual bool insert(const Bitcoin::header&) = 0;
+        virtual bool insert(const header&) = 0;
         
         virtual bool insert(const Merkle::proof&) = 0;
         
@@ -53,7 +53,7 @@ namespace Gigamonkey::Bitcoin {
         
     };
     
-    class headers::memory final : headers {
+    /*class headers::memory final : headers {
         struct entry : header {
             Merkle::map Tree;
             entry(digest256 s, Bitcoin::header h, N n, work::difficulty d) : header{s, h, n, d}, Tree{} {}
@@ -178,7 +178,7 @@ namespace Gigamonkey::Bitcoin {
             ByTxid = ByTxid.insert(p.Branch.Leaf.Digest, headers);
             return true;
         }
-    };
+    };*/
     
 }
 
