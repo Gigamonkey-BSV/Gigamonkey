@@ -28,7 +28,7 @@ namespace Gigamonkey::Bitcoin {
             
             double_entry() : ptr<bytes>{nullptr}, Proof{}, Header{} {}
             
-            double_entry(ptr<bytes> t, Merkle::proof p, const header& h) : Proof{p}, Header{h} {}
+            double_entry(ptr<bytes> t, Merkle::proof p, const header& h) : ptr<bytes>{t}, Proof{p}, Header{h} {}
             
             bool operator<=(const double_entry& t) const;
             bool operator>=(const double_entry& t) const;

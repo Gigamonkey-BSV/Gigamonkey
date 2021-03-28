@@ -39,6 +39,7 @@ namespace Gigamonkey::Bitcoin {
         virtual header latest() const = 0;
         
         virtual header operator[](const N&) const = 0;
+        virtual header operator[](const digest256&) const = 0;
         
         virtual Merkle::dual dual_tree(const digest256&) const = 0;
         
