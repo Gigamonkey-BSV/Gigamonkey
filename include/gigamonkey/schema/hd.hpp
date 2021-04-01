@@ -26,12 +26,20 @@ namespace Gigamonkey::Bitcoin::hd {
             test = 0x74
         };
         
-        inline type from_wif(Bitcoin::secret::type t) {
+        type inline from_wif(Bitcoin::secret::type t) {
             return t == Bitcoin::secret::main ? main : t == Bitcoin::secret::test ? test : type{0};
         }
         
-        inline Bitcoin::secret::type to_wif(type t) {
+        Bitcoin::secret::type inline to_wif(type t) {
             return t == main ? Bitcoin::secret::main : t == test ? Bitcoin::secret::test : Bitcoin::secret::type{0};
+        }
+        
+        bool inline hardened(uint32 child) {
+            return child >= 0x80000000;
+        }
+        
+        uint32 inline harden(uint32 child) {
+            return child | 0x80000000;
         }
 
         struct pubkey {
