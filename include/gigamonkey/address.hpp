@@ -89,10 +89,10 @@ namespace Gigamonkey::Bitcoin {
         return address{str};
     }
 
-}
+    inline std::ostream& operator<<(std::ostream& o, const address& a) {
+        return o << std::string(a);
+    }
 
-inline std::ostream& operator<<(std::ostream& o, Gigamonkey::Bitcoin::address& a) {
-    return o << std::string(a);
 }
 
 namespace Gigamonkey::base58 {
