@@ -412,23 +412,31 @@ namespace Gigamonkey {
         };
         
         struct output {
-            
-            Bitcoin::outpoint Reference;
             output_script Script;
             satoshi Value;
-            digest256 ID;
             
-            output() : Reference{}, Script{}, Value{0}, ID{} {}
-            output(const Bitcoin::outpoint& o, const output_script& s, satoshi v) : 
-                Reference{o}, Script{s}, Value{v}, ID{s.hash()} {}
+            output() : Script{}, Value{-1} {}
+            output(const output_script& x, satoshi v) : Script{x}, Value{v} {}
+            output(const Bitcoin::output& b): Script{Boost::output_script::read(b.Script)}, Value{b.Value} {}
+            
+            bool valid() const {
+                return Script.valid() && Value >= 0;
+            }
+        };
+        
+        struct mined_output {
+            
+            Bitcoin::outpoint Reference;
+            output Output;
+            
+            mined_output() : Reference{}, Output{} {}
+            mined_output(const Bitcoin::outpoint& p, const output o) : 
+                Reference{p}, Output{o} {}
                 
             bool valid() const {
-                return Reference != Bitcoin::outpoint::coinbase() && Script.valid() && ID.valid();
+                return Reference != Bitcoin::outpoint::coinbase() && Output.valid();
             }
             
-        private:
-            output(const Bitcoin::outpoint& o, const output_script& j, satoshi v, const uint256& id) : 
-                Reference{o}, Script{j}, Value{v}, ID{id} {}
         };
         
         struct redeem_boost final : Bitcoin::redeemable {

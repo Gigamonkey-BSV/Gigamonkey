@@ -70,6 +70,10 @@ namespace Gigamonkey::work {
         
     };
     
+    inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::difficulty& h) {
+        return o << h.Value << " difficulty ";
+    }
+    
     // proportional to inverse difficulty.
     struct compact : uint32_little {
         
