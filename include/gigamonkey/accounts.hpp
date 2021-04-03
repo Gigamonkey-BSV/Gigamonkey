@@ -77,7 +77,7 @@ namespace Gigamonkey::Bitcoin {
         
         struct transaction {
             data::entry<txid, ledger::double_entry> Entry;
-            ordered_list<index> Mine;
+            ordered_list<uint32> Mine;
             
             // the outpoints of the redeeming txs. 
             stack<outpoint> prevouts() const;
@@ -86,7 +86,7 @@ namespace Gigamonkey::Bitcoin {
             stack<outpoint> outpoints() const;
             
             transaction();
-            transaction(data::entry<txid, ledger::double_entry> e, ordered_list<index> m) : Entry{e}, Mine{m} {}
+            transaction(data::entry<txid, ledger::double_entry> e, ordered_list<uint32> m) : Entry{e}, Mine{m} {}
 
             bool operator>=(const transaction &t) const {
                 return Entry.Value >= t.Entry.Value;
@@ -102,6 +102,14 @@ namespace Gigamonkey::Bitcoin {
             
             bool operator<(const transaction &t) const {
                 return Entry.Value < t.Entry.Value;
+            }
+            
+            bool operator==(const transaction &t) const {
+                return Entry == t.Entry && Mine == t.Mine;
+            }
+            
+            bool operator!=(const transaction &t) const {
+                return !(*this == t);
             }
         };
         

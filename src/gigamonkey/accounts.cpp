@@ -23,10 +23,10 @@ namespace Gigamonkey::Bitcoin {
             inputs = inputs.rest();
         }
         
-        ordered_list<index> Mine = tx.Mine;
+        ordered_list<uint32> Mine = tx.Mine;
         
         // make a credit for every output that isn't mine. 
-        for (index i = 0; i < t.Outputs.size(); i++) 
+        for (uint32 i = 0; i < t.Outputs.size(); i++) 
             if (Mine.size() > 0 && Mine.first() == i) {
                 Account.Mine = Account.Mine.insert(outpoint{tx.Entry.Key, i}, tx.Entry.Value);
                 Mine = Mine.rest();
