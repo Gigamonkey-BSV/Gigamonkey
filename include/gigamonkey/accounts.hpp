@@ -13,12 +13,17 @@ namespace Gigamonkey::bookkeeping {
         amount Value;
         time Time;
         
-        bool operator<(const entry&) const;
-        bool operator>(const entry&) const;
-        bool operator<=(const entry&) const;
-        bool operator>=(const entry&) const;
+        bool operator<(const entry &) const;
+        bool operator>(const entry &) const;
+        bool operator<=(const entry &) const;
+        bool operator>=(const entry &) const;
         
     };
+    
+    template <typename amount, typename time>
+    std::ostream inline &operator<<(std::ostream &o, const entry<amount, time> &e) {
+        return o << "entry{Time: " << e.Time << ", Value: " << e.Value << "}";
+    }
     
     template <typename Amount, typename Time>
     struct account {
@@ -54,7 +59,7 @@ namespace Gigamonkey::Bitcoin {
         } 
         
         // we use an input + output as a debit. 
-        static entry debit(const prevout& p) {
+        static entry debit(const prevout &p) {
             return entry{p.value(), p.Transaction.Header.Timestamp};
         } 
         
@@ -102,22 +107,22 @@ namespace Gigamonkey::Bitcoin {
 namespace Gigamonkey::bookkeeping {
         
     template <typename amount, typename time>
-    inline bool entry<amount, time>::operator<(const entry& e) const {
+    bool inline entry<amount, time>::operator<(const entry &e) const {
         return Time < e.Time;
     }
     
     template <typename amount, typename time>
-    inline bool entry<amount, time>::operator>(const entry& e) const {
+    bool inline entry<amount, time>::operator>(const entry &e) const {
         return Time > e.Time;
     }
     
     template <typename amount, typename time>
-    inline bool entry<amount, time>::operator<=(const entry& e) const {
+    bool inline entry<amount, time>::operator<=(const entry &e) const {
         return Time <= e.Time;
     }
     
     template <typename amount, typename Time>
-    inline bool entry<amount, Time>::operator>=(const entry& e) const {
+    bool inline entry<amount, Time>::operator>=(const entry &e) const {
         return Time >= e.Time;
     }
 }
