@@ -38,6 +38,18 @@ namespace Gigamonkey {
     inline satoshi::satoshi(uint64_little x) {
         std::copy(x.begin(), x.end(), int64_little::begin());
     }
+        
+    satoshi inline satoshi::operator+(satoshi x) const {
+        return static_cast<int64_little>(*this) - static_cast<int64_little>(x);
+    }
+    
+    satoshi inline satoshi::operator-(satoshi x) const {
+        return static_cast<int64_little>(*this) - static_cast<int64_little>(x);
+    }
+    
+    satoshi inline satoshi::operator-() const {
+        return satoshi{-static_cast<int64_little>(*this)};
+    }
 
 }
 

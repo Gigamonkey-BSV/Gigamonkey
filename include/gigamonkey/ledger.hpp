@@ -37,8 +37,8 @@ namespace Gigamonkey::Bitcoin {
             bool operator<(const double_entry& t) const;
             bool operator>(const double_entry& t) const;
             
-            Bitcoin::output output(index) const;
-            Bitcoin::input input(index) const;
+            Bitcoin::output output(uint32) const;
+            Bitcoin::input input(uint32) const;
             
             Bitcoin::txid txid() const;
         };
@@ -132,6 +132,18 @@ namespace Gigamonkey::Bitcoin {
     bool inline ledger::double_entry::operator>(const double_entry& t) const {
         if (Header == t.Header) return Proof.index() > t.Proof.index();
         return Header > t.Header;
+    }
+    
+    Bitcoin::output inline ledger::double_entry::output(uint32 i) const {
+        auto t = Bitcoin::transaction::read(ptr<bytes>::operator*());
+        if (!t.valid() || t.Outputs.size() <= i) return {};
+        return t.Outputs[i];
+    }
+    
+    Bitcoin::input inline ledger::double_entry::input(uint32 i) const {
+        auto t = Bitcoin::transaction::read(ptr<bytes>::operator*());
+        if (!t.valid() || t.Inputs.size() <= i) return {};
+        return t.Inputs[i];
     }
     
 }

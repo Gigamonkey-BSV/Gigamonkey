@@ -216,7 +216,7 @@ namespace Gigamonkey::Bitcoin {
             
         transaction() : Version{}, Inputs{}, Outputs{}, Locktime{} {};
         
-        transaction(bytes_view);
+        transaction(bytes_view b) : transaction{read(b)} {}
         
         bool valid() const;
         
