@@ -79,6 +79,9 @@ namespace Gigamonkey::Bitcoin {
             
             // the outpoints of all my outputs. 
             stack<outpoint> outpoints() const;
+            
+            transaction();
+            transaction(data::entry<txid, ledger::double_entry> e, ordered_list<index> m) : Entry{e}, Mine{m} {}
         };
         
         account reduce(const transaction& tx) const;
