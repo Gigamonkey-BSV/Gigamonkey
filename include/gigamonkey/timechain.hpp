@@ -459,6 +459,22 @@ namespace Gigamonkey::Bitcoin {
     inline bool operator<=(const outpoint& a, const outpoint& b) {
         return a.Reference == b.Reference ? a.Index <= b.Index : a.Reference <= b.Reference;
     }
+    
+    bool inline operator>(const header& a, const header& b) {
+        return a.Timestamp > b.Timestamp;
+    }
+    
+    bool inline operator<(const header& a, const header& b) {
+        return a.Timestamp < b.Timestamp;
+    }
+    
+    bool inline operator>=(const header& a, const header& b) {
+        return a.Timestamp >= b.Timestamp;
+    }
+    
+    bool inline operator<=(const header& a, const header& b) {
+        return a.Timestamp <= b.Timestamp;
+    }
 }
 
 #endif
