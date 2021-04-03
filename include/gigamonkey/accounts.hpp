@@ -87,6 +87,22 @@ namespace Gigamonkey::Bitcoin {
             
             transaction();
             transaction(data::entry<txid, ledger::double_entry> e, ordered_list<index> m) : Entry{e}, Mine{m} {}
+
+            bool operator>=(const transaction &t) const {
+                return Entry.Value >= t.Entry.Value;
+            } 
+            
+            bool operator<=(const transaction &t) const {
+                return Entry.Value <= t.Entry.Value;
+            }
+            
+            bool operator>(const transaction &t) const {
+                return Entry.Value > t.Entry.Value;
+            }
+            
+            bool operator<(const transaction &t) const {
+                return Entry.Value < t.Entry.Value;
+            }
         };
         
         account reduce(const transaction& tx) const;

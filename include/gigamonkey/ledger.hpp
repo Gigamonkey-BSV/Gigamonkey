@@ -30,6 +30,8 @@ namespace Gigamonkey::Bitcoin {
             
             double_entry(ptr<bytes> t, Merkle::proof p, const header& h) : ptr<bytes>{t}, Proof{p}, Header{h} {}
             
+            bool operator==(const double_entry &t) const;
+            bool operator!=(const double_entry &t) const;
             bool operator<=(const double_entry& t) const;
             bool operator>=(const double_entry& t) const;
             bool operator<(const double_entry& t) const;
@@ -37,6 +39,8 @@ namespace Gigamonkey::Bitcoin {
             
             Bitcoin::output output(index) const;
             Bitcoin::input input(index) const;
+            
+            Bitcoin::txid txid() const;
         };
         
         virtual data::entry<txid, double_entry> transaction(const digest256&) const = 0;
@@ -100,6 +104,35 @@ namespace Gigamonkey::Bitcoin {
             return valid() ? input_index{bytes_view{Previous.Value->data(), Previous.Value->size()}, input().Outpoint.Index} : input_index{};
         }
     };
+    
+    bool inline ledger::double_entry::operator==(const double_entry &t) const {
+        // if the types are valid then checking this proves that they are equal. 
+        return Header == t.Header && Proof.index() == t.Proof.index();
+    }
+    
+    bool inline ledger::double_entry::operator!=(const double_entry &t) const {
+        return !(*this == t);
+    }
+    
+    bool inline ledger::double_entry::operator<=(const double_entry& t) const {
+        if (Header == t.Header) return Proof.index() <= t.Proof.index();
+        return Header <= t.Header;
+    }
+    
+    bool inline ledger::double_entry::operator>=(const double_entry& t) const {
+        if (Header == t.Header) return Proof.index() >= t.Proof.index();
+        return Header >= t.Header;
+    }
+    
+    bool inline ledger::double_entry::operator<(const double_entry& t) const {
+        if (Header == t.Header) return Proof.index() < t.Proof.index();
+        return Header < t.Header;
+    }
+    
+    bool inline ledger::double_entry::operator>(const double_entry& t) const {
+        if (Header == t.Header) return Proof.index() > t.Proof.index();
+        return Header > t.Header;
+    }
     
 }
 

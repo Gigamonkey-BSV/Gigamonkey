@@ -143,6 +143,9 @@ namespace Gigamonkey::Merkle {
         proof(branch p, const digest& root);
         
         bool valid() const;
+        uint32 index() const {
+            return Branch.Leaf.Index;
+        }
     };
     
     inline digest root(const proof& p) {

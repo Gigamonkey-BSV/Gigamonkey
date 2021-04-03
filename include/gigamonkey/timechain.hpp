@@ -64,6 +64,11 @@ namespace Gigamonkey::Bitcoin {
     bool operator==(const header& a, const header& b);
     bool operator!=(const header& a, const header& b);
     
+    bool operator>(const header&, const header&);
+    bool operator<(const header&, const header&);
+    bool operator>=(const header&, const header&);
+    bool operator<=(const header&, const header&);
+    
     writer operator<<(writer w, const header& h);
     reader operator>>(reader r, header& h);
 

@@ -224,69 +224,8 @@ namespace Gigamonkey::Boost {
         }
     };
 
-    
-    TEST(BoostTest, DoExtraPoW) {
-        
-        string raw_tx_hex{ "010000000174d9f6dc235207fbbcdff7bdc412dcb375eb634da698ed164cc1e9aa1b88729a040000006b4830450221008596410738406e0e8589292a0e7a4d960e739025ab1859a3df6c77b4cf8c59ac0220733024f199162bc7b9ccd648aae56f0a0e307558a9827a26d35b1016de1865c54121025a77fe27d1db166b660205ff08b97f7dd87c7c68edaa2931895c2c8577f1a351ffffffff027d20000000000000e108626f6f7374706f777504000000002035b8fcb6882f93bddb928c9872198bcdf057ab93ed615ad938f24a63abde588104ffff001d14000000000000000000000000000000000000000004000000002000000000000000000000000000000000000000000000000000000000000000007e7c557a766b7e52796b557a8254887e557a8258887e7c7eaa7c6b7e7e7c8254887e6c7e7c8254887eaa01007e816c825488537f7681530121a5696b768100a0691d00000000000000000000000000000000000000000000000000000000007e6c539458959901007e819f6976a96c88acb461590e000000001976a914ba6e459a2b505dc78e44e8c5874776c00890e16088ac00000000"};
-        
-        bytes raw_tx = bytes_view(data::encoding::hex::view{raw_tx_hex}); 
-        Bitcoin::transaction tx = Bitcoin::transaction::read(raw_tx);
-        
-        list<Boost::output> boost_outputs; 
-        
-        for(const Bitcoin::output& o : tx.Outputs) {
-            Boost::output b{o};
-            if (b.valid()) boost_outputs = boost_outputs << b;
-        }
-        
-        EXPECT_EQ(boost_outputs.size(), 1);
-        
-        Boost::output_script boost_script{boost_outputs.first().Script};
-        
-        string signature_hex{"00"};
-        string minerPubKey_hex{"00"};
-        string extraNonce1_hex{"0a00000a"};
-        string extraNonce2_hex{"bf07000000000000"};
-        string time_hex{"5e6dc081"};
-        string nonce_hex{"1ca169e0"};
-        string minerPubKeyHash_hex{"9fb8cb68b8850a13c7438e26e1d277b748be657a"};
-        
-        bytes signature{1}; 
-        bytes pubkey{1};  
-        uint32_little nonce{2089482288};
-        uint32_little timestamp{};
-        uint64_big extra_nonce_2{};
-        Stratum::session_id extra_nonce_1{}; 
-        digest160 miner_address{};
-        
-        bytes signature_bytes = bytes_view(encoding::hex::view{signature_hex});
-        bytes minerPubKey_bytes = bytes_view(encoding::hex::view{minerPubKey_hex});
-        bytes extraNonce1_bytes = bytes_view(encoding::hex::view{extraNonce1_hex});
-        bytes extraNonce2_bytes = bytes_view(encoding::hex::view{extraNonce2_hex});
-        bytes time_bytes = bytes_view(encoding::hex::view{time_hex});
-        bytes minerPubKeyHash_bytes = bytes_view(encoding::hex::view{minerPubKeyHash_hex});
-            
-        std::copy(signature_bytes.begin(), signature_bytes.end(), signature.begin());
-        std::copy(minerPubKey_bytes.begin(), minerPubKey_bytes.end(), pubkey.begin());
-        std::copy(extraNonce1_bytes.begin(), extraNonce1_bytes.end(), extra_nonce_1.begin());
-        
-        std::copy(extraNonce2_bytes.begin(), extraNonce2_bytes.end(), extra_nonce_2.begin());
-        std::copy(time_bytes.begin(), time_bytes.end(), timestamp.begin());
-        
-        std::copy(minerPubKeyHash_bytes.begin(), minerPubKeyHash_bytes.end(), miner_address.begin());
-        
-        work::puzzle puzzle{work::candidate{boost_script.Category, boost_script.Content, boost_script.Target, Merkle::path{}}, 
-            Boost::puzzle::header(boost_script.Tag, miner_address), 
-            Boost::puzzle::body(boost_script.UserNonce, boost_script.AdditionalData)};
-            
-        work::proof pr = work::cpu_solve(puzzle, work::solution{Bitcoin::timestamp{timestamp}, nonce, extra_nonce_2, extra_nonce_1});
-        
-        EXPECT_EQ(pr.Solution.Share.Nonce, nonce);
-        
-    }
-
     TEST(BoostTest, TestBoost) {
-
+        
         const digest256 ContentsA = sha256(std::string{} + 
             "Capitalists will always be able to expend more energy that socialists.");
         
@@ -538,6 +477,128 @@ namespace Gigamonkey::Boost {
         }, Stratum_jobs, Stratum_shares);
         
         EXPECT_TRUE(test_orthogonal(proofs, proofs_from_stratum)) << "could not reconstruct proofs from Stratum.";
+        
+    }
+
+    
+    TEST(BoostTest, DoExtraPoW1) {
+        
+        string raw_tx_hex{ "010000000174d9f6dc235207fbbcdff7bdc412dcb375eb634da698ed164cc1e9aa1b88729a040000006b4830450221008596410738406e0e8589292a0e7a4d960e739025ab1859a3df6c77b4cf8c59ac0220733024f199162bc7b9ccd648aae56f0a0e307558a9827a26d35b1016de1865c54121025a77fe27d1db166b660205ff08b97f7dd87c7c68edaa2931895c2c8577f1a351ffffffff027d20000000000000e108626f6f7374706f777504000000002035b8fcb6882f93bddb928c9872198bcdf057ab93ed615ad938f24a63abde588104ffff001d14000000000000000000000000000000000000000004000000002000000000000000000000000000000000000000000000000000000000000000007e7c557a766b7e52796b557a8254887e557a8258887e7c7eaa7c6b7e7e7c8254887e6c7e7c8254887eaa01007e816c825488537f7681530121a5696b768100a0691d00000000000000000000000000000000000000000000000000000000007e6c539458959901007e819f6976a96c88acb461590e000000001976a914ba6e459a2b505dc78e44e8c5874776c00890e16088ac00000000"};
+        
+        bytes raw_tx = bytes_view(data::encoding::hex::view{raw_tx_hex}); 
+        Bitcoin::transaction tx = Bitcoin::transaction::read(raw_tx);
+        
+        list<Boost::output> boost_outputs; 
+        
+        for(const Bitcoin::output& o : tx.Outputs) {
+            Boost::output b{o};
+            if (b.valid()) boost_outputs = boost_outputs << b;
+        }
+        
+        EXPECT_EQ(boost_outputs.size(), 1);
+        
+        Boost::output_script boost_script{boost_outputs.first().Script};
+        
+        string signature_hex{"00"};
+        string minerPubKey_hex{"00"};
+        string extraNonce1_hex{"0a00000a"};
+        string extraNonce2_hex{"bf07000000000000"};
+        string time_hex{"5e6dc081"};
+        string minerPubKeyHash_hex{"9fb8cb68b8850a13c7438e26e1d277b748be657a"};
+        
+        bytes signature(1); 
+        bytes pubkey(1);  
+        uint32_little nonce{2089482288};
+        uint32_little timestamp{};
+        uint64_big extra_nonce_2{};
+        Stratum::session_id extra_nonce_1{}; 
+        digest160 miner_address{};
+        
+        bytes signature_bytes = bytes_view(encoding::hex::view{signature_hex});
+        bytes minerPubKey_bytes = bytes_view(encoding::hex::view{minerPubKey_hex});
+        bytes extraNonce1_bytes = bytes_view(encoding::hex::view{extraNonce1_hex});
+        bytes extraNonce2_bytes = bytes_view(encoding::hex::view{extraNonce2_hex});
+        bytes time_bytes = bytes_view(encoding::hex::view{time_hex});
+        bytes minerPubKeyHash_bytes = bytes_view(encoding::hex::view{minerPubKeyHash_hex});
+            
+        std::copy(signature_bytes.begin(), signature_bytes.end(), signature.begin());
+        std::copy(minerPubKey_bytes.begin(), minerPubKey_bytes.end(), pubkey.begin());
+        std::copy(extraNonce1_bytes.begin(), extraNonce1_bytes.end(), extra_nonce_1.begin());
+        
+        std::copy(extraNonce2_bytes.begin(), extraNonce2_bytes.end(), extra_nonce_2.begin());
+        std::copy(time_bytes.begin(), time_bytes.end(), timestamp.begin());
+        
+        std::copy(minerPubKeyHash_bytes.begin(), minerPubKeyHash_bytes.end(), miner_address.begin());
+        
+        work::puzzle puzzle{work::candidate{boost_script.Category, boost_script.Content, boost_script.Target, Merkle::path{}}, 
+            Boost::puzzle::header(boost_script.Tag, miner_address), 
+            Boost::puzzle::body(boost_script.UserNonce, boost_script.AdditionalData)};
+            
+        work::proof pr = work::cpu_solve(puzzle, work::solution{Bitcoin::timestamp{timestamp}, nonce, extra_nonce_2, extra_nonce_1});
+        
+        EXPECT_EQ(pr.Solution.Share.Nonce, nonce);
+        
+    }
+
+    TEST(BoostTest, DoExtraPoW2) {
+        
+        string raw_tx_hex{ "01000000018ff2fe10e8629051853507b4189bf3981569a0d358e0506033a11618f2e3b10c010000006b483045022100f82288631d8c8b6b6fba9094a6d56af6ab572347b7365dcf7e6d68905cb8fd000220390cde292cc50a92bd60e680bfcbddf17443d904c7372880b6ec312a06952fb3412102be82a62c8c3d8e949c9b54a60b4cadf0efacec08164b3eca3b6e793f52bf8d8affffffff0220090000000000001976a914cdb2b66b5fa33fa3f55fb9296f31d445892d990988ace218000000000000e108626f6f7374706f7775047800000020325593000000000000000000000000000000000000000000000000000000000004ffff001d14231200000000000000000000000000000000000004886600002094000000000000000000000000000000000000000000000000000000000000007e7c557a766b7e52796b557a8254887e557a8258887e7c7eaa7c6b7e7e7c8254887e6c7e7c8254887eaa01007e816c825488537f7681530121a5696b768100a0691d00000000000000000000000000000000000000000000000000000000007e6c539458959901007e819f6976a96c88ac00000000"};
+        
+        bytes raw_tx = bytes_view(data::encoding::hex::view{raw_tx_hex}); 
+        Bitcoin::transaction tx = Bitcoin::transaction::read(raw_tx);
+        
+        list<Boost::output> boost_outputs; 
+        
+        for(const Bitcoin::output& o : tx.Outputs) {
+            Boost::output b{o};
+            if (b.valid()) boost_outputs = boost_outputs << b;
+        }
+        
+        EXPECT_EQ(boost_outputs.size(), 1);
+        
+        Boost::output_script boost_script{boost_outputs.first().Script};
+        
+        string signature_hex{"00"};
+        string minerPubKey_hex{"02f96821f6d9a6150e0ea06b00c8c77597e863330041be70438ff6fb211d7efe66"};
+        string extraNonce2_hex{"0000000000000000"};
+        string time_hex{"5e802ed9"};
+        string minerPubKeyHash_hex{"92e4d5ab4bb067f872d28f44d3e5433e56fca190"};
+        
+        bytes signature(1); 
+        bytes pubkey(minerPubKey_hex.size() / 2);  
+        uint32_little nonce{0x10AC9844};
+        uint32_little timestamp{};
+        uint64_big extra_nonce_2{};
+        Stratum::session_id extra_nonce_1{1174405125}; 
+        digest160 miner_address{};
+        
+        bytes signature_bytes = bytes_view(encoding::hex::view{signature_hex});
+        bytes minerPubKey_bytes = bytes_view(encoding::hex::view{minerPubKey_hex});
+        bytes extraNonce2_bytes = bytes_view(encoding::hex::view{extraNonce2_hex});
+        bytes time_bytes = bytes_view(encoding::hex::view{time_hex});
+        bytes minerPubKeyHash_bytes = bytes_view(encoding::hex::view{minerPubKeyHash_hex});
+            
+        std::copy(signature_bytes.begin(), signature_bytes.end(), signature.begin());
+        std::copy(minerPubKey_bytes.begin(), minerPubKey_bytes.end(), pubkey.begin());
+        
+        std::copy(extraNonce2_bytes.begin(), extraNonce2_bytes.end(), extra_nonce_2.begin());
+        std::copy(time_bytes.begin(), time_bytes.end(), timestamp.begin());
+        
+        std::copy(minerPubKeyHash_bytes.begin(), minerPubKeyHash_bytes.end(), miner_address.begin());
+        
+        work::puzzle puzzle{work::candidate{boost_script.Category, boost_script.Content, boost_script.Target, Merkle::path{}}, 
+            Boost::puzzle::header(boost_script.Tag, miner_address), 
+            Boost::puzzle::body(boost_script.UserNonce, boost_script.AdditionalData)};
+        
+        extra_nonce_2 += 5;
+        
+        std::cout << "about to mine; extra nonce 2 = " << extra_nonce_2 << std::endl;
+        
+        work::proof pr = work::cpu_solve(puzzle, work::solution{Bitcoin::timestamp{timestamp}, nonce, extra_nonce_2, extra_nonce_1});
+        
+        EXPECT_EQ(pr.Solution.Share.Nonce, nonce);
+        
+        std::cout << "done mining; nonce = " << encoding::hex::write(pr.Solution.Share.Nonce) << "; extra_nonce_2 = " << encoding::hex::write(pr.Solution.Share.ExtraNonce2) << std::endl;
         
     }
 
