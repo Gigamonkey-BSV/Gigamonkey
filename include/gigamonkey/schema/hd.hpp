@@ -64,7 +64,7 @@ namespace Gigamonkey::Bitcoin::hd {
 
             bool operator!=(const pubkey &rhs) const;
             
-            pubkey derive(list<uint32> l) ;
+            pubkey derive(list<uint32> l) const;
 
             friend std::ostream &operator<<(std::ostream &os, const pubkey &pubkey);
         };
@@ -98,7 +98,7 @@ namespace Gigamonkey::Bitcoin::hd {
             
             signature sign(const digest256& d) const;
             
-            secret derive(list<uint32> l);
+            secret derive(list<uint32> l) const;
 
             friend std::ostream &operator<<(std::ostream &os, const secret &secret);
         };
@@ -118,11 +118,11 @@ namespace Gigamonkey::Bitcoin::hd {
             return derive(derive(p, l.first()), l.rest());
         }
             
-        inline pubkey pubkey::derive(list<uint32> l) {
+        inline pubkey pubkey::derive(list<uint32> l) const {
             return bip32::derive(*this, l);
         }
         
-        inline secret secret::derive(list<uint32> l) {
+        inline secret secret::derive(list<uint32> l) const {
             return bip32::derive(*this, l);
         }
     
