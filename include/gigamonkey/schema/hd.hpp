@@ -59,6 +59,7 @@ namespace Gigamonkey::Bitcoin::hd {
             static pubkey from_seed(seed entropy,type net);
 
             string write() const;
+            Bitcoin::address address() const;
 
             bool operator==(const pubkey &rhs) const;
 
@@ -153,11 +154,11 @@ namespace Gigamonkey::Bitcoin::hd {
         
         using pubkey = bip32::pubkey;
         
-        constexpr uint32 purpose = 0x8000002C;
+        constexpr uint32 purpose = 0x8000002C; // Purpose = 44'
         
-        constexpr uint32 coin_type_BSV = 0x80000000;
+        constexpr uint32 coin_type_BSV = 0x80000000; // BSV = 0'
         
-        constexpr uint32 coin_type_testnet = 0x80000001;
+        constexpr uint32 coin_type_testnet = 0x80000001; // BSV Testnet = 1'
         const list<uint32> SIMPLY_CASH{bip32::harden(44),bip32::harden(145),bip32::harden(0)};
         inline secret derive(const secret& s,list<uint32> walletFormat,bool change,uint32 index) {
             return bip32::derive(bip32::derive(s,walletFormat),list<uint32>{change?1:0,index});
