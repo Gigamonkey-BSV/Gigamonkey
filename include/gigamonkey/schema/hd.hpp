@@ -158,17 +158,22 @@ namespace Gigamonkey::Bitcoin::hd {
         constexpr uint32 coin_type_BSV = 0x80000000;
         
         constexpr uint32 coin_type_testnet = 0x80000001;
-        
+        const list<uint32> SIMPLY_CASH{bip32::harden(44),bip32::harden(145),bip32::harden(0)};
+        inline secret derive(const secret& s,list<uint32> walletFormat,bool change,uint32 index) {
+            return bip32::derive(bip32::derive(s,walletFormat),list<uint32>{change?1:0,index});
+        }
         inline secret derive(const secret& s, uint32 account, bool change, uint32 index, bool testnet = false) {
-            return bip32::derive(s, 
+            return bip32::derive(s,
                 list<uint32>{purpose, testnet ? coin_type_testnet : coin_type_BSV, account, uint32(change), index});
         }
         
         inline pubkey derive(const pubkey& p, uint32 account, bool change, uint32 index, bool testnet = false) {
-            return bip32::derive(p, 
+            return bip32::derive(p,
                 list<uint32>{purpose, testnet ? coin_type_testnet : coin_type_BSV, account, uint32(change), index});
         }
-    
+        inline pubkey derive(const pubkey& p,list<uint32> walletFormat,bool change,uint32 index) {
+            return bip32::derive(bip32::derive(p,walletFormat),list<uint32>{change?1:0,index});
+        }
     }
     
     namespace bip39 {
