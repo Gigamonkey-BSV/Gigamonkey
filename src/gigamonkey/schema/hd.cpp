@@ -488,6 +488,7 @@ namespace Gigamonkey::Bitcoin::hd::bip39 {
         {
             wordsBA2[i]=words[i];
         }
+        char checkByte=wordsBA2[words.length()-1];
         std::string salt="mnemonic"+passphrase;
         CryptoPP::PKCS5_PBKDF2_HMAC<CryptoPP::SHA512> pbkdf2;
         byte key[64];
