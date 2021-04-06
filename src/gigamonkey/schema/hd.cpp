@@ -486,9 +486,9 @@ namespace Gigamonkey::Bitcoin::hd::bip39 {
     seed read(std::string words,const string& passphrase,languages lang) {
         if(lang!=english)
             throw data::method::unimplemented("Non English Language");
-        if(!valid(passphrase,lang)) {
+        /*if(!valid(passphrase,lang)) {
             throw "Invalid Words";
-        }
+        }*/
         std::string passcode;
         char wordsBA2[words.length()];
         for(int i=0;i<words.length();i++)
