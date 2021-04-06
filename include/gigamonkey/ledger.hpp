@@ -76,6 +76,8 @@ namespace Gigamonkey::Bitcoin {
         // get block by header hash and merkle root. 
         virtual bytes block(const digest256&) const = 0; 
         
+        struct vertex;
+        
         struct prevout {
             data::entry<txid, double_entry> Previous;
             
@@ -95,6 +97,11 @@ namespace Gigamonkey::Bitcoin {
                     Input.Outpoint.Reference == Previous.Key/* && 
                     evaluate_script(output(*this).Script, Input.Script).valid()*/;
             }
+        private:
+            prevout();
+            prevout(data::entry<txid, double_entry> p, uint32_little i, input in);
+            
+            friend struct vertex;
         };
         
         struct vertex : public double_entry {
@@ -114,7 +121,14 @@ namespace Gigamonkey::Bitcoin {
             
             uint32 sigops() const;
             
-            list<prevout> prevouts() const;
+            list<prevout> prevouts() const {
+                list<prevout> p;
+                list<Bitcoin::input> inputs = double_entry::inputs();
+                index i = 0;
+                for (const Bitcoin::input& in : inputs) p << 
+                    prevout{data::entry<txid, double_entry>{in.Outpoint.Reference, Previous[in.Outpoint.Reference]}, i++, in};
+                return p;
+            }
             
             vertex(const double_entry& d, data::map<txid, double_entry> p) : double_entry{d}, Previous{p} {}
             vertex() : double_entry{}, Previous{} {}
@@ -122,7 +136,7 @@ namespace Gigamonkey::Bitcoin {
             prevout operator[](index i) {
                 struct input in = double_entry::input(i);
                 
-                return {data::entry<txid, double_entry>{in.Outpoint.Reference, *this}, i, in};
+                return {data::entry<txid, double_entry>{in.Outpoint.Reference, Previous[in.Outpoint.Reference]}, i, in};
             }
         };
         
