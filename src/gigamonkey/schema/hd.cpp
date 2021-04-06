@@ -15,7 +15,6 @@
 #include <cmath>
 //#include <unicode/normalizer2.h>
 //#include <unicode/utypes.h>
-
 //#include <unicode/unistr.h>
 #include <bitset>
 
@@ -372,6 +371,14 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         return !(rhs == *this);
     }
 
+    Bitcoin::address pubkey::address() const {
+        auto hash =Pubkey.hash();
+        if(Net==type::main)
+            return Gigamonkey::Bitcoin::address{Gigamonkey::Bitcoin::address::main,hash};
+        else
+            return Gigamonkey::Bitcoin::address{Gigamonkey::Bitcoin::address::test,hash};
+    }
+
     secret derive(const secret& sec, string path) {
         if (path.empty())
             return secret();
@@ -479,9 +486,9 @@ namespace Gigamonkey::Bitcoin::hd::bip39 {
     seed read(std::string words,const string& passphrase,languages lang) {
         if(lang!=english)
             throw data::method::unimplemented("Non English Language");
-
-
-
+        if(!valid(passphrase,lang)) {
+            throw "Invalid Words";
+        }
         std::string passcode;
         char wordsBA2[words.length()];
         for(int i=0;i<words.length();i++)
@@ -506,7 +513,6 @@ namespace Gigamonkey::Bitcoin::hd::bip39 {
         byte abDigest[CryptoPP::SHA256::DIGESTSIZE];
         CryptoPP::SHA256().CalculateDigest(abDigest, ent.data(), ent.size());
         int checksumLength=(ent.size()*8) /32;
-
         byte checkByte=abDigest[0];
         byte mask=1;
         mask = (1 << checksumLength) - 1;
