@@ -97,9 +97,10 @@ namespace Gigamonkey::Bitcoin {
                     Input.Outpoint.Reference == Previous.Key/* && 
                     evaluate_script(output(*this).Script, Input.Script).valid()*/;
             }
+            
         private:
-            prevout();
-            prevout(data::entry<txid, double_entry> p, uint32_little i, input in);
+            prevout() : Previous{txid{}}, Index{}, Input{} {}
+            prevout(data::entry<txid, double_entry> p, uint32_little i, input in) : Previous{p}, Index{i}, Input{in} {}
             
             friend struct vertex;
         };
