@@ -92,10 +92,10 @@ namespace Gigamonkey::Bitcoin {
             }, to_redeem.Entries);
         
         // create tx
-        vertex vx = redeem(redeem_orders, outputs);
-        
+        ledger::double_entry vx = redeem(redeem_orders, outputs);
         if (!vx.valid()) return {};
-        return spent{vx, wallet{remainder, Policy, keys, Fee, Change, Dust}}; // TODO
+        throw 0;
+        //return spent{ledger::vertex{vx, }, wallet{remainder, Policy, keys, Fee, Change, Dust}}; // TODO
     }
     
 }

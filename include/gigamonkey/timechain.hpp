@@ -174,7 +174,10 @@ namespace Gigamonkey::Bitcoin {
     
     struct output {
         
-        static bool valid(bytes_view);
+        static bool valid(bytes_view b) {
+            return output{b}.valid();
+        }
+        
         static satoshi value(bytes_view);
         static bytes_view script(bytes_view);
     

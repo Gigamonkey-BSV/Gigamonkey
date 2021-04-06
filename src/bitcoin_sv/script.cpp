@@ -45,11 +45,12 @@ namespace Gigamonkey::Bitcoin {
         return evaluate_script(unlock, lock, DummySignatureChecker{});
     }
     
-    evaluated evaluate_script(const script& unlock, const script& lock, const input_index& v) {
-        CDataStream stream{(const char*)(v.Transaction.data()), 
-            (const char*)(v.Transaction.data() + v.Transaction.size()), SER_NETWORK, PROTOCOL_VERSION};
+    evaluated evaluate_script(const script& unlock, const script& lock, const bytes_view tx, const index i) {
+        CDataStream stream{(const char*)(tx.data()), 
+            (const char*)(tx.data() + tx.size()), SER_NETWORK, PROTOCOL_VERSION};
         CTransaction ctx{deserialize, stream}; 
-        return evaluate_script(lock, unlock, TransactionSignatureChecker(&ctx, v.Index, Amount(int64(v.value()))));
+        
+        return evaluate_script(lock, unlock, TransactionSignatureChecker(&ctx, i, Amount(int64(output::value(transaction::output(tx, i))))));
     }
     
     std::ostream& operator<<(std::ostream& o, const machine& i) {

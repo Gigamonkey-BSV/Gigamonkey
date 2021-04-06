@@ -238,5 +238,31 @@ namespace Gigamonkey::Bitcoin {
         }
     }
     
+    satoshi output::value(bytes_view z) {
+        reader r{z};
+        satoshi Value;
+        try {
+            bytes_reader b = r.Reader >> Value;
+        } catch (data::end_of_stream) {
+            Value = -1;
+        }
+        return Value;
+    }
+    
+    bytes_view output::script(bytes_view z) {
+        reader r{z};
+        satoshi Value;
+        try {
+            bytes_reader b = r.Reader >> Value;
+            uint64 script_size;
+            b = reader::read_var_int(b, script_size);
+            if (script_size == 0) return {};
+            uint32 sub_size = 4 + writer::var_int_size(script_size);
+            return bytes_view{z.data() + sub_size, z.size() - sub_size};
+        } catch (data::end_of_stream) {
+            return {};
+        }
+    }
+    
 }
 

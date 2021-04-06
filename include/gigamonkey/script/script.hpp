@@ -41,7 +41,7 @@ namespace Gigamonkey::Bitcoin {
     evaluated evaluate_script(const script& unlock, const script& lock);
     
     // Evaluate script with real signature operations. 
-    evaluated evaluate_script(const script& unlock, const script& lock, const input_index& tx);
+    evaluated evaluate_script(const script& unlock, const script& lock, const bytes_view tx, index input_index);
     
     using op = opcodetype;
     

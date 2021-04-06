@@ -55,76 +55,51 @@ namespace Gigamonkey::Bitcoin {
         
         // we use a bitcoin output as a credit. 
         static entry credit(const ledger::double_entry& tx, const index i) {
-            return entry{-input_index{*tx, i}.value(), tx.Header.Timestamp};
+            return entry{tx.output(i).Value, tx.Header.Timestamp};
         } 
         
         // we use an input + output as a debit. 
-        static entry debit(const prevout &p) {
-            return entry{p.value(), p.Transaction.Header.Timestamp};
+        static entry debit(const ledger::prevout &p) {
+            return entry{p.spent(), p.Previous.Value.Header.Timestamp};
         } 
+        
+        struct event : public ledger::vertex {
+            
+            // outputs marked as belonging to me. 
+            ordered_list<uint32> Mine;
+            
+            // the outpoints of all my outputs. 
+            stack<outpoint> output_outpoints() const;
+            
+            event();
+            event(const ledger::vertex& p, ordered_list<uint32> m) : ledger::vertex{p}, Mine{m} {}
+
+        };
         
         // the transactions that are in this account. 
         data::set<txid> Transactions;
         
         // the outputs that belong to me. 
-        data::map<outpoint, ledger::double_entry> Mine;
+        data::map<outpoint, event> Mine;
         
         // the outputs belonging to me that have been cancelled. 
-        data::map<outpoint, ledger::double_entry> Cancellations;
+        data::map<outpoint, event> Cancellations;
         
-        list<data::entry<outpoint, ledger::double_entry>> Debits;
-        list<data::entry<outpoint, ledger::double_entry>> Credits;
+        data::map<event, ordered_list<index>> Debits;
+        data::map<event, ordered_list<index>> Credits;
         
-        struct transaction {
-            data::entry<txid, ledger::double_entry> Entry;
-            ordered_list<uint32> Mine;
-            
-            // the outpoints of the redeeming txs. 
-            stack<outpoint> prevouts() const;
-            
-            // the outpoints of all my outputs. 
-            stack<outpoint> outpoints() const;
-            
-            transaction();
-            transaction(data::entry<txid, ledger::double_entry> e, ordered_list<uint32> m) : Entry{e}, Mine{m} {}
-
-            bool operator>=(const transaction &t) const {
-                return Entry.Value >= t.Entry.Value;
-            } 
-            
-            bool operator<=(const transaction &t) const {
-                return Entry.Value <= t.Entry.Value;
-            }
-            
-            bool operator>(const transaction &t) const {
-                return Entry.Value > t.Entry.Value;
-            }
-            
-            bool operator<(const transaction &t) const {
-                return Entry.Value < t.Entry.Value;
-            }
-            
-            bool operator==(const transaction &t) const {
-                return Entry == t.Entry && Mine == t.Mine;
-            }
-            
-            bool operator!=(const transaction &t) const {
-                return !(*this == t);
-            }
-        };
-        
-        account reduce(const transaction& tx) const;
-        
-        account reduce(stack<transaction> txs) const {
-            if (txs.empty()) return *this;
-            return reduce(txs.first()).reduce(txs.rest());
-        }
-        
-        account(stack<transaction> txs) : account{account{}.reduce(txs)} {}
+        account(priority_queue<event> txs) : account{account{}.reduce(txs)} {}
         account() : Mine{}, Debits{}, Credits{} {}
         
         bookkeeping::account<satoshi, timestamp> balance(const ledger& l) const;
         
+    private:
+        account reduce(const event& tx) const;
+        
+        account reduce(priority_queue<event> txs) const {
+            if (txs.empty()) return *this;
+            return reduce(txs.first()).reduce(txs.rest());
+        }
     };
 }
 

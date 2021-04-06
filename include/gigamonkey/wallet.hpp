@@ -15,8 +15,8 @@ namespace Gigamonkey::Bitcoin {
         satoshi calculate(size_t size, uint32 sigops) const {
             return FeePerByte * size + FeePerSigop * sigops;
         }
-        bool sufficient(const vertex& t) const {
-            return t.fee() >= calculate(t.size(), t.sigops());
+        bool sufficient(const ledger::vertex& t) const {
+            return t.fee() >= calculate(t->size(), t.sigops());
         }
         
     };
@@ -30,7 +30,7 @@ namespace Gigamonkey::Bitcoin {
         funds(list<spendable> e) : funds{funds{}.insert(e)} {}
         
         funds insert(spendable s) const {
-            return {Entries << s, Value + s.Prevout.value(), Valid && s.valid()};
+            return {Entries << s, Value + s.Value, Valid && s.valid()};
         }
         
         funds insert(list<spendable> s) const {
@@ -109,7 +109,7 @@ namespace Gigamonkey::Bitcoin {
     };
     
     struct wallet::spent {
-        vertex Vertex;
+        ledger::vertex Vertex;
         wallet Remainder;
         
         bool valid() const {
@@ -118,7 +118,7 @@ namespace Gigamonkey::Bitcoin {
         
     private:
         spent() : Vertex{}, Remainder{} {}
-        spent(const vertex& v, const wallet& r) : Vertex{v}, Remainder{r} {}
+        spent(const ledger::vertex& v, const wallet& r) : Vertex{v}, Remainder{r} {}
         
         friend struct wallet;
     };

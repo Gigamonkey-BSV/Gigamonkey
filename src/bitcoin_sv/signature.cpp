@@ -7,18 +7,21 @@
 
 namespace Gigamonkey::Bitcoin {
     
-    digest256 signature_hash(const input_index &v, sighash::directive d) {
-        bytes_view x = output::script(v.output());
-        CScript script(x.begin(), x.end());
-        CDataStream stream{(const char*)(v.Transaction.data()), 
-            (const char*)(v.Transaction.data() + v.Transaction.size()), SER_NETWORK, PROTOCOL_VERSION};
+    digest256 signature_hash(const bytes_view tx, index i, sighash::directive d) {
+        
+        CDataStream stream{(const char*)(tx.data()), 
+            (const char*)(tx.data() + tx.size()), SER_NETWORK, PROTOCOL_VERSION};
         CTransaction ctx{deserialize, stream};
-        ::SigHashType hashType(d);
-        Amount amount((int64)v.value());
-        ::uint256 tmp= SignatureHash(script, ctx, v.Index, hashType, amount);
+        
+        bytes_view o = transaction::output(tx, i);
+        bytes_view x = output::script(o);
+        
+        ::uint256 tmp= SignatureHash(CScript(x.begin(), x.end()), ctx, i, SigHashType(d), Amount((int64)output::value(o)));
+        
         digest<32> output;
         std::copy(output.begin(), tmp.begin(), tmp.end());
         return output;
+        
     }
 
 }

@@ -68,14 +68,14 @@ namespace Gigamonkey::Bitcoin {
         
     };
     
-    digest256 signature_hash(const input_index& v, sighash::directive d);
+    digest256 signature_hash(const bytes_view tx, index i, sighash::directive d);
     
-    inline signature sign(const input_index& i, sighash::directive d, const secp256k1::secret& s) {
-        return signature{s.sign(signature_hash(i, d)), d};
+    inline signature sign(const bytes_view tx, index i, sighash::directive d, const secp256k1::secret& s) {
+        return signature{s.sign(signature_hash(tx, i, d)), d};
     }
     
-    inline bool verify(const signature& x, const input_index& i, sighash::directive d, const pubkey& p) {
-        return p.verify(signature_hash(i, d), x.raw());
+    inline bool verify(const signature& x, bytes_view tx, index i, sighash::directive d, const pubkey& p) {
+        return p.verify(signature_hash(tx, i, d), x.raw());
     }
     
     inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::signature& x) {

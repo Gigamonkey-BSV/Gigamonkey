@@ -23,9 +23,9 @@ namespace Gigamonkey::Bitcoin::redemption {
             return (Secret == nullptr) || (Script.size() == 0);
         }
         
-        bytes redeem(const input_index& tx, bool dummy_signature = false) const {
+        bytes redeem(bytes_view tx, index i, bool dummy_signature = false) const {
             return Secret == nullptr ? Script : 
-                compile(Bitcoin::program{} << push_data(dummy_signature ? signature{} : Secret->sign(tx, Directive)));
+                compile(Bitcoin::program{} << push_data(dummy_signature ? signature{} : Secret->sign(tx, i, Directive)));
         };
         
         uint32 expected_size() const {
@@ -35,7 +35,7 @@ namespace Gigamonkey::Bitcoin::redemption {
     
     using incomplete = list<element>;
     
-    bytes redeem(incomplete x, const input_index& tx, bool dummy_signature = false);
+    bytes redeem(incomplete x, bytes_view tx, index i, bool dummy_signature = false);
     
     uint32 expected_size(incomplete x);
 }
@@ -49,49 +49,19 @@ namespace Gigamonkey::Bitcoin {
         virtual uint32 sigops() const = 0;
     };
     
-    struct spendable {
+    struct spendable : output {
         ptr<redeemable> Redeemer;
-        prevout Prevout;
+        outpoint Outpoint;
         uint32_little Sequence;
         
-        bool valid() const {
-            return Prevout.valid();
-        } 
+        spendable(const output& o, ptr<redeemable> r, const outpoint& op, uint32_little s = 0) : output{o}, Redeemer{r}, Outpoint{op}, Sequence{s} {}
         
-        spendable(ptr<redeemable> r, prevout p, uint32_little s = 0) : Redeemer{r}, Prevout{p}, Sequence{s} {}
     };
     
-    struct vertex {
-        list<prevout> Previous;
-        transaction Transaction;
-        
-        satoshi spent() const;
-        
-        satoshi sent() const;
-        satoshi fee() const;
-        size_t size() const;
-        
-        bool valid() const;
-        
-        uint32 sigops() const;
-    };
+    ledger::double_entry redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out, uint32_little locktime);
     
-    vertex redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out, uint32_little locktime);
-    
-    inline vertex redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out) {
+    ledger::double_entry inline redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out) {
         return redeem(prev, out, 0);
-    }
-    
-    inline satoshi vertex::sent() const {
-        return Transaction.sent();
-    }
-    
-    inline satoshi vertex::fee() const {
-        return spent() - sent();
-    }
-    
-    inline size_t vertex::size() const {
-        return Transaction.serialized_size();
     }
     
 }

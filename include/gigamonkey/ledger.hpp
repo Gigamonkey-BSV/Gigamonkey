@@ -4,8 +4,8 @@
 #ifndef GIGAMONKEY_LEDGER
 #define GIGAMONKEY_LEDGER
 
-#include "timechain.hpp"
 #include "spv.hpp"
+#include <gigamonkey/script/script.hpp>
 
 namespace Gigamonkey::Bitcoin {
     
@@ -19,16 +19,20 @@ namespace Gigamonkey::Bitcoin {
             header Header;
             
             bool valid() const {
-                return *this != nullptr && Header.valid();
+                return *this != nullptr;
             }
             
             bool confirmed() const {
-                return Proof != Merkle::proof{};
+                return valid() && Header.valid() && id() == Proof.Branch.Leaf.Digest && Proof.valid() && Proof.Root == Header.MerkleRoot;
             }
             
             double_entry() : ptr<bytes>{nullptr}, Proof{}, Header{} {}
             
+            // for a confirmed transaction. 
             double_entry(ptr<bytes> t, Merkle::proof p, const header& h) : ptr<bytes>{t}, Proof{p}, Header{h} {}
+            
+            // for an unconfirmed transaction. 
+            double_entry(ptr<bytes> t) : ptr<bytes>{t}, Proof{}, Header{} {}
             
             bool operator==(const double_entry &t) const;
             bool operator!=(const double_entry &t) const;
@@ -40,69 +44,99 @@ namespace Gigamonkey::Bitcoin {
             Bitcoin::output output(uint32) const;
             Bitcoin::input input(uint32) const;
             
-            Bitcoin::txid txid() const;
+            list<Bitcoin::output> outputs() const;
+            list<Bitcoin::input> inputs() const;
+            
+            txid id() const;
+            
+            satoshi sent() const;
+            
+            timestamp time() const {
+                return Header.Timestamp;
+            }
+            
         };
         
-        virtual data::entry<txid, double_entry> transaction(const digest256&) const = 0;
+        virtual data::entry<txid, double_entry> transaction(const txid&) const = 0;
         
         // get header by header hash and merkle root.
         virtual block_header header(const digest256&) const = 0; 
         
         // get block by header hash and merkle root. 
         virtual bytes block(const digest256&) const = 0; 
+        
+        struct prevout {
+            data::entry<txid, double_entry> Previous;
+            
+            uint32_little Index;
+            input Input;
+            
+            explicit operator output() const {
+                return Previous.Value.output(Index);
+            }
+            
+            satoshi spent() const {
+                return output(*this).Value;
+            }
+            
+            bool valid() const {
+                return Previous.Value.valid() && 
+                    Input.Outpoint.Reference == Previous.Key/* && 
+                    evaluate_script(output(*this).Script, Input.Script).valid()*/;
+            }
+        };
+        
+        struct vertex : public double_entry {
+            data::map<txid, double_entry> Previous;
+            
+            satoshi spent() const {
+                return data::fold([](satoshi x, const prevout& p) -> satoshi {
+                    return p.spent();
+                }, satoshi{0}, prevouts());
+            }
+            
+            satoshi fee() const {
+                return spent() - sent();
+            }
+            
+            bool valid() const;
+            
+            uint32 sigops() const;
+            
+            list<prevout> prevouts() const;
+            
+            vertex(const double_entry& d, data::map<txid, double_entry> p) : double_entry{d}, Previous{p} {}
+            vertex();
+            
+            prevout operator[](index i) {
+                struct input in = double_entry::input(i);
+                
+                return {data::entry<txid, double_entry>{in.Outpoint.Reference, *this}, i, in};
+            }
+        };
+        
+        vertex make_vertex(const double_entry& d) {
+            list<input> in = d.inputs();
+            data::map<txid, double_entry> p;
+            for (const input& i : in) p = p.insert(transaction(i.Outpoint.Reference));
+            return {d, p};
+        }
+    
+        struct edge {
+            input Input;
+            output Output;
+        
+            bool valid() const {
+                return Output.valid() && Input.valid();
+            } 
+        };
+        
     };
     
     struct timechain : ledger {
         
         virtual bool broadcast(const bytes_view&) = 0;
         
-    };
-    
-    struct input_index {
-        bytes_view Transaction;
-        index Index;
-        
-        input_index() : Transaction{}, Index{0} {}
-        input_index(bytes_view t, index i) : Transaction{t}, Index{i} {}
-        
-        bytes_view output() const {
-            return transaction::output(Transaction, Index);
-        }
-        
-        bool valid() const {
-            return Bitcoin::output{output()}.valid();
-        }
-        
-        satoshi value() const {
-            return Bitcoin::output{output()}.Value;
-        }
-    };
-    
-    struct prevout {
-        data::entry<txid, ledger::double_entry> Previous;
-        index Index;
-        ledger::double_entry Transaction;
-        
-        bytes_view output() const {
-            return operator input_index().output();
-        }
-        
-        Bitcoin::input input() const {
-            return Transaction.input(Index);
-        }
-        
-        bool valid() const {
-            Bitcoin::input in = input();
-            return in.valid() && Previous.Key == in.Outpoint.Reference && Previous.Value.valid();
-        }
-        
-        satoshi value() const {
-            return operator input_index().value();
-        }
-        
-        explicit operator input_index() const {
-            return valid() ? input_index{bytes_view{Previous.Value->data(), Previous.Value->size()}, input().Outpoint.Index} : input_index{};
-        }
     };
     
     bool inline ledger::double_entry::operator==(const double_entry &t) const {
