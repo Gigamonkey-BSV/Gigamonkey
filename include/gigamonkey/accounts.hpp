@@ -71,7 +71,7 @@ namespace Gigamonkey::Bitcoin {
             // the outpoints of all my outputs. 
             stack<outpoint> output_outpoints() const;
             
-            event();
+            event() : ledger::vertex{}, Mine{} {}
             event(const ledger::vertex& p, ordered_list<uint32> m) : ledger::vertex{p}, Mine{m} {}
 
         };

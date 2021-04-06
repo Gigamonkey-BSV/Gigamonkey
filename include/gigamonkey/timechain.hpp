@@ -478,6 +478,10 @@ namespace Gigamonkey::Bitcoin {
     bool inline operator<=(const header& a, const header& b) {
         return a.Timestamp <= b.Timestamp;
     }
+    
+    txid inline transaction::id(bytes_view b) {
+        return hash256(b);
+    }
 }
 
 #endif

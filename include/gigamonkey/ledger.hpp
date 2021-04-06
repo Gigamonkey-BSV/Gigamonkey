@@ -44,15 +44,26 @@ namespace Gigamonkey::Bitcoin {
             Bitcoin::output output(uint32) const;
             Bitcoin::input input(uint32) const;
             
-            list<Bitcoin::output> outputs() const;
-            list<Bitcoin::input> inputs() const;
+            list<Bitcoin::output> outputs() const {
+                return operator Bitcoin::transaction().Outputs;
+            }
             
-            txid id() const;
+            list<Bitcoin::input> inputs() const {
+                return operator Bitcoin::transaction().Inputs;
+            }
+            
+            txid id() const {
+                return Bitcoin::transaction::id(this->operator*());
+            }
             
             satoshi sent() const;
             
             timestamp time() const {
                 return Header.Timestamp;
+            }
+            
+            explicit operator Bitcoin::transaction() const {
+                return Bitcoin::transaction::read(this->operator*());
             }
             
         };
@@ -106,7 +117,7 @@ namespace Gigamonkey::Bitcoin {
             list<prevout> prevouts() const;
             
             vertex(const double_entry& d, data::map<txid, double_entry> p) : double_entry{d}, Previous{p} {}
-            vertex();
+            vertex() : double_entry{}, Previous{} {}
             
             prevout operator[](index i) {
                 struct input in = double_entry::input(i);
