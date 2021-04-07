@@ -283,6 +283,10 @@ namespace Gigamonkey::Bitcoin {
     writer operator<<(writer w, const output& out) {
         return w << out.Value << out.Script;
     }
+
+    std::ostream& operator<<(std::ostream& o, const transaction& p) {
+        return o << "transaction{Version : " << p.Version << ", Inputs : " << p.Inputs << ", Outputs: " << p.Outputs << ", " << p.Locktime << "}";
+    }
     
 }
 
