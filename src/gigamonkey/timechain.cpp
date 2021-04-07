@@ -17,7 +17,7 @@ namespace Gigamonkey {
 
 namespace Gigamonkey::Bitcoin {
     
-    bytes_writer writer::write_var_int(bytes_writer r, uint64 x) {
+    bytes_writer writer::write_var_int(bytes_writer r, uint64 x) {        
         if (x <= 0xfc) return r << static_cast<byte>(x);
         else if (x <= 0xffff) return r << byte(0xfd) << uint16_little{static_cast<uint16>(x)};
         else if (x <= 0xffffffff) return r << byte(0xfe) << uint32_little{static_cast<uint32>(x)};
@@ -43,6 +43,14 @@ namespace Gigamonkey::Bitcoin {
             x = uint64(n);
         } 
         return r;
+    }
+    
+    reader read_var_int(reader r, uint64& u) {
+        return reader{reader::read_var_int(r.Reader, u)};
+    }
+    
+    writer write_var_int(writer w, uint64 u) {
+        return writer{writer::write_var_int(w.Writer, u)};
     }
     
     size_t writer::var_int_size(uint64 x) {
@@ -123,10 +131,10 @@ namespace Gigamonkey::Bitcoin {
     
     size_t transaction::serialized_size() const {
         return 8 + writer::var_int_size(Inputs.size()) + writer::var_int_size(Inputs.size()) + 
-            data::fold([](size_t size, const Bitcoin::input& i)->size_t{
+            data::fold([](size_t size, const Bitcoin::input& i) -> size_t {
                 return size + i.serialized_size();
             }, 0, Inputs) + 
-            data::fold([](size_t size, const Bitcoin::output& i)->size_t{
+            data::fold([](size_t size, const Bitcoin::output& i) -> size_t {
                 return size + i.serialized_size();
             }, 0, Outputs);
     }
@@ -147,9 +155,13 @@ namespace Gigamonkey::Bitcoin {
     }
     
     transaction transaction::read(bytes_view b) {
-        transaction t;
-        bytes_reader(b.data(), b.data() + b.size()) >> t;
-        return t;
+        try {
+            transaction t;
+            bytes_reader(b.data(), b.data() + b.size()) >> t;
+            return t;
+        } catch (data::end_of_stream n) {
+            return {};
+        }
     }
     
     bytes transaction::write() const {
@@ -262,6 +274,14 @@ namespace Gigamonkey::Bitcoin {
         } catch (data::end_of_stream) {
             return {};
         }
+    }
+
+    writer operator<<(writer w, const input& in) {
+        return w << in.Outpoint << in.Script << in.Sequence;
+    }
+
+    writer operator<<(writer w, const output& out) {
+        return w << out.Value << out.Script;
     }
     
 }

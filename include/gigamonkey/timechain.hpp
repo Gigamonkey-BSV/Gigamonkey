@@ -369,36 +369,28 @@ namespace Gigamonkey::Bitcoin {
         return r >> o.Reference >> o.Index;
     }
 
-    writer inline operator<<(writer w, const input& in) {
-        return w << in.Outpoint << in.Script << in.Sequence;
-    }
-
     reader inline operator>>(reader r, input& in) {
         return r >> in.Outpoint >> in.Script >> in.Sequence;
     }
 
-    writer inline operator<<(writer w, const output& out) {
-        return w << out.Value << out.Script;
-    }
-
     reader inline operator>>(reader r, output& out) {
         return r >> out.Value >> out.Script;
+    }
+    
+    reader inline operator>>(reader r, transaction& t) {
+        return r >> t.Version >> t.Inputs >> t.Outputs >> t.Locktime;
     }
 
     writer inline operator<<(writer w, const transaction& t) {
         return w << t.Version << t.Inputs << t.Outputs << t.Locktime;
     }
 
-    reader inline operator>>(reader r, transaction& t) {
-        return r >> t.Version >> t.Inputs >> t.Outputs >> t.Locktime;
-    }
-
-    writer inline operator<<(writer w, const block& b) {
-        return w << b.Header << b.Transactions;
-    }
-
     reader inline operator>>(reader r, block& b) {
         return r >> b.Header >> b.Transactions;
+    }
+    
+    writer inline operator<<(writer w, const block& b) {
+        return w << b.Header << b.Transactions;
     }
    
     digest256 inline header::previous(const slice<80> x) {
