@@ -278,7 +278,7 @@ namespace Gigamonkey::Bitcoin {
         
         pay_to_address(bytes_view script) : Address{} {
             bytes addr{20};
-            pattern(addr).match(script);
+            if (!pattern(addr).match(script)) return;
             std::copy(addr.begin(), addr.end(), Address.Value.begin());
         }
         
