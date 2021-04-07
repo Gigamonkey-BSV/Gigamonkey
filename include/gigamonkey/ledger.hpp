@@ -126,7 +126,7 @@ namespace Gigamonkey::Bitcoin {
                 list<prevout> p;
                 list<Bitcoin::input> inputs = double_entry::inputs();
                 index i = 0;
-                for (const Bitcoin::input& in : inputs) p << 
+                for (const Bitcoin::input& in : inputs) p = p << 
                     prevout{data::entry<txid, double_entry>{in.Outpoint.Reference, Previous[in.Outpoint.Reference]}, i++, in};
                 return p;
             }
