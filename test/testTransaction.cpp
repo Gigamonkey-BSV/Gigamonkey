@@ -1,7 +1,8 @@
-// Copyright (c) 2019 Daniel Krawisz
+// Copyright (c) 2021 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/spv.hpp>
+#include <gigamonkey/script/pattern.hpp>
 #include "gtest/gtest.h"
 
 namespace Gigamonkey::Bitcoin {
@@ -19,6 +20,8 @@ namespace Gigamonkey::Bitcoin {
         
         transaction t = transaction::read(tx);
         
+        EXPECT_TRUE(t.valid());
+        
         EXPECT_EQ(t.Version, 1);
         
         EXPECT_EQ(t.Inputs.size(), 1);
@@ -28,6 +31,8 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_EQ(t.Locktime, 0);
         
         EXPECT_EQ(t.serialized_size(), 7676);
+        
+        EXPECT_FALSE(Bitcoin::pay_to_address{t.Outputs.first().Script}.valid());
         
         EXPECT_EQ(t.write(), tx);
         

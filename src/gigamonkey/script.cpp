@@ -170,12 +170,31 @@ namespace Gigamonkey::Bitcoin {
     program decompile(bytes_view b) {
         program p{};
         script_reader r{bytes_reader{b.data(), b.data() + b.size()}};
+        bool first_false = false;
+        while(!r.empty()) {
+            instruction i{};
+            r = r >> i;
+            if(!i.valid()) return {};
+            p = p << i;
+            if (i == OP_RETURN) return p;
+            if (i == OP_FALSE) first_false = true;
+        }
+        
+        while(!r.empty()) {
+            instruction i{};
+            r = r >> i;
+            if(!i.valid()) return {};
+            p = p << i;
+            if (first_false && i == OP_RETURN) return p;
+        }
+        
         while(!r.empty()) {
             instruction i{};
             r = r >> i;
             if(!i.valid()) return {};
             p = p << i;
         }
+        
         return p;
     }
     

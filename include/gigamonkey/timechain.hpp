@@ -404,24 +404,6 @@ namespace Gigamonkey::Bitcoin {
     digest256 inline header::hash(const slice<80> h) {
         return Bitcoin::hash256(h);
     }
-    
-    inline uint<80> header::write() const {
-        uint<80> x; // inefficient: unnecessary copy. 
-        bytes b(80);
-        writer{b} << Version << Previous << MerkleRoot << Timestamp << Target << Nonce;
-        std::copy(b.begin(), b.end(), x.data());
-        return x;
-    }
-    
-    inline bool transaction::valid() const {
-        return Inputs.size() > 0 && Outputs.size() > 0 && 
-            fold([](bool b, Bitcoin::input i) -> bool {
-                return b && i.valid();
-            }, true, Inputs) && 
-            fold([](bool b, Bitcoin::output o) -> bool {
-                return b && o.valid();
-            }, true, Outputs);
-    }
         
     txid inline transaction::id() const {
         return Bitcoin::id(*this);

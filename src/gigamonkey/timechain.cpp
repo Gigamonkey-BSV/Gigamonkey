@@ -288,5 +288,20 @@ namespace Gigamonkey::Bitcoin {
         return o << "transaction{Version : " << p.Version << ", Inputs : " << p.Inputs << ", Outputs: " << p.Outputs << ", " << p.Locktime << "}";
     }
     
+    uint<80> header::write() const {
+        uint<80> x; // inefficient: unnecessary copy. 
+        bytes b(80);
+        writer{b} << Version << Previous << MerkleRoot << Timestamp << Target << Nonce;
+        std::copy(b.begin(), b.end(), x.data());
+        return x;
+    }
+    
+    bool transaction::valid() const {
+        if (Inputs.size() == 0 || Outputs.size() == 0) return false;
+        for (const Bitcoin::input& i : Inputs) if (!i.valid()) return false; 
+        for (const Bitcoin::output& o : Outputs) if (!o.valid()) return false; 
+        return true;
+    }
+    
 }
 
