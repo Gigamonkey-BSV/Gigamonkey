@@ -29,7 +29,7 @@ namespace Gigamonkey::Bitcoin {
             inputs = inputs.rest();
         }
         
-        Account.Debits = Account.Debits.insert(tx, debits);
+        if (!debits.empty()) Account.Debits = Account.Debits.insert(tx, debits);
         
         ordered_list<uint32> Mine = tx.Mine;
         
@@ -43,7 +43,7 @@ namespace Gigamonkey::Bitcoin {
             } else credits = credits.insert(i);
         }
         
-        Account.Credits = Account.Credits.insert(tx, credits);
+        if (!credits.empty()) Account.Credits = Account.Credits.insert(tx, credits);
         
         return Account;
     }

@@ -85,7 +85,7 @@ namespace Gigamonkey::Bitcoin {
         // the outputs belonging to me that have been cancelled. 
         data::map<outpoint, event> Cancellations;
         
-        data::map<event, ordered_list<index>> Debits;
+        data::map<ledger::double_entry, ordered_list<index>> Debits;
         data::map<event, ordered_list<index>> Credits;
         
         account(priority_queue<event> txs) : account{account{}.reduce(txs)} {}
@@ -98,6 +98,10 @@ namespace Gigamonkey::Bitcoin {
         
         account reduce(priority_queue<event> txs) const {
             if (txs.empty()) return *this;
+            // need to process from earliest to latest, so we reverse. 
+            return data::fold([](const account& a, const event& e) -> account {
+                return a.reduce(e);
+            }, account{}, data::reverse(txs.values()));
             return reduce(txs.first()).reduce(txs.rest());
         }
     };
