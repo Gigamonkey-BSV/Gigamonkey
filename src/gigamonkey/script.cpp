@@ -96,8 +96,9 @@ namespace Gigamonkey::Bitcoin {
         script_writer(bytes_writer w) : Writer{w} {}
     };
     
-    bytes_reader read_push(bytes_reader r, instruction& rest) {
+    bytes_reader read_push(bytes_reader read, instruction& rest) {
         uint32 size;
+        bytes_reader r = read;
         if (rest.Op <= OP_PUSHSIZE75) size = rest.Op;
         if (rest.Op == OP_PUSHDATA1) {
             byte x;
@@ -115,19 +116,24 @@ namespace Gigamonkey::Bitcoin {
             size = x;
         }
         
-        // TODO inefficient because I copy data here for
-        // no reason other than not wanting to re-write
-        // some old types. 
+        if ((r.Reader.End - r.Reader.Begin) < size) {
+            rest = {};
+            return read;
+        }
+        
         rest.Data = bytes(size);
-        data::bytes bx(size);
-        r = r >> bx;
-        std::copy(bx.begin(), bx.end(), rest.Data.begin());
+        r = r >> rest.Data;
         return r;
     }
     
     struct script_reader {
         bytes_reader Reader;
         script_reader operator>>(instruction& i) const {
+            if ((Reader.Reader.End - Reader.Reader.Begin) == 0) {
+                i = {};
+                return *this;
+            }
+            
             byte next;
             bytes_reader r = Reader >> next;
             i.Op = static_cast<op>(next);
@@ -167,6 +173,7 @@ namespace Gigamonkey::Bitcoin {
         while(!r.empty()) {
             instruction i{};
             r = r >> i;
+            if(!i.valid()) return {};
             p = p << i;
         }
         return p;
