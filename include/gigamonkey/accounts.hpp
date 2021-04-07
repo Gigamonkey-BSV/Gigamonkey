@@ -98,10 +98,9 @@ namespace Gigamonkey::Bitcoin {
         
         account reduce(priority_queue<event> txs) const {
             if (txs.empty()) return *this;
-            // need to process from earliest to latest, so we reverse. 
             return data::fold([](const account& a, const event& e) -> account {
                 return a.reduce(e);
-            }, account{}, data::reverse(txs.values()));
+            }, account{}, txs.values());
             return reduce(txs.first()).reduce(txs.rest());
         }
     };
