@@ -85,7 +85,7 @@ namespace Gigamonkey::Bitcoin {
             input Input;
             
             explicit operator output() const {
-                return Previous.Value.output(Index);
+                return Previous.Value.output(Input.Outpoint.Index);
             }
             
             satoshi spent() const {
