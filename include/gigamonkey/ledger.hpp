@@ -12,7 +12,7 @@ namespace Gigamonkey::Bitcoin {
     struct ledger {
         using block_header = Bitcoin::headers::header;
         
-        virtual list<block_header> headers(uint64 since_height) const = 0;
+        virtual list<block_header> headers(uint64 since_height) = 0;
         
         struct double_entry : ptr<bytes> {
             Merkle::proof Proof;
