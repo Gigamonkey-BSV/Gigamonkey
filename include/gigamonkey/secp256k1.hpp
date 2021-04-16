@@ -115,8 +115,8 @@ namespace Gigamonkey::secp256k1 {
         explicit pubkey(bytes_view v) : Value{v} {}
         
         explicit pubkey(string_view s) : Value{} {
-            encoding::hex::view hex(s);
-            if (hex.valid()) Value = bytes_view(hex);
+            ptr<bytes> hex = encoding::hex::read(s);
+            if (hex != nullptr) Value = *hex;
         }
         
         bool valid() const;

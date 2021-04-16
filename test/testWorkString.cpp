@@ -23,19 +23,17 @@ namespace Gigamonkey::Bitcoin {
             // nonce 
             "1DAC2B7C";
         
-        encoding::hex::view genesis_header_hex(genesis_header_string);
+        ptr<bytes> genesis_header_hex = encoding::hex::read(genesis_header_string);
         
-        ASSERT_TRUE(genesis_header_hex.valid());
+        ASSERT_NE(genesis_header_hex, nullptr);
         
-        bytes genesis_header_bytes = bytes_view(genesis_header_hex);
-        
-        digest256 genesis_hash = hash256(genesis_header_bytes);
+        digest256 genesis_hash = hash256(*genesis_header_hex);
         
         EXPECT_EQ(genesis_hash, digest256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
         
-        work::string work_string{slice<80>(genesis_header_bytes.data())}; 
+        work::string work_string{slice<80>(genesis_header_hex->data())}; 
         
-        Bitcoin::header header(slice<80>(genesis_header_bytes.data()));
+        Bitcoin::header header(slice<80>(genesis_header_hex->data()));
         
         EXPECT_EQ(work_string, work::string(header));
         

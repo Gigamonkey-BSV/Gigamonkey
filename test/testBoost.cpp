@@ -485,7 +485,7 @@ namespace Gigamonkey::Boost {
         
         string raw_tx_hex{ "010000000174d9f6dc235207fbbcdff7bdc412dcb375eb634da698ed164cc1e9aa1b88729a040000006b4830450221008596410738406e0e8589292a0e7a4d960e739025ab1859a3df6c77b4cf8c59ac0220733024f199162bc7b9ccd648aae56f0a0e307558a9827a26d35b1016de1865c54121025a77fe27d1db166b660205ff08b97f7dd87c7c68edaa2931895c2c8577f1a351ffffffff027d20000000000000e108626f6f7374706f777504000000002035b8fcb6882f93bddb928c9872198bcdf057ab93ed615ad938f24a63abde588104ffff001d14000000000000000000000000000000000000000004000000002000000000000000000000000000000000000000000000000000000000000000007e7c557a766b7e52796b557a8254887e557a8258887e7c7eaa7c6b7e7e7c8254887e6c7e7c8254887eaa01007e816c825488537f7681530121a5696b768100a0691d00000000000000000000000000000000000000000000000000000000007e6c539458959901007e819f6976a96c88acb461590e000000001976a914ba6e459a2b505dc78e44e8c5874776c00890e16088ac00000000"};
         
-        bytes raw_tx = bytes_view(data::encoding::hex::view{raw_tx_hex}); 
+        bytes raw_tx = *data::encoding::hex::read(raw_tx_hex); 
         Bitcoin::transaction tx = Bitcoin::transaction::read(raw_tx);
         
         list<Boost::output> boost_outputs; 
@@ -514,13 +514,13 @@ namespace Gigamonkey::Boost {
         Stratum::session_id extra_nonce_1{}; 
         digest160 miner_address{};
         
-        bytes signature_bytes = bytes_view(encoding::hex::view{signature_hex});
-        bytes minerPubKey_bytes = bytes_view(encoding::hex::view{minerPubKey_hex});
-        bytes extraNonce1_bytes = bytes_view(encoding::hex::view{extraNonce1_hex});
-        bytes extraNonce2_bytes = bytes_view(encoding::hex::view{extraNonce2_hex});
-        bytes time_bytes = bytes_view(encoding::hex::view{time_hex});
-        bytes minerPubKeyHash_bytes = bytes_view(encoding::hex::view{minerPubKeyHash_hex});
-            
+        bytes signature_bytes = *encoding::hex::read(signature_hex);
+        bytes minerPubKey_bytes = *encoding::hex::read(minerPubKey_hex);
+        bytes extraNonce1_bytes = *encoding::hex::read(extraNonce1_hex);
+        bytes extraNonce2_bytes = *encoding::hex::read(extraNonce2_hex);
+        bytes time_bytes = *encoding::hex::read(time_hex);
+        bytes minerPubKeyHash_bytes = *encoding::hex::read(minerPubKeyHash_hex);
+        
         std::copy(signature_bytes.begin(), signature_bytes.end(), signature.begin());
         std::copy(minerPubKey_bytes.begin(), minerPubKey_bytes.end(), pubkey.begin());
         std::copy(extraNonce1_bytes.begin(), extraNonce1_bytes.end(), extra_nonce_1.begin());
@@ -544,7 +544,7 @@ namespace Gigamonkey::Boost {
         
         string raw_tx_hex{ "01000000018ff2fe10e8629051853507b4189bf3981569a0d358e0506033a11618f2e3b10c010000006b483045022100f82288631d8c8b6b6fba9094a6d56af6ab572347b7365dcf7e6d68905cb8fd000220390cde292cc50a92bd60e680bfcbddf17443d904c7372880b6ec312a06952fb3412102be82a62c8c3d8e949c9b54a60b4cadf0efacec08164b3eca3b6e793f52bf8d8affffffff0220090000000000001976a914cdb2b66b5fa33fa3f55fb9296f31d445892d990988ace218000000000000e108626f6f7374706f7775047800000020325593000000000000000000000000000000000000000000000000000000000004ffff001d14231200000000000000000000000000000000000004886600002094000000000000000000000000000000000000000000000000000000000000007e7c557a766b7e52796b557a8254887e557a8258887e7c7eaa7c6b7e7e7c8254887e6c7e7c8254887eaa01007e816c825488537f7681530121a5696b768100a0691d00000000000000000000000000000000000000000000000000000000007e6c539458959901007e819f6976a96c88ac00000000"};
         
-        bytes raw_tx = bytes_view(data::encoding::hex::view{raw_tx_hex}); 
+        bytes raw_tx = *data::encoding::hex::read(raw_tx_hex); 
         Bitcoin::transaction tx = Bitcoin::transaction::read(raw_tx);
         
         list<Boost::output> boost_outputs; 
@@ -572,11 +572,11 @@ namespace Gigamonkey::Boost {
         Stratum::session_id extra_nonce_1{1174405125}; 
         digest160 miner_address{};
         
-        bytes signature_bytes = bytes_view(encoding::hex::view{signature_hex});
-        bytes minerPubKey_bytes = bytes_view(encoding::hex::view{minerPubKey_hex});
-        bytes extraNonce2_bytes = bytes_view(encoding::hex::view{extraNonce2_hex});
-        bytes time_bytes = bytes_view(encoding::hex::view{time_hex});
-        bytes minerPubKeyHash_bytes = bytes_view(encoding::hex::view{minerPubKeyHash_hex});
+        bytes signature_bytes = *data::encoding::hex::read(signature_hex);
+        bytes minerPubKey_bytes = *data::encoding::hex::read(minerPubKey_hex);
+        bytes extraNonce2_bytes = *data::encoding::hex::read(extraNonce2_hex);
+        bytes time_bytes = *data::encoding::hex::read(time_hex);
+        bytes minerPubKeyHash_bytes = *data::encoding::hex::read(minerPubKeyHash_hex);
             
         std::copy(signature_bytes.begin(), signature_bytes.end(), signature.begin());
         std::copy(minerPubKey_bytes.begin(), minerPubKey_bytes.end(), pubkey.begin());

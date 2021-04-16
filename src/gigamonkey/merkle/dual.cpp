@@ -162,9 +162,9 @@ namespace Gigamonkey::Merkle {
         bool read_digest(const json& j, digest& d) {
             if (!j.is_string()) return false;
             string hex_digest = j;
-            data::encoding::hex::view v{hex_digest};
-            if (!v.valid() || hex_digest.size() != 64) return false;
-            std::copy(bytes_view(v).begin(), bytes_view(v).end(), d.begin());
+            ptr<bytes> v = data::encoding::hex::read(hex_digest);
+            if (v == nullptr || hex_digest.size() != 64) return false;
+            std::copy(v->begin(), v->end(), d.begin());
             return true;
         }
         

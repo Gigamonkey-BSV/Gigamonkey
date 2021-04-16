@@ -15,11 +15,10 @@ namespace Gigamonkey::Stratum::mining {
             if (!j.is_string()) return false;
             string str(j);
             if (str.size() != 8) return false;
-            encoding::hex::view hex{str};
-            if (!hex.valid()) return false;
-            bytes_view b = bytes_view(hex);
+            ptr<bytes> b = encoding::hex::read(str);
+            if (b != nullptr) return false;
             uint32_big n;
-            std::copy(b.begin(), b.end(), n.begin());
+            std::copy(b->begin(), b->end(), n.begin());
             x = uint32(n);
             return true;
         }
@@ -32,10 +31,9 @@ namespace Gigamonkey::Stratum::mining {
             if (!j.is_string()) return false;
             string str(j);
             if (str.size() != 64) return false;
-            encoding::hex::view hex{str};
-            if (!hex.valid()) return false;
-            bytes_view b = bytes_view(hex);
-            std::copy(b.begin(), b.end(), x.begin());
+            ptr<bytes> b = encoding::hex::read(str);
+            if (b != nullptr) return false;
+            std::copy(b->begin(), b->end(), x.begin());
             return true;
         }
         
@@ -46,9 +44,9 @@ namespace Gigamonkey::Stratum::mining {
         bool read(const json& j, bytes& x) {
             if (!j.is_string()) return false;
             string str(j);
-            encoding::hex::view hex{str};
-            if (!hex.valid()) return false;
-            x = bytes_view(hex);
+            ptr<bytes> b = encoding::hex::read(str);
+            if (b != nullptr) return false;
+            x = *b;
             return true;
         }
         
@@ -82,11 +80,10 @@ namespace Gigamonkey::Stratum::mining {
             if (!j.is_string()) return false;
             string str(j);
             if (str.size() != 8) return false;
-            encoding::hex::view hex{str};
-            if (!hex.valid()) return false;
-            bytes_view b = bytes_view(hex);
+            ptr<bytes> b = encoding::hex::read(str);
+            if (b != nullptr) return false;
             int32_big n;
-            std::copy(b.begin(), b.end(), n.begin());
+            std::copy(b->begin(), b->end(), n.begin());
             x = int32_little(n);
             return true;
         }
@@ -99,11 +96,10 @@ namespace Gigamonkey::Stratum::mining {
             if (!j.is_string()) return false;
             string str(j);
             if (str.size() != 8) return false;
-            encoding::hex::view hex{str};
-            if (!hex.valid()) return false;
-            bytes_view b = bytes_view(hex);
+            ptr<bytes> b = encoding::hex::read(str);
+            if (b != nullptr) return false;
             uint32_big n;
-            std::copy(b.begin(), b.end(), n.begin());
+            std::copy(b->begin(), b->end(), n.begin());
             x = work::compact(uint32_little(n));
             return true;
         }
@@ -116,11 +112,10 @@ namespace Gigamonkey::Stratum::mining {
             if (!j.is_string()) return false;
             string str(j);
             if (str.size() != 8) return false;
-            encoding::hex::view hex{str};
-            if (!hex.valid()) return false;
-            bytes_view b = bytes_view(hex);
+            ptr<bytes> b = encoding::hex::read(str);
+            if (b != nullptr) return false;
             uint32_big n;
-            std::copy(b.begin(), b.end(), n.begin());
+            std::copy(b->begin(), b->end(), n.begin());
             x = Bitcoin::timestamp(uint32_little(n));
             return true;
         }
@@ -133,9 +128,8 @@ namespace Gigamonkey::Stratum::mining {
             if (!j.is_string()) return false;
             string str(j);
             if (str.size() != 16) return false;
-            encoding::hex::view hex{str};
-            bytes_view b = bytes_view(hex);
-            std::copy(b.begin(), b.end(), x.begin());
+            ptr<bytes> b = encoding::hex::read(str);
+            std::copy(b->begin(), b->end(), x.begin());
             return true;
         }
         
@@ -147,10 +141,9 @@ namespace Gigamonkey::Stratum::mining {
             if (!j.is_string()) return false;
             string str(j);
             if (str.size() != 8) return false;
-            encoding::hex::view hex{str};
-            bytes_view b = bytes_view(hex);
+            ptr<bytes> b = encoding::hex::read(str);
             uint32_big n;
-            std::copy(b.begin(), b.end(), n.begin());
+            std::copy(b->begin(), b->end(), n.begin());
             x = uint32_little(n);
             return true;
         }

@@ -73,14 +73,10 @@ namespace Gigamonkey::Bitcoin {
         return instruction{b};
     }
     
-    // inefficient: copying. 
     instruction push_hex(std::string str) {
-        data::encoding::hex::view hex{str};
-        if (!hex.valid()) return instruction{};
-        data::bytes b = data::bytes_view(hex);
-        bytes x(b.size());
-        std::copy(b.begin(), b.end(), x.begin());
-        return instruction{x};
+        ptr<bytes> b = data::encoding::hex::read(str);
+        if (b == nullptr) return instruction{};
+        return instruction{*b};
     }
     
     struct script_writer {

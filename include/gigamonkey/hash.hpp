@@ -20,7 +20,12 @@ namespace Gigamonkey {
         
         uint(const slice<size>);
         
+        // valid inputs are a hexidecimal number, which will be written 
+        // to the digest in little endian (in other words, reversed
+        // from the way it is written) or a hex string, which will be
+        // written to the digest as given, without reversing. 
         explicit uint(string_view hex);
+        
         explicit uint(const base_uint<bits>& b) : base_uint<bits>{b} {}
         explicit uint(const N& n);
         
@@ -264,8 +269,8 @@ namespace Gigamonkey {
     inline uint<size, bits>::uint(string_view hex) : uint(0) {
         if (hex.size() != size * 2 + 2) return;
         if (!data::encoding::hexidecimal::valid(hex)) return;
-        bytes read = bytes_view(encoding::hex::view{hex.substr(2)});
-        std::reverse_copy(read.begin(), read.end(), begin());
+        ptr<bytes> read = encoding::hex::read(hex.substr(2));
+        std::reverse_copy(read->begin(), read->end(), begin());
     }
     
     template <size_t size, unsigned int bits>
@@ -466,10 +471,9 @@ namespace Gigamonkey {
     
     template <size_t size>
     digest<size>::digest(string_view s) {
-        data::encoding::hex::view v{s};
-        if (v.valid()) {
-            bytes_view b = (bytes_view)v;
-            std::copy(b.begin(), b.end(), begin());
+        ptr<bytes> b = data::encoding::hex::read(s);
+        if (b != nullptr) {
+            std::copy(b->begin(), b->end(), begin());
         } else *this = digest{uint<size>{s}};
     }
 

@@ -48,8 +48,8 @@ namespace Gigamonkey::Stratum {
     inline session_id::session_id(uint32_big v) : uint32_big{v} {}
     
     inline session_id::session_id(encoding::hex::fixed<4> v) : uint32_big{0} {
-        encoding::hex::view x{v};
-        if (x.valid()) std::copy(bytes_view(x).begin(), bytes_view(x).end(), uint32_big::begin());
+        ptr<bytes> x = encoding::hex::read(v);
+        if (x != nullptr) std::copy(x->begin(), x->end(), uint32_big::begin());
     }
     
     inline session_id::operator encoding::hex::fixed<4>() const {
