@@ -6,8 +6,6 @@ namespace Gigamonkey::Bitcoin {
         
         if (!valid()) return {};
         
-        if (payments.empty()) return {};
-        
         list<output> outputs = for_each([](payment p) -> output {return output(p);}, payments);
         
         // check if any payment is below dust threshhold. 

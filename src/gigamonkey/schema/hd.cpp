@@ -371,14 +371,6 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         return !(rhs == *this);
     }
 
-    Bitcoin::address pubkey::address() const {
-        auto hash =Pubkey.hash();
-        if(Net==type::main)
-            return Gigamonkey::Bitcoin::address{Gigamonkey::Bitcoin::address::main,hash};
-        else
-            return Gigamonkey::Bitcoin::address{Gigamonkey::Bitcoin::address::test,hash};
-    }
-
     secret derive(const secret& sec, string path) {
         if (path.empty())
             return secret();

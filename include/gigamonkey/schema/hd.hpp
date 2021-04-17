@@ -34,6 +34,14 @@ namespace Gigamonkey::Bitcoin::hd {
             return t == main ? Bitcoin::secret::main : t == test ? Bitcoin::secret::test : Bitcoin::secret::type{0};
         }
         
+        type inline from_address(Bitcoin::address::type t) {
+            return t == Bitcoin::address::main ? main : t == Bitcoin::address::test ? test : type{0};
+        }
+        
+        Bitcoin::address::type inline to_address(type t) {
+            return t == main ? Bitcoin::address::main : t == test ? Bitcoin::address::test : Bitcoin::address::type{0};
+        }
+        
         bool inline hardened(uint32 child) {
             return child >= 0x80000000;
         }
@@ -59,7 +67,10 @@ namespace Gigamonkey::Bitcoin::hd {
             static pubkey from_seed(seed entropy,type net);
 
             string write() const;
-            Bitcoin::address address() const;
+
+            Bitcoin::address address() const {
+                return Gigamonkey::Bitcoin::address{to_address(Net), Pubkey};
+            }
 
             bool operator==(const pubkey &rhs) const;
 
@@ -68,6 +79,10 @@ namespace Gigamonkey::Bitcoin::hd {
             pubkey derive(list<uint32> l) const;
 
             friend std::ostream &operator<<(std::ostream &os, const pubkey &pubkey);
+            
+            explicit operator Bitcoin::address() const {
+                return address();
+            }
         };
         
         struct secret {
@@ -102,6 +117,10 @@ namespace Gigamonkey::Bitcoin::hd {
             secret derive(list<uint32> l) const;
 
             friend std::ostream &operator<<(std::ostream &os, const secret &secret);
+            
+            explicit operator Bitcoin::secret() const {
+                return Bitcoin::secret{to_wif(Net), Secret};
+            }
         };
 
         secret derive(const secret&, uint32);
