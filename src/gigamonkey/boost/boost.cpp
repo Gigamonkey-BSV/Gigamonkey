@@ -345,10 +345,10 @@ namespace Gigamonkey::Boost {
         Boost::output_script out = Type == bounty ? 
             Boost::output_script::bounty(job::Puzzle.Candidate.Category, 
                 job::Puzzle.Candidate.Digest, job::Puzzle.Candidate.Target, 
-                bytes(tag_size), 0, bytes(data_size), masked_category()) :
+                bytes(tag_size), 0, bytes(data_size), use_general_purpose_bits()) :
             Boost::output_script::contract(job::Puzzle.Candidate.Category, 
                 job::Puzzle.Candidate.Digest, job::Puzzle.Candidate.Target, 
-                bytes(tag_size), 0, bytes(data_size), miner_address(), masked_category());
+                bytes(tag_size), 0, bytes(data_size), miner_address(), use_general_purpose_bits());
         
         std::copy(job::Puzzle.Header.begin(), job::Puzzle.Header.begin() + tag_size, out.Tag.begin());
         std::copy(job::Puzzle.Body.begin(), job::Puzzle.Body.begin() + 4, out.UserNonce.begin());

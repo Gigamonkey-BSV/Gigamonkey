@@ -497,7 +497,7 @@ namespace Gigamonkey::Boost {
         
         EXPECT_EQ(boost_outputs.size(), 1);
         
-        Boost::output_script boost_script{boost_outputs.first().Script};
+        Boost::output_script boost_script{boost_outputs.first()};
         
         string signature_hex{"00"};
         string minerPubKey_hex{"00"};
@@ -556,7 +556,7 @@ namespace Gigamonkey::Boost {
         
         EXPECT_EQ(boost_outputs.size(), 1);
         
-        Boost::output_script boost_script{boost_outputs.first().Script};
+        Boost::output_script boost_script{boost_outputs.first()};
         
         string signature_hex{"00"};
         string minerPubKey_hex{"02f96821f6d9a6150e0ea06b00c8c77597e863330041be70438ff6fb211d7efe66"};

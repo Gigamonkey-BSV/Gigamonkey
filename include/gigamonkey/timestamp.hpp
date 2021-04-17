@@ -47,6 +47,7 @@ namespace Gigamonkey::Bitcoin {
         bool operator<=(const timestamp& t) const;
         
         duration operator-(const timestamp& t) const;
+        
     };
 
     std::ostream& operator<<(std::ostream& o, const timestamp& s);

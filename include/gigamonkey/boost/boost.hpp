@@ -154,7 +154,7 @@ namespace Gigamonkey {
                 uint32_little user_nonce, 
                 bytes_view data, 
                 const digest160& miner_address, 
-                bool use_general_purpose_bitss = true);
+                bool use_general_purpose_bits = true);
             
         };
         
@@ -354,7 +354,7 @@ namespace Gigamonkey {
             Boost::output_script output_script() const; 
             digest160 miner_address() const;
             
-            bool masked_category() const {
+            bool use_general_purpose_bits() const {
                 return job::Puzzle.Mask != 0;
             }
 
@@ -382,7 +382,7 @@ namespace Gigamonkey {
                 const bytes& data, 
                 const digest160& miner_address, 
                 Stratum::session_id extra_nonce_1, 
-                bool masked = true);
+                bool use_general_purpose_bits = true);
             
             friend struct proof;
         };
@@ -411,30 +411,32 @@ namespace Gigamonkey {
             
         };
         
-        struct output {
-            output_script Script;
+        struct output : output_script {
             satoshi Value;
             
-            output() : Script{}, Value{-1} {}
-            output(const output_script& x, satoshi v) : Script{x}, Value{v} {}
-            output(const Bitcoin::output& b): Script{Boost::output_script::read(b.Script)}, Value{b.Value} {}
+            output() : output_script{}, Value{-1} {}
+            output(const output_script& x, satoshi v) : output_script{x}, Value{v} {}
+            output(const Bitcoin::output& b): output_script{Boost::output_script::read(b.Script)}, Value{b.Value} {}
             
             bool valid() const {
-                return Script.valid() && Value >= 0;
+                return output_script::valid() && Value >= 0;
+            }
+            
+            explicit operator Bitcoin::output() const {
+                return Bitcoin::output{Value, output_script::write()};
             }
         };
         
-        struct mined_output {
-            
+        struct mined_output : output {
             Bitcoin::outpoint Reference;
-            output Output;
+            digest256 ID;
             
-            mined_output() : Reference{}, Output{} {}
-            mined_output(const Bitcoin::outpoint& p, const output o) : 
-                Reference{p}, Output{o} {}
+            mined_output() : output{}, Reference{}, ID{} {}
+            mined_output(const output o, const Bitcoin::outpoint& p) : 
+                output{o}, Reference{p}, ID{o.hash()} {}
                 
             bool valid() const {
-                return Reference != Bitcoin::outpoint::coinbase() && Output.valid();
+                return Reference != Bitcoin::outpoint::coinbase() && output::valid();
             }
             
         };
@@ -444,11 +446,11 @@ namespace Gigamonkey {
             Bitcoin::pubkey Pubkey;
             work::solution Solution;
             type Type;
-            bool MaskedCategory;
+            bool UseGeneralPurposeBits;
             
             Bitcoin::redemption::incomplete redeem(Bitcoin::sighash::directive d) const override {
                 throw method::unimplemented{"redeem_boost"};
-                Bitcoin::program p = input_script{Bitcoin::signature{}, Pubkey, Solution, Type, MaskedCategory}.program();
+                Bitcoin::program p = input_script{Bitcoin::signature{}, Pubkey, Solution, Type, UseGeneralPurposeBits}.program();
                 if (p.empty()) return {};
                 return {Bitcoin::redemption::element{&Secret, d}, compile(p.rest())};
             }
