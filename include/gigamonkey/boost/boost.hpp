@@ -279,6 +279,13 @@ namespace Gigamonkey {
                 const Bitcoin::pubkey& pubkey, 
                 const work::solution&, Boost::type, 
                 bool category_mask);
+            
+            static uint64 expected_size(Boost::type t, bool use_general_purpose_bits) {
+                return t == Boost::invalid ? 0 : 
+                    Bitcoin::signature::MaxSignatureSize + 
+                    (t == Boost::bounty ? 34 : 0) + 
+                    (use_general_purpose_bits ? 5 : 0) + 46;
+            }
         };
         
         // A boost output cannot be redeemed until after a miner address
@@ -463,7 +470,7 @@ namespace Gigamonkey {
             }
             
             uint32 expected_size() const override {
-                return Bitcoin::signature::MaxSignatureSize + (Type == bounty ? 34 : 0) + (UseGeneralPurposeBits ? 5 : 0) + 46;
+                return input_script::expected_size(Type, UseGeneralPurposeBits);
             }
             
             uint32 sigops() const override {
