@@ -13,7 +13,7 @@ namespace Gigamonkey {
         using http = data::networking::http;
         
         string Host;
-        http Http;
+        ptr<http> Http;
         
         struct satoshi_per_byte {
             satoshi Satoshis;

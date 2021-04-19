@@ -21,7 +21,7 @@ namespace Gigamonkey {
     merchant_api::get_fee_quote_response merchant_api::get_fee_quote() {
         JSONEnvelope envelope;
         try {
-            envelope = JSONEnvelope{Http.GET(Host, string{get_fee_quote_path})};
+            envelope = JSONEnvelope{Http->GET(Host, string{get_fee_quote_path})};
         } catch (...) {
             return {};
         }
@@ -51,7 +51,7 @@ namespace Gigamonkey {
         
         JSONEnvelope envelope;
         try {
-            envelope = JSONEnvelope{Http.POST(Host, submit_transaction_path, params, headers, body)};
+            envelope = JSONEnvelope{Http->POST(Host, submit_transaction_path, params, headers, body)};
         } catch (...) {
             return {};
         }
@@ -64,7 +64,7 @@ namespace Gigamonkey {
     merchant_api::query_transaction_status_response merchant_api::query_transaction_status(const Bitcoin::txid& id) {
         JSONEnvelope envelope;
         try {
-            envelope = JSONEnvelope{Http.GET(Host, 
+            envelope = JSONEnvelope{Http->GET(Host, 
                 string{query_transaction_status_path} + string(id.Value).substr(2))};
         } catch (...) {
             return {};
@@ -104,7 +104,7 @@ namespace Gigamonkey {
         
         JSONEnvelope envelope;
         try {
-            envelope = JSONEnvelope{Http.POST(Host, submit_multiple_transactions_path, params, headers, body)};
+            envelope = JSONEnvelope{Http->POST(Host, submit_multiple_transactions_path, params, headers, body)};
         } catch (...) {
             return {};
         }
