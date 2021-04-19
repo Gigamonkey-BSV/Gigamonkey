@@ -12,6 +12,38 @@ namespace Gigamonkey::Bitcoin {
         virtual secret first() const = 0;
         virtual ptr<keysource> rest() const = 0;
     };
+    
+    // a key source containing a single key. 
+    struct single_key : keysource {
+        secret Key;
+        
+        explicit single_key(const secret& k) : Key{k} {}
+        
+        secret first() const {
+            return Key;
+        }
+        
+        ptr<keysource> rest() const {
+            return std::make_shared<single_key>(Key);
+        }
+    };
+    
+    // a key source that increments the key. 
+    struct increment_key : keysource {
+        secret Key;
+        
+        explicit increment_key(const secret& k) : Key{k} {}
+        
+        secret first() const override {
+            return Key;
+        }
+        
+        ptr<keysource> rest() const override {
+            ptr<increment_key> k = std::make_shared<increment_key>(Key);
+            k->Key.Secret = k->Key.Secret + secp256k1::secret{1};
+            return k;
+        }
+    };
 }
 
 #endif
