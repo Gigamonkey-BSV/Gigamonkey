@@ -60,6 +60,7 @@ namespace Gigamonkey::Bitcoin {
     };
     
     struct pay_to_pubkey_pattern : output_pattern {
+        pay_to_pubkey_pattern() : output_pattern{} {}
         change create_redeemable(ptr<keysource>& k) const override {
             secret s = k->first();
             k = k->rest();
@@ -69,6 +70,7 @@ namespace Gigamonkey::Bitcoin {
     };
     
     struct pay_to_address_pattern : output_pattern {
+        pay_to_address_pattern() : output_pattern{} {}
         change create_redeemable(ptr<keysource>& k) const override {
             secret s = k->first();
             k = k->rest();
