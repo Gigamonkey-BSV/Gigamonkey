@@ -42,7 +42,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     struct signature : bytes {
-        constexpr static size_t MaxSignatureSize = 71;
+        constexpr static size_t MaxSignatureSize = 73;
         
         bytes Data;
         

@@ -455,9 +455,13 @@ namespace Gigamonkey {
                 return {Bitcoin::redemption::element{&Secret, d}, compile(p.rest())};
             }
             
-            uint32 expected_size() const override;
+            uint32 expected_size() const override {
+                return Bitcoin::signature::MaxSignatureSize + (Type == bounty ? 34 : 0) + (UseGeneralPurposeBits ? 5 : 0) + 46;
+            }
             
-            uint32 sigops() const override;
+            uint32 sigops() const override {
+                return 1;
+            }
         };
         
         inline bool operator==(const output_script& a, const output_script& b) {
