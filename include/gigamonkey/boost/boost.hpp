@@ -448,6 +448,13 @@ namespace Gigamonkey {
             type Type;
             bool UseGeneralPurposeBits;
             
+            redeem_boost(
+                const Bitcoin::secret& k, 
+                const Bitcoin::pubkey& p, 
+                const work::solution& z, type t, 
+                bool use_general_purpose_bits) : 
+                Secret{k}, Pubkey{p}, Solution{z}, Type{t}, UseGeneralPurposeBits{use_general_purpose_bits} {}
+            
             Bitcoin::redemption::incomplete redeem(Bitcoin::sighash::directive d) const override {
                 throw method::unimplemented{"redeem_boost"};
                 Bitcoin::program p = input_script{Bitcoin::signature{}, Pubkey, Solution, Type, UseGeneralPurposeBits}.program();
