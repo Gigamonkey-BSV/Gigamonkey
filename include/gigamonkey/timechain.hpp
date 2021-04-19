@@ -163,11 +163,13 @@ namespace Gigamonkey::Bitcoin {
         Gigamonkey::script Script;
         uint32_little Sequence;
         
+        static constexpr uint32 Finalized{0xFFFFFFFF};
+        
         bool valid() const;
         
         input() : Outpoint{}, Script{}, Sequence{} {}
-        input(const outpoint&, const Gigamonkey::script&, const uint32_little&);
-        input(const outpoint&, const Gigamonkey::script&);
+        input(const outpoint& o, const Gigamonkey::script& x, const uint32_little& z = Finalized) : 
+            Outpoint{o}, Script{x}, Sequence{z} {}
         
         size_t serialized_size() const;
     };
