@@ -56,7 +56,9 @@ namespace Gigamonkey::Bitcoin {
                 return Bitcoin::transaction::id(this->operator*());
             }
             
-            satoshi sent() const;
+            satoshi sent() const {
+                return Bitcoin::transaction(*this).sent();
+            }
             
             timestamp time() const {
                 return Header.Timestamp;
