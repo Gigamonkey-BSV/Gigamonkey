@@ -78,6 +78,8 @@ namespace Gigamonkey {
         
         byte* data();
         const byte* data() const;
+        
+        explicit operator string() const;
     };
     
     // sizes of standard hash functions. 
@@ -94,51 +96,23 @@ namespace Gigamonkey {
         explicit digest(string_view s);
         explicit digest(const slice<size>& x) : digest{uint<size>(x)} {}
         
-        operator bytes_view() const {
-            return bytes_view(nonzero<uint<size>>::Value);
-        }
+        operator bytes_view() const;
         
         explicit operator N() const;
         
-        byte* begin() {
-            return nonzero<uint<size>>::Value.begin();
-        }
+        byte* begin();
+        byte* end();
         
-        byte* end() {
-            return nonzero<uint<size>>::Value.end();
-        }
+        const byte* begin() const;
+        const byte* end() const;
         
-        const byte* begin() const {
-            return nonzero<uint<size>>::Value.begin();
-        }
+        bool operator==(const digest& d) const;
+        bool operator!=(const digest& d) const;
         
-        const byte* end() const {
-            return nonzero<uint<size>>::Value.end();
-        }
-        
-        bool operator==(const digest& d) const {
-            return nonzero<uint<size>>::Value == d.Value;
-        }
-        
-        bool operator!=(const digest& d) const {
-            return nonzero<uint<size>>::Value != d.Value;
-        }
-        
-        bool operator>(const digest& d) const {
-            return nonzero<uint<size>>::Value > d.Value;
-        }
-        
-        bool operator<(const digest& d) const {
-            return nonzero<uint<size>>::Value < d.Value;
-        }
-        
-        bool operator<=(const digest& d) const {
-            return nonzero<uint<size>>::Value <= d.Value;
-        }
-        
-        bool operator>=(const digest& d) const {
-            return nonzero<uint<size>>::Value >= d.Value;
-        }
+        bool operator>(const digest& d) const;
+        bool operator<(const digest& d) const;
+        bool operator<=(const digest& d) const;
+        bool operator>=(const digest& d) const;
     };
 
     using digest160 = digest<20>;
@@ -172,8 +146,13 @@ namespace Gigamonkey {
     }
 
     template <size_t size, unsigned int bits> 
+    inline uint<size, bits>::operator string() const {
+        return data::encoding::hexidecimal::write((data::bytes_view)(*this), data::endian::little);
+    }
+
+    template <size_t size, unsigned int bits> 
     inline std::ostream& operator<<(std::ostream& o, const uint<size, bits>& s) {
-        return o << data::encoding::hexidecimal::write((data::bytes_view)(s), data::endian::little);
+        return o << string(s);
     }
 
     template <size_t size> 
@@ -475,6 +454,61 @@ namespace Gigamonkey {
         if (b != nullptr) {
             std::copy(b->begin(), b->end(), begin());
         } else *this = digest{uint<size>{s}};
+    }
+    
+    template <size_t size>
+    inline digest<size>::operator bytes_view() const {
+        return bytes_view(nonzero<uint<size>>::Value);
+    }
+    
+    template <size_t size>
+    byte inline *digest<size>::begin() {
+        return nonzero<uint<size>>::Value.begin();
+    }
+    
+    template <size_t size>
+    byte inline *digest<size>::end() {
+        return nonzero<uint<size>>::Value.end();
+    }
+    
+    template <size_t size>
+    const byte inline *digest<size>::begin() const {
+        return nonzero<uint<size>>::Value.begin();
+    }
+    
+    template <size_t size>
+    const byte inline *digest<size>::end() const {
+        return nonzero<uint<size>>::Value.end();
+    }
+    
+    template <size_t size>
+    bool inline digest<size>::operator==(const digest& d) const {
+        return nonzero<uint<size>>::Value == d.Value;
+    }
+    
+    template <size_t size>
+    bool inline digest<size>::operator!=(const digest& d) const {
+        return nonzero<uint<size>>::Value != d.Value;
+    }
+    
+    template <size_t size>
+    bool inline digest<size>::operator>(const digest& d) const {
+        return nonzero<uint<size>>::Value > d.Value;
+    }
+    
+    template <size_t size>
+    bool inline digest<size>::operator<(const digest& d) const {
+        return nonzero<uint<size>>::Value < d.Value;
+    }
+    
+    template <size_t size>
+    bool inline digest<size>::operator<=(const digest& d) const {
+        return nonzero<uint<size>>::Value <= d.Value;
+    }
+    
+    template <size_t size>
+    bool inline digest<size>::operator>=(const digest& d) const {
+        return nonzero<uint<size>>::Value >= d.Value;
     }
 
 }
