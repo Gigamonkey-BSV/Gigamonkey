@@ -3,7 +3,7 @@
 
 #include <gigamonkey/mapi/envelope.hpp>
 #include <data/encoding/base64.hpp>
-#include <data/encoding/utf8.hpp>
+#include <data/encoding/unicode.hpp>
 
 namespace Gigamonkey {
         
@@ -16,7 +16,7 @@ namespace Gigamonkey {
                 return publicKey.verify(Gigamonkey::sha256(*decoded), signature);
             }
             case UTF_8 : 
-                return publicKey.verify(Gigamonkey::sha256(data::encoding::utf8::encode(payload)), signature);
+                return publicKey.verify(Gigamonkey::sha256(data::encoding::unicode::utf8_encode(payload)), signature);
         }
     }
     
