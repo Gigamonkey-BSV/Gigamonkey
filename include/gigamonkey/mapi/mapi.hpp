@@ -16,15 +16,15 @@ namespace Gigamonkey {
         ptr<http> Http;
         
         struct satoshi_per_byte {
-            satoshi Satoshis;
-            uint64 Bytes;
+            satoshi satoshis;
+            uint64 bytes;
             
             bool valid() const {
-                return Bytes != 0;
+                return bytes != 0;
             }
             
-            satoshi_per_byte() : Satoshis{0}, Bytes{0} {}
-            explicit satoshi_per_byte(const string&);
+            satoshi_per_byte() : satoshis{0}, bytes{0} {}
+            explicit satoshi_per_byte(const json&);
         };
         
         struct fee {
@@ -36,8 +36,8 @@ namespace Gigamonkey {
                 return feeType != "" && miningFee.valid() && relayFee.valid();
             }
             
-            fee();
-            explicit fee(const string&);
+            fee() : feeType{}, miningFee{}, relayFee{} {}
+            explicit fee(const json&);
         };
         
         struct get_fee_quote_response {
@@ -65,8 +65,8 @@ namespace Gigamonkey {
         get_fee_quote_response get_fee_quote();
         
         enum content_type {
-            json,
-            octet_stream,
+            application_json,
+            application_octet_stream,
         };
         
         struct submission_parameters {
@@ -97,7 +97,7 @@ namespace Gigamonkey {
                 return rawtx != nullptr;
             }
             
-            explicit operator Gigamonkey::json() const;
+            explicit operator json() const;
         };
         
         struct submit_transaction_request {
@@ -108,9 +108,8 @@ namespace Gigamonkey {
                 return Submission.valid();
             }
             
-            explicit submit_transaction_request(ptr<bytes> tx) : ContentType{octet_stream}, Submission{tx} {}
+            explicit submit_transaction_request(ptr<bytes> tx) : ContentType{application_octet_stream}, Submission{tx} {}
             
-            explicit operator Gigamonkey::json() const;
         };
         
         enum return_result {
@@ -123,11 +122,13 @@ namespace Gigamonkey {
             uint64 size;
             string hex;
             
-            bool valid() const;
+            bool valid() const {
+                return txid.valid() && size != 0 && hex != "";
+            }
             
-        private:
-            conflicted_with();
-            conflicted_with(const string&);
+            conflicted_with() : txid{}, size{0}, hex{} {}
+            
+            conflicted_with(const json&);
         };
         
         struct submission_response {
@@ -136,10 +137,13 @@ namespace Gigamonkey {
             string resultDescription;
             std::optional<list<conflicted_with>> conflictedWith;
             
-            bool valid() const;
+            bool valid() const {
+                return txid.valid() && (!conflictedWith.has_value() || conflictedWith->valid());
+            }
             
-            submission_response();
-            submission_response(const string&);
+            submission_response() : txid{}, returnResult{failure}, resultDescription{}, conflictedWith{} {}
+            
+            submission_response(const json&);
         };
         
         struct submit_transaction_response {
@@ -202,7 +206,8 @@ namespace Gigamonkey {
             
             bool valid() const {
                 if (!Submissions.valid()) return false;
-                if (ContentType == octet_stream) for (const submission& x : Submissions) if(!x.Parameters.empty()) return false;
+                if (ContentType == application_octet_stream) 
+                    for (const submission& x : Submissions) if(!x.Parameters.empty()) return false;
                 return true;
             }
             
@@ -217,6 +222,7 @@ namespace Gigamonkey {
             uint64 currentHighestBlockHeight;
             uint32 txSecondMempoolExpiry;
             list<submission_response> txs;
+            uint32 failureCount;
             
             bool valid() const; 
             
@@ -224,7 +230,7 @@ namespace Gigamonkey {
                 apiVersion{}, timestamp{}, minerId{}, 
                 currentHighestBlockHash{}, 
                 currentHighestBlockHeight{0}, 
-                txSecondMempoolExpiry{0}, txs{} {}
+                txSecondMempoolExpiry{0}, txs{}, failureCount{0} {}
             
             submit_multiple_transactions_response(const string&);
         };

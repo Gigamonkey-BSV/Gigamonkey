@@ -6,10 +6,55 @@
 
 namespace Gigamonkey {
     
+    merchant_api::satoshi_per_byte::satoshi_per_byte(const json& j) : satoshi_per_byte{} {
+        
+        if (!(j.is_object() && 
+            j.contains("satoshis") && j["satoshis"].is_number_unsigned() && 
+            j.contains("bytes") && j["bytes"].is_number_unsigned())) return;
+        
+        satoshis = uint64(j["satoshis"]);
+        bytes = uint64(j["bytes"]);
+        
+    }
+    
+    merchant_api::fee::fee(const json& j) : fee{} {
+        
+        if (!(j.is_object() && 
+            j.contains("feeType") && j["feeType"].is_string() && 
+            j.contains("miningFee") && j.contains("relayFee"))) return;
+        
+        satoshi_per_byte mf{j["miningFee"]};
+        
+        if (!mf.valid()) return;
+        
+        satoshi_per_byte rf{j["relayFee"]};
+        
+        if (!rf.valid()) return;
+        
+        feeType = j["feeType"];
+        miningFee = mf;
+        relayFee = rf;
+        
+    }
+    
+    merchant_api::submission::operator json() const {
+        if (!valid()) return {};
+        
+        json j{{"rawtx", encoding::hex::write(*rawtx)}};
+        
+        if (Parameters.callbackUrl.has_value()) j["callbackUrl"] = *Parameters.callbackUrl;
+        if (Parameters.callbackToken.has_value()) j["callbackToken"] = *Parameters.callbackToken;
+        if (Parameters.merkleProof.has_value()) j["merkleProof"] = *Parameters.merkleProof;
+        if (Parameters.dsCheck.has_value()) j["dsCheck"] = *Parameters.dsCheck;
+        if (Parameters.callbackEncryption.has_value()) j["callbackEncryption"] = *Parameters.callbackEncryption;
+        
+        return j;
+    }
+    
     merchant_api::get_fee_quote_response::get_fee_quote_response(const string& r) : 
         get_fee_quote_response{} {
         
-        Gigamonkey::json j{r};
+        json j{r};
         
         if (!(j.is_object() && 
             j.contains("apiVersion") && j["apiVersion"].is_string() && 
@@ -22,7 +67,7 @@ namespace Gigamonkey {
         
         list<fee> f;
         
-        for (const Gigamonkey::json& jf : j["fees"]) {
+        for (const json& jf : j["fees"]) {
             f = f << fee{jf};
             if (!f.first().valid()) return;
         }
@@ -37,14 +82,82 @@ namespace Gigamonkey {
         
     }
     
-    merchant_api::query_transaction_status_response::query_transaction_status_response(const string& r) : 
-        query_transaction_status_response{} {
+    merchant_api::conflicted_with::conflicted_with(const json& j) : conflicted_with{} {
         
-        Gigamonkey::json j{r};
+        if (!(j.is_object() && 
+            j.contains("txid") && j["txid"].is_string() && 
+            j.contains("size") && j["size"].is_number_unsigned() && 
+            j.contains("hex") && j["hex"].is_string())) return;
+        
+        txid = digest256{string(j["txid"])};
+        size = uint64(j["size"]);
+        hex = j["hex"];
+        
+    }
+    
+    merchant_api::submission_response::submission_response(const json& j) : submission_response{} {
+        
+        if (!(j.is_object() && 
+            j.contains("txid") && j["txid"].is_string() && 
+            j.contains("returnResult") && j["returnResult"].is_string() && 
+            j.contains("returnDescription") && j["returnDescription"].is_string() && 
+            (!j.contains("conflictedWith") || j["conflictedWith"].is_array()))) return;
+        
+        string rr = j["returnResult"];
+        if (rr == "success") returnResult = success;
+        else if (rr == "failure") returnResult = failure;
+        else return;
+        
+        if (j.contains("conflictedWith")) {
+            list<conflicted_with> cw;
+            for (const json& w : j["conflictedWith"]) {
+                cw = cw << conflicted_with{w};
+                if (!cw.first().valid()) return;
+            }
+            conflictedWith = cw;
+        }
+        
+        txid = digest256{string(j["txid"])};
+        resultDescription = j["resultDescription"];
+        
+    }
+    
+    merchant_api::submit_transaction_response::submit_transaction_response(const string& r) : 
+        submit_transaction_response{} {
+        
+        json j{r};
         
         if (!(j.is_object() && 
             j.contains("apiVersion") && j["apiVersion"].is_string() && 
             j.contains("timestamp") && j["timestamp"].is_string() && 
+            j.contains("minerId") && j["minerId"].is_string() && 
+            j.contains("currentHighestBlockHash") && j["currentHighestBlockHash"].is_string() && 
+            j.contains("currentHighestBlockHeight") && j["currentHighestBlockHeight"].is_number_unsigned() && 
+            j.contains("txSecondMempoolExpiry") && j["txSecondMempoolExpiry"].is_number_unsigned())) return;
+        
+        submission_response sub{j};
+        
+        if (!sub.valid()) return;
+        
+        apiVersion = j["apiVersion"];
+        timestamp = j["timestamp"];
+        minerId = Bitcoin::pubkey{string(j["minerId"])};
+        currentHighestBlockHash = digest256{string(j["currentHighestBlockHash"])};
+        currentHighestBlockHeight = j["currentHighestBlockHeight"];
+        txSecondMempoolExpiry = uint32(j["txSecondMempoolExpiry"]);
+        SubmissionResponse = sub;
+        
+    }
+    
+    merchant_api::query_transaction_status_response::query_transaction_status_response(const string& r) : 
+        query_transaction_status_response{} {
+        
+        json j{r};
+        
+        if (!(j.is_object() && 
+            j.contains("apiVersion") && j["apiVersion"].is_string() && 
+            j.contains("timestamp") && j["timestamp"].is_string() && 
+            j.contains("txid") && j["txid"].is_string() && 
             j.contains("returnResult") && j["returnResult"].is_string() && 
             j.contains("returnDescription") && j["returnDescription"].is_string() && 
             j.contains("blockHash") && j["blockHash"].is_string() && 
@@ -60,7 +173,7 @@ namespace Gigamonkey {
         
         apiVersion = j["apiVersion"];
         timestamp = j["timestamp"];
-        txid = Bitcoin::txid{string(j["minerId"])};
+        txid = Bitcoin::txid{string(j["txid"])};
         resultDescription = j["resultDescription"];
         blockHash = digest256{string(j["blockHash"])};
         blockHeight = j["blockHeight"];
@@ -68,6 +181,38 @@ namespace Gigamonkey {
         txSecondMempoolExpiry = uint32(j["txSecondMempoolExpiry"]);
         
         if (j.contains("confirmations")) confirmations = uint64(j["confirmations"]);
+        
+    }
+    
+    merchant_api::submit_multiple_transactions_response::submit_multiple_transactions_response(const string& r) : 
+        submit_multiple_transactions_response{} {
+        
+        json j{r};
+        
+        if (!(j.is_object() && 
+            j.contains("apiVersion") && j["apiVersion"].is_string() && 
+            j.contains("timestamp") && j["timestamp"].is_string() && 
+            j.contains("minerId") && j["minerId"].is_string() && 
+            j.contains("currentHighestBlockHash") && j["currentHighestBlockHash"].is_string() && 
+            j.contains("currentHighestBlockHeight") && j["currentHighestBlockHeight"].is_number_unsigned() && 
+            j.contains("txSecondMempoolExpiry") && j["txSecondMempoolExpiry"].is_number_unsigned() && 
+            j.contains("txs") && j["txs"].is_array() && 
+            j.contains("failureCount") && j["failureCount"].is_number_unsigned())) return;
+        
+        list<submission_response> sr;
+        for (const json& w : j["txs"]) {
+            sr = sr << submission_response{w};
+            if (!sr.first().valid()) return;
+        }
+        
+        apiVersion = j["apiVersion"];
+        timestamp = j["timestamp"];
+        minerId = Bitcoin::pubkey{string(j["minerId"])};
+        currentHighestBlockHash = digest256{string(j["currentHighestBlockHash"])};
+        currentHighestBlockHeight = j["currentHighestBlockHeight"];
+        txSecondMempoolExpiry = uint32(j["txSecondMempoolExpiry"]);
+        txs = sr;
+        failureCount = uint32(j["failureCount"]);
         
     }
     
@@ -116,9 +261,9 @@ namespace Gigamonkey {
         std::map<http::header, string> headers;
         string body;
         
-        if (request.ContentType == json) {
+        if (request.ContentType == application_json) {
             headers[http::header::content_type] = "application/json";
-            body = string(Gigamonkey::json(request));
+            body = string(json(request.Submission));
         } else {
             headers[http::header::content_type] = "application/octet-stream";
             body.resize(request.Submission.rawtx->size());
@@ -165,7 +310,7 @@ namespace Gigamonkey {
         std::map<http::header, string> headers;
         string body;
         
-        if (request.ContentType == json) {
+        if (request.ContentType == application_json) {
             headers[http::header::content_type] = "application/json";
             body = string(to_json(request.Submissions));
         } else {
