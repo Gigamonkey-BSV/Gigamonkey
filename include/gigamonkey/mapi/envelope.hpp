@@ -4,29 +4,30 @@
 #ifndef GIGAMONKEY_MAPI_JSONENVELOPE
 #define GIGAMONKEY_MAPI_JSONENVELOPE
 
-#include <gigamonkey/signature.hpp>
 #include <gigamonkey/wif.hpp>
 
 namespace Gigamonkey {
     struct JSONEnvelope {
         enum payload_encoding {
+            none, 
             UTF_8,
             base64
         };
         
         string payload;
-        Bitcoin::signature signature;
+        secp256k1::signature signature;
         Bitcoin::pubkey publicKey;
         payload_encoding encoding;
         string mimetype;
         
-        static bool verify(const string& payload, const Bitcoin::signature& signature, const Bitcoin::pubkey& publicKey, payload_encoding);
+        static bool verify(const string& payload, const secp256k1::signature& signature, const Bitcoin::pubkey& publicKey, payload_encoding);
         
         bool valid() const {
             return mimetype != "" && verify(payload, signature, publicKey, encoding);
         }
         
-        JSONEnvelope();
+        JSONEnvelope() : payload{}, signature{}, publicKey{}, encoding{none}, mimetype{} {}
+        
         JSONEnvelope(const string&);
         
         JSONEnvelope(const json& payload, Bitcoin::secret& secret);

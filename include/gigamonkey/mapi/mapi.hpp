@@ -55,7 +55,10 @@ namespace Gigamonkey {
                     currentHighestBlockHeight != 0 && fees.size() != 0;
             }
             
-            get_fee_quote_response();
+            get_fee_quote_response() : 
+                apiVersion{}, timestamp{}, expiryTime{}, minerId{}, 
+                currentHighestBlockHash{}, currentHighestBlockHeight{0}, fees{} {}
+            
             get_fee_quote_response(const string&);
         };
         
@@ -88,18 +91,22 @@ namespace Gigamonkey {
             ptr<bytes> rawtx;
             submission_parameters Parameters;
             
-            explicit submission(ptr<bytes>);
+            explicit submission(ptr<bytes> p) : rawtx{p} {}
             
             bool valid() const {
                 return rawtx != nullptr;
             }
+            
+            explicit operator Gigamonkey::json() const;
         };
         
         struct submit_transaction_request {
             content_type ContentType;
             submission Submission;
             
-            bool valid() const;
+            bool valid() const {
+                return Submission.valid();
+            }
             
             explicit submit_transaction_request(ptr<bytes> tx) : ContentType{octet_stream}, Submission{tx} {}
             
@@ -146,8 +153,15 @@ namespace Gigamonkey {
             
             bool valid() const;
             
-            submit_transaction_response();
+            submit_transaction_response() : 
+                apiVersion{}, timestamp{}, minerId{}, 
+                currentHighestBlockHash{}, 
+                currentHighestBlockHeight{0}, 
+                txSecondMempoolExpiry{}, 
+                SubmissionResponse{} {}
+            
             submit_transaction_response(const string&);
+            
         };
         
         submit_transaction_response submit_transaction(ptr<bytes> tx) {
@@ -159,17 +173,22 @@ namespace Gigamonkey {
         struct query_transaction_status_response {
             string apiVersion;
             string timestamp;
-            bool returnResult;
+            Bitcoin::txid txid;
+            return_result returnResult;
             string resultDescription;
             digest256 blockHash;
             uint64 blockHeight;
             Bitcoin::pubkey minerId;
-            uint64 confirmations;
+            std::optional<uint64> confirmations;
             uint32 txSecondMempoolExpiry;
             
             bool valid() const;
             
-            query_transaction_status_response();
+            query_transaction_status_response() : 
+                apiVersion{}, timestamp{}, txid{}, returnResult{failure}, 
+                resultDescription{}, blockHash{}, blockHeight{0}, 
+                minerId{}, confirmations{}, txSecondMempoolExpiry{0} {}
+            
             query_transaction_status_response(const string&);
         };
         
@@ -188,8 +207,6 @@ namespace Gigamonkey {
             }
             
             submit_multiple_transactions_request(list<ptr<bytes>> txs);
-            
-            explicit operator Gigamonkey::json() const;
         };
         
         struct submit_multiple_transactions_response {
@@ -203,7 +220,12 @@ namespace Gigamonkey {
             
             bool valid() const; 
             
-            submit_multiple_transactions_response();
+            submit_multiple_transactions_response() : 
+                apiVersion{}, timestamp{}, minerId{}, 
+                currentHighestBlockHash{}, 
+                currentHighestBlockHeight{0}, 
+                txSecondMempoolExpiry{0}, txs{} {}
+            
             submit_multiple_transactions_response(const string&);
         };
         
