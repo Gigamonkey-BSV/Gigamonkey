@@ -181,7 +181,11 @@ namespace Gigamonkey::MAPI {
         uint32 txSecondMempoolExpiry;
         submission_response SubmissionResponse;
         
-        bool valid() const;
+        bool valid() const {
+            return apiVersion != "" && timestamp != "" && minerId.valid() && 
+            currentHighestBlockHash.valid() && currentHighestBlockHeight != 0 && 
+            txSecondMempoolExpiry != 0;
+        }
         
         submit_transaction_response() : 
             apiVersion{}, timestamp{}, minerId{}, 
@@ -209,7 +213,10 @@ namespace Gigamonkey::MAPI {
         std::optional<uint64> confirmations;
         uint32 txSecondMempoolExpiry;
         
-        bool valid() const;
+        bool valid() const {
+            return apiVersion != "" && timestamp != "" && txid.valid() && resultDescription != "" && 
+                blockHash.valid() && blockHeight != 0 && minerId.valid() && txSecondMempoolExpiry != 0;
+        }
         
         query_transaction_status_response() : 
             apiVersion{}, timestamp{}, txid{}, returnResult{failure}, 
@@ -251,7 +258,11 @@ namespace Gigamonkey::MAPI {
         list<submission_response> txs;
         uint32 failureCount;
         
-        bool valid() const; 
+        bool valid() const {
+            return apiVersion != "" && timestamp != "" && minerId.valid() && 
+                currentHighestBlockHash.valid() && currentHighestBlockHeight != 0 && 
+                txSecondMempoolExpiry != 0 && txs.valid(); 
+        }
         
         submit_multiple_transactions_response() : 
             apiVersion{}, timestamp{}, minerId{}, 

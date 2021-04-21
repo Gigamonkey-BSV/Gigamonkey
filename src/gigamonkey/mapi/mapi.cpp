@@ -17,6 +17,10 @@ namespace Gigamonkey::MAPI {
         
     }
     
+    satoshi_per_byte::operator json() const {
+        return json{{"satoshis", satoshis}, {"bytes", bytes}};
+    }
+    
     fee::fee(const json& j) : fee{} {
         
         if (!(j.is_object() && 
@@ -35,6 +39,13 @@ namespace Gigamonkey::MAPI {
         miningFee = mf;
         relayFee = rf;
         
+    }
+    
+    fee::operator json() const {
+        return json{
+            {"feeType", feeType}, 
+            {"miningFee", json(miningFee)}, 
+            {"relayFee", json(relayFee)}};
     }
     
     submission::operator json() const {
@@ -228,7 +239,13 @@ namespace Gigamonkey::MAPI {
         return j;
     }
     
-    json to_json(list<fee> fees);
+    json to_json(list<fee> fees) {
+        json j = json::array();
+        
+        for (const fee& f : fees) {
+            j.push_back(json(f));
+        }
+    }
     
     get_fee_quote_response::operator json() const {
         return valid() ? json{
