@@ -153,9 +153,9 @@ namespace Gigamonkey::secp256k1 {
         
         bytes_writer write(bytes_writer w) const;
         
-        string write_string() const;
-        
         digest160 hash() const;
+        
+        explicit operator string() const;
     };
     
 }
@@ -328,7 +328,7 @@ namespace Gigamonkey::secp256k1 {
         return w << Value;
     }
     
-    inline string pubkey::write_string() const {
+    inline pubkey::operator string() const {
         return encoding::hex::write(Value);
     }
     

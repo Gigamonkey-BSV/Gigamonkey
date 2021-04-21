@@ -64,8 +64,8 @@ namespace Gigamonkey::Bitcoin {
         test_data write() const {
             return test_data{SecretWIFCompressed.write(), 
                 SecretWIFUncompressed.write(), 
-                PubkeyHexCompressed.write_string(),
-                PubkeyHexUncompressed.write_string(), 
+                string(PubkeyHexCompressed),
+                string(PubkeyHexUncompressed), 
                 AddressBase58.write()
             };
         }

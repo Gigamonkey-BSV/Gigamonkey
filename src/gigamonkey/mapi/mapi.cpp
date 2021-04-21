@@ -4,9 +4,9 @@
 #include<gigamonkey/mapi/envelope.hpp>
 #include<gigamonkey/mapi/mapi.hpp>
 
-namespace Gigamonkey {
+namespace Gigamonkey::MAPI {
     
-    merchant_api::satoshi_per_byte::satoshi_per_byte(const json& j) : satoshi_per_byte{} {
+    satoshi_per_byte::satoshi_per_byte(const json& j) : satoshi_per_byte{} {
         
         if (!(j.is_object() && 
             j.contains("satoshis") && j["satoshis"].is_number_unsigned() && 
@@ -17,7 +17,7 @@ namespace Gigamonkey {
         
     }
     
-    merchant_api::fee::fee(const json& j) : fee{} {
+    fee::fee(const json& j) : fee{} {
         
         if (!(j.is_object() && 
             j.contains("feeType") && j["feeType"].is_string() && 
@@ -37,7 +37,7 @@ namespace Gigamonkey {
         
     }
     
-    merchant_api::submission::operator json() const {
+    submission::operator json() const {
         if (!valid()) return {};
         
         json j{{"rawtx", encoding::hex::write(*rawtx)}};
@@ -51,7 +51,7 @@ namespace Gigamonkey {
         return j;
     }
     
-    merchant_api::get_fee_quote_response::get_fee_quote_response(const string& r) : 
+    get_fee_quote_response::get_fee_quote_response(const string& r) : 
         get_fee_quote_response{} {
         
         json j{r};
@@ -82,7 +82,7 @@ namespace Gigamonkey {
         
     }
     
-    merchant_api::conflicted_with::conflicted_with(const json& j) : conflicted_with{} {
+    conflicted_with::conflicted_with(const json& j) : conflicted_with{} {
         
         if (!(j.is_object() && 
             j.contains("txid") && j["txid"].is_string() && 
@@ -95,7 +95,7 @@ namespace Gigamonkey {
         
     }
     
-    merchant_api::submission_response::submission_response(const json& j) : submission_response{} {
+    submission_response::submission_response(const json& j) : submission_response{} {
         
         if (!(j.is_object() && 
             j.contains("txid") && j["txid"].is_string() && 
@@ -122,7 +122,7 @@ namespace Gigamonkey {
         
     }
     
-    merchant_api::submit_transaction_response::submit_transaction_response(const string& r) : 
+    submit_transaction_response::submit_transaction_response(const string& r) : 
         submit_transaction_response{} {
         
         json j{r};
@@ -149,7 +149,7 @@ namespace Gigamonkey {
         
     }
     
-    merchant_api::query_transaction_status_response::query_transaction_status_response(const string& r) : 
+    query_transaction_status_response::query_transaction_status_response(const string& r) : 
         query_transaction_status_response{} {
         
         json j{r};
@@ -184,7 +184,7 @@ namespace Gigamonkey {
         
     }
     
-    merchant_api::submit_multiple_transactions_response::submit_multiple_transactions_response(const string& r) : 
+    submit_multiple_transactions_response::submit_multiple_transactions_response(const string& r) : 
         submit_multiple_transactions_response{} {
         
         json j{r};
@@ -216,15 +216,74 @@ namespace Gigamonkey {
         
     }
     
-    json to_json(list<merchant_api::submission> subs) {
+    string to_json(return_result r) {
+        return r == success ? "success" : "failure";
+    }
+    
+    json to_json(list<submission> subs) {
         json j = json::array();
         
-        for (const merchant_api::submission& sub : subs) j.push_back(json(sub));
+        for (const submission& sub : subs) j.push_back(json(sub));
         
         return j;
     }
     
-    std::map<string, string> merchant_api::submission_parameters::http_parameters() const {
+    json to_json(list<fee> fees);
+    
+    get_fee_quote_response::operator json() const {
+        return valid() ? json{
+            {"apiVersion", apiVersion},
+            {"timestamp", timestamp}, 
+            {"expiryTime", expiryTime}, 
+            {"minerId", string(minerId)}, 
+            {"currentHighestBlockHash", string(currentHighestBlockHash.Value)}, 
+            {"currentHighestBlockHeight", currentHighestBlockHeight}, 
+            {"fees", to_json(fees)}} : json{};
+    }
+    
+    submit_transaction_response::operator json() const {
+        return valid() ? json{
+            {"apiVersion", apiVersion},
+            {"timestamp", timestamp},
+            {"txid", string(SubmissionResponse.txid.Value)}, 
+            {"returnResult", to_json(SubmissionResponse.returnResult)}, 
+            {"resultDescription", SubmissionResponse.resultDescription}, 
+            {"minerId", string(minerId)}, 
+            {"currentHighestBlockHash", string(currentHighestBlockHash.Value)}, 
+            {"currentHighestBlockHeight", currentHighestBlockHeight}, 
+            {"txSecondMempoolExpiry", txSecondMempoolExpiry}} : json{};
+    }
+    
+    query_transaction_status_response::operator json() const {
+        if (!valid()) return {};
+        
+        json j{
+            {"apiVersion", apiVersion}, 
+            {"timestamp", timestamp}, 
+            {"txid", string(txid.Value)}, 
+            {"returnResult", to_json(returnResult)}, 
+            {"resultDescription", resultDescription}, 
+            {"minerId", string(minerId)}, 
+            {"txSecondMempoolExpiry", txSecondMempoolExpiry}};
+    
+        if (confirmations.has_value()) j["confirmations"] = *confirmations; 
+    
+        return j;
+    }
+    
+    submit_multiple_transactions_response::operator json() const {
+        return valid() ? json{
+            {"apiVersion", apiVersion}, 
+            {"timestamp", timestamp}, 
+            {"minerId", string(minerId)}, 
+            {"currentHighestBlockHash", string(currentHighestBlockHash.Value)}, 
+            {"currentHighestBlockHeight", currentHighestBlockHeight}, 
+            {"txSecondMempoolExpiry", txSecondMempoolExpiry}, 
+            {"txs", }, 
+            {"failureCount", failureCount}} : json{};
+    }
+    
+    std::map<string, string> submission_parameters::http_parameters() const {
         
         std::map<string, string> params;
             
@@ -238,7 +297,7 @@ namespace Gigamonkey {
         
     }
     
-    merchant_api::get_fee_quote_response merchant_api::get_fee_quote() {
+    get_fee_quote_response merchant_api::get_fee_quote() {
         
         JSONEnvelope envelope;
         try {
@@ -253,7 +312,7 @@ namespace Gigamonkey {
         
     }
     
-    merchant_api::submit_transaction_response merchant_api::submit_transaction(submit_transaction_request request) {
+    submit_transaction_response merchant_api::submit_transaction(submit_transaction_request request) {
         
         if (!request.valid()) return {};
         
@@ -285,7 +344,7 @@ namespace Gigamonkey {
         
     }
     
-    merchant_api::query_transaction_status_response merchant_api::query_transaction_status(const Bitcoin::txid& id) {
+    query_transaction_status_response merchant_api::query_transaction_status(const Bitcoin::txid& id) {
         
         JSONEnvelope envelope;
         try {
@@ -301,7 +360,7 @@ namespace Gigamonkey {
         
     }
     
-    merchant_api::submit_multiple_transactions_response 
+    submit_multiple_transactions_response 
     merchant_api::submit_multiple_transactions(submit_multiple_transactions_request request) {
         
         if (!request.valid()) return {};
