@@ -65,7 +65,7 @@ namespace Gigamonkey::MAPI {
     get_fee_quote_response::get_fee_quote_response(const string& r) : 
         get_fee_quote_response{} {
         
-        json j{r};
+        json j = json::parse(r);
         
         if (!(j.is_object() && 
             j.contains("apiVersion") && j["apiVersion"].is_string() && 
@@ -136,7 +136,7 @@ namespace Gigamonkey::MAPI {
     submit_transaction_response::submit_transaction_response(const string& r) : 
         submit_transaction_response{} {
         
-        json j{r};
+        json j = json::parse(r);
         
         if (!(j.is_object() && 
             j.contains("apiVersion") && j["apiVersion"].is_string() && 
@@ -163,7 +163,7 @@ namespace Gigamonkey::MAPI {
     query_transaction_status_response::query_transaction_status_response(const string& r) : 
         query_transaction_status_response{} {
         
-        json j{r};
+        json j = json::parse(r);
         
         if (!(j.is_object() && 
             j.contains("apiVersion") && j["apiVersion"].is_string() && 
@@ -198,7 +198,7 @@ namespace Gigamonkey::MAPI {
     submit_multiple_transactions_response::submit_multiple_transactions_response(const string& r) : 
         submit_multiple_transactions_response{} {
         
-        json j{r};
+        json j = json::parse(r);
         
         if (!(j.is_object() && 
             j.contains("apiVersion") && j["apiVersion"].is_string() && 
