@@ -46,9 +46,11 @@ namespace Gigamonkey::Bitcoin::hd {
             return child >= 0x80000000;
         }
         
-        uint32 inline harden(uint32 child) {
+        constexpr uint32 inline harden(uint32 child) {
             return child | 0x80000000;
         }
+        
+        using path = list<uint32>;
 
         struct pubkey {
             
@@ -76,7 +78,7 @@ namespace Gigamonkey::Bitcoin::hd {
 
             bool operator!=(const pubkey &rhs) const;
             
-            pubkey derive(list<uint32> l) const;
+            pubkey derive(path l) const;
 
             friend std::ostream &operator<<(std::ostream &os, const pubkey &pubkey);
             
@@ -114,7 +116,7 @@ namespace Gigamonkey::Bitcoin::hd {
             
             signature sign(const digest256& d) const;
             
-            secret derive(list<uint32> l) const;
+            secret derive(path l) const;
 
             friend std::ostream &operator<<(std::ostream &os, const secret &secret);
             
@@ -128,21 +130,21 @@ namespace Gigamonkey::Bitcoin::hd {
         pubkey derive(const pubkey&, uint32);
         pubkey derive(const pubkey&, string);
         
-        inline secret derive(const secret& s, list<uint32> l) {
+        inline secret derive(const secret& s, path l) {
             if (l.empty()) return s;
             return derive(derive(s, l.first()), l.rest());
         }
         
-        inline pubkey derive(const pubkey& p, list<uint32> l) {
+        inline pubkey derive(const pubkey& p, path l) {
             if (l.empty()) return p;
             return derive(derive(p, l.first()), l.rest());
         }
             
-        inline pubkey pubkey::derive(list<uint32> l) const {
+        inline pubkey pubkey::derive(path l) const {
             return bip32::derive(*this, l);
         }
         
-        inline secret secret::derive(list<uint32> l) const {
+        inline secret secret::derive(path l) const {
             return bip32::derive(*this, l);
         }
     
@@ -168,32 +170,65 @@ namespace Gigamonkey::Bitcoin::hd {
     };
     
     namespace bip44 {
+        
+        constexpr uint32 purpose = bip32::harden(44); // Purpose = 44'
+        
+        constexpr uint32 coin_type_Bitcoin = bip32::harden(44); // BSV = 0'
+        
+        constexpr uint32 coin_type_Bitcoin_Cash = bip32::harden(145); 
+        
+        constexpr uint32 coin_type_Bitcoin_SV = bip32::harden(236); 
+        
+        constexpr uint32 coin_type_testnet = bip32::harden(1); // BSV Testnet = 1'
+        
+        constexpr uint32 receive_index = 0; 
+        
+        constexpr uint32 change_index = 0; 
+        
+        inline list<uint32> derivation_path(uint32 account, bool change, uint32 index, uint32 coin_type = coin_type_Bitcoin) {
+            return list<uint32>{purpose, coin_type, account, uint32(change), index};
+        }
+        
+        struct pubkey {
+            bip32::pubkey Pubkey;
+            bip32::path Path;
+            
+            pubkey(const bip32::pubkey& p, uint32 coin_type = coin_type_Bitcoin) : Pubkey{p}, Path{purpose, coin_type} {}
+            
+            Bitcoin::address receive(uint32 account = 0) const {
+                return Bitcoin::address(bip32::derive(Pubkey, Path << account << receive_index));
+            }
+            
+            Bitcoin::address change(uint32 account = 0) const {
+                return Bitcoin::address(bip32::derive(Pubkey, Path << account << change_index));
+            }
+            
+        };
     
-        using secret = bip32::secret;
+        struct secret {
+            bip32::secret Secret;
+            bip32::path Path;
+            
+            pubkey to_public() const;
+            
+            secret(const bip32::secret& s, uint32 coin_type = coin_type_Bitcoin) : Secret{s}, Path{purpose, coin_type} {}
+            
+            Bitcoin::secret receive(uint32 account = 0) const {
+                return Bitcoin::secret(bip32::derive(Secret, Path << account << receive_index));
+            }
+            
+            Bitcoin::secret change(uint32 account = 0) const {
+                return Bitcoin::secret(bip32::derive(Secret, Path << account << change_index));
+            }
+        };
         
-        using pubkey = bip32::pubkey;
+        // coin types for standard wallets. 
+        const list<uint32> simply_cash_coin_type = coin_type_Bitcoin_Cash;
         
-        constexpr uint32 purpose = 0x8000002C; // Purpose = 44'
+        const list<uint32> money_button_coin_type = coin_type_Bitcoin;
         
-        constexpr uint32 coin_type_BSV = 0x80000000; // BSV = 0'
+        const list<uint32> relay_x_coin_type = coin_type_Bitcoin_SV;
         
-        constexpr uint32 coin_type_testnet = 0x80000001; // BSV Testnet = 1'
-        const list<uint32> SIMPLY_CASH{bip32::harden(44),bip32::harden(145),bip32::harden(0)};
-        inline secret derive(const secret& s,list<uint32> walletFormat,bool change,uint32 index) {
-            return bip32::derive(bip32::derive(s,walletFormat),list<uint32>{change?1:0,index});
-        }
-        inline secret derive(const secret& s, uint32 account, bool change, uint32 index, bool testnet = false) {
-            return bip32::derive(s,
-                list<uint32>{purpose, testnet ? coin_type_testnet : coin_type_BSV, account, uint32(change), index});
-        }
-        
-        inline pubkey derive(const pubkey& p, uint32 account, bool change, uint32 index, bool testnet = false) {
-            return bip32::derive(p,
-                list<uint32>{purpose, testnet ? coin_type_testnet : coin_type_BSV, account, uint32(change), index});
-        }
-        inline pubkey derive(const pubkey& p,list<uint32> walletFormat,bool change,uint32 index) {
-            return bip32::derive(bip32::derive(p,walletFormat),list<uint32>{change?1:0,index});
-        }
     }
     
     namespace bip39 {
