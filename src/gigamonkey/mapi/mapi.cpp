@@ -245,6 +245,8 @@ namespace Gigamonkey::MAPI {
         for (const fee& f : fees) {
             j.push_back(json(f));
         }
+        
+        return j;
     }
     
     get_fee_quote_response::operator json() const {
