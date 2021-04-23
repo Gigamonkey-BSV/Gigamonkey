@@ -32,14 +32,31 @@ std::vector<char> HexToBytes(const std::string& hex) {
 }
 
 
-TEST(Bip32,DeriveChain) {
-    bip32::secret secret=bip32::secret::read("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi");
-    bip32::secret expected=bip32::secret::read("xprv9uHRZZhk6KAJC1avXpDAp4MDc3sQKNxDiPvvkX8Br5ngLNv1TxvUxt4cV1rGL5hj6KCesnDYUhd7oWgT11eZG7XnxHrnYeSvkzY7d2bhkJ7");
-    bip32::secret derived=bip32::derive(secret,"0\'");
-    ASSERT_EQ(expected,derived);
-    ASSERT_EQ(derived.to_public().write(),bip32::pubkey::read("xpub68Gmy5EdvgibQVfPdqkBBCHxA5htiqg55crXYuXoQRKfDBFA1WEjWgP6LHhwBZeNK1VTsfTFUHCdrfp1bgwQ9xv5ski8PX9rL2dZXvgGDnw").write());
-    bip32::secret expected2=bip32::secret::read("xprv9wTYmMFdV23N2TdNG573QoEsfRrWKQgWeibmLntzniatZvR9BmLnvSxqu53Kw1UmYPxLgboyZQaXwTCg8MSY3H2EU4pWcQDnRnrVA1xe8fs");
-    ASSERT_EQ(expected2,bip32::derive(secret,"0\'/1"));
+TEST(Bip32, DeriveChain) {
+    string path1 = "0\'";
+    string path2 = "0\'/1";
+    
+    bip32::secret secret = 
+        bip32::secret::read("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi");
+    bip32::secret expected = 
+        bip32::secret::read("xprv9uHRZZhk6KAJC1avXpDAp4MDc3sQKNxDiPvvkX8Br5ngLNv1TxvUxt4cV1rGL5hj6KCesnDYUhd7oWgT11eZG7XnxHrnYeSvkzY7d2bhkJ7");
+    bip32::secret derived = bip32::derive(secret, path1);
+    bip32::pubkey derived_pubkey = derived.to_public();
+    
+    bip32::pubkey expected_pubkey = 
+        bip32::pubkey::read("xpub68Gmy5EdvgibQVfPdqkBBCHxA5htiqg55crXYuXoQRKfDBFA1WEjWgP6LHhwBZeNK1VTsfTFUHCdrfp1bgwQ9xv5ski8PX9rL2dZXvgGDnw");
+    
+    ASSERT_EQ(expected, derived);
+    ASSERT_EQ(derived.to_public(), expected_pubkey);
+    
+    ASSERT_EQ(derived.to_public().write(), expected_pubkey.write());
+    
+    ASSERT_EQ(secret.to_public().derive(path1), expected_pubkey);
+    
+    bip32::secret expected2 =
+        bip32::secret::read("xprv9wTYmMFdV23N2TdNG573QoEsfRrWKQgWeibmLntzniatZvR9BmLnvSxqu53Kw1UmYPxLgboyZQaXwTCg8MSY3H2EU4pWcQDnRnrVA1xe8fs");
+    
+        ASSERT_EQ(expected2, bip32::derive(secret, path2));
 }
 
 

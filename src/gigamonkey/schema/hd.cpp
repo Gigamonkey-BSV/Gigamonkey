@@ -370,79 +370,37 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
     bool pubkey::operator!=(const pubkey &rhs) const {
         return !(rhs == *this);
     }
-
-    secret derive(const secret& sec, string path) {
-        if (path.empty())
-            return secret();
-        std::vector<uint32_t> paths;
+    
+    path read_path(string_view p) {
+        if (p.empty()) return {};
+        list<uint32> paths;
         uint32_t i = 0;
         uint64_t n = 0;
-        while (i < path.size()) {
-            char current = path[i];
+        while (i < p.size()) {
+            char current = p[i];
             if (current >= '0' && current <= '9') {
                 n *= 10;
                 n += current - '0';
                 if (n >= 0x80000000)
-                    return secret();
+                    return {};
                 i++;
-                if (i >= path.size())
-                    paths.push_back(n);
+                if (i >= p.size())
+                    paths = paths << n;
             } else if (current == '\'') {
                 n |= 0x80000000;
-                paths.push_back(n);
+                paths = paths << n;
                 n = 0;
                 i += 2;
             } else if (current == '/') {
-                if (i + 1 >= path.size() || path[i + 1] < '0' || path[i + 1] > '9')
-                    return secret();
-                paths.push_back(n);
+                if (i + 1 >= p.size() || p[i + 1] < '0' || p[i + 1] > '9')
+                    return {};
+                paths = paths << n;
                 n = 0;
                 i++;
             }
         }
 
-        secret derived = sec;
-        for (uint32_t child:paths) {
-            derived = derive(derived, child);
-        }
-        return derived;
-    }
-
-    pubkey derive(const pubkey &pub, string path) {
-        if (path.empty())
-            return pubkey();
-        std::vector<uint32_t> paths;
-        uint32_t i = 0;
-        uint64_t n = 0;
-        while (i < path.size()) {
-            char current = path[i];
-            if (current >= '0' && current <= '9') {
-                n *= 10;
-                n += current - '0';
-                if (n >= 0x80000000)
-                    return pubkey();
-                i++;
-                if (i >= path.size())
-                    paths.push_back(n);
-            } else if (current == '\'') {
-                n |= 0x80000000;
-                paths.push_back(n);
-                n = 0;
-                i += 2;
-            } else if (current == '/') {
-                if (i + 1 >= path.size() || path[i + 1] < '0' || path[i + 1] > '9')
-                    return pubkey();
-                paths.push_back(n);
-                n = 0;
-                i++;
-            }
-        }
-
-        pubkey derived = pub;
-        for (uint32_t child:paths) {
-            derived = derive(derived, child);
-        }
-        return derived;
+        return paths;
     }
 }
 

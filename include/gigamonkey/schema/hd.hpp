@@ -51,6 +51,9 @@ namespace Gigamonkey::Bitcoin::hd {
         }
         
         using path = list<uint32>;
+        
+        path read_path(string_view);
+        string write(path);
 
         struct pubkey {
             
@@ -79,6 +82,7 @@ namespace Gigamonkey::Bitcoin::hd {
             bool operator!=(const pubkey &rhs) const;
             
             pubkey derive(path l) const;
+            pubkey derive(string_view l) const;
 
             friend std::ostream &operator<<(std::ostream &os, const pubkey &pubkey);
             
@@ -117,6 +121,7 @@ namespace Gigamonkey::Bitcoin::hd {
             signature sign(const digest256& d) const;
             
             secret derive(path l) const;
+            secret derive(string_view l) const;
 
             friend std::ostream &operator<<(std::ostream &os, const secret &secret);
             
@@ -126,9 +131,7 @@ namespace Gigamonkey::Bitcoin::hd {
         };
 
         secret derive(const secret&, uint32);
-        secret derive(const secret&, string);
         pubkey derive(const pubkey&, uint32);
-        pubkey derive(const pubkey&, string);
         
         inline secret derive(const secret& s, path l) {
             if (l.empty()) return s;
@@ -139,13 +142,29 @@ namespace Gigamonkey::Bitcoin::hd {
             if (l.empty()) return p;
             return derive(derive(p, l.first()), l.rest());
         }
-            
+        
         inline pubkey pubkey::derive(path l) const {
             return bip32::derive(*this, l);
         }
         
         inline secret secret::derive(path l) const {
             return bip32::derive(*this, l);
+        }
+        
+        inline pubkey pubkey::derive(string_view l) const {
+            return bip32::derive(*this, read_path(l));
+        }
+        
+        inline secret secret::derive(string_view l) const {
+            return bip32::derive(*this, read_path(l));
+        }
+
+        inline secret derive(const secret& x, string_view p) {
+            return derive(x, read_path(p));
+        }
+        
+        inline pubkey derive(const pubkey& x, string_view p) {
+            return derive(x, read_path(p));
         }
     
     }
@@ -196,11 +215,11 @@ namespace Gigamonkey::Bitcoin::hd {
             pubkey(const bip32::pubkey& p, uint32 coin_type = coin_type_Bitcoin) : Pubkey{p}, Path{purpose, coin_type} {}
             
             Bitcoin::address receive(uint32 account = 0) const {
-                return Bitcoin::address(bip32::derive(Pubkey, Path << account << receive_index));
+                return Bitcoin::address(Pubkey.derive(Path << account << receive_index));
             }
             
             Bitcoin::address change(uint32 account = 0) const {
-                return Bitcoin::address(bip32::derive(Pubkey, Path << account << change_index));
+                return Bitcoin::address(Pubkey.derive(Path << account << change_index));
             }
             
         };
