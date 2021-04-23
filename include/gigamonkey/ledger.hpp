@@ -96,7 +96,7 @@ namespace Gigamonkey::Bitcoin {
             
             bool valid() const {
                 return Previous.Value.valid() && 
-                    Input.Outpoint.Reference == Previous.Key/* && 
+                    Input.Outpoint.Digest == Previous.Key/* && 
                     evaluate_script(output(*this).Script, Input.Script).valid()*/;
             }
             
@@ -129,7 +129,7 @@ namespace Gigamonkey::Bitcoin {
                 list<Bitcoin::input> inputs = double_entry::inputs();
                 index i = 0;
                 for (const Bitcoin::input& in : inputs) p = p << 
-                    prevout{data::entry<txid, double_entry>{in.Outpoint.Reference, Previous[in.Outpoint.Reference]}, i++, in};
+                    prevout{data::entry<txid, double_entry>{in.Outpoint.Digest, Previous[in.Outpoint.Digest]}, i++, in};
                 return p;
             }
             
@@ -139,14 +139,14 @@ namespace Gigamonkey::Bitcoin {
             prevout operator[](index i) {
                 struct input in = double_entry::input(i);
                 
-                return {data::entry<txid, double_entry>{in.Outpoint.Reference, Previous[in.Outpoint.Reference]}, i, in};
+                return {data::entry<txid, double_entry>{in.Outpoint.Digest, Previous[in.Outpoint.Digest]}, i, in};
             }
         };
         
         vertex make_vertex(const double_entry& d) {
             list<input> in = d.inputs();
             data::map<txid, double_entry> p;
-            for (const input& i : in) p = p.insert(transaction(i.Outpoint.Reference));
+            for (const input& i : in) p = p.insert(transaction(i.Outpoint.Digest));
             return {d, p};
         }
     

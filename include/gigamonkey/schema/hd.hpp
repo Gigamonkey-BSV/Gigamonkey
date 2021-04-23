@@ -64,6 +64,10 @@ namespace Gigamonkey::Bitcoin::hd {
             uint32_t Parent;
             uint32_t Sequence;
             
+            bool valid() const {
+                return Pubkey.valid() && (Net == main || Net == test);
+            }
+            
             pubkey(const secp256k1::pubkey& p, const chain_code& cc) : Pubkey{p}, ChainCode{cc} {}
             pubkey(string_view s) : pubkey{read(s)} {}
             pubkey() = default;
@@ -78,7 +82,6 @@ namespace Gigamonkey::Bitcoin::hd {
             }
 
             bool operator==(const pubkey &rhs) const;
-
             bool operator!=(const pubkey &rhs) const;
             
             pubkey derive(path l) const;

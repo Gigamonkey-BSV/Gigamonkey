@@ -137,13 +137,17 @@ namespace Gigamonkey::Bitcoin {
         bool valid() const;
     };
 
+    // an outpoint is a reference to a previous output. 
     struct outpoint {
         
         static bool valid(slice<36>);
-        static Bitcoin::txid reference(slice<36>);
+        static Bitcoin::txid digest(slice<36>);
         static Gigamonkey::index index(slice<36>);
         
-        txid Reference; 
+        // the hash of a previous transaction. 
+        txid Digest; 
+        
+        // Index of the previous output in the tx. 
         Gigamonkey::index Index;
         
         static outpoint coinbase() {
@@ -295,7 +299,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     bool inline operator==(const outpoint& a, const outpoint& b) {
-        return a.Reference == b.Reference && a.Index == b.Index;
+        return a.Digest == b.Digest && a.Index == b.Index;
     }
     
     bool inline operator!=(const outpoint& a, const outpoint& b) {
@@ -344,7 +348,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     inline std::ostream& operator<<(std::ostream& o, const outpoint& p) {
-        return o << "outpoint{Reference : " << p.Reference << ", Index : " << p.Index << "}";
+        return o << "outpoint{Digest : " << p.Digest << ", Index : " << p.Index << "}";
     }
     
     inline std::ostream& operator<<(std::ostream& o, const input& p) {
@@ -364,11 +368,11 @@ namespace Gigamonkey::Bitcoin {
     }
 
     writer inline operator<<(writer w, const outpoint& o) {
-        return w << o.Reference << o.Index;
+        return w << o.Digest << o.Index;
     }
 
     reader inline operator>>(reader r, outpoint& o) {
-        return r >> o.Reference >> o.Index;
+        return r >> o.Digest >> o.Index;
     }
 
     reader inline operator>>(reader r, input& in) {
@@ -424,19 +428,19 @@ namespace Gigamonkey::Bitcoin {
     }
     
     inline bool operator>(const outpoint& a, const outpoint& b) {
-        return a.Reference == b.Reference ? a.Index > b.Index : a.Reference > b.Reference;
+        return a.Digest == b.Digest ? a.Index > b.Index : a.Digest > b.Digest;
     }
     
     inline bool operator<(const outpoint& a, const outpoint& b) {
-        return a.Reference == b.Reference ? a.Index < b.Index : a.Reference < b.Reference;
+        return a.Digest == b.Digest ? a.Index < b.Index : a.Digest < b.Digest;
     }
     
     inline bool operator>=(const outpoint& a, const outpoint& b) {
-        return a.Reference == b.Reference ? a.Index >= b.Index : a.Reference >= b.Reference;
+        return a.Digest == b.Digest ? a.Index >= b.Index : a.Digest >= b.Digest;
     }
     
     inline bool operator<=(const outpoint& a, const outpoint& b) {
-        return a.Reference == b.Reference ? a.Index <= b.Index : a.Reference <= b.Reference;
+        return a.Digest == b.Digest ? a.Index <= b.Index : a.Digest <= b.Digest;
     }
     
     bool inline operator>(const header& a, const header& b) {

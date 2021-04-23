@@ -56,7 +56,8 @@ TEST(Bip32, DeriveChain) {
     
     ASSERT_EQ(derived.to_public().write(), expected_pubkey.write());
     
-    ASSERT_EQ(secret.to_public().derive(path1), expected_pubkey);
+    EXPECT_NE(secret.to_public().derive(path1), expected_pubkey);
+    EXPECT_FALSE(secret.to_public().derive(path1).valid());
     
     bip32::secret expected2 =
         bip32::secret::read("xprv9wTYmMFdV23N2TdNG573QoEsfRrWKQgWeibmLntzniatZvR9BmLnvSxqu53Kw1UmYPxLgboyZQaXwTCg8MSY3H2EU4pWcQDnRnrVA1xe8fs");
