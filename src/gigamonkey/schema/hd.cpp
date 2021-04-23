@@ -253,7 +253,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         Gigamonkey::base58::check outputString(0x04, output);
         return outputString.encode();
     }
-
+    /*
     std::ostream &operator<<(std::ostream &os, const secret &secret) {
         os << "Secret: " << data::encoding::hex::write(secret.Secret.Value) << " ChainCode: "
            << data::encoding::hex::write(secret.ChainCode) << " net: " << data::encoding::hex::write((byte) secret.Net)
@@ -261,7 +261,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
            << data::encoding::hex::write(secret.Depth) << " parent: " << data::encoding::hex::write(secret.Parent)
            << " sequence: " << data::encoding::hex::write(secret.Sequence);
         return os;
-    }
+    }*/
 
     pubkey secret::to_public() const {
         pubkey pu;
@@ -352,7 +352,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         pubkey1.Pubkey = secp256k1::pubkey{keyuint};
         return pubkey1;
     }
-
+    /*
     std::ostream &operator<<(std::ostream &os, const pubkey &pubkey) {
         os << "Pubkey: " << data::encoding::hex::write(pubkey.Pubkey) << " ChainCode: "
            << data::encoding::hex::write(pubkey.ChainCode) << " net: " << data::encoding::hex::write((byte) pubkey.Net)
@@ -360,7 +360,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
            << data::encoding::hex::write(pubkey.Depth) << " parent: " << data::encoding::hex::write(pubkey.Parent)
            << " sequence: " << data::encoding::hex::write(pubkey.Sequence);
         return os;
-    }
+    }*/
 
     bool pubkey::operator==(const pubkey &rhs) const {
         return std::tie(Pubkey, ChainCode, Net, Depth, Parent, Sequence) ==

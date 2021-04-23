@@ -26,23 +26,23 @@ namespace Gigamonkey::Bitcoin::hd {
             test = 0x74
         };
         
-        type inline from_wif(Bitcoin::secret::type t) {
+        constexpr type inline from_wif(Bitcoin::secret::type t) {
             return t == Bitcoin::secret::main ? main : t == Bitcoin::secret::test ? test : type{0};
         }
         
-        Bitcoin::secret::type inline to_wif(type t) {
+        constexpr Bitcoin::secret::type inline to_wif(type t) {
             return t == main ? Bitcoin::secret::main : t == test ? Bitcoin::secret::test : Bitcoin::secret::type{0};
         }
         
-        type inline from_address(Bitcoin::address::type t) {
+        constexpr type inline from_address(Bitcoin::address::type t) {
             return t == Bitcoin::address::main ? main : t == Bitcoin::address::test ? test : type{0};
         }
         
-        Bitcoin::address::type inline to_address(type t) {
+        constexpr Bitcoin::address::type inline to_address(type t) {
             return t == main ? Bitcoin::address::main : t == test ? Bitcoin::address::test : Bitcoin::address::type{0};
         }
         
-        bool inline hardened(uint32 child) {
+        constexpr bool inline hardened(uint32 child) {
             return child >= 0x80000000;
         }
         
@@ -83,11 +83,13 @@ namespace Gigamonkey::Bitcoin::hd {
             
             pubkey derive(path l) const;
             pubkey derive(string_view l) const;
-
-            friend std::ostream &operator<<(std::ostream &os, const pubkey &pubkey);
             
             explicit operator Bitcoin::address() const {
                 return address();
+            }
+            
+            explicit operator string() const {
+                return write();
             }
         };
         
@@ -122,11 +124,13 @@ namespace Gigamonkey::Bitcoin::hd {
             
             secret derive(path l) const;
             secret derive(string_view l) const;
-
-            friend std::ostream &operator<<(std::ostream &os, const secret &secret);
             
             explicit operator Bitcoin::secret() const {
                 return Bitcoin::secret{to_wif(Net), Secret};
+            }
+            
+            explicit operator string() const {
+                return write();
             }
         };
 
@@ -166,6 +170,14 @@ namespace Gigamonkey::Bitcoin::hd {
         inline pubkey derive(const pubkey& x, string_view p) {
             return derive(x, read_path(p));
         }
+
+        std::ostream inline &operator<<(std::ostream &os, const pubkey &pubkey) {
+            return os << pubkey.write();
+        }
+
+        std::ostream inline &operator<<(std::ostream &os, const secret &secret) {
+            return os << secret.write();
+        }
     
     }
     
@@ -202,7 +214,7 @@ namespace Gigamonkey::Bitcoin::hd {
         
         constexpr uint32 receive_index = 0; 
         
-        constexpr uint32 change_index = 0; 
+        constexpr uint32 change_index = 1; 
         
         inline list<uint32> derivation_path(uint32 account, bool change, uint32 index, uint32 coin_type = coin_type_Bitcoin) {
             return list<uint32>{purpose, coin_type, bip32::harden(account), uint32(change), index};
@@ -247,6 +259,8 @@ namespace Gigamonkey::Bitcoin::hd {
         const list<uint32> money_button_coin_type = coin_type_Bitcoin;
         
         const list<uint32> relay_x_coin_type = coin_type_Bitcoin_SV;
+        
+        const list<uint32> electrum_sv_coin_type = coin_type_Bitcoin_Cash;
         
     }
     
