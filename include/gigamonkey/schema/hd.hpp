@@ -205,7 +205,7 @@ namespace Gigamonkey::Bitcoin::hd {
         constexpr uint32 change_index = 0; 
         
         inline list<uint32> derivation_path(uint32 account, bool change, uint32 index, uint32 coin_type = coin_type_Bitcoin) {
-            return list<uint32>{purpose, coin_type, account, uint32(change), index};
+            return list<uint32>{purpose, coin_type, bip32::harden(account), uint32(change), index};
         }
         
         struct pubkey {
@@ -214,12 +214,12 @@ namespace Gigamonkey::Bitcoin::hd {
             
             pubkey(const bip32::pubkey& p, uint32 coin_type = coin_type_Bitcoin) : Pubkey{p}, Path{purpose, coin_type} {}
             
-            Bitcoin::address receive(uint32 account = 0) const {
-                return Bitcoin::address(Pubkey.derive(Path << account << receive_index));
+            Bitcoin::address receive(uint32 index, uint32 account = 0) const {
+                return Bitcoin::address(Pubkey.derive(Path << bip32::harden(account) << receive_index << index));
             }
             
-            Bitcoin::address change(uint32 account = 0) const {
-                return Bitcoin::address(Pubkey.derive(Path << account << change_index));
+            Bitcoin::address change(uint32 index, uint32 account = 0) const {
+                return Bitcoin::address(Pubkey.derive(Path << bip32::harden(account) << change_index << index));
             }
             
         };
@@ -232,12 +232,12 @@ namespace Gigamonkey::Bitcoin::hd {
             
             secret(const bip32::secret& s, uint32 coin_type = coin_type_Bitcoin) : Secret{s}, Path{purpose, coin_type} {}
             
-            Bitcoin::secret receive(uint32 account = 0) const {
-                return Bitcoin::secret(bip32::derive(Secret, Path << account << receive_index));
+            Bitcoin::secret receive(uint32 index, uint32 account = 0) const {
+                return Bitcoin::secret(bip32::derive(Secret, Path << bip32::harden(account) << receive_index << index));
             }
             
-            Bitcoin::secret change(uint32 account = 0) const {
-                return Bitcoin::secret(bip32::derive(Secret, Path << account << change_index));
+            Bitcoin::secret change(uint32 index, uint32 account = 0) const {
+                return Bitcoin::secret(bip32::derive(Secret, Path << bip32::harden(account) << change_index << index));
             }
         };
         
