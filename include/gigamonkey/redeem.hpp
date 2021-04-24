@@ -58,11 +58,15 @@ namespace Gigamonkey::Bitcoin {
         
     };
     
-    ledger::double_entry redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out, uint32_little locktime);
+    ptr<bytes> redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out, uint32_little locktime);
     
-    ledger::double_entry inline redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out) {
+    ptr<bytes> inline redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out) {
         return redeem(prev, out, 0);
     }
+    
+    std::ostream inline &operator<<(std::ostream &o, const spendable& x) {
+        return o << "{" << static_cast<output>(x) << ", " << x.Outpoint << ", " << x.Sequence << "}";
+    };
     
 }
 

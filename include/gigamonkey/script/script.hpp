@@ -271,7 +271,9 @@ namespace Gigamonkey::Bitcoin {
         return {OP_FALSE, instruction::op_return(b)};
     }
     
-    bool provably_prunable(program p);
+    bool inline is_op_return(const script& p) {
+        return p.size() > 1 && p[0] == 0x6a || p.size() > 2 && p[0] == 0x00 && p[1] == 0x6a;
+    }
     
     std::ostream& operator<<(std::ostream&, instruction);
     

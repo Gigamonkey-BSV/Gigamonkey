@@ -31,7 +31,7 @@ namespace Gigamonkey::Bitcoin::redemption {
 
 namespace Gigamonkey::Bitcoin {
     
-    ledger::double_entry redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out, uint32_little locktime) {
+    ptr<bytes> redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out, uint32_little locktime) {
         
         satoshi spent = fold([](satoshi s, data::entry<spendable, sighash::directive> v) -> satoshi {
             return s + v.Key.Value;
@@ -58,7 +58,7 @@ namespace Gigamonkey::Bitcoin {
                 entry.Key.Sequence};
         }
         
-        return ledger::double_entry{std::make_shared<bytes>(transaction{in, out, locktime}.write())};
+        return std::make_shared<bytes>(transaction{in, out, locktime}.write());
     }
     
     bool ledger::vertex::valid() const {
@@ -68,6 +68,7 @@ namespace Gigamonkey::Bitcoin {
         if (spent() > sent()) return false;
         
         // TODO run scripts
+        throw "ledger::vertex::valid(): we need to run scripts.";
         return true;
     }
     

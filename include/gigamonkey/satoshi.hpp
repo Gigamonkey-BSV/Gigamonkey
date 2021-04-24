@@ -53,4 +53,13 @@ namespace Gigamonkey {
 
 }
 
+namespace data::math {
+    
+    template <> struct identity<data::plus<Gigamonkey::satoshi>, Gigamonkey::satoshi> {
+        static const Gigamonkey::satoshi value() {
+            return {0};
+        }
+    };
+}
+
 #endif

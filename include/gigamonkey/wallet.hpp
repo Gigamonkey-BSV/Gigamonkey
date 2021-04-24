@@ -8,17 +8,25 @@
 
 namespace Gigamonkey::Bitcoin {
     
+    struct satoshi_per_byte {
+        satoshi Satoshis;
+        uint64 Bytes;
+        
+        bool valid() const {
+            return Bytes != 0;
+        }
+        
+        satoshi_per_byte() : Satoshis{0}, Bytes{0} {}
+        satoshi_per_byte(satoshi x, uint64 b) : Satoshis{x}, Bytes{b} {}
+    };
+    
+    satoshi operator*(satoshi_per_byte fee, uint64 size);
+    
     struct fee {
-        double FeePerByte;
-        double FeePerSigop;
+        satoshi_per_byte Data;
+        satoshi_per_byte Standard;
         
-        satoshi calculate(size_t size, uint32 sigops) const {
-            return FeePerByte * size + FeePerSigop * sigops;
-        }
-        bool sufficient(const ledger::vertex& t) const {
-            return t.fee() >= calculate(t->size(), t.sigops());
-        }
-        
+        fee() : Data{}, Standard{} {}
     };
     
     struct funds {
@@ -38,49 +46,32 @@ namespace Gigamonkey::Bitcoin {
             return insert(s.first()).insert(s.rest());
         }
         
-        struct selected;
-        
-        selected select_next() const;
-        selected select_random() const;
-        
     private:
         funds(list<spendable> e, satoshi value, bool valid) : Entries{e}, Value{value}, Valid{valid} {}
     };
     
-    struct funds::selected {
-        spendable Selected;
-        funds Remainder;
-    };
-    
-    inline funds::selected funds::select_next() const {
-        throw method::unimplemented{"funds::select_next"};
+    output inline pay(satoshi value, const bytes& script) {
+        return output{value, script};
     }
     
-    inline funds::selected funds::select_random() const {
-        throw method::unimplemented{"funds::select_random"};
+    output inline pay(satoshi value, const address& addr) {
+        return output{value, pay_to_address::script(addr.Digest)};
     }
     
-    struct payment {
-        satoshi Value;
-        bytes Script;
-        
-        explicit operator output() {
-            return output{Value, Script};
-        }
-        
-        payment(output o) : Value{o.Value}, Script{o.Script} {}
-        
-        payment(satoshi value, const bytes& script) : Value{value}, Script{script} {}
-
-        payment(satoshi value, const address& addr) : Value{value}, Script{pay_to_address::script(addr.Digest)} {}
-
-        payment(satoshi value, const pubkey& pub) : Value{value}, Script{pay_to_pubkey::script(pub)} {}
-        
-        payment(satoshi value, std::string paymail) {
-            throw method::unimplemented{"payment::payment(paymail)"};
-        }
-        
+    output inline pay(
+        satoshi value, const pubkey& pub) {
+        return output{value, pay_to_pubkey::script(pub)};
+    }
+    
+    struct paymail {
+        string Name;
+        string Host;
+        explicit operator string() const;
     };
+    
+    output inline pay(satoshi value, paymail p) {
+        throw method::unimplemented{"pay to paymail"};
+    }
     
     struct wallet {
         enum spend_policy {unset, all, fifo, random};
@@ -95,7 +86,7 @@ namespace Gigamonkey::Bitcoin {
         
         satoshi Dust;
         
-        wallet() : Funds{}, Policy{unset}, Keys{nullptr}, Fee{0, 0}, Change{nullptr}, Dust{} {}
+        wallet() : Funds{}, Policy{unset}, Keys{nullptr}, Fee{}, Change{nullptr}, Dust{} {}
         wallet(funds fun, spend_policy policy, ptr<keysource> k, fee f, ptr<output_pattern> c, satoshi d) : 
             Funds{fun}, Policy{policy}, Keys{k}, Fee{f}, Change{c}, Dust{d} {}
         
@@ -105,23 +96,29 @@ namespace Gigamonkey::Bitcoin {
         
         struct spent;
         
-        spent spend(list<payment>) const;
+        spent spend(list<output>) const;
     };
     
     struct wallet::spent {
-        ledger::vertex Vertex;
+        ptr<bytes> Transaction;
+        funds Change;
         wallet Remainder;
         
         bool valid() const {
-            return Vertex.valid() && Remainder.valid();
+            return Transaction != nullptr && Remainder.valid();
         }
         
     private:
-        spent() : Vertex{}, Remainder{} {}
-        spent(const ledger::vertex& v, const wallet& r) : Vertex{v}, Remainder{r} {}
+        spent() : Transaction{}, Change{}, Remainder{} {}
+        spent(const ptr<bytes>& v, funds x, const wallet& r) : Transaction{v}, Change{x}, Remainder{r} {}
         
         friend struct wallet;
     };
+    
+    std::ostream &operator<<(std::ostream &o, funds f) {
+        if (data::valid(f)) return o << "funds{" << f.Value << " sats, " << f.Entries << "}";
+        else return o << "funds{}";
+    }
     
 }
 

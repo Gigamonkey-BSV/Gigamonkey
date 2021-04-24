@@ -5,8 +5,7 @@
 #define GIGAMONKEY_MAPI_MAPI
 
 #include <data/networking/http.hpp>
-#include <gigamonkey/timechain.hpp>
-#include <gigamonkey/secp256k1.hpp>
+#include <gigamonkey/wallet.hpp>
 
 namespace Gigamonkey::MAPI {
     
@@ -24,19 +23,7 @@ namespace Gigamonkey::MAPI {
     std::ostream &operator<<(std::ostream &, const submit_multiple_transactions_request &);
     std::ostream &operator<<(std::ostream &, const submit_multiple_transactions_response &);
     
-    struct satoshi_per_byte {
-        satoshi satoshis;
-        uint64 bytes;
-        
-        bool valid() const {
-            return bytes != 0;
-        }
-        
-        satoshi_per_byte() : satoshis{0}, bytes{0} {}
-        explicit satoshi_per_byte(const json&);
-        
-        operator json() const;
-    };
+    using satoshi_per_byte = Bitcoin::satoshi_per_byte;
     
     struct fee {
         string feeType;
@@ -50,7 +37,7 @@ namespace Gigamonkey::MAPI {
         fee() : feeType{}, miningFee{}, relayFee{} {}
         explicit fee(const json&);
         
-        operator json() const;
+        explicit operator json() const;
     };
     
     struct get_fee_quote_response {
