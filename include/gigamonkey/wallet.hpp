@@ -18,6 +18,10 @@ namespace Gigamonkey::Bitcoin {
         
         satoshi_per_byte() : Satoshis{0}, Bytes{0} {}
         satoshi_per_byte(satoshi x, uint64 b) : Satoshis{x}, Bytes{b} {}
+        
+        explicit operator double() const {
+            return double(Satoshis) / double(Bytes);
+        }
     };
     
     satoshi operator*(satoshi_per_byte fee, uint64 size);
@@ -27,6 +31,7 @@ namespace Gigamonkey::Bitcoin {
         satoshi_per_byte Standard;
         
         fee() : Data{}, Standard{} {}
+        fee(satoshi_per_byte d, satoshi_per_byte x) : Data{d}, Standard{x} {}
     };
     
     struct funds {
@@ -115,7 +120,11 @@ namespace Gigamonkey::Bitcoin {
         friend struct wallet;
     };
     
-    std::ostream &operator<<(std::ostream &o, funds f) {
+    std::ostream inline &operator<<(std::ostream &o, satoshi_per_byte v) {
+        return o << "(" << v.Satoshis << "sats / " << v.Bytes << "byte)";
+    }
+    
+    std::ostream inline &operator<<(std::ostream &o, funds f) {
         if (data::valid(f)) return o << "funds{" << f.Value << " sats, " << f.Entries << "}";
         else return o << "funds{}";
     }
