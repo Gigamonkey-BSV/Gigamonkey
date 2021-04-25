@@ -101,7 +101,7 @@ namespace Gigamonkey::Bitcoin {
         
         struct spent;
         
-        spent spend(list<output>) const;
+        spent spend(list<output> = {}) const;
     };
     
     struct wallet::spent {
@@ -114,7 +114,7 @@ namespace Gigamonkey::Bitcoin {
         wallet Remainder;
         
         bool valid() const {
-            return Transaction != nullptr && Change.Valid && Remainder.valid();
+            return Transaction.valid() && Change.Valid && Remainder.valid();
         }
         
     private:

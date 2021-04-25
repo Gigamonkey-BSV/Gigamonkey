@@ -13,7 +13,7 @@ namespace Gigamonkey::Bitcoin {
             return s + o.Value;
         }, 0, out);
         
-        if (spent > sent) return {};
+        if (spent < sent) return {};
         
         incomplete::transaction incomplete{data::for_each([](std::pair<spendable, spend_input> s) -> incomplete::input {
             return incomplete::input{s.first.reference(), s.second.Sequence};

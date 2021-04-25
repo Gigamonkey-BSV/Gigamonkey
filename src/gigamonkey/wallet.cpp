@@ -36,6 +36,7 @@ namespace Gigamonkey::Bitcoin {
     wallet::spent wallet::spend(list<output> payments) const {
         
         if (!valid()) return {};
+        
         satoshi to_spend = 0;
         transaction_data_type outputs_size{0, 0};
         
@@ -113,6 +114,8 @@ namespace Gigamonkey::Bitcoin {
             }
         }
         
+        int expected_transaction_size = in_progress_tx_size_count.Data + in_progress_tx_size_count.Standard;
+        
         // determine change output
         satoshi to_keep = to_redeem.Value - to_spend - tx_fee;
         
@@ -143,7 +146,7 @@ namespace Gigamonkey::Bitcoin {
         
         // finally, we create tx
         ledger::vertex vx = redeem(to_redeem.Entries, outputs);
-        if (vx != nullptr) return {};
+        if (!vx.valid()) return {};
         
         return spent{vx, new_funds, wallet{remainder, Policy, keys, Fee, Change, Dust}}; 
     }
