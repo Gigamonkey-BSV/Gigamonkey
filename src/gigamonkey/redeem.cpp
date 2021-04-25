@@ -44,7 +44,7 @@ namespace Gigamonkey::Bitcoin {
         if (spent > sent) return {};
         
         bytes incomplete = transaction{data::for_each([](data::entry<spendable, sighash::directive> s) -> input {
-            return input{s.Key.Outpoint, {}, s.Key.Sequence};
+            return input{s.Key.Reference, {}, s.Key.Sequence};
         }, prev), out, locktime}.write();
         
         uint32 ind{0};
@@ -53,7 +53,7 @@ namespace Gigamonkey::Bitcoin {
         
         while (!p.empty()) {
             data::entry<spendable, sighash::directive> entry = p.first();
-            in = in << input{entry.Key.Outpoint, 
+            in = in << input{entry.Key.Reference, 
                 redemption::redeem(entry.Key.Redeemer->redeem(entry.Value), incomplete, ind++), 
                 entry.Key.Sequence};
         }

@@ -51,10 +51,14 @@ namespace Gigamonkey::Bitcoin {
     
     struct spendable : output {
         ptr<redeemable> Redeemer;
-        outpoint Outpoint;
+        outpoint Reference;
         uint32_little Sequence;
         
-        spendable(const output& o, ptr<redeemable> r, const outpoint& op, uint32_little s = 0) : output{o}, Redeemer{r}, Outpoint{op}, Sequence{s} {}
+        spendable(const output& o, ptr<redeemable> r, const outpoint& op, uint32_little s = 0) : output{o}, Redeemer{r}, Reference{op}, Sequence{s} {}
+        
+        bool valid() const {
+            return output::valid() && Redeemer != nullptr; 
+        }
         
     };
     
@@ -65,7 +69,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     std::ostream inline &operator<<(std::ostream &o, const spendable& x) {
-        return o << "{" << static_cast<output>(x) << ", " << x.Outpoint << ", " << x.Sequence << "}";
+        return o << "{" << static_cast<output>(x) << ", " << x.Reference << ", " << x.Sequence << "}";
     };
     
 }

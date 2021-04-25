@@ -9,6 +9,9 @@ namespace Gigamonkey::Bitcoin {
         return n / v.Bytes + (n % v.Bytes == 0 ? 0 : 1);
     }
     
+    // We use a model wherebdy data scripts can have a different cost
+    // from other types of data. In principle, transactions could be
+    // priced in a more granular way, requring a more complex model here. 
     struct transaction_data_type {
         uint64 Data;
         uint64 Standard;
@@ -33,10 +36,7 @@ namespace Gigamonkey::Bitcoin {
         satoshi to_spend = 0;
         transaction_data_type outputs_size{0, 0};
         
-        list<output> outputs;
-        
         for (const output& p : payments) {
-            outputs = outputs << p;
             outputs_size.count_output_script(p.Script);
             satoshi value = p.Value;
             // check if any payment is below dust threshhold. 
@@ -59,11 +59,12 @@ namespace Gigamonkey::Bitcoin {
             outputs_size.count_output_script(change_scripts.first().OutputScript);
         }
         
-        transaction_data_type incomplete_tx_size = outputs_size;
-        incomplete_tx_size.Standard += 8 + writer::var_int_size(outputs.size() + change_scripts.size());
+        // we use this to count the size of the tx as we build it. 
+        transaction_data_type in_progress_tx_size_count = outputs_size;
+        in_progress_tx_size_count.Standard += 8 + writer::var_int_size(payments.size() + change_scripts.size());
          
         funds to_redeem;
-        funds remainder;
+        list<spendable> remainder;
         satoshi tx_fee{0};
         
         // select outputs to redeem.
@@ -71,37 +72,38 @@ namespace Gigamonkey::Bitcoin {
             switch (Policy) {
                 case all: {
                     to_redeem = Funds;
-                    remainder = funds{};
                     list<spendable> entries = to_redeem.Entries;
                     while (!entries.empty()) {
-                        incomplete_tx_size.count_input_script(entries.first().Redeemer->expected_size());
+                        in_progress_tx_size_count.count_input_script(entries.first().Redeemer->expected_size());
                         entries = entries.rest();
                     }
-                    tx_fee = Fee * incomplete_tx_size;
+                    tx_fee = Fee * in_progress_tx_size_count;
                     break;
                 }
                 case fifo: {
-                    remainder = Funds;
+                    remainder = Funds.Entries;
                     do {
-                        spendable x = Funds.Entries.first();
-                        incomplete_tx_size.count_input_script(x.Redeemer->expected_size());
+                        spendable x = remainder.first();
+                        remainder = remainder.rest();
+                        in_progress_tx_size_count.count_input_script(x.Redeemer->expected_size());
                         to_redeem = to_redeem.insert(x);
-                        remainder = funds{}.insert(Funds.Entries.rest());
-                        tx_fee = Fee * incomplete_tx_size;
+                        tx_fee = Fee * in_progress_tx_size_count;
                     } while (to_redeem.Value < to_spend + tx_fee + Dust);
                     break;
                 }
-                case random: {/*
-                    remainder = Funds;
+                // TODO
+                case random: {
+                    remainder = Funds.Entries;
                     do {
-                        std::uniform_int_distribution<uint32>(0, funds.Entries.size() - 1);
-                        spendable x = remainder.select_random();
-                        inputs_size += x.Selected.Redeemer->expected_size();
-                        inputs_sigops += x.Selected.Redeemer->sigops();
-                        to_redeem = to_redeem.insert(x.Selected);
-                        fee = Fee.calculate(inputs_size + outputs_size + 8, inputs_sigops);
-                    } while (to_redeem.Value < to_spend + fee);
-                    break;*/
+                        remainder = data::functional::list::rotate_left(remainder, 
+                            std::uniform_int_distribution<int>(0, remainder.size() - 1)(data::get_random_engine()));
+                        spendable x = remainder.first();
+                        remainder = remainder.rest();
+                        in_progress_tx_size_count.count_input_script(x.Redeemer->expected_size());
+                        to_redeem = to_redeem.insert(x);
+                        tx_fee = Fee * in_progress_tx_size_count;
+                    } while (to_redeem.Value < to_spend + tx_fee + Dust);
+                    break;
                 }
                 case unset:
                     return {}; 
@@ -114,7 +116,9 @@ namespace Gigamonkey::Bitcoin {
         // setup outputs.
         if (change_scripts.size() != 1) throw "we don't know how to do multiple change outputs yet.";
         
+        // these will be the new funds that will appear in our wallet. 
         funds new_funds;
+        list<output> outputs;
         
         {
         
@@ -122,9 +126,7 @@ namespace Gigamonkey::Bitcoin {
             
             list<spendable> incomplete_outputs = data::functional::list::shuffle<list<spendable>>(for_each([](const output& o) -> spendable {
                 return spendable{o, nullptr, outpoint{}};
-            }, outputs) << spendable{change_output, change_scripts.first().Redeemer, outpoint{}});
-            
-            outputs = {};
+            }, payments) << spendable{change_output, change_scripts.first().Redeemer, outpoint{}});
             
             index i = 0;
             for(const spendable& x : incomplete_outputs) {
