@@ -1,41 +1,12 @@
 #include <gigamonkey/redeem.hpp>
 #include <gigamonkey/script/script.hpp>
-
-namespace Gigamonkey::Bitcoin::redemption {
     
-    bytes redeem(incomplete x, bytes_view tx, index i, bool dummy_signature) {
-        list<bytes> parts{};
-        uint32 size = 0;
-        while(!x.empty()) {
-            bytes b = x.first().redeem(tx, i, dummy_signature);
-            size += b.size();
-            parts = parts << b;
-        }
-        bytes b(size);
-        bytes_writer w{b.begin(), b.end()};
-        write(w, parts);
-        return b;
-    }
-    
-    uint32 expected_size(incomplete x) {
-        uint32 size = 0;
-        
-        while(!x.empty()) {
-            size += x.first().expected_size();
-            x = x.rest();
-        }
-        
-        return size;
-    };
-    
-}
-
 namespace Gigamonkey::Bitcoin {
     
-    ledger::vertex redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out, uint32_little locktime) {
+    ledger::vertex redeem(list<std::pair<spendable, spend_input>> prev, list<output> out, uint32_little locktime) {
         
-        satoshi spent = fold([](satoshi s, data::entry<spendable, sighash::directive> v) -> satoshi {
-            return s + v.Key.value();
+        satoshi spent = fold([](satoshi s, std::pair<spendable, spend_input> v) -> satoshi {
+            return s + v.first.value();
         }, 0, prev);
         
         satoshi sent = fold([](satoshi s, output o) -> satoshi {
@@ -44,22 +15,22 @@ namespace Gigamonkey::Bitcoin {
         
         if (spent > sent) return {};
         
-        bytes incomplete = transaction{data::for_each([](data::entry<spendable, sighash::directive> s) -> input {
-            return input{s.Key.reference(), {}, s.Key.Sequence};
-        }, prev), out, locktime}.write();
+        incomplete::transaction incomplete{data::for_each([](std::pair<spendable, spend_input> s) -> incomplete::input {
+            return incomplete::input{s.first.reference(), s.second.Sequence};
+        }, prev), out, locktime};
+        
+        if (prev.size() != incomplete.Inputs.size()) throw "this should be impossible.";
         
         uint32 ind{0};
-        list<input> in;
+        list<input> inputs;
         data::map<outpoint, Bitcoin::output> prevouts;
         
-        for (const data::entry<spendable, sighash::directive> order : prev) {
-            in = in << input{order.Key.reference(), 
-                redemption::redeem(order.Key.Redeemer->redeem(order.Value), incomplete, ind++), 
-                order.Key.Sequence};
-            prevouts = prevouts.insert(static_cast<ledger::prevout>(order.Key));
+        for (std::pair<spendable, spend_input> s : prev) {
+            inputs = inputs << s.first(incomplete, ind, s.second.Directive);
+            ind++;
         }
         
-        return {ledger::double_entry{std::make_shared<bytes>(transaction{in, out, locktime}.write()), {}, {}}, prevouts};
+        return {ledger::double_entry{std::make_shared<bytes>(transaction{inputs, out, locktime}.write()), {}, {}}, prevouts};
     }
     
     bool ledger::vertex::valid() const {

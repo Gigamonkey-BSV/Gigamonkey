@@ -1,16 +1,13 @@
 // Copyright (c) 2019 Katrina Swales
-// Copyright (c) 2019 Daniel Krawisz
+// Copyright (c) 2019-2021 Daniel Krawisz
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "cert-err58-cpp"
 
-#include <gigamonkey/types.hpp>
-#include <gigamonkey/spendable.hpp>
+#include <gigamonkey/redeem.hpp>
 #include <gigamonkey/address.hpp>
-#include <gigamonkey/signature.hpp>
-#include <gigamonkey/script/pattern.hpp>
 #include "gtest/gtest.h"
 #include <iostream>
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Daniel Krawisz
+// Copyright (c) 2019-2021 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #ifndef GIGAMONKEY_SIGNATURE
@@ -41,6 +41,7 @@ namespace Gigamonkey::Bitcoin {
         return sighash::directive(t + sighash::fork_id * fork_id + sighash::anyone_can_pay * anyone_can_pay);
     }
     
+    // this represents a signature that will appear in a Bitcoin script. 
     struct signature : bytes {
         constexpr static size_t MaxSignatureSize = 73;
         
@@ -66,21 +67,60 @@ namespace Gigamonkey::Bitcoin {
             return x;
         } 
         
+        // the document that is signed by the signature. 
+        struct document;
+        
+        static signature sign(const secp256k1::secret& s, sighash::directive d, const document&);
+        
+        static bool verify(const signature& x, const secp256k1::pubkey& p, sighash::directive d, const document&);
+        
     };
     
-    digest256 signature_hash(const bytes_view tx, index i, sighash::directive d);
-    
-    inline signature sign(const bytes_view tx, index i, sighash::directive d, const secp256k1::secret& s) {
-        return signature{s.sign(signature_hash(tx, i, d)), d};
-    }
-    
-    inline bool verify(const signature& x, bytes_view tx, index i, sighash::directive d, const pubkey& p) {
-        return p.verify(signature_hash(tx, i, d), x.raw());
-    }
-    
-    inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::Bitcoin::signature& x) {
+    std::ostream inline &operator<<(std::ostream& o, const signature& x) {
         return o << "signature{" << data::encoding::hex::write(x.Data) << "}";
     }
+    
+    namespace incomplete {
+        
+        struct input {
+            outpoint Reference;
+            uint32_little Sequence;
+            
+            Bitcoin::input complete(bytes_view script) {
+                return Bitcoin::input{Reference, script, Sequence};
+            }
+        };
+    
+        // an incomplete transaction is a transaction with no input scripts. 
+        struct transaction {
+            cross<input> Inputs;
+            cross<output> Outputs;
+            uint32_little Locktime;
+            
+            transaction(list<input> i, list<output> o, uint32_little l = 0);
+                
+            bytes write() const;
+        };
+    }
+    
+    struct signature::document {
+    
+        output Previous; 
+        incomplete::transaction Transaction; 
+        index Index;
+        
+        digest256 hash(sighash::directive d) const;
+        
+    };
+    
+    signature inline signature::sign(const secp256k1::secret& s, sighash::directive d, const document& doc) {
+        return signature{s.sign(doc.hash(d)), d};
+    }
+    
+    bool inline signature::verify(const signature& x, const secp256k1::pubkey& p, sighash::directive d, const document& doc) {
+        return p.verify(doc.hash(d), x.raw());
+    }
+    
 }
 
 #endif

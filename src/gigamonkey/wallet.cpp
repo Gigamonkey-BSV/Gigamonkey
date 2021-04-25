@@ -1,3 +1,6 @@
+// Copyright (c) 2019-2021 Daniel Krawisz
+// Distributed under the Open BSV software license, see the accompanying file LICENSE.
+
 #include <gigamonkey/wallet.hpp>
 
 namespace Gigamonkey::Bitcoin {
@@ -138,17 +141,8 @@ namespace Gigamonkey::Bitcoin {
         
         }
         
-        // add sighash directives and finalize all input directives
-        // we could do a lot more with this. Someday! 
-        list<data::entry<spendable, sighash::directive>> redeem_orders = for_each(
-            [](spendable s) -> data::entry<spendable, sighash::directive> {
-                spendable z = s;
-                z.Sequence = input::Finalized;
-                return {s, sighash::all};
-            }, to_redeem.Entries);
-        
-        // create tx
-        ledger::vertex vx = redeem(redeem_orders, outputs);
+        // finally, we create tx
+        ledger::vertex vx = redeem(to_redeem.Entries, outputs);
         if (vx != nullptr) return {};
         
         return spent{vx, new_funds, wallet{remainder, Policy, keys, Fee, Change, Dust}}; 

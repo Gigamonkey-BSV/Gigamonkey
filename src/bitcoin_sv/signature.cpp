@@ -1,3 +1,5 @@
+// Copyright (c) 2019-2021 Daniel Krawisz
+// Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/signature.hpp>
 #include <key.h>
@@ -7,16 +9,26 @@
 
 namespace Gigamonkey::Bitcoin {
     
-    digest256 signature_hash(const bytes_view tx, index i, sighash::directive d) {
+    bytes incomplete::transaction::write() const {
+        list<output> outputs;
+        for (const output& o : Outputs) outputs = outputs << o;
+        list<Bitcoin::input> inputs;
+        for (const input& in : Inputs) inputs = inputs << Bitcoin::input{in.Reference, {}, in.Sequence};
+        return Bitcoin::transaction{2, inputs, outputs, Locktime}.write();
+    }
+    
+    digest256 signature::document::hash(sighash::directive d) const {
+        
+        bytes tx = Transaction.write();
         
         CDataStream stream{(const char*)(tx.data()), 
             (const char*)(tx.data() + tx.size()), SER_NETWORK, PROTOCOL_VERSION};
+        
         CTransaction ctx{deserialize, stream};
         
-        bytes_view o = transaction::output(tx, i);
-        bytes_view x = output::script(o);
-        
-        ::uint256 tmp= SignatureHash(CScript(x.begin(), x.end()), ctx, i, SigHashType(d), Amount((int64)output::value(o)));
+        ::uint256 tmp = SignatureHash(
+            CScript(Previous.Script.begin(), Previous.Script.end()), ctx, Index, SigHashType(d), 
+            Amount((int64)Previous.Value));
         
         digest<32> output;
         std::copy(output.begin(), tmp.begin(), tmp.end());

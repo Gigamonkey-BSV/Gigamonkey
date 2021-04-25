@@ -1,10 +1,10 @@
-// Copyright (c) 2019 Daniel Krawisz
+// Copyright (c) 2019-2021 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #ifndef GIGAMONKEY_WALLET
 #define GIGAMONKEY_WALLET
 
-#include "spendable.hpp"
+#include "redeem.hpp"
 
 namespace Gigamonkey::Bitcoin {
     

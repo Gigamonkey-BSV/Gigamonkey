@@ -60,7 +60,7 @@ namespace Gigamonkey::secp256k1 {
         secp256k1::point point() const;
     };
     
-    using digest = Gigamonkey::digest<SecretSize>;
+    using digest = digest256;
     
     class secret final : public nonzero<coordinate> {
         static bool valid(bytes_view);

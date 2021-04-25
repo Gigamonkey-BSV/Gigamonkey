@@ -1,3 +1,6 @@
+// Copyright (c) 2020-2021 Daniel Krawisz
+// Distributed under the Open BSV software license, see the accompanying file LICENSE.
+
 #ifndef GIGAMONKEY_BOOST_BOOST
 #define GIGAMONKEY_BOOST_BOOST
 
@@ -448,7 +451,7 @@ namespace Gigamonkey {
             
         };
         
-        struct redeem_boost final : Bitcoin::redeemable {
+        struct redeem_boost final : Bitcoin::redeemer {
             Bitcoin::secret Secret;
             Bitcoin::pubkey Pubkey;
             work::solution Solution;
@@ -462,11 +465,8 @@ namespace Gigamonkey {
                 bool use_general_purpose_bits) : 
                 Secret{k}, Pubkey{p}, Solution{z}, Type{t}, UseGeneralPurposeBits{use_general_purpose_bits} {}
             
-            Bitcoin::redemption::incomplete redeem(Bitcoin::sighash::directive d) const override {
-                throw method::unimplemented{"redeem_boost"};
-                Bitcoin::program p = input_script{Bitcoin::signature{}, Pubkey, Solution, Type, UseGeneralPurposeBits}.program();
-                if (p.empty()) return {};
-                return {Bitcoin::redemption::element{&Secret, d}, compile(p.rest())};
+            bytes redeem(const Bitcoin::signature::document& document, Bitcoin::sighash::directive d) const override {
+                return input_script{Bitcoin::signature::sign(Secret.Secret, d, document), Pubkey, Solution, Type, UseGeneralPurposeBits}.write();
             }
             
             uint32 expected_size() const override {
