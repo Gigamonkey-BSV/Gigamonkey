@@ -49,27 +49,35 @@ namespace Gigamonkey::Bitcoin {
         virtual uint32 sigops() const = 0;
     };
     
-    struct spendable : output {
+    struct spendable : ledger::prevout {
         ptr<redeemable> Redeemer;
-        outpoint Reference;
         uint32_little Sequence;
         
-        spendable(const output& o, ptr<redeemable> r, const outpoint& op, uint32_little s = 0) : output{o}, Redeemer{r}, Reference{op}, Sequence{s} {}
+        spendable(const ledger::prevout& p, ptr<redeemable> r, uint32_little s = 0) : 
+            ledger::prevout{p}, Redeemer{r}, Sequence{s} {}
         
         bool valid() const {
-            return output::valid() && Redeemer != nullptr; 
+            return ledger::prevout::valid() && Redeemer != nullptr; 
+        }
+        
+        satoshi value() const {
+            return ledger::prevout::Value.Value;
+        }
+        
+        outpoint reference() const {
+            return ledger::prevout::Key;
         }
         
     };
     
-    ptr<bytes> redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out, uint32_little locktime);
+    ledger::vertex redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out, uint32_little locktime);
     
-    ptr<bytes> inline redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out) {
+    ledger::vertex inline redeem(list<data::entry<spendable, sighash::directive>> prev, list<output> out) {
         return redeem(prev, out, 0);
     }
     
     std::ostream inline &operator<<(std::ostream &o, const spendable& x) {
-        return o << "{" << static_cast<output>(x) << ", " << x.Reference << ", " << x.Sequence << "}";
+        return o << "{" << static_cast<ledger::prevout>(x) << ", " << ", " << x.Sequence << "}";
     };
     
 }

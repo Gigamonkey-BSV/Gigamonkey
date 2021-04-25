@@ -25,7 +25,15 @@ namespace Gigamonkey::Bitcoin {
         evaluated(ScriptError err) : Error{err}, Return{false} {}
         
         bool valid() const {
-            return Error == SCRIPT_ERR_OK;
+            return !Error;
+        }
+        
+        bool verify() const {
+            return !Error && Return;
+        }
+        
+        operator bool() const {
+            return verify();
         }
         
         bool operator==(const evaluated e) const {

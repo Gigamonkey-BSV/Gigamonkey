@@ -277,7 +277,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     writer operator<<(writer w, const input& in) {
-        return w << in.Outpoint << in.Script << in.Sequence;
+        return w << in.Reference << in.Script << in.Sequence;
     }
 
     writer operator<<(writer w, const output& out) {

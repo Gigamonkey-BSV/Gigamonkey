@@ -125,13 +125,14 @@ namespace Gigamonkey::Bitcoin {
             output change_output{to_keep, change_scripts.first().OutputScript};
             
             list<spendable> incomplete_outputs = data::functional::list::shuffle<list<spendable>>(for_each([](const output& o) -> spendable {
-                return spendable{o, nullptr, outpoint{}};
-            }, payments) << spendable{change_output, change_scripts.first().Redeemer, outpoint{}});
+                return spendable{ledger::prevout{outpoint{}, o}, nullptr};
+            }, payments) << spendable{ledger::prevout{outpoint{}, change_output}, change_scripts.first().Redeemer});
             
             index i = 0;
             for(const spendable& x : incomplete_outputs) {
-                if (x.Redeemer != nullptr) new_funds = new_funds.insert(spendable{static_cast<output>(x), x.Redeemer, outpoint{{}, i}});
-                else outputs = outputs << static_cast<output>(x);
+                if (x.Redeemer != nullptr) new_funds = 
+                    new_funds.insert(spendable{ledger::prevout{outpoint{{}, i}, x.Value}, x.Redeemer});
+                outputs = outputs << x.Value;
                 i++;
             };
         
@@ -147,7 +148,7 @@ namespace Gigamonkey::Bitcoin {
             }, to_redeem.Entries);
         
         // create tx
-        ptr<bytes> vx = redeem(redeem_orders, outputs);
+        ledger::vertex vx = redeem(redeem_orders, outputs);
         if (vx != nullptr) return {};
         
         return spent{vx, new_funds, wallet{remainder, Policy, keys, Fee, Change, Dust}}; 

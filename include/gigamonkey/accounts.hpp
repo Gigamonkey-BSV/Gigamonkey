@@ -53,14 +53,27 @@ namespace Gigamonkey::Bitcoin {
     struct account {
         using entry = bookkeeping::entry<satoshi, timestamp>;
         
+        struct prevout : ledger::double_entry {
+            data::entry<txid, ledger::double_entry> Previous;
+            index InputIndex;
+            
+            Bitcoin::input input() const {
+                return ledger::double_entry::input(InputIndex);
+            }
+            
+            bool valid() const {
+                return Previous.Key == input().Reference.Digest;
+            }
+        };
+        
         // we use a bitcoin output as a credit. 
         static entry credit(const ledger::double_entry& tx, const index i) {
             return entry{tx.output(i).Value, tx.Header.Timestamp};
         } 
         
         // we use an input + output as a debit. 
-        static entry debit(const ledger::prevout &p) {
-            return entry{p.spent(), p.Previous.Value.Header.Timestamp};
+        static entry debit(const prevout &v) {
+            return entry{v.Previous.Value.output(v.input().Reference.Index).Value, v.Previous.Value.Header.Timestamp};
         } 
         
         struct event : public ledger::vertex {

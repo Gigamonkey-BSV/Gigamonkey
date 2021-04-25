@@ -43,7 +43,7 @@ namespace Gigamonkey::Bitcoin {
         funds(list<spendable> e) : funds{funds{}.insert(e)} {}
         
         funds insert(spendable s) const {
-            return {Entries << s, Value + s.Value, Valid && s.valid()};
+            return {Entries << s, Value + s.value(), Valid && s.valid()};
         }
         
         funds insert(list<spendable> s) const {
@@ -105,17 +105,21 @@ namespace Gigamonkey::Bitcoin {
     };
     
     struct wallet::spent {
-        ptr<bytes> Transaction;
+        ledger::vertex Transaction;
+        
+        // these are new funds that will mature as soon as the tx is processed. 
         funds Change;
+        
+        // this is what remains in our wallet. 
         wallet Remainder;
         
         bool valid() const {
-            return Transaction != nullptr && Remainder.valid();
+            return Transaction != nullptr && Change.Valid && Remainder.valid();
         }
         
     private:
         spent() : Transaction{}, Change{}, Remainder{} {}
-        spent(const ptr<bytes>& v, funds x, const wallet& r) : Transaction{v}, Change{x}, Remainder{r} {}
+        spent(const ledger::vertex& v, funds x, const wallet& r) : Transaction{v}, Change{x}, Remainder{r} {}
         
         friend struct wallet;
     };

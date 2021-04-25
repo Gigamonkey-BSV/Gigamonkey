@@ -23,8 +23,8 @@ namespace Gigamonkey::Bitcoin {
         ordered_list<index> debits{};
         
         for (index i = 0; inputs.size() > 0; i++) {
-            if (Account.Mine.contains(inputs.first().Outpoint)) 
-                Account.Cancellations = Account.Cancellations.insert(inputs.first().Outpoint, tx);
+            if (Account.Mine.contains(inputs.first().Reference)) 
+                Account.Cancellations = Account.Cancellations.insert(inputs.first().Reference, tx);
             else debits.insert(i);
             inputs = inputs.rest();
         }

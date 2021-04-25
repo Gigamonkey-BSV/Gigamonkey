@@ -84,6 +84,7 @@ namespace Gigamonkey::Bitcoin {
 
     std::ostream& operator<<(std::ostream& o, const block& p);
 
+    // The header is the first 80 bytes of a Bitcoin block. 
     struct header {
         
         static int32_little version(const slice<80>);
@@ -163,7 +164,7 @@ namespace Gigamonkey::Bitcoin {
         static bytes_view script(bytes_view);
         static uint32_little sequence(bytes_view);
         
-        outpoint Outpoint; 
+        outpoint Reference; 
         Gigamonkey::script Script;
         uint32_little Sequence;
         
@@ -171,9 +172,9 @@ namespace Gigamonkey::Bitcoin {
         
         bool valid() const;
         
-        input() : Outpoint{}, Script{}, Sequence{} {}
+        input() : Reference{}, Script{}, Sequence{} {}
         input(const outpoint& o, const Gigamonkey::script& x, const uint32_little& z = Finalized) : 
-            Outpoint{o}, Script{x}, Sequence{z} {}
+            Reference{o}, Script{x}, Sequence{z} {}
         
         size_t serialized_size() const;
     };
@@ -307,7 +308,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     bool inline operator==(const input& a, const input& b) {
-        return a.Outpoint == b.Outpoint && a.Script == b.Script && a.Sequence == b.Sequence;
+        return a.Reference == b.Reference && a.Script == b.Script && a.Sequence == b.Sequence;
     }
     
     bool inline operator!=(const input& a, const input& b) {
@@ -348,11 +349,11 @@ namespace Gigamonkey::Bitcoin {
     }
 
     inline std::ostream& operator<<(std::ostream& o, const outpoint& p) {
-        return o << "outpoint{Digest : " << p.Digest << ", Index : " << p.Index << "}";
+        return o << "outpoint{" << p.Digest << ":" << p.Index << "}";
     }
     
     inline std::ostream& operator<<(std::ostream& o, const input& p) {
-        return o << "input{Outpoint : " << p.Outpoint << ", Script : " << p.Script << ", Sequence : " << p.Sequence << "}";
+        return o << "input{Reference : " << p.Reference << ", Script : " << p.Script << ", Sequence : " << p.Sequence << "}";
     }
 
     inline std::ostream& operator<<(std::ostream& o, const output& p) {
@@ -376,7 +377,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     reader inline operator>>(reader r, input& in) {
-        return r >> in.Outpoint >> in.Script >> in.Sequence;
+        return r >> in.Reference >> in.Script >> in.Sequence;
     }
 
     reader inline operator>>(reader r, output& out) {

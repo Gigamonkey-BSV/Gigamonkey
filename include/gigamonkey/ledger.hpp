@@ -78,42 +78,29 @@ namespace Gigamonkey::Bitcoin {
         // get block by header hash and merkle root. 
         virtual bytes block(const digest256&) const = 0; 
         
-        struct vertex;
+        using prevout = data::entry<outpoint, output>;
         
-        struct prevout {
-            data::entry<txid, double_entry> Previous;
-            
-            uint32_little Index;
+        struct edge {
+            output Output;
             input Input;
-            
-            explicit operator output() const {
-                return Previous.Value.output(Input.Outpoint.Index);
-            }
+        
+            bool valid() const {
+                return Output.valid() && Input.valid();
+                // TODO evaluate the script. 
+            } 
             
             satoshi spent() const {
-                return output(*this).Value;
+                return Output.Value;
             }
-            
-            bool valid() const {
-                return Previous.Value.valid() && 
-                    Input.Outpoint.Digest == Previous.Key/* && 
-                    evaluate_script(output(*this).Script, Input.Script).valid()*/;
-            }
-            
-        private:
-            prevout() : Previous{txid{}}, Index{}, Input{} {}
-            prevout(data::entry<txid, double_entry> p, uint32_little i, input in) : Previous{p}, Index{i}, Input{in} {}
-            
-            friend struct vertex;
         };
         
         struct vertex : public double_entry {
-            data::map<txid, double_entry> Previous;
+            data::map<outpoint, Bitcoin::output> Previous;
             
             satoshi spent() const {
-                return data::fold([](satoshi x, const prevout& p) -> satoshi {
+                return data::fold([](satoshi x, const edge& p) -> satoshi {
                     return p.spent();
-                }, satoshi{0}, prevouts());
+                }, satoshi{0}, incoming_edges());
             }
             
             satoshi fee() const {
@@ -122,42 +109,31 @@ namespace Gigamonkey::Bitcoin {
             
             bool valid() const;
             
-            uint32 sigops() const;
-            
-            list<prevout> prevouts() const {
-                list<prevout> p;
+            list<edge> incoming_edges() const {
+                list<edge> p;
                 list<Bitcoin::input> inputs = double_entry::inputs();
-                index i = 0;
-                for (const Bitcoin::input& in : inputs) p = p << 
-                    prevout{data::entry<txid, double_entry>{in.Outpoint.Digest, Previous[in.Outpoint.Digest]}, i++, in};
+                for (const Bitcoin::input& in : inputs) p = p << edge{Previous[in.Reference], in};
                 return p;
             }
             
-            vertex(const double_entry& d, data::map<txid, double_entry> p) : double_entry{d}, Previous{p} {}
+            vertex(const double_entry& d, data::map<outpoint, Bitcoin::output> p) : double_entry{d}, Previous{p} {}
             vertex() : double_entry{}, Previous{} {}
             
-            prevout operator[](index i) {
+            edge operator[](index i) {
                 struct input in = double_entry::input(i);
                 
-                return {data::entry<txid, double_entry>{in.Outpoint.Digest, Previous[in.Outpoint.Digest]}, i, in};
+                return {Previous[in.Reference], in};
             }
+            
+            uint32 sigops() const;
         };
         
         vertex make_vertex(const double_entry& d) {
             list<input> in = d.inputs();
-            data::map<txid, double_entry> p;
-            for (const input& i : in) p = p.insert(transaction(i.Outpoint.Digest));
+            data::map<outpoint, output> p;
+            for (const input& i : in) p = p.insert(i.Reference, transaction(i.Reference.Digest).Value.output(i.Reference.Index));
             return {d, p};
         }
-    
-        struct edge {
-            input Input;
-            output Output;
-        
-            bool valid() const {
-                return Output.valid() && Input.valid();
-            } 
-        };
         
     };
     
