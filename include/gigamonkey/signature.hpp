@@ -93,8 +93,8 @@ namespace Gigamonkey::Bitcoin {
     
         // an incomplete transaction is a transaction with no input scripts. 
         struct transaction {
-            cross<input> Inputs;
-            cross<output> Outputs;
+            std::vector<input> Inputs;
+            std::vector<output> Outputs;
             uint32_little Locktime;
             
             transaction(list<input> i, list<output> o, uint32_little l = 0);

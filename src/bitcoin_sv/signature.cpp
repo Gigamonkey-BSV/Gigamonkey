@@ -8,6 +8,18 @@
 #include <streams.h>
 
 namespace Gigamonkey::Bitcoin {
+            
+    incomplete::transaction::transaction(list<input> i, list<output> o, uint32_little l) : Inputs(i.size()), Outputs(o.size()), Locktime{l} {
+        for (int n = 0; n < i.size(); n++) {
+            Inputs[n] = i.first();
+            i = i.rest();
+        }
+        
+        for (int n = 0; n < o.size(); n++) {
+            Outputs[n] = o.first();
+            o = o.rest();
+        }
+    }
     
     bytes incomplete::transaction::write() const {
         list<output> outputs;
