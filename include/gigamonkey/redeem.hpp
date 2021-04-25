@@ -98,7 +98,7 @@ namespace Gigamonkey::Bitcoin {
     };
     
     std::ostream inline &operator<<(std::ostream &o, const spendable& x) {
-        return o << "{" << static_cast<ledger::prevout>(x) << ", " << "}";
+        return o << "{" << static_cast<ledger::prevout>(x) << "}";
     };
     
 }

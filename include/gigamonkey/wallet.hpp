@@ -47,7 +47,7 @@ namespace Gigamonkey::Bitcoin {
         }
         
         funds insert(list<spendable> s) const {
-            if (s.empty()) return {};
+            if (s.empty()) return *this;
             return insert(s.first()).insert(s.rest());
         }
         
@@ -129,7 +129,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     std::ostream inline &operator<<(std::ostream &o, funds f) {
-        if (data::valid(f)) return o << "funds{" << f.Value << " sats, " << f.Entries << "}";
+        if (f.Valid) return o << "funds{" << f.Value << " sats, " << f.Entries << "}";
         else return o << "funds{}";
     }
     
