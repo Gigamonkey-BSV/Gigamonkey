@@ -40,7 +40,7 @@ namespace Gigamonkey {
     }
         
     satoshi inline satoshi::operator+(satoshi x) const {
-        return static_cast<int64_little>(*this) - static_cast<int64_little>(x);
+        return static_cast<int64_little>(*this) + static_cast<int64_little>(x);
     }
     
     satoshi inline satoshi::operator-(satoshi x) const {
