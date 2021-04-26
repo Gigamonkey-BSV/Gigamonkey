@@ -26,7 +26,10 @@ namespace Gigamonkey::Bitcoin {
         data::map<outpoint, Bitcoin::output> prevouts;
         
         for (std::pair<spendable, spend_input> s : prev) {
-            inputs = inputs << s.first(incomplete, ind, s.second.Directive);
+            input new_input = s.first(incomplete, ind, s.second.Directive);
+            new_input.Sequence = s.second.Sequence;
+            if (!new_input.valid()) return {};
+            inputs = inputs << new_input;
             ind++;
         }
         
