@@ -35,15 +35,21 @@ namespace Gigamonkey::Bitcoin {
     }
     
     bool ledger::vertex::valid() const {
-        if (!double_entry::valid() || incoming_edges().valid()) return false; 
+        if (!double_entry::valid()) return false;
+        
+        for (const struct input &in : inputs()) if (!Previous.contains(in.Reference)) return false;
+        
+        auto edges = incoming_edges();
+        if (!edges.valid()) return false; 
         
         if (sent() > spent()) return false;
         
         uint32 index = 0;
-        for (const edge& e: incoming_edges()) {
+        for (const edge& e: edges) {
             if (!evaluate_script(e.Input.Script, e.Output.Script, ptr<bytes>::operator*(), index)) return false;
             index++;
         }
+        
         return true;
     }
     

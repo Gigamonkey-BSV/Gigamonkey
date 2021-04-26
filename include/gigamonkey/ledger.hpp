@@ -86,7 +86,6 @@ namespace Gigamonkey::Bitcoin {
         
             bool valid() const {
                 return Output.valid() && Input.valid();
-                // TODO evaluate the script. 
             } 
             
             satoshi spent() const {
