@@ -53,10 +53,14 @@ namespace Gigamonkey::Bitcoin {
     
     ledger::vertex redeem(list<std::pair<spendable, spend_input>> prev, list<output> out, uint32_little locktime = 0);
 
-    ledger::vertex inline redeem(list<spendable> prev, list<output> out, uint32_little locktime) {
-        return redeem(data::for_each([](spendable p) -> std::pair<spendable, spend_input> {
-            return {p, spend_input{}};
+    ledger::vertex inline redeem(list<spendable> prev, spend_input param, list<output> out, uint32_little locktime = 0) {
+        return redeem(data::for_each([param](spendable p) -> std::pair<spendable, spend_input> {
+            return {p, param};
         }, prev), out, locktime);
+    }
+
+    ledger::vertex inline redeem(list<spendable> prev, list<output> out, uint32_little locktime) {
+        return redeem(prev, spend_input{}, out, locktime);
     }
     
     struct redeem_pay_to_pubkey final : redeemer {

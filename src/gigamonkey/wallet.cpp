@@ -145,7 +145,7 @@ namespace Gigamonkey::Bitcoin {
         }
         
         // finally, we create tx
-        ledger::vertex vx = redeem(to_redeem.Entries, outputs);
+        ledger::vertex vx = redeem(to_redeem.Entries, spend_input{input::Finalized, sighash::all | sighash::fork_id}, outputs);
         if (!vx.valid()) return {};
         
         return spent{vx, new_funds, wallet{remainder, Policy, keys, Fee, Change, Dust}}; 
