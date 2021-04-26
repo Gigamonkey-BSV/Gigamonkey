@@ -30,6 +30,7 @@ namespace Gigamonkey::Bitcoin {
             new_input.Sequence = s.second.Sequence;
             if (!new_input.valid()) return {};
             inputs = inputs << new_input;
+            prevouts = prevouts.insert(s.first.Key, s.first.Value);
             ind++;
         }
         
