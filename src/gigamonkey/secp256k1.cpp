@@ -93,11 +93,9 @@ namespace Gigamonkey::secp256k1 {
         secp256k1_ecdsa_signature x;
         auto context = Signing();
         if (secp256k1_ecdsa_sign(context, &x, d.Value.data(), sk.data(),
-            secp256k1_nonce_function_rfc6979, nullptr) != 1)
-            return {};
+            secp256k1_nonce_function_rfc6979, nullptr) != 1) return {};
         
         signature sig{};
-        
         size_t size = sig.size();
         secp256k1_ecdsa_signature_serialize_der(context, sig.data(), &size, &x);
         sig.resize(size);

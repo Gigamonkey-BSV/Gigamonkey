@@ -55,7 +55,7 @@ namespace Gigamonkey::secp256k1 {
     public:
         constexpr static size_t MaxSignatureSize = 72;
         
-        signature() : bytes{MaxSignatureSize} {}
+        signature() : bytes(MaxSignatureSize) {}
         
         secp256k1::point point() const;
     };
@@ -80,7 +80,6 @@ namespace Gigamonkey::secp256k1 {
         bool valid() const;
         
         bool operator==(const secret& s) const;
-        
         bool operator!=(const secret& s) const;
         
         signature sign(const digest& d) const;
@@ -88,9 +87,7 @@ namespace Gigamonkey::secp256k1 {
         pubkey to_public() const;
         
         secret operator-() const;
-        
         secret operator+(const secret& s) const;
-        
         secret operator*(const secret& s) const;
     };
     
@@ -122,7 +119,6 @@ namespace Gigamonkey::secp256k1 {
         bool valid() const;
         
         bool operator==(const pubkey& p) const;
-        
         bool operator!=(const pubkey& p) const;
         
         bool verify(const digest& d, const signature& s) const;
@@ -134,21 +130,16 @@ namespace Gigamonkey::secp256k1 {
         operator bytes_view() const;
         
         coordinate x() const;
-        
         coordinate y() const;
         
         secp256k1::point point() const;
         
         pubkey compress() const;
-        
         pubkey decompress() const;
         
         pubkey operator-() const;
-        
         pubkey operator+(const pubkey& p) const;
-        
         pubkey operator+(const secret& s) const;
-        
         pubkey operator*(const secret& s) const;
         
         bytes_writer write(bytes_writer w) const;
