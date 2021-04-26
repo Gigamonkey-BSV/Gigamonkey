@@ -6,7 +6,7 @@
 
 #include "secp256k1.hpp"
 #include "hash.hpp"
-#include "ledger.hpp"
+#include "timechain.hpp"
 
 namespace Gigamonkey::Bitcoin {
     
@@ -43,7 +43,7 @@ namespace Gigamonkey::Bitcoin {
     
     // this represents a signature that will appear in a Bitcoin script. 
     struct signature : bytes {
-        constexpr static size_t MaxSignatureSize = 73;
+        constexpr static size_t MaxSignatureSize = secp256k1::signature::MaxSignatureSize + 1;
         
         bytes Data;
         
@@ -93,13 +93,15 @@ namespace Gigamonkey::Bitcoin {
     
         // an incomplete transaction is a transaction with no input scripts. 
         struct transaction {
+            int32_little Version;
             std::vector<input> Inputs;
             std::vector<output> Outputs;
             uint32_little Locktime;
             
-            transaction(list<input> i, list<output> o, uint32_little l = 0);
-                
+            transaction(int32_little v, list<input> i, list<output> o, uint32_little l = 0);
+            
             bytes write() const;
+            static transaction read(bytes_view);
         };
     }
     
@@ -110,6 +112,7 @@ namespace Gigamonkey::Bitcoin {
         index Index;
         
         digest256 hash(sighash::directive d) const;
+        bytes write() const;
         
     };
     

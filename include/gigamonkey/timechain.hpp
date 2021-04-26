@@ -213,7 +213,7 @@ namespace Gigamonkey::Bitcoin {
         
         static txid id(bytes_view);
         
-        constexpr static int32 latest_version = 2;
+        constexpr static int32 LatestVersion = 2;
         
         int32_little Version;
         list<Bitcoin::input> Inputs;
@@ -224,7 +224,7 @@ namespace Gigamonkey::Bitcoin {
             Version{v}, Inputs{i}, Outputs{o}, Locktime{t} {}
         
         transaction(list<Bitcoin::input> i, list<Bitcoin::output> o, uint32_little t = 0) : 
-            transaction{int32_little{latest_version}, i, o, t} {}
+            transaction{int32_little{LatestVersion}, i, o, t} {}
             
         transaction() : Version{}, Inputs{}, Outputs{}, Locktime{} {};
         

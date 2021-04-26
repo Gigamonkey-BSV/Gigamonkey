@@ -9,7 +9,8 @@
 
 namespace Gigamonkey::Bitcoin {
             
-    incomplete::transaction::transaction(list<input> i, list<output> o, uint32_little l) : Inputs(i.size()), Outputs(o.size()), Locktime{l} {
+    incomplete::transaction::transaction(int32_little v, list<input> i, list<output> o, uint32_little l) : 
+        Version{v}, Inputs(i.size()), Outputs(o.size()), Locktime{l} {
         for (int n = 0; n < i.size(); n++) {
             Inputs[n] = i.first();
             i = i.rest();
@@ -26,7 +27,16 @@ namespace Gigamonkey::Bitcoin {
         for (const output& o : Outputs) outputs = outputs << o;
         list<Bitcoin::input> inputs;
         for (const input& in : Inputs) inputs = inputs << Bitcoin::input{in.Reference, {}, in.Sequence};
-        return Bitcoin::transaction{2, inputs, outputs, Locktime}.write();
+        return Bitcoin::transaction{Version, inputs, outputs, Locktime}.write();
+    }
+    
+    incomplete::transaction read(bytes_view b) {
+        auto tx = Bitcoin::transaction::read(b);
+        return incomplete::transaction{tx.Version, 
+            data::for_each([](const Bitcoin::input& in) -> incomplete::input {
+                    return {in.Reference, in.Sequence};
+                }, tx.Inputs), 
+            tx.Outputs, tx.Locktime};
     }
     
     digest256 signature::document::hash(sighash::directive d) const {

@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Bitcoin Core developers
 // Copyright (c) 2018 The Bitcoin SV developers
-// Copyright (c) 2019 Daniel Krawisz
+// Copyright (c) 2019-2021 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #ifndef GIGAMONKEY_SCRIPT_SCRIPT
@@ -49,7 +49,7 @@ namespace Gigamonkey::Bitcoin {
     evaluated evaluate_script(const script& unlock, const script& lock);
     
     // Evaluate script with real signature operations. 
-    evaluated evaluate_script(const script& unlock, const script& lock, const bytes_view tx, index input_index);
+    evaluated evaluate_script(const script& unlock, const signature::document &lock);
     
     using op = opcodetype;
     
@@ -280,7 +280,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     bool inline is_op_return(const script& p) {
-        return p.size() > 1 && p[0] == 0x6a || p.size() > 2 && p[0] == 0x00 && p[1] == 0x6a;
+        return (p.size() > 1 && p[0] == 0x6a) || (p.size() > 2 && p[0] == 0x00 && p[1] == 0x6a);
     }
     
     std::ostream& operator<<(std::ostream&, instruction);

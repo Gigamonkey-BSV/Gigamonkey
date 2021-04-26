@@ -53,7 +53,7 @@ namespace Gigamonkey::secp256k1 {
         friend class secret;
         
     public:
-        constexpr static size_t MaxSignatureSize = 70;
+        constexpr static size_t MaxSignatureSize = 72;
         
         signature() : bytes{MaxSignatureSize} {}
         
