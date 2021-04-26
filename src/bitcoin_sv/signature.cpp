@@ -43,7 +43,7 @@ namespace Gigamonkey::Bitcoin {
             Amount((int64)Previous.Value));
         
         digest<32> output;
-        std::copy(output.begin(), tmp.begin(), tmp.end());
+        std::copy(tmp.begin(), tmp.end(), output.begin());
         return output;
         
     }
