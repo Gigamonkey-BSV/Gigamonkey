@@ -31,12 +31,13 @@ namespace Gigamonkey::Bitcoin {
         }
         
         return {ledger::double_entry{std::make_shared<bytes>(transaction{inputs, out, locktime}.write()), {}, {}}, prevouts};
+        
     }
     
     bool ledger::vertex::valid() const {
         if (!double_entry::valid() || incoming_edges().valid()) return false; 
         
-        if (spent() > sent()) return false;
+        if (sent() > spent()) return false;
         
         uint32 index = 0;
         for (const edge& e: incoming_edges()) {
