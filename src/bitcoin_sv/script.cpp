@@ -3,6 +3,7 @@
 
 #include <gigamonkey/script/machine.hpp>
 #include "script/interpreter.h"
+#include "pubkey.h"
 #include "taskcancellation.h"
 #include "streams.h"
 #include "config.h"
@@ -10,6 +11,8 @@
 
 // not in use but required by config.h dependency
 bool fRequireStandard = true;
+
+ECCVerifyHandle required_for_signature_verification{};
 
 namespace Gigamonkey::Bitcoin::interpreter {
     
