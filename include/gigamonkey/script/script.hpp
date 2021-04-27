@@ -279,6 +279,10 @@ namespace Gigamonkey::Bitcoin::interpreter {
     instruction inline instruction::op_return(bytes_view b) {
         return instruction{OP_RETURN, b};
     }
+
+    bytes_writer inline operator<<(bytes_writer w, const instruction i) {
+        return i.write(w);
+    }
     
 }
 

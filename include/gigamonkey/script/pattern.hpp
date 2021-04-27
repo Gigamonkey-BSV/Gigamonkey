@@ -302,12 +302,6 @@ namespace Gigamonkey::Bitcoin {
 }
 
 namespace Gigamonkey::Bitcoin::interpreter { 
-
-    std::ostream& operator<<(std::ostream& o, const instruction i);
-
-    inline bytes_writer operator<<(bytes_writer w, const instruction i) {
-        return i.write(w);
-    }
     
     template <typename X, typename... P>
     pattern::pattern(X x, P... p) : Pattern(std::make_shared<sequence>(x, p...)) {}

@@ -52,7 +52,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
             (const char*)(tx.data() + tx.size()), SER_NETWORK, PROTOCOL_VERSION};
         CTransaction ctx{deserialize, stream}; 
         
-        return evaluate(lock.Previous.Script, unlock, 
+        return evaluate(unlock, lock.Previous.Script, 
             TransactionSignatureChecker(&ctx, lock.Index, Amount(int64(lock.Previous.Value))));
     }
     

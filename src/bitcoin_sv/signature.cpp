@@ -52,9 +52,10 @@ namespace Gigamonkey::Bitcoin {
             CScript(Previous.Script.begin(), Previous.Script.end()), ctx, Index, SigHashType(d), 
             Amount((int64)Previous.Value));
         
-        digest<32> output;
-        std::copy(tmp.begin(), tmp.end(), output.begin());
-        return output;
+        digest<32> out;
+        std::copy(tmp.begin(), tmp.end(), out.begin());
+        
+        return out;
         
     }
 

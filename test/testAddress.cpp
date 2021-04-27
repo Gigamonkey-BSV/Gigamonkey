@@ -14,6 +14,7 @@
 namespace Gigamonkey::Bitcoin {
     
     TEST(AddressTest, TestAddresses) {
+        using namespace interpreter;
         
         // We start with a secret key. 
         secret key{secret::test, secp256k1::secret{secp256k1::coordinate{"0x00000000000000000000000000000000000000000000000000000000000101a7"}}};
@@ -54,7 +55,10 @@ namespace Gigamonkey::Bitcoin {
         redeem_pay_to_address p2pkh_compressed_redeemer(key, pubkey_compressed);
         redeem_pay_to_address p2pkh_uncompressed_redeemer(key, pubkey_uncompressed);
         
-        incomplete::transaction tx{Bitcoin::transaction::LatestVersion, list<incomplete::input>{incomplete::input{outpoint{txid{307}, 7}}}, list<output>{}, 0};
+        incomplete::transaction tx{
+            transaction::LatestVersion, 
+            list<incomplete::input>{incomplete::input{outpoint{txid{307}, 7}}}, 
+            list<output>{}, 0};
         
         signature::document document_p2pk_compressed{output_p2pk_compressed, tx, 0};
         signature::document document_p2pk_uncompressed{output_p2pk_uncompressed, tx, 0};
@@ -69,29 +73,29 @@ namespace Gigamonkey::Bitcoin {
         bytes redeem_p2pkh_compressed = p2pkh_compressed_redeemer.redeem(document_p2pk_compressed, directive);
         bytes redeem_p2pkh_uncompressed = p2pkh_uncompressed_redeemer.redeem(document_p2pk_uncompressed, directive);
         
-        EXPECT_TRUE(interpreter::evaluate(redeem_p2pk_compressed, document_p2pk_compressed).valid());
-        EXPECT_TRUE(interpreter::evaluate(redeem_p2pk_uncompressed, document_p2pk_uncompressed).valid());
+        EXPECT_TRUE(evaluate(redeem_p2pk_compressed, document_p2pk_compressed).verify());
+        EXPECT_TRUE(evaluate(redeem_p2pk_uncompressed, document_p2pk_uncompressed).verify());
         
-        EXPECT_TRUE(interpreter::evaluate(redeem_p2pkh_compressed, script_p2pkh_compressed).valid());
-        EXPECT_TRUE(interpreter::evaluate(redeem_p2pkh_uncompressed, script_p2pkh_uncompressed).valid());
+        EXPECT_TRUE(evaluate(redeem_p2pkh_compressed, document_p2pkh_compressed).verify());
+        EXPECT_TRUE(evaluate(redeem_p2pkh_uncompressed, document_p2pkh_uncompressed).verify());
         
-        EXPECT_FALSE(interpreter::evaluate(redeem_p2pk_uncompressed, script_p2pk_compressed).valid());
-        EXPECT_FALSE(interpreter::evaluate(redeem_p2pk_compressed, script_p2pk_uncompressed).valid());
+        EXPECT_FALSE(evaluate(redeem_p2pk_uncompressed, document_p2pk_compressed).verify());
+        EXPECT_FALSE(evaluate(redeem_p2pk_compressed, document_p2pk_uncompressed).verify());
         
-        EXPECT_FALSE(interpreter::evaluate(redeem_p2pkh_uncompressed, script_p2pkh_compressed).valid());
-        EXPECT_FALSE(interpreter::evaluate(redeem_p2pkh_compressed, script_p2pkh_uncompressed).valid());
+        EXPECT_FALSE(evaluate(redeem_p2pkh_uncompressed, document_p2pkh_compressed).verify());
+        EXPECT_FALSE(evaluate(redeem_p2pkh_compressed, document_p2pkh_uncompressed).verify());
         
-        EXPECT_FALSE(interpreter::evaluate(redeem_p2pkh_compressed, script_p2pk_compressed).valid());
-        EXPECT_FALSE(interpreter::evaluate(redeem_p2pkh_uncompressed, script_p2pk_uncompressed).valid());
+        EXPECT_FALSE(evaluate(redeem_p2pkh_compressed, document_p2pk_compressed).verify());
+        EXPECT_FALSE(evaluate(redeem_p2pkh_uncompressed, document_p2pk_uncompressed).verify());
         
-        EXPECT_FALSE(interpreter::evaluate(redeem_p2pk_compressed, script_p2pkh_compressed).valid());
-        EXPECT_FALSE(interpreter::evaluate(redeem_p2pk_uncompressed, script_p2pkh_uncompressed).valid());
+        EXPECT_FALSE(evaluate(redeem_p2pk_compressed, document_p2pkh_compressed).verify());
+        EXPECT_FALSE(evaluate(redeem_p2pk_uncompressed, document_p2pkh_uncompressed).verify());
         
-        EXPECT_FALSE(interpreter::evaluate(redeem_p2pkh_compressed, script_p2pk_uncompressed).valid());
-        EXPECT_FALSE(interpreter::evaluate(redeem_p2pkh_uncompressed, script_p2pk_compressed).valid());
+        EXPECT_FALSE(evaluate(redeem_p2pkh_compressed, document_p2pk_uncompressed).verify());
+        EXPECT_FALSE(evaluate(redeem_p2pkh_uncompressed, document_p2pk_compressed).verify());
         
-        EXPECT_FALSE(interpreter::evaluate(redeem_p2pk_compressed, script_p2pkh_uncompressed).valid());
-        EXPECT_FALSE(interpreter::evaluate(redeem_p2pk_uncompressed, script_p2pkh_compressed).valid());
+        EXPECT_FALSE(evaluate(redeem_p2pk_compressed, document_p2pkh_uncompressed).verify());
+        EXPECT_FALSE(evaluate(redeem_p2pk_uncompressed, document_p2pkh_compressed).verify());
         
     }
 
