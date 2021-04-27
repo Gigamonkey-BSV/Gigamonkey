@@ -30,7 +30,7 @@ namespace Gigamonkey::Bitcoin {
         return Bitcoin::transaction{Version, inputs, outputs, Locktime}.write();
     }
     
-    incomplete::transaction read(bytes_view b) {
+    incomplete::transaction incomplete::transaction::read(bytes_view b) {
         auto tx = Bitcoin::transaction::read(b);
         return incomplete::transaction{tx.Version, 
             data::for_each([](const Bitcoin::input& in) -> incomplete::input {
