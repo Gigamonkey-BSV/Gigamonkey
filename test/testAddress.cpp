@@ -70,8 +70,8 @@ namespace Gigamonkey::Bitcoin {
         bytes redeem_p2pk_compressed = p2pk_redeemer.redeem(document_p2pk_compressed, directive);
         bytes redeem_p2pk_uncompressed = p2pk_redeemer.redeem(document_p2pk_uncompressed, directive);
         
-        bytes redeem_p2pkh_compressed = p2pkh_compressed_redeemer.redeem(document_p2pk_compressed, directive);
-        bytes redeem_p2pkh_uncompressed = p2pkh_uncompressed_redeemer.redeem(document_p2pk_uncompressed, directive);
+        bytes redeem_p2pkh_compressed = p2pkh_compressed_redeemer.redeem(document_p2pkh_compressed, directive);
+        bytes redeem_p2pkh_uncompressed = p2pkh_uncompressed_redeemer.redeem(document_p2pkh_uncompressed, directive);
         
         EXPECT_TRUE(evaluate(redeem_p2pk_compressed, document_p2pk_compressed).verify());
         EXPECT_TRUE(evaluate(redeem_p2pk_uncompressed, document_p2pk_uncompressed).verify());
