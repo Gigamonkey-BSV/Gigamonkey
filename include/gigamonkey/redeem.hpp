@@ -17,6 +17,8 @@ namespace Gigamonkey::Bitcoin {
         virtual bytes redeem(const signature::document& document, sighash::directive d) const = 0;
         virtual uint32 expected_size() const = 0;
         virtual uint32 sigops() const = 0;
+        
+        virtual ~redeemer() {}
     };
     
     struct spendable : ledger::prevout {

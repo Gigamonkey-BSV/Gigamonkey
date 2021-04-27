@@ -1,15 +1,16 @@
 // Copyright (c) 2021 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#ifndef GIGAMONKEY_SCRIPT_DEBUGGER
-#define GIGAMONKEY_SCRIPT_DEBUGGER
+#ifndef GIGAMONKEY_SCRIPT_MACHINE
+#define GIGAMONKEY_SCRIPT_MACHINE
 
 #include <gigamonkey/script/script.hpp>
 #include <script/script_flags.h>
 #include <policy/policy.h>
 
-namespace Gigamonkey::Bitcoin { 
+namespace Gigamonkey::Bitcoin::interpreter { 
     
+    // a Bitcoin script interpreter that can be advanced step-by-step.
     struct machine {
         
         struct state {

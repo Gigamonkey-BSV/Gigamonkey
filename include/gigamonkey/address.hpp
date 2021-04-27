@@ -4,54 +4,15 @@
 #ifndef GIGAMONKEY_ADDRESS
 #define GIGAMONKEY_ADDRESS
 
-#include "hash.hpp"
-#include "secp256k1.hpp"
+#include "signature.hpp"
 #include <data/encoding/base58.hpp>
 
-namespace Gigamonkey::base58 {
-
-    // A base 58 check encoded string. 
-    // The first byte is a version byte. 
-    // The rest is the payload. 
-
-    // In base 58 check encoding, each initial
-    // zero bytes are written as a '1'. The rest
-    // is encoded as a base 58 number. 
-    struct check : bytes {
-
-        bool valid() const;
-
-        byte version() const;
-
-        bytes_view payload() const;
-
-        bytes_view full_payload() const;
-
-        static check decode(string_view);
-        std::string encode() const;
-
-        check(byte version, bytes data);
-        check(string_view s);
-        check(bytes p);
-    private:
-        check();
-
-    };
-
-}
-
 namespace Gigamonkey::Bitcoin {
-
-    Gigamonkey::checksum checksum(bytes_view b);
-
-    inline bytes append_checksum(bytes_view b) {
-        bytes checked(b.size() + 4);
-        bytes_writer(checked.begin(), checked.end()) << b << checksum(b);
-        return checked;
-    }
-
-    bytes_view remove_checksum(bytes_view b);
-
+    
+    struct pubkey;
+    
+    // A Bitcoin address is a hash160 digest of a public key 
+    // with a human-readable format designed on it. 
     struct address {
         enum type : byte {
             main = 0x00,
@@ -69,7 +30,7 @@ namespace Gigamonkey::Bitcoin {
 
         explicit address(string_view s);
 
-        address(type p, const pubkey& pub);
+        address(type p, const secp256k1::pubkey& pub);
 
         bool operator==(const address& a) const;
         bool operator!=(const address& a) const;
@@ -91,6 +52,111 @@ namespace Gigamonkey::Bitcoin {
 
     inline std::ostream& operator<<(std::ostream& o, const address& a) {
         return o << std::string(a);
+    }
+    
+    // a Bitcoin pubkey is the same as a secp256k1 pubkey except 
+    // that we have a standard human representation, which is
+    // just a hex string. 
+    struct pubkey : secp256k1::pubkey {
+        using secp256k1::pubkey::pubkey;
+        pubkey(const secp256k1::pubkey &p) : secp256k1::pubkey{p} {}
+        
+        explicit pubkey(string_view s) : secp256k1::pubkey{} {
+            ptr<bytes> hex = encoding::hex::read(s);
+            if (hex != nullptr) {
+                this->resize(hex->size());
+                std::copy(hex->begin(), hex->end(), this->begin());
+            };
+        }
+        
+        Bitcoin::address address(Bitcoin::address::type) const;
+        
+        explicit operator string() const;
+        
+        bool verify(const signature &x, const signature::document& document, sighash::directive d) const;
+    };
+
+    // A Bitcoin checksum takes the hash256 value of a string
+    // and appends the last 4 bytes of the result. 
+    Gigamonkey::checksum checksum(bytes_view b);
+
+    inline bytes append_checksum(bytes_view b) {
+        bytes checked(b.size() + 4);
+        bytes_writer(checked.begin(), checked.end()) << b << checksum(b);
+        return checked;
+    }
+
+    bytes_view remove_checksum(bytes_view b);
+
+}
+
+namespace Gigamonkey::base58 {
+
+    // A base 58 check encoded string. 
+    // The first byte is a version byte. 
+    // The rest is the payload. 
+
+    // In base 58 check encoding, each initial
+    // zero bytes are written as a '1'. The rest
+    // is encoded as a base 58 number. 
+    struct check : bytes {
+
+        bool valid() const;
+
+        byte version() const;
+
+        bytes_view payload() const;
+
+        static check decode(string_view);
+        std::string encode() const;
+
+        check(byte version, bytes data);
+        check(string_view s);
+        check(bytes p);
+    private:
+        check();
+
+    };
+
+}
+
+namespace Gigamonkey::Bitcoin {
+
+    inline address::address() : Prefix{}, Digest{} {}
+    inline address::address(type p, const digest& d) : Prefix{p}, Digest{d} {}
+
+    inline address::address(type p, const secp256k1::pubkey& pub) : address{p, hash160(pub)} {}
+
+    bool inline address::operator==(const address& a) const {
+        return Prefix == a.Prefix && Digest == a.Digest;
+    }
+
+    bool inline address::operator!=(const address& a) const {
+        return !operator==(a);
+    }
+
+    string inline address::write(char prefix, const address::digest& d) {
+        return base58::check{byte(prefix), bytes_view{d}}.encode();
+    }
+
+    string inline address::write() const {
+        return write(Prefix, Digest);
+    }
+
+    inline address::operator string() const {
+        return write();
+    }
+
+    bool inline address::valid_prefix(type p) {
+        return p == main || p == test;
+    }
+
+    bool inline address::valid() const {
+        return Digest.valid() && valid_prefix(Prefix);
+    }
+    
+    inline pubkey::operator string() const {
+        return encoding::hex::write(*this);
     }
 
 }
@@ -116,43 +182,6 @@ namespace Gigamonkey::base58 {
 
     inline check::check() : bytes{} {};
     inline check::check(bytes p) : bytes{p} {}
-
-}
-
-namespace Gigamonkey::Bitcoin {
-
-    inline address::address() : Prefix{}, Digest{} {}
-    inline address::address(type p, const digest& d) : Prefix{p}, Digest{d} {}
-
-    inline address::address(type p, const pubkey& pub) : address{p, pub.hash()} {}
-
-    inline bool address::operator==(const address& a) const {
-        return Prefix == a.Prefix && Digest == a.Digest;
-    }
-
-    inline bool address::operator!=(const address& a) const {
-        return !operator==(a);
-    }
-
-    inline string address::write(char prefix, const address::digest& d) {
-        return base58::check{byte(prefix), bytes_view{d}}.encode();
-    }
-
-    inline string address::write() const {
-        return write(Prefix, Digest);
-    }
-
-    inline address::operator string() const {
-        return write();
-    }
-
-    inline bool address::valid_prefix(type p) {
-        return p == main || p == test;
-    }
-
-    inline bool address::valid() const {
-        return Digest.valid() && valid_prefix(Prefix);
-    }
 
 }
 

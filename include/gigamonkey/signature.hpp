@@ -80,6 +80,8 @@ namespace Gigamonkey::Bitcoin {
         return o << "signature{" << data::encoding::hex::write(x.Data) << "}";
     }
     
+    // incomplete types are used to construct the signature hash in Bitcoin transactions. 
+    // this is necessary because the input script is not known before it is created.
     namespace incomplete {
         
         struct input {

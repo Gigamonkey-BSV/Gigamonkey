@@ -122,11 +122,11 @@ namespace Gigamonkey::Bitcoin {
     }
     
     bool input::valid() const {
-        return decompile(Script) != program{};
+        return interpreter::decompile(Script) != interpreter::program{};
     }
     
     bool output::valid() const {
-        return Value < 2100000000000000 && decompile(Script) != program{};
+        return Value < 2100000000000000 && interpreter::decompile(Script) != interpreter::program{};
     }
     
     size_t transaction::serialized_size() const {

@@ -102,8 +102,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     inline pubkey secret::to_public() const {
-        if (Compressed) return Secret.to_public().compress();
-        return Secret.to_public().decompress();
+        return pubkey{Compressed ? Secret.to_public().compress() : Secret.to_public().decompress()};
     }
     
     inline Bitcoin::address secret::address() const {

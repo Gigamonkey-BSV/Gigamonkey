@@ -3,7 +3,7 @@
 #include <data/encoding/halves.hpp>
 #include <iostream>
 
-namespace Gigamonkey::Bitcoin {
+namespace Gigamonkey::Bitcoin::interpreter {
     // The Bitcoin script pattern which takes a target in 
     // exponential format and converts it to expanded format. 
     const program expand_target = program{
@@ -27,6 +27,7 @@ namespace Gigamonkey::Bitcoin {
 namespace Gigamonkey::Boost {
     
     input_script input_script::read(bytes b) {
+        using namespace Bitcoin::interpreter;
         using namespace Bitcoin;
         input_script x{};
         bytes MinerPubkey;
@@ -44,8 +45,8 @@ namespace Gigamonkey::Boost {
             push_size{4, Timestamp}, 
             push_size{8, ExtraNonce2}, 
             push_size{4, ExtraNonce1}, 
-            Bitcoin::optional{push_size{4, GeneralPurposeBits}}, 
-            Bitcoin::optional{push_size{20, MinerAddress}}}.match(b)) return {};
+            interpreter::optional{push_size{4, GeneralPurposeBits}}, 
+            interpreter::optional{push_size{20, MinerAddress}}}.match(b)) return {};
         
         x.Type = MinerAddress.size() == 0 ? Boost::contract : Boost::bounty;
         
@@ -59,11 +60,11 @@ namespace Gigamonkey::Boost {
             MinerAddress.end(), 
             x.MinerAddress.begin());
         
-        x.Pubkey.Value.resize(MinerPubkey.size());
+        x.Pubkey.resize(MinerPubkey.size());
         std::copy(
             MinerPubkey.begin(), 
             MinerPubkey.end(), 
-            x.Pubkey.Value.begin());
+            x.Pubkey.begin());
         
         std::copy(
             Timestamp.begin(), 
@@ -89,6 +90,7 @@ namespace Gigamonkey::Boost {
     }
     
     output_script output_script::read(bytes b) {
+        using namespace Bitcoin::interpreter;
         using namespace Bitcoin;
         output_script x{};
         bytes Category{};
@@ -99,7 +101,7 @@ namespace Gigamonkey::Boost {
         
         pattern output_script_pattern_no_asicboost = pattern{
             push{bytes{0x62, 0x6F, 0x6F, 0x73, 0x74, 0x70, 0x6F, 0x77}}, OP_DROP, 
-            Bitcoin::optional{push_size{20, MinerAddress}},
+            interpreter::optional{push_size{20, MinerAddress}},
             push_size{4, Category},
             push_size{32, Content},
             push_size{4, Target},
@@ -130,7 +132,7 @@ namespace Gigamonkey::Boost {
             
         pattern output_script_pattern = pattern{
             push{bytes{0x62, 0x6F, 0x6F, 0x73, 0x74, 0x70, 0x6F, 0x77}}, OP_DROP, 
-            Bitcoin::optional{push_size{20, MinerAddress}},
+            interpreter::optional{push_size{20, MinerAddress}},
             push_size{4, Category},
             push_size{32, Content},
             push_size{4, Target},
@@ -201,10 +203,11 @@ namespace Gigamonkey::Boost {
         return x;
     }
     
-    Bitcoin::program input_script::program() const {
+    Bitcoin::interpreter::program input_script::program() const {
+        using namespace Bitcoin::interpreter;
         using namespace Bitcoin;
         if (Type == Boost::invalid) return {};
-        Bitcoin::program p{
+        interpreter::program p{
             push_data(bytes_view(Signature)), 
             push_data(Pubkey),
             push_data(Nonce),
@@ -217,7 +220,7 @@ namespace Gigamonkey::Boost {
     }
     
     script output_script::write() const {
-        using namespace Bitcoin;
+        using namespace Bitcoin::interpreter;
         if (Type == Boost::invalid) return {};
         program boost_output_script = program{push_hex("626F6F7374706F77"), OP_DROP}; // "boostpow"
         
@@ -315,7 +318,7 @@ namespace Gigamonkey::Boost {
         if (t == Boost::invalid || !x.valid() || (!category_mask && x.Share.Bits)) return in;
         
         in = t == Boost::bounty ? 
-            input_script::bounty(signature, pubkey, x.Share.Nonce, x.Share.Timestamp, x.Share.ExtraNonce2, x.ExtraNonce1, pubkey.hash()) : 
+            input_script::bounty(signature, pubkey, x.Share.Nonce, x.Share.Timestamp, x.Share.ExtraNonce2, x.ExtraNonce1, hash160(pubkey)) : 
             input_script::contract(signature, pubkey, x.Share.Nonce, x.Share.Timestamp, x.Share.ExtraNonce2, x.ExtraNonce1);
         
         if (category_mask) in.GeneralPurposeBits = x.Share.Bits ? *x.Share.Bits : int32_little{0};

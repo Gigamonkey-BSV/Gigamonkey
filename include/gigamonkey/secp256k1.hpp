@@ -46,23 +46,39 @@ namespace Gigamonkey::secp256k1 {
         coordinate Y;
     };
     
-    class secret;
-    class pubkey;
+    bool operator==(const point &, const point &);
+    bool operator!=(const point &, const point &);
     
-    class signature : public bytes {
-        friend class secret;
-        
-    public:
-        constexpr static size_t MaxSignatureSize = 72;
-        
+    struct secret;
+    struct pubkey;
+    
+    bool operator==(const secret &, const secret &);
+    bool operator!=(const secret &, const secret &);
+    
+    bool operator==(const pubkey &, const pubkey &);
+    bool operator!=(const pubkey &, const pubkey &);
+    
+    secret operator-(const secret &);
+    secret operator+(const secret &, const secret &);
+    secret operator*(const secret &, const secret &);
+    
+    pubkey operator-(const pubkey &);
+    pubkey operator+(const pubkey &, const pubkey &);
+    pubkey operator+(const pubkey &, const secret &);
+    pubkey operator*(const pubkey &, const secret &);
+    
+    struct signature : public bytes {
         signature() : bytes(MaxSignatureSize) {}
+        
+        constexpr static size_t MaxSignatureSize = 72;
         
         secp256k1::point point() const;
     };
     
     using digest = digest256;
     
-    class secret final : public nonzero<coordinate> {
+    struct secret final : public nonzero<coordinate> {
+        
         static bool valid(bytes_view);
         static bytes to_public_compressed(bytes_view);
         static bytes to_public_uncompressed(bytes_view);
@@ -71,7 +87,6 @@ namespace Gigamonkey::secp256k1 {
         static coordinate plus(const coordinate&, bytes_view);
         static coordinate times(const coordinate&, bytes_view);
         
-    public:
         constexpr static size_t Size = 32;
         
         secret() : nonzero<coordinate>{} {}
@@ -79,19 +94,14 @@ namespace Gigamonkey::secp256k1 {
         
         bool valid() const;
         
-        bool operator==(const secret& s) const;
-        bool operator!=(const secret& s) const;
-        
         signature sign(const digest& d) const;
         
         pubkey to_public() const;
         
-        secret operator-() const;
-        secret operator+(const secret& s) const;
-        secret operator*(const secret& s) const;
     };
     
-    class pubkey {
+    struct pubkey : bytes {
+        
         static bool valid(bytes_view);
         static bool verify(bytes_view pubkey, const digest&, const signature&);
         static bytes compress(bytes_view);
@@ -105,29 +115,14 @@ namespace Gigamonkey::secp256k1 {
             return size == CompressedPubkeySize || size == UncompressedPubkeySize;
         }
         
-    public:
-        bytes Value;
-        
-        pubkey() : Value{} {}
-        explicit pubkey(bytes_view v) : Value{v} {}
-        
-        explicit pubkey(string_view s) : Value{} {
-            ptr<bytes> hex = encoding::hex::read(s);
-            if (hex != nullptr) Value = *hex;
-        }
+        pubkey() : bytes{} {}
+        explicit pubkey(bytes_view v) : bytes{v} {}
         
         bool valid() const;
         
-        bool operator==(const pubkey& p) const;
-        bool operator!=(const pubkey& p) const;
-        
         bool verify(const digest& d, const signature& s) const;
         
-        size_t size() const;
-        
         pubkey_type type() const;
-        
-        operator bytes_view() const;
         
         coordinate x() const;
         coordinate y() const;
@@ -136,195 +131,162 @@ namespace Gigamonkey::secp256k1 {
         
         pubkey compress() const;
         pubkey decompress() const;
-        
-        pubkey operator-() const;
-        pubkey operator+(const pubkey& p) const;
-        pubkey operator+(const secret& s) const;
-        pubkey operator*(const secret& s) const;
-        
-        bytes_writer write(bytes_writer w) const;
-        
-        digest160 hash() const;
-        
-        explicit operator string() const;
     };
     
-}
-
-namespace Gigamonkey::Bitcoin {
-    // a Bitcoin pubkey is just a secp256k1 pubkey. 
-    // Secret keys are different. 
-    using pubkey = secp256k1::pubkey;
-}
-
-namespace Gigamonkey::secp256k1 {
+    bool inline operator==(const point &a, const point &b) {
+        return a.X == b.X && a.Y == b.Y;
+    }
     
-    inline std::ostream& operator<<(std::ostream& o, const secret& s) {
+    bool inline operator!=(const point &a, const point &b) {
+        return !(a == b);
+    }
+    
+    std::ostream inline &operator<<(std::ostream &o, const secret &s) {
         return o << "secret{" << s.Value << "}";
     }
 
-    inline std::ostream& operator<<(std::ostream& o, const pubkey& p) {
-        return o << "pubkey{" << data::encoding::hexidecimal::write(p.Value, data::endian::little) << "}";
+    std::ostream inline &operator<<(std::ostream &o, const pubkey &p) {
+        return o << "pubkey{" << data::encoding::hexidecimal::write(p, data::endian::little) << "}";
     }
 
-    inline std::ostream& operator<<(std::ostream& o, const signature& p) {
-        return o << "pubkey{" << data::encoding::hexidecimal::write(data::bytes_view(p), data::endian::little) << "}";
+    std::ostream inline &operator<<(std::ostream &o, const signature &p) {
+        return o << "signature{" << data::encoding::hexidecimal::write(p, data::endian::little) << "}";
     }
 
-    inline Gigamonkey::bytes_writer operator<<(bytes_writer w, const secret& x) {
+    Gigamonkey::bytes_writer inline operator<<(bytes_writer w, const secret& x) {
         return w << x.Value;
     }
 
-    inline Gigamonkey::bytes_reader operator>>(bytes_reader r, secret& x) {
+    Gigamonkey::bytes_reader inline operator>>(bytes_reader r, secret& x) {
         return r >> x.Value;
     }
     
-    inline bool valid(const secret& s) {
+    bool inline valid(const secret& s) {
         return s.valid();
     }
     
-    inline signature sign(const secret& s, const digest& d) {
+    signature inline sign(const secret& s, const digest& d) {
         return s.sign(d);
     }
     
-    inline secret negate(const secret& s) {
+    secret inline negate(const secret& s) {
         return -s;
     }
     
-    inline secret plus(const secret& a, const secret& b) {
+    secret inline plus(const secret& a, const secret& b) {
         return a + b;
     }
     
-    inline pubkey to_public(const secret& s) {
+    pubkey inline to_public(const secret& s) {
         return s.to_public();
     }
     
-    inline bool valid(const pubkey& p) {
+    bool inline valid(const pubkey& p) {
         return p.valid();
     }
     
-    inline bool verify(const pubkey& p, const digest& d, const signature& s) {
+    bool inline verify(const pubkey& p, const digest& d, const signature& s) {
         return p.verify(d, s);
     }
     
-    inline pubkey negate(const pubkey& p) {
+    pubkey inline negate(const pubkey& p) {
         return -p;
     }
     
-    inline pubkey plus(const pubkey& a, const pubkey& b) {
+    pubkey inline plus(const pubkey& a, const pubkey& b) {
         return a + b;
     }
     
-    inline pubkey plus(const pubkey& a, const secret& b) {
+    pubkey inline plus(const pubkey& a, const secret& b) {
         return a + b;
     }
     
-    inline secret times(const secret& a, const secret& b) {
+    secret inline times(const secret& a, const secret& b) {
         return a * b;
     }
     
-    inline pubkey times(const pubkey& a, const secret& b) {
+    pubkey inline times(const pubkey& a, const secret& b) {
         return a * b;
     }
         
-    inline bool secret::valid() const {
+    bool inline secret::valid() const {
         return nonzero<coordinate>::valid();
     }
     
-    inline bool secret::operator==(const secret& s) const {
-        return Value == s.Value;
+    bool inline operator==(const secret &a, const secret &b) {
+        return a.Value == b.Value;
     }
     
-    inline bool secret::operator!=(const secret& s) const {
-        return Value != s.Value;
+    bool inline operator!=(const secret &a, const secret &b) {
+        return a.Value != b.Value;
     }
     
-    inline signature secret::sign(const digest& d) const {
+    signature inline secret::sign(const digest& d) const {
         return sign(Value, d);
     }
     
-    inline pubkey secret::to_public() const {
+    pubkey inline secret::to_public() const {
         return pubkey{to_public_compressed(bytes_view(Value))};
     }
     
-    inline secret secret::operator-() const {
-        return secret{negate(Value)};
+    secret inline operator-(const secret &s) {
+        return secret{secret::negate(s)};
     }
     
-    inline secret secret::operator+(const secret& s) const {
-        return secret{plus(Value, s.Value)};
+    secret inline operator+(const secret& a, const secret& b) {
+        return secret{secret::plus(a.Value, b.Value)};
     }
     
-    inline secret secret::operator*(const secret& s) const {
-        return secret{times(Value, s.Value)};
-    }
-        
-    inline bool pubkey::valid() const {
-        return valid_size(Value.size()) && valid(Value);
+    secret inline operator*(const secret& a, const secret& b) {
+        return secret{secret::times(a.Value, b.Value)};
     }
     
-    inline bool pubkey::operator==(const pubkey& p) const {
-        return Value == p.Value;
+    bool inline pubkey::valid() const {
+        return valid_size(bytes::size()) && valid(*this);
     }
     
-    inline bool pubkey::operator!=(const pubkey& p) const {
-        return Value != p.Value;
+    bool inline operator==(const pubkey &a, const pubkey &b) {
+        return static_cast<bytes>(a) == static_cast<bytes>(b);
     }
     
-    inline bool pubkey::verify(const digest& d, const signature& s) const {
-        return verify(Value, d, s);
+    bool inline operator!=(const pubkey &a, const pubkey &b) {
+        return static_cast<bytes>(a) != static_cast<bytes>(b);
     }
     
-    inline size_t pubkey::size() const {
-        return Value.size();
+    bool inline pubkey::verify(const digest& d, const signature& s) const {
+        return verify(*this, d, s);
     }
     
-    inline pubkey_type pubkey::type() const {
-        return size() == 0 ? invalid : pubkey_type{Value[0]};
+    pubkey_type inline pubkey::type() const {
+        return size() == 0 ? invalid : pubkey_type{bytes::operator[](0)};
     }
     
-    inline pubkey::operator bytes_view() const {
-        return Value;
-    }
-    
-    inline point pubkey::point() const {
+    point inline pubkey::point() const {
         return {x(), y()};
     }
     
-    inline pubkey pubkey::compress() const {
-        return pubkey(compress(Value));
+    pubkey inline pubkey::compress() const {
+        return pubkey(compress(*this));
     }
     
-    inline pubkey pubkey::decompress() const {
-        return pubkey(decompress(Value));
+    pubkey inline pubkey::decompress() const {
+        return pubkey(decompress(*this));
     }
     
-    inline pubkey pubkey::operator-() const {
-        return pubkey(negate(Value));
+    pubkey inline operator-(const pubkey &p) {
+        return pubkey(pubkey::negate(p));
     }
     
-    inline pubkey pubkey::operator+(const pubkey& p) const {
-        return pubkey{plus_pubkey(Value, p.Value)};
+    pubkey inline operator+(const pubkey &a, const pubkey &b) {
+        return pubkey{pubkey::plus_pubkey(a, b)};
     }
     
-    inline pubkey pubkey::operator+(const secret& s) const {
-        return pubkey{plus_secret(Value, s.Value)};
+    pubkey inline operator+(const pubkey &a, const secret &b) {
+        return pubkey{pubkey::plus_secret(a, b.Value)};
     }
     
-    inline pubkey pubkey::operator*(const secret& s) const {
-        return pubkey{times(Value, s.Value)};
-    }
-    
-    inline bytes_writer pubkey::write(bytes_writer w) const {
-        return w << Value;
-    }
-    
-    inline pubkey::operator string() const {
-        return encoding::hex::write(Value);
-    }
-    
-    inline digest160 pubkey::hash() const {
-        return Bitcoin::hash160(*this);
+    pubkey inline operator*(const pubkey &a, const secret &b) {
+        return pubkey{pubkey::times(a, b.Value)};
     }
 }
 

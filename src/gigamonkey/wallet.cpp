@@ -20,7 +20,7 @@ namespace Gigamonkey::Bitcoin {
         uint64 Standard;
         
         void count_output_script(const script& x) {
-            (is_op_return(x) ? Data : Standard) += x.size();
+            (interpreter::is_op_return(x) ? Data : Standard) += x.size();
             Standard += writer::var_int_size(x.size()) + 4;
         }
         

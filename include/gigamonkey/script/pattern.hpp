@@ -6,7 +6,7 @@
 
 #include <gigamonkey/script/script.hpp>
 
-namespace Gigamonkey::Bitcoin { 
+namespace Gigamonkey::Bitcoin::interpreter { 
     
     class push;
     struct optional;
@@ -202,14 +202,20 @@ namespace Gigamonkey::Bitcoin {
         virtual bytes_view scan(bytes_view) const final override;
     };
     
+}
+
+namespace Gigamonkey::Bitcoin {
+    
     // A pattern that matches a pubkey and grabs the value of that pubkey.
-    inline pattern pubkey_pattern(bytes& pubkey) {
+    interpreter::pattern inline pubkey_pattern(bytes& pubkey) {
+        using namespace interpreter;
         return pattern{alternatives{push_size{33, pubkey}, push_size{65, pubkey}}};
     }
     
     struct op_return_data {
-        static Bitcoin::pattern pattern() {
-            static Bitcoin::pattern Pattern{optional{OP_FALSE}, OP_RETURN, repeated{push{}, 0}};
+        static interpreter::pattern pattern() {
+            using namespace interpreter;
+            static interpreter::pattern Pattern{optional{OP_FALSE}, OP_RETURN, repeated{push{}, 0}};
             return Pattern;
         }
         
@@ -228,11 +234,12 @@ namespace Gigamonkey::Bitcoin {
     };
     
     struct pay_to_pubkey {
-        static Bitcoin::pattern pattern(bytes& pubkey) {
+        static interpreter::pattern pattern(bytes& pubkey) {
             return {pubkey_pattern(pubkey), OP_CHECKSIG};
         }
         
         static bytes script(pubkey p) {
+            using namespace interpreter;
             return compile(program{push_data(p), OP_CHECKSIG});
         }
         
@@ -247,22 +254,26 @@ namespace Gigamonkey::Bitcoin {
         }
         
         pay_to_pubkey(bytes_view script) : Pubkey{} {
+            using namespace interpreter;
             pubkey p;
-            if (!pattern(p.Value).match(script)) return;
+            if (!pattern(p).match(script)) return;
             Pubkey = p;
         }
         
         static bytes redeem(const signature& s) {
+            using namespace interpreter;
             return compile(push_data(s));
         }
     };
     
     struct pay_to_address {
-        static Bitcoin::pattern pattern(bytes& address) {
+        static interpreter::pattern pattern(bytes& address) {
+            using namespace interpreter;
             return {OP_DUP, OP_HASH160, push_size{20, address}, OP_EQUALVERIFY, OP_CHECKSIG};
         }
         
         static bytes script(const digest160& a) {
+            using namespace interpreter;
             return compile(program{OP_DUP, OP_HASH160, bytes_view(a), OP_EQUALVERIFY, OP_CHECKSIG});
         }
         
@@ -277,15 +288,20 @@ namespace Gigamonkey::Bitcoin {
         }
         
         pay_to_address(bytes_view script) : Address{} {
+            using namespace interpreter;
             bytes addr{20};
             if (!pattern(addr).match(script)) return;
             std::copy(addr.begin(), addr.end(), Address.Value.begin());
         }
         
         static bytes redeem(const signature& s, const pubkey& p) {
+            using namespace interpreter;
             return compile(program{} << push_data(s) << push_data(p));
         }
     };
+}
+
+namespace Gigamonkey::Bitcoin::interpreter { 
 
     std::ostream& operator<<(std::ostream& o, const instruction i);
 

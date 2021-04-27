@@ -219,7 +219,7 @@ namespace Gigamonkey {
             
             bool valid() const;
             
-            Bitcoin::program program() const; 
+            Bitcoin::interpreter::program program() const; 
             
             script write() const;
             
@@ -422,11 +422,11 @@ namespace Gigamonkey {
         };
         
         struct output : output_script {
-            satoshi Value;
+            Bitcoin::satoshi Value;
             digest256 ID;
             
             output() : output_script{}, Value{-1}, ID{} {}
-            output(const output_script& x, satoshi v) : output_script{x}, Value{v}, ID{output_script::hash()} {}
+            output(const output_script& x, Bitcoin::satoshi v) : output_script{x}, Value{v}, ID{output_script::hash()} {}
             output(const Bitcoin::output& b): output_script{Boost::output_script::read(b.Script)}, Value{b.Value}, ID{output_script::hash()} {}
             
             bool valid() const {
@@ -697,7 +697,7 @@ namespace Gigamonkey {
         }
         
         script inline input_script::write() const {
-            return Bitcoin::compile(program());
+            return Bitcoin::interpreter::compile(program());
         }
         
         size_t inline input_script::serialized_size() const {

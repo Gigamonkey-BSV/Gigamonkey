@@ -32,7 +32,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
     secret derive(const secret& sec, uint32 child) {
         secret derived;
         derived.Depth = sec.Depth + 1;
-        derived.Parent = fp(sec.Secret.to_public().hash());
+        derived.Parent = fp(hash160(sec.Secret.to_public()));
         derived.Sequence = child;
         derived.Net = sec.Net;
 
@@ -46,8 +46,8 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         } else {
             pubkey pub = sec.to_public();
             data_bytes.clear();
-            for (unsigned char &itr : pub.Pubkey.Value) {
-                data_bytes.push_back(itr);
+            for (byte &b : pub.Pubkey) {
+                data_bytes.push_back(b);
             }
         }
 
@@ -64,6 +64,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         } catch (const CryptoPP::Exception &e) {
             std::cerr << e.what() << std::endl;
         }
+        
         bytes left;
         for (int i = 0; i < 32; i++)
             left.push_back(hmaced[i]);
@@ -103,7 +104,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
     pubkey derive(const pubkey &pub, uint32 child) {
         pubkey derived;
         derived.Depth = pub.Depth + 1;
-        derived.Parent = fp(pub.Pubkey.hash());
+        derived.Parent = fp(hash160(pub.Pubkey));
         derived.Sequence = child;
         derived.Net = pub.Net;
 
@@ -114,10 +115,9 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         if (is_hardened)
             return pubkey();
         data_bytes.clear();
-        for (auto &itr : pub.Pubkey.Value) {
-            data_bytes.push_back(itr);
+        for (auto &b : pub.Pubkey) {
+            data_bytes.push_back(b);
         }
-
 
         data_bytes.push_back(child >> 24);
         data_bytes.push_back((child >> 16) & 0xff);
@@ -303,8 +303,8 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         while (itr2 != ChainCode.end()) {
             output.push_back(*itr2++);
         }
-        auto itr = Pubkey.Value.begin();
-        while (itr != Pubkey.Value.end()) {
+        auto itr = Pubkey.begin();
+        while (itr != Pubkey.end()) {
             output.push_back(*itr++);
         }
         Gigamonkey::base58::check outputString(0x04, output);

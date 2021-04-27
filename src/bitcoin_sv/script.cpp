@@ -11,7 +11,7 @@
 // not in use but required by config.h dependency
 bool fRequireStandard = true;
 
-namespace Gigamonkey::Bitcoin {
+namespace Gigamonkey::Bitcoin::interpreter {
     
     class DummySignatureChecker : public BaseSignatureChecker {
     public:
@@ -24,8 +24,8 @@ namespace Gigamonkey::Bitcoin {
         }
     };
     
-    evaluated evaluate_script(const script& unlock, const script& lock, const BaseSignatureChecker& checker) {
-        evaluated Response;
+    result evaluate(const script& unlock, const script& lock, const BaseSignatureChecker& checker) {
+        result Response;
         std::optional<bool> response = VerifyScript(
             GlobalConfig::GetConfig(), // Config. 
             false, // true for consensus rules, false for policy rules.  
@@ -41,18 +41,18 @@ namespace Gigamonkey::Bitcoin {
         return Response;
     }
     
-    evaluated evaluate_script(const script& unlock, const script& lock) {
-        return evaluate_script(unlock, lock, DummySignatureChecker{});
+    result evaluate(const script& unlock, const script& lock) {
+        return evaluate(unlock, lock, DummySignatureChecker{});
     }
     
-    evaluated evaluate_script(const script& unlock, const signature::document& lock) {
+    result evaluate(const script& unlock, const signature::document& lock) {
         bytes tx = lock.Transaction.write();
         
         CDataStream stream{(const char*)(tx.data()), 
             (const char*)(tx.data() + tx.size()), SER_NETWORK, PROTOCOL_VERSION};
         CTransaction ctx{deserialize, stream}; 
         
-        return evaluate_script(lock.Previous.Script, unlock, 
+        return evaluate(lock.Previous.Script, unlock, 
             TransactionSignatureChecker(&ctx, lock.Index, Amount(int64(lock.Previous.Value))));
     }
     

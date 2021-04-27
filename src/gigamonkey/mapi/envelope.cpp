@@ -7,7 +7,7 @@
 
 namespace Gigamonkey {
         
-    bool JSONEnvelope::verify(const string& payload, const secp256k1::signature& signature, const Bitcoin::pubkey& publicKey, payload_encoding enc) {        
+    bool JSONEnvelope::verify(const string& payload, const secp256k1::signature& signature, const secp256k1::pubkey& publicKey, payload_encoding enc) {        
         switch (enc) {
             default: return false;
             case base64 : {

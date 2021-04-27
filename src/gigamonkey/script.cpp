@@ -4,7 +4,49 @@
 #include <gigamonkey/script/pattern.hpp>
 #include <data/math/number/bytes/N.hpp>
 
-namespace Gigamonkey::Bitcoin {
+namespace Gigamonkey::Bitcoin::interpreter {
+    
+    instruction::instruction(bytes_view data) : Op{[](size_t size)->op{
+        if (size <= OP_PUSHSIZE75) return static_cast<op>(size);
+        if (size <= 0xffff) return OP_PUSHDATA1;
+        if (size <= 0xffffffff) return OP_PUSHDATA2;
+        return OP_PUSHDATA4;
+    }(data.size())}, Data{data} {} 
+    
+    bytes instruction::data() const {
+        if (is_push_data(Op) || Op == OP_RETURN) return Data;
+        if (!is_push(Op)) return {};
+        if (Op == OP_1NEGATE) return {OP_1NEGATE};
+        return bytes{static_cast<byte>(Op - 0x50)};
+    }
+    
+    bool instruction::valid() const {
+        if (Op == OP_INVALIDOPCODE) return false;
+        if (Op == OP_RETURN) return true;
+        size_t size = Data.size();
+        return (!is_push_data(Op) && size == 0) || (Op <= OP_PUSHSIZE75 && Op == size) 
+            || (Op == OP_PUSHDATA1 && size <= 0xffff) 
+            || (Op == OP_PUSHDATA2 && size <= 0xffffffff) 
+            || (Op == OP_PUSHDATA4 && size <= 0xffffffffffffffff);
+    }
+    
+    uint32 instruction::size() const {
+        if (Op == OP_RETURN) return Data.size() + 1;
+        if (!is_push_data(Op)) return 1;
+        uint32 size = Data.size();
+        if (Op <= OP_PUSHSIZE75) return size + 1;
+        if (Op == OP_PUSHDATA1) return size + 2;
+        if (Op == OP_PUSHDATA2) return size + 3;
+        if (Op == OP_PUSHDATA4) return size + 5;
+        return 0; // invalid 
+    }
+    
+    bytes_writer instruction::write_push_data(bytes_writer w, op Push, size_t size) {
+        if (Push <= OP_PUSHSIZE75) return w << static_cast<byte>(Push);
+        if (Push == OP_PUSHDATA1) return w << static_cast<byte>(OP_PUSHDATA1) << static_cast<byte>(size); 
+        if (Push == OP_PUSHDATA2) return w << static_cast<byte>(OP_PUSHDATA2) << static_cast<uint16_little>(size); 
+        return w << static_cast<byte>(OP_PUSHDATA2) << static_cast<uint32_little>(size);
+    }
     
     bool valid_program(program p, stack<op> x) {
         if (p.empty()) return false;
@@ -152,13 +194,13 @@ namespace Gigamonkey::Bitcoin {
     }
     
     bytes compile(program p) {
-        bytes compiled(length(p));
+        bytes compiled(size(p));
         script_writer{bytes_writer{compiled.begin(), compiled.end()}} << p;
         return compiled;
     }
     
     bytes compile(instruction i) {
-        bytes compiled(length(i));
+        bytes compiled(size(i));
         script_writer{bytes_writer{compiled.begin(), compiled.end()}} << i;
         return compiled;
     }
@@ -390,7 +432,7 @@ namespace Gigamonkey::Bitcoin {
         }
     }
 
-    std::ostream& operator<<(std::ostream& o, instruction i) {
+    std::ostream& operator<<(std::ostream& o, const instruction& i) {
         if (!is_push_data(i.Op)) return write_op_code(o, i.Op);
         return write_op_code(o, i.Op) << "{" << data::encoding::hex::write(i.Data) << "}";
     }

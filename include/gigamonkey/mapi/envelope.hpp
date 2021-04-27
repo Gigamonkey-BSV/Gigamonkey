@@ -20,7 +20,7 @@ namespace Gigamonkey {
         payload_encoding encoding;
         string mimetype;
         
-        static bool verify(const string& payload, const secp256k1::signature& signature, const Bitcoin::pubkey& publicKey, payload_encoding);
+        static bool verify(const string& payload, const secp256k1::signature& signature, const secp256k1::pubkey& publicKey, payload_encoding);
         
         bool valid() const {
             return mimetype != "" && verify(payload, signature, publicKey, encoding);

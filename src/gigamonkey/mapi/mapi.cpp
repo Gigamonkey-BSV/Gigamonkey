@@ -12,7 +12,7 @@ namespace Gigamonkey::MAPI {
             j.contains("satoshis") && j["satoshis"].is_number_unsigned() && 
             j.contains("bytes") && j["bytes"].is_number_unsigned())) return{};
         
-        return satoshi_per_byte{satoshi{int64(j["satoshis"])}, uint64(j["bytes"])};
+        return satoshi_per_byte{Bitcoin::satoshi{int64(j["satoshis"])}, uint64(j["bytes"])};
         
     }
     

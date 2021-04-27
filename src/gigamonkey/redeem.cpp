@@ -15,9 +15,11 @@ namespace Gigamonkey::Bitcoin {
         
         if (spent < sent) return {};
         
-        incomplete::transaction incomplete{Bitcoin::transaction::LatestVersion, data::for_each([](std::pair<spendable, spend_input> s) -> incomplete::input {
-            return incomplete::input{s.first.reference(), s.second.Sequence};
-        }, prev), out, locktime};
+        incomplete::transaction incomplete{
+            Bitcoin::transaction::LatestVersion, 
+            data::for_each([](std::pair<spendable, spend_input> s) -> incomplete::input {
+                return incomplete::input{s.first.reference(), s.second.Sequence};
+            }, prev), out, locktime};
         
         if (prev.size() != incomplete.Inputs.size()) throw "this should be impossible.";
         
@@ -50,7 +52,8 @@ namespace Gigamonkey::Bitcoin {
         
         uint32 index = 0;
         for (const edge& e: edges) {
-            if (!evaluate_script(e.Input.Script, signature::document{e.Output, incomplete::transaction::read(ptr<bytes>::operator*()), index})) return false;
+            if (!interpreter::evaluate(e.Input.Script, 
+                signature::document{e.Output, incomplete::transaction::read(ptr<bytes>::operator*()), index})) return false;
             index++;
         }
         

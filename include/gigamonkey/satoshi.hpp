@@ -6,7 +6,7 @@
 
 #include <gigamonkey/types.hpp>
 
-namespace Gigamonkey {
+namespace Gigamonkey::Bitcoin {
     
     // in the protocol, satoshi amounts are written as uint64_littles. 
     // However, we need to be able to think in terms of negative amounts
@@ -55,8 +55,8 @@ namespace Gigamonkey {
 
 namespace data::math {
     
-    template <> struct identity<data::plus<Gigamonkey::satoshi>, Gigamonkey::satoshi> {
-        static const Gigamonkey::satoshi value() {
+    template <> struct identity<data::plus<Gigamonkey::Bitcoin::satoshi>, Gigamonkey::Bitcoin::satoshi> {
+        static const Gigamonkey::Bitcoin::satoshi value() {
             return {0};
         }
     };

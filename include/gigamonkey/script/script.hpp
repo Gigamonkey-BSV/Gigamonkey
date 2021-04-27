@@ -13,16 +13,68 @@
 #include <boost/endian/conversion.hpp>
 
 #include <gigamonkey/signature.hpp>
-#include <gigamonkey/address.hpp>
+#include <gigamonkey/wif.hpp>
 
-namespace Gigamonkey::Bitcoin { 
+namespace Gigamonkey::Bitcoin::interpreter { 
     
-    struct evaluated {
+    // the result returned from a script evaluatuon. 
+    // There is a success or failure and a possible error. 
+    struct result; 
+    
+    // Test validity of a script. All signature operations succeed. 
+    result evaluate(const script& unlock, const script& lock);
+    
+    // Evaluate script with real signature operations. 
+    result evaluate(const script& unlock, const signature::document &lock);
+    
+    bool operator==(const result &, const result &);
+    bool operator!=(const result &, const result &);
+    
+    using op = opcodetype;
+
+    bool inline is_push(op o) {
+        return o <= OP_16 && o != OP_RESERVED;
+    }
+    
+    bool inline is_push_data(op o) {
+        return o <= OP_PUSHDATA4;
+    }
+    
+    // a single step in a program. 
+    struct instruction; 
+    
+    bool operator==(const instruction &, const instruction &);
+    bool operator!=(const instruction &, const instruction &);
+    
+    size_t size(const instruction &o);
+    
+    std::ostream& operator<<(std::ostream&, const instruction &);
+    
+    instruction push_value(int);
+    
+    instruction push_hex(std::string);
+    
+    using program = list<instruction>;
+    
+    bool valid(program);
+    
+    bytes compile(program p); 
+    
+    bytes compile(instruction i); 
+    
+    program decompile(bytes_view); 
+    
+    size_t inline size(program p) {
+        if (p.empty()) return 0;
+        return size(p.first()) + size(p.rest());
+    }
+    
+    struct result {
         ScriptError Error;
         bool Return;
         
-        evaluated() : Error{SCRIPT_ERR_OK}, Return{false} {}
-        evaluated(ScriptError err) : Error{err}, Return{false} {}
+        result() : Error{SCRIPT_ERR_OK}, Return{false} {}
+        result(ScriptError err) : Error{err}, Return{false} {}
         
         bool valid() const {
             return !Error;
@@ -35,24 +87,40 @@ namespace Gigamonkey::Bitcoin {
         operator bool() const {
             return verify();
         }
-        
-        bool operator==(const evaluated e) const {
-            return Error == e.Error && Return == e.Return;
-        }
-        
-        bool operator!=(const evaluated e) const {
-            return !operator==(e);
-        }
     };
     
-    // Test validity of a script. All signature operations succeed. 
-    evaluated evaluate_script(const script& unlock, const script& lock);
+    // Representation of a Bitcoin script instruction, which is either an op code
+    // by itself or an op code for pushing data to the stack along with data. 
+    struct instruction {
+        op Op;
+        bytes Data;
+        
+        instruction();
+        instruction(op p, bytes d);
+        instruction(op p);
+        instruction(bytes_view);
+        
+        bytes data() const;
+        
+        bool valid() const;
+        
+        uint32 size() const;
+        
+        bool operator==(op o) const;
+        bool operator!=(op o) const;
+        
+        bytes_writer write(bytes_writer w) const;
+        
+        static instruction op_code(op o);
+        static instruction op_return(bytes_view b);
+        static instruction read(bytes_view b);
+        
+    private:
+        static bytes_writer write_push_data(bytes_writer w, op Push, size_t size);
+    };
     
-    // Evaluate script with real signature operations. 
-    evaluated evaluate_script(const script& unlock, const signature::document &lock);
-    
-    using op = opcodetype;
-    
+    // instructions which can appear in script programs but which 
+    // do not have names in the original Satoshi client. 
     const op OP_PUSHSIZE1 = op(0x01);
     const op OP_PUSHSIZE2 = op(0x02);
     const op OP_PUSHSIZE3 = op(0x03);
@@ -135,124 +203,9 @@ namespace Gigamonkey::Bitcoin {
     const op OP_PUSHSIZE73 = op(0x49);
     const op OP_PUSHSIZE74 = op(0x4a);
     const op OP_PUSHSIZE75 = op(0x4b);
-
-    bool inline is_push(op o) {
-        return o <= OP_16 && o != OP_RESERVED;
-    }
     
-    bool inline is_push_data(op o) {
-        return o <= OP_PUSHDATA4;
-    }
-    
-    // Representation of a Bitcoin script instruction, which is either an op code
-    // by itself or an op code for pushing data to the stack along with data. 
-    struct instruction {
-        op Op;
-        bytes Data;
-        
-        instruction() : Op{OP_INVALIDOPCODE}, Data{} {}
-        
-        instruction(op p, bytes d) : Op{p}, Data{d} {}
-        
-        instruction(op p) : Op{p}, Data{} {}
-        
-        instruction(bytes_view data) : Op{[](size_t size)->op{
-            if (size <= OP_PUSHSIZE75) return static_cast<op>(size);
-            if (size <= 0xffff) return OP_PUSHDATA1;
-            if (size <= 0xffffffff) return OP_PUSHDATA2;
-            return OP_PUSHDATA4;
-        }(data.size())}, Data{data} {} 
-        
-        bytes data() const {
-            if (is_push_data(Op) || Op == OP_RETURN) return Data;
-            if (!is_push(Op)) return {};
-            if (Op == OP_1NEGATE) return {OP_1NEGATE};
-            return bytes{static_cast<byte>(Op - 0x50)};
-        }
-        
-        bool valid() const {
-            if (Op == OP_INVALIDOPCODE) return false;
-            if (Op == OP_RETURN) return true;
-            size_t size = Data.size();
-            return (!is_push_data(Op) && size == 0) || (Op <= OP_PUSHSIZE75 && Op == size) 
-                || (Op == OP_PUSHDATA1 && size <= 0xffff) 
-                || (Op == OP_PUSHDATA2 && size <= 0xffffffff) 
-                || (Op == OP_PUSHDATA4 && size <= 0xffffffffffffffff);
-        }
-        
-        uint32 length() const {
-            if (Op == OP_RETURN) return Data.size() + 1;
-            if (!is_push_data(Op)) return 1;
-            uint32 size = Data.size();
-            if (Op <= OP_PUSHSIZE75) return size + 1;
-            if (Op == OP_PUSHDATA1) return size + 2;
-            if (Op == OP_PUSHDATA2) return size + 3;
-            if (Op == OP_PUSHDATA4) return size + 5;
-            return 0; // invalid 
-        }
-        
-        bool operator==(instruction x) const {
-            return Op == x.Op && Data == x.Data;
-        }
-        
-        bool operator!=(instruction x) const {
-            return !operator==(x);
-        }
-        
-        bool operator==(op o) const {
-            return Op == o && Data.size() == 0;
-        }
-        
-        bool operator!=(op o) const {
-            return !operator==(o);
-        }
-        
-        bytes_writer write(bytes_writer w) const {
-            return is_push_data(Op) ? 
-                write_push_data(w, Op, Data.size()) << Data : 
-                w << static_cast<byte>(Op);
-        }
-        
-        static instruction op_code(op o) {
-            return instruction{o};
-        }
-        
-        static instruction op_return(bytes_view b) {
-            return {OP_RETURN, b};
-        }
-        
-        static instruction read(bytes_view b);
-        
-    private:
-        static bytes_writer write_push_data(bytes_writer w, op Push, size_t size) {
-            if (Push <= OP_PUSHSIZE75) return w << static_cast<byte>(Push);
-            if (Push == OP_PUSHDATA1) return w << static_cast<byte>(OP_PUSHDATA1) << static_cast<byte>(size); 
-            if (Push == OP_PUSHDATA2) return w << static_cast<byte>(OP_PUSHDATA2) << static_cast<uint16_little>(size); 
-            return w << static_cast<byte>(OP_PUSHDATA2) << static_cast<uint32_little>(size);
-        }
-    };
-    
-    instruction push_value(int);
-    
-    instruction push_hex(std::string);
-    
-    using program = list<instruction>;
-    
-    bool valid(program);
-    
-    bytes compile(program p); 
-    
-    bytes compile(instruction i); 
-    
-    program decompile(bytes_view); 
-    
-    size_t inline length(instruction o) {
-        return o.length();
-    }
-    
-    size_t inline length(program p) {
-        if (p.empty()) return 0;
-        return length(p.first()) + length(p.rest());
+    size_t inline size(const instruction &o) {
+        return o.size();
     }
     
     instruction inline push_data(int32_little x) {
@@ -271,7 +224,7 @@ namespace Gigamonkey::Bitcoin {
         return instruction{x};
     }
     
-    instruction inline push_data(pubkey p) {
+    instruction inline push_data(const pubkey &p) {
         return instruction{write(p.size(), p)};
     }
     
@@ -283,7 +236,49 @@ namespace Gigamonkey::Bitcoin {
         return (p.size() > 1 && p[0] == 0x6a) || (p.size() > 2 && p[0] == 0x00 && p[1] == 0x6a);
     }
     
-    std::ostream& operator<<(std::ostream&, instruction);
+    bool inline operator==(const result &a, const result &b) {
+        return a.Return == b.Return && a.Error == b.Error;
+    }
+    
+    bool inline operator!=(const result &a, const result &b) {
+        return !(a == b);
+    }
+    
+    bool inline operator==(const instruction &a, const instruction &b) {
+        return a.Op == b.Op && a.Data == b.Data;
+    }
+    
+    bool inline operator!=(const instruction &a, const instruction &b) {
+        return !(a == b);
+    }
+    
+    bool inline instruction::operator==(op o) const {
+        return Op == o && Data.size() == 0;
+    }
+    
+    bool inline instruction::operator!=(op o) const {
+        return !operator==(o);
+    }
+    
+    inline instruction::instruction() : Op{OP_INVALIDOPCODE}, Data{} {}
+    
+    inline instruction::instruction(op p, bytes d) : Op{p}, Data{d} {}
+    
+    inline instruction::instruction(op p) : Op{p}, Data{} {}
+    
+    bytes_writer inline instruction::write(bytes_writer w) const {
+        return is_push_data(Op) ? 
+            write_push_data(w, Op, Data.size()) << Data : 
+            w << static_cast<byte>(Op);
+    }
+    
+    instruction inline instruction::op_code(op o) {
+        return instruction{o};
+    }
+    
+    instruction inline instruction::op_return(bytes_view b) {
+        return instruction{OP_RETURN, b};
+    }
     
 }
 

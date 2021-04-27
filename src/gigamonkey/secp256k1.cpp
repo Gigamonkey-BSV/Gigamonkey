@@ -76,14 +76,14 @@ namespace Gigamonkey::secp256k1 {
     
     coordinate pubkey::x() const {
         coordinate v{0};
-        if (valid()) std::copy(Value.begin() + 1, Value.begin() + 33, v.begin());
+        if (valid()) std::copy(this->begin() + 1, this->begin() + 33, v.begin());
         return v;
     }
         
     coordinate pubkey::y() const {
         coordinate v{0}; 
         if (valid()) {
-            bytes_view decompressed = type() == uncompressed ? Value : decompress(Value);
+            bytes_view decompressed = type() == uncompressed ? static_cast<bytes>(*this) : decompress(*this);
             std::copy(decompressed.begin() + 33, decompressed.end(), v.begin());
         };
         return v;
