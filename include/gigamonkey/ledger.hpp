@@ -98,7 +98,7 @@ namespace Gigamonkey::Bitcoin {
             
             satoshi spent() const {
                 return data::fold([](satoshi x, const edge& p) -> satoshi {
-                    return p.spent();
+                    return x + p.spent();
                 }, satoshi{0}, incoming_edges());
             }
             
