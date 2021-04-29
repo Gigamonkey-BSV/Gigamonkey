@@ -134,12 +134,14 @@ namespace Gigamonkey::Bitcoin {
             return {d, p};
         }
         
+        virtual ~ledger() {}
+        
     };
     
     struct timechain : ledger {
         
         virtual bool broadcast(const bytes_view&) = 0;
-        
+        virtual ~timechain() {}
     };
     
     bool inline ledger::double_entry::operator==(const double_entry &t) const {

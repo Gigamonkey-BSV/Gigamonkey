@@ -11,10 +11,11 @@ namespace Gigamonkey::Bitcoin {
     struct keysource {
         virtual secret first() const = 0;
         virtual ptr<keysource> rest() const = 0;
+        virtual ~keysource() {}
     };
     
     // a key source containing a single key. 
-    struct single_key : keysource {
+    struct single_key final : keysource {
         secret Key;
         
         explicit single_key(const secret& k) : Key{k} {}
@@ -29,7 +30,7 @@ namespace Gigamonkey::Bitcoin {
     };
     
     // a key source that increments the key. 
-    struct increment_key : keysource {
+    struct increment_key final : keysource {
         secret Key;
         
         explicit increment_key(const secret& k) : Key{k} {}

@@ -413,7 +413,7 @@ namespace Gigamonkey::Bitcoin::hd::bip39 {
         bitarray[index/8] = bitarray[index/8] | (value  << 7-(index & 0x7));
     }
     
-    const cross<std::string>& getWordList(languages lang) {
+    const cross<std::string>& getWordList(language lang) {
         switch(lang) {
             case english:
                 return english_words();
@@ -424,7 +424,7 @@ namespace Gigamonkey::Bitcoin::hd::bip39 {
         }
     }
     
-    std::string getLangSplit(languages lang) {
+    std::string getLangSplit(language lang) {
         switch(lang) {
             case japanese:
                 return "\u3000";
@@ -433,7 +433,7 @@ namespace Gigamonkey::Bitcoin::hd::bip39 {
         }
     }
 
-    seed read(std::string words,const string& passphrase,languages lang) {
+    seed read(std::string words,const string& passphrase,language lang) {
         if(lang!=english)
             throw data::method::unimplemented("Non English Language");
         /*if(!valid(passphrase,lang)) {
@@ -455,7 +455,7 @@ namespace Gigamonkey::Bitcoin::hd::bip39 {
         return seedObj;
     }
 
-    std::string generate(entropy ent,languages lang) {
+    std::string generate(entropy ent,language lang) {
         if(lang!=english)
             throw data::method::unimplemented("Non English Language");
         assert(ent.size()%4==0);
@@ -496,7 +496,7 @@ namespace Gigamonkey::Bitcoin::hd::bip39 {
         return output;
     }
 
-    bool valid(std::string words_text,languages lang) {
+    bool valid(std::string words_text,language lang) {
         std::vector<std::string> wordsList;
         boost::split(wordsList, words_text, boost::is_any_of(getLangSplit(lang)));
         std::vector<int> wordIndices(wordsList.size());

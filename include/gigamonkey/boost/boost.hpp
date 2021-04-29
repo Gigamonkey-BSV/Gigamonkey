@@ -48,6 +48,11 @@ namespace Gigamonkey {
         struct output;
         struct redeemer;
         
+        bool operator==(const output&, const output&);
+        bool operator!=(const output&, const output&);
+        
+        std::ostream& operator<<(std::ostream& o, const output s);
+        
         struct output_script {
             
             // if the miner address is provided then this is a contract script
@@ -421,20 +426,21 @@ namespace Gigamonkey {
             
         };
         
-        struct output : output_script {
+        struct output {
             Bitcoin::satoshi Value;
+            output_script Script;
             digest256 ID;
             
-            output() : output_script{}, Value{-1}, ID{} {}
-            output(const output_script& x, Bitcoin::satoshi v) : output_script{x}, Value{v}, ID{output_script::hash()} {}
-            output(const Bitcoin::output& b): output_script{Boost::output_script::read(b.Script)}, Value{b.Value}, ID{output_script::hash()} {}
+            output() : Value{-1}, Script{}, ID{} {}
+            output(Bitcoin::satoshi v, const output_script& x) : Value{v}, Script{x}, ID{Script.hash()} {}
+            output(const Bitcoin::output& b): Value{b.Value}, Script{Boost::output_script::read(b.Script)}, ID{Script.hash()} {}
             
             bool valid() const {
-                return output_script::valid() && Value >= 0;
+                return Value >= 0 && ID != digest256{};
             }
             
             explicit operator Bitcoin::output() const {
-                return Bitcoin::output{Value, output_script::write()};
+                return Bitcoin::output{Value, Script.write()};
             }
         };
         
@@ -869,6 +875,18 @@ namespace Gigamonkey {
         
         input_script inline proof::input_script() const {
             return Boost::input_script{Signature, Pubkey, work::proof::Solution, Type, work::proof::Puzzle.Mask != 0};
+        }
+        
+        bool inline operator==(const output &a, const output &b) {
+            return a.Script == b.Script && a.Value == b.Value && a.ID == b.ID;
+        }
+        
+        bool inline operator!=(const output &a, const output &b) {
+            return !(a == b);
+        }
+        
+        std::ostream inline &operator<<(std::ostream& o, const output s) {
+            return o << "boost_output{Script: " << s.Script << ", Value: " << s.Value << "}";
         }
         
     }
