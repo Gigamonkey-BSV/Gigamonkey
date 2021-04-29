@@ -10,6 +10,41 @@
 
 namespace Gigamonkey::work {
     
+    struct difficulty;
+    
+    // proportional to inverse difficulty.
+    struct compact : uint32_little {
+        
+        static compact encode(byte e, uint24_little v);
+        
+        compact();
+        compact(byte e, uint24_little v);
+        explicit compact(uint32_little i);
+        explicit compact(uint32 i);
+        explicit compact(work::difficulty);
+        
+        byte exponent() const;
+        
+        uint24_little digits() const;
+        
+        bool valid() const;
+        
+        uint256 expand() const;
+        
+        work::difficulty difficulty() const;
+        
+        explicit operator work::difficulty() const;
+        
+        explicit operator bytes_view() const;
+    };
+    
+    uint256 expand(const compact&);
+    
+    const compact SuccessHalf{33, 0x8000};
+    const compact SuccessQuarter{32, 0x400000};
+    const compact SuccessEighth{32, 0x200000};
+    const compact SuccessSixteenth{32, 0x100000};
+    
     // units of difficulty per second. 
     struct hashpower {
         double Value;
@@ -73,39 +108,6 @@ namespace Gigamonkey::work {
     inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::difficulty& h) {
         return o << h.Value << " difficulty ";
     }
-    
-    // proportional to inverse difficulty.
-    struct compact : uint32_little {
-        
-        static compact encode(byte e, uint24_little v);
-        
-        compact();
-        compact(byte e, uint24_little v);
-        explicit compact(uint32_little i);
-        explicit compact(uint32 i);
-        explicit compact(work::difficulty);
-        
-        byte exponent() const;
-        
-        uint24_little digits() const;
-        
-        bool valid() const;
-        
-        uint256 expand() const;
-        
-        work::difficulty difficulty() const;
-        
-        explicit operator work::difficulty() const;
-        
-        explicit operator bytes_view() const;
-    };
-    
-    uint256 expand(const compact&);
-    
-    const compact SuccessHalf{33, 0x8000};
-    const compact SuccessQuarter{32, 0x400000};
-    const compact SuccessEighth{32, 0x200000};
-    const compact SuccessSixteenth{32, 0x100000};
 
 }
 

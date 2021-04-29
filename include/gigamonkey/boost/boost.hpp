@@ -46,7 +46,7 @@ namespace Gigamonkey {
         
         // for wallets
         struct output;
-        struct redeem_boost;
+        struct redeemer;
         
         struct output_script {
             
@@ -440,14 +440,14 @@ namespace Gigamonkey {
         
         using prevout = data::entry<Bitcoin::outpoint, output>;
         
-        struct redeem_boost final : Bitcoin::redeemer {
+        struct redeemer final : Bitcoin::spendable::redeemer {
             Bitcoin::secret Secret;
             Bitcoin::pubkey Pubkey;
             work::solution Solution;
             type Type;
             bool UseGeneralPurposeBits;
             
-            redeem_boost(
+            redeemer(
                 const Bitcoin::secret& k, 
                 const Bitcoin::pubkey& p, 
                 const work::solution& z, type t, 

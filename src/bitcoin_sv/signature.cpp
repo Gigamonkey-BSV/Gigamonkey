@@ -11,12 +11,12 @@ namespace Gigamonkey::Bitcoin {
             
     incomplete::transaction::transaction(int32_little v, list<input> i, list<output> o, uint32_little l) : 
         Version{v}, Inputs(i.size()), Outputs(o.size()), Locktime{l} {
-        for (int n = 0; n < i.size(); n++) {
+        for (int n = 0; n < Inputs.size(); n++) {
             Inputs[n] = i.first();
             i = i.rest();
         }
         
-        for (int n = 0; n < o.size(); n++) {
+        for (int n = 0; n < Outputs.size(); n++) {
             Outputs[n] = o.first();
             o = o.rest();
         }

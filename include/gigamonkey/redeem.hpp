@@ -10,62 +10,72 @@
 
 namespace Gigamonkey::Bitcoin {
     
-    struct redeemer {
-        // This information must be provided in the event that a signature is required. 
-        // However, not all input scripts have signatures. Therefore, we can't assume that
-        // a key is here either or that any signature is created. 
-        virtual bytes redeem(const signature::document& document, sighash::directive d) const = 0;
-        virtual uint32 expected_size() const = 0;
-        virtual uint32 sigops() const = 0;
+    // an output that we know how to spend. 
+    struct spendable {
+        // information required to redeem an output. 
+        struct redeemer {
+            // This information must be provided in the event that a signature is required. 
+            // However, not all input scripts have signatures. Therefore, we can't assume that
+            // a key is here either or that any signature is created. 
+            virtual bytes redeem(const signature::document& document, sighash::directive d) const = 0;
+            virtual uint32 expected_size() const = 0;
+            virtual uint32 sigops() const = 0;
+            
+            virtual ~redeemer() {}
+        };
         
-        virtual ~redeemer() {}
-    };
-    
-    struct spendable : ledger::prevout {
+        ledger::prevout Previous;
         ptr<redeemer> Redeemer;
         
-        spendable(const ledger::prevout& p, ptr<redeemer> r) : ledger::prevout{p}, Redeemer{r} {}
+        spendable(const ledger::prevout& p, ptr<redeemer> r) : Previous{p}, Redeemer{r} {}
         
-        input operator()(const incomplete::transaction tx, index i, sighash::directive d) {
+        input operator()(const incomplete::transaction tx, index i, sighash::directive d) const {
             if (Redeemer == nullptr) return {};
             incomplete::input in = tx.Inputs[i];
-            if (ledger::prevout::Key != in.Reference) return {};
-            return in.complete(Redeemer->redeem(signature::document{ledger::prevout::Value, tx, i}, d));
+            if (Previous.Key != in.Reference) return {};
+            return in.complete(Redeemer->redeem(signature::document{Previous.Value, tx, i}, d));
         }
         
         satoshi value() const {
-            return ledger::prevout::Value.Value;
+            return Previous.Value.Value;
         }
         
         outpoint reference() const {
-            return ledger::prevout::Key;
+            return Previous.Key;
+        }
+        
+        bool valid() const {
+            return Redeemer != nullptr;
         }
         
     };
     
     ledger::vertex redeem(list<spendable> prev, list<output> out, uint32_little locktime = 0);
     
-    struct spend_input {
+    // extra information required with spendable necessary to generate a transaction. 
+    struct spend_instructions {
         uint32_little Sequence;
         sighash::directive Directive;
         
-        spend_input() : Sequence{input::Finalized}, Directive{sighash::all} {}
-        spend_input(uint32_little x, sighash::directive d) : Sequence{x}, Directive{d} {}
+        spend_instructions() : Sequence{input::Finalized}, Directive{sighash::all} {}
+        spend_instructions(uint32_little x, sighash::directive d) : Sequence{x}, Directive{d} {}
     };
     
-    ledger::vertex redeem(list<std::pair<spendable, spend_input>> prev, list<output> out, uint32_little locktime = 0);
+    using spend_order = std::pair<spendable, spend_instructions>;
+    
+    ledger::vertex redeem(list<spend_order> prev, list<output> out, uint32_little locktime = 0);
 
-    ledger::vertex inline redeem(list<spendable> prev, spend_input param, list<output> out, uint32_little locktime = 0) {
-        return redeem(data::for_each([param](spendable p) -> std::pair<spendable, spend_input> {
-            return {p, param};
+    ledger::vertex inline redeem(list<spendable> prev, spend_instructions apply_to_all, list<output> out, uint32_little locktime = 0) {
+        return redeem(data::for_each([apply_to_all](spendable p) -> spend_order {
+            return {p, apply_to_all};
         }, prev), out, locktime);
     }
 
     ledger::vertex inline redeem(list<spendable> prev, list<output> out, uint32_little locktime) {
-        return redeem(prev, spend_input{}, out, locktime);
+        return redeem(prev, spend_instructions{}, out, locktime);
     }
     
-    struct redeem_pay_to_pubkey final : redeemer {
+    struct redeem_pay_to_pubkey final : spendable::redeemer {
         secret Secret;
         
         redeem_pay_to_pubkey(const secret& s) : Secret{s} {}
@@ -83,7 +93,7 @@ namespace Gigamonkey::Bitcoin {
         }
     };
     
-    struct redeem_pay_to_address final : redeemer {
+    struct redeem_pay_to_address final : spendable::redeemer {
         secret Secret;
         pubkey Pubkey;
         
@@ -104,7 +114,7 @@ namespace Gigamonkey::Bitcoin {
     };
     
     std::ostream inline &operator<<(std::ostream &o, const spendable& x) {
-        return o << "{" << static_cast<ledger::prevout>(x) << "}";
+        return o << "spendable{" << x.Previous << "}";
     };
     
 }
@@ -116,14 +126,15 @@ namespace Gigamonkey::Bitcoin {
     
     struct change {
         bytes OutputScript;
-        ptr<redeemer> Redeemer;
+        ptr<spendable::redeemer> Redeemer;
     };
     
     struct output_pattern {
         virtual change create_redeemable(ptr<keysource>&) const = 0;
+        virtual ~output_pattern() {}
     };
     
-    struct pay_to_pubkey_pattern : output_pattern {
+    struct pay_to_pubkey_pattern final : output_pattern {
         pay_to_pubkey_pattern() : output_pattern{} {}
         change create_redeemable(ptr<keysource>& k) const override {
             secret s = k->first();
@@ -133,7 +144,7 @@ namespace Gigamonkey::Bitcoin {
         };
     };
     
-    struct pay_to_address_pattern : output_pattern {
+    struct pay_to_address_pattern final : output_pattern {
         pay_to_address_pattern() : output_pattern{} {}
         change create_redeemable(ptr<keysource>& k) const override {
             secret s = k->first();

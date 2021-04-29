@@ -3,9 +3,9 @@
     
 namespace Gigamonkey::Bitcoin {
     
-    ledger::vertex redeem(list<std::pair<spendable, spend_input>> prev, list<output> out, uint32_little locktime) {
-        
-        satoshi spent = fold([](satoshi s, std::pair<spendable, spend_input> v) -> satoshi {
+    ledger::vertex redeem(list<spend_order> prev, list<output> out, uint32_little locktime) {
+        // first check if we are trying to spend more than we can afford. 
+        satoshi spent = fold([](satoshi s, spend_order v) -> satoshi {
             return s + v.first.value();
         }, 0, prev);
         
@@ -15,24 +15,23 @@ namespace Gigamonkey::Bitcoin {
         
         if (spent < sent) return {};
         
+        // generate the incomplete transaction for signatures. 
         incomplete::transaction incomplete{
             Bitcoin::transaction::LatestVersion, 
-            data::for_each([](std::pair<spendable, spend_input> s) -> incomplete::input {
+            data::for_each([](spend_order s) -> incomplete::input {
                 return incomplete::input{s.first.reference(), s.second.Sequence};
             }, prev), out, locktime};
-        
-        if (prev.size() != incomplete.Inputs.size()) throw "this should be impossible.";
         
         uint32 ind{0};
         list<input> inputs;
         data::map<outpoint, Bitcoin::output> prevouts;
         
-        for (std::pair<spendable, spend_input> s : prev) {
+        for (const spend_order& s : prev) {
             input new_input = s.first(incomplete, ind, s.second.Directive);
             new_input.Sequence = s.second.Sequence;
             if (!new_input.valid()) return {};
             inputs = inputs << new_input;
-            prevouts = prevouts.insert(s.first.Key, s.first.Value);
+            prevouts = prevouts.insert(s.first.Previous.Key, s.first.Previous.Value);
             ind++;
         }
         

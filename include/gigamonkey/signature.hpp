@@ -9,7 +9,9 @@
 #include "timechain.hpp"
 
 namespace Gigamonkey::Bitcoin {
-    
+    // the sighash directive determines what parts of a 
+    // transaction are signed to spend funds that require
+    // a signature. 
     namespace sighash {
         
         using directive = byte;
@@ -105,6 +107,9 @@ namespace Gigamonkey::Bitcoin {
             bytes write() const;
             static transaction read(bytes_view);
         };
+        
+        std::ostream &operator<<(std::ostream &, const input &);
+        std::ostream &operator<<(std::ostream &, const transaction &);
     }
     
     struct signature::document {
@@ -124,6 +129,12 @@ namespace Gigamonkey::Bitcoin {
     
     bool inline signature::verify(const signature& x, const secp256k1::pubkey& p, sighash::directive d, const document& doc) {
         return p.verify(doc.hash(d), x.raw());
+    }
+    
+    namespace incomplete {
+        std::ostream inline &operator<<(std::ostream &o, const input &i) {
+            return o << "input{" << i.Reference << ", ___, " << i.Sequence << "}";
+        }
     }
     
 }

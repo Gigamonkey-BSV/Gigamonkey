@@ -12,7 +12,7 @@ namespace Gigamonkey::Bitcoin {
         return n / v.Bytes + (n % v.Bytes == 0 ? 0 : 1);
     }
     
-    // We use a model wherebdy data scripts can have a different cost
+    // We use a model whereby data scripts can have a different cost
     // from other types of data. In principle, transactions could be
     // priced in a more granular way, requring a more complex model here. 
     struct transaction_data_type {
@@ -95,7 +95,6 @@ namespace Gigamonkey::Bitcoin {
                     } while (to_redeem.Value < to_spend + tx_fee + Dust);
                     break;
                 }
-                // TODO
                 case random: {
                     remainder = Funds.Entries;
                     do {
@@ -127,25 +126,28 @@ namespace Gigamonkey::Bitcoin {
         list<output> outputs;
         
         {
-        
+            // here is our change output. 
             output change_output{to_keep, change_scripts.first().OutputScript};
             
+            // We shuffle the outputs and remember which one belongs
+            // to us by finding those which have a redeemer. 
             list<spendable> incomplete_outputs = data::functional::list::shuffle<list<spendable>>(for_each([](const output& o) -> spendable {
+                // we don't know our own txid yet, so can't fill in the outpoint. 
                 return spendable{ledger::prevout{outpoint{}, o}, nullptr};
             }, payments) << spendable{ledger::prevout{outpoint{}, change_output}, change_scripts.first().Redeemer});
             
             index i = 0;
             for(const spendable& x : incomplete_outputs) {
                 if (x.Redeemer != nullptr) new_funds = 
-                    new_funds.insert(spendable{ledger::prevout{outpoint{{}, i}, x.Value}, x.Redeemer});
-                outputs = outputs << x.Value;
+                    new_funds.insert(spendable{ledger::prevout{outpoint{{}, i}, x.Previous.Value}, x.Redeemer});
+                outputs = outputs << x.Previous.Value;
                 i++;
             };
         
         }
         
         // finally, we create tx
-        ledger::vertex vx = redeem(to_redeem.Entries, spend_input{input::Finalized, sighash::all | sighash::fork_id}, outputs);
+        ledger::vertex vx = redeem(to_redeem.Entries, spend_instructions{input::Finalized, sighash::all | sighash::fork_id}, outputs);
         if (!vx.valid()) return {};
         
         return spent{vx, new_funds, wallet{remainder, Policy, keys, Fee, Change, Dust}}; 
