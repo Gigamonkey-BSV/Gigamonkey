@@ -73,7 +73,7 @@ namespace Gigamonkey::work {
         
         bool valid() const;
         
-        explicit operator double() const;
+        operator double() const;
         
         difficulty();
         explicit difficulty(double x);
