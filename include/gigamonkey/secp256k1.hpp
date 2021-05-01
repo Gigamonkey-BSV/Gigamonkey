@@ -69,6 +69,12 @@ namespace Gigamonkey::secp256k1 {
     
     struct signature : public bytes {
         signature() : bytes(MaxSignatureSize) {}
+        explicit signature(const bytes& b) : bytes{} {
+            if (b.size() <= MaxSignatureSize) {
+                bytes::resize(b.size());
+                std::copy(b.begin(), b.end(), bytes::begin());
+            }
+        }
         
         constexpr static size_t MaxSignatureSize = 72;
         

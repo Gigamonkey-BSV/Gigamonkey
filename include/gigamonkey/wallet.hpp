@@ -32,6 +32,10 @@ namespace Gigamonkey::Bitcoin {
         
         fee() : Data{}, Standard{} {}
         fee(satoshi_per_byte d, satoshi_per_byte x) : Data{d}, Standard{x} {}
+        
+        bool valid() const {
+            return Data.valid() && Standard.valid();
+        }
     };
     
     struct funds {
@@ -128,9 +132,21 @@ namespace Gigamonkey::Bitcoin {
         return o << "(" << v.Satoshis << "sats / " << v.Bytes << "byte)";
     }
     
+    std::ostream inline &operator<<(std::ostream &o, fee f) {
+        return o << "fees{standard: " << f.Standard << ", " << f.Data << ")";
+    }
+    
     std::ostream inline &operator<<(std::ostream &o, funds f) {
         if (f.Valid) return o << "funds{" << f.Value << " sats, " << f.Entries << "}";
         else return o << "funds{}";
+    }
+    
+    bool inline operator==(const satoshi_per_byte &a, const satoshi_per_byte &b) {
+        return a.Satoshis == b.Satoshis && a.Bytes == b.Bytes;
+    }
+    
+    bool inline operator!=(const satoshi_per_byte &a, const satoshi_per_byte &b) {
+        return !(a == b);
     }
     
 }

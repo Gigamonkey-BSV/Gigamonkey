@@ -23,7 +23,9 @@ namespace Gigamonkey {
         static bool verify(const string& payload, const secp256k1::signature& signature, const secp256k1::pubkey& publicKey, payload_encoding);
         
         bool valid() const {
-            return mimetype != "" && verify(payload, signature, publicKey, encoding);
+            // TODO we skip checking signatures for now because we don't have a way of 
+            // checking whether the provided key is the miner's id key. 
+            return mimetype != "" && publicKey.valid();// && verify(payload, signature, publicKey, encoding);
         }
         
         JSONEnvelope() : payload{}, signature{}, publicKey{}, encoding{none}, mimetype{} {}
