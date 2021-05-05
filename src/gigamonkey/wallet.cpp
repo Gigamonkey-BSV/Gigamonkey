@@ -2,14 +2,14 @@
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/wallet.hpp>
+#include <math.h>
 
 namespace Gigamonkey::Bitcoin {
     
     satoshi operator*(satoshi_per_byte v, uint64 size) {
         if (v.Bytes == 0) throw data::math::division_by_zero{};
-        if (v.Bytes == 1) return v.Satoshis * size;
-        satoshi n = v.Satoshis * size;
-        return n / v.Bytes + (n % v.Bytes == 0 ? 0 : 1);
+        
+        return ceil(double(v.Satoshis) * double(size) / double(v.Bytes));
     }
     
     // We use a model whereby data scripts can have a different cost
@@ -20,12 +20,19 @@ namespace Gigamonkey::Bitcoin {
         uint64 Standard;
         
         void count_output_script(const script& x) {
+            // op_return output scripts are cheap. 
             (interpreter::is_op_return(x) ? Data : Standard) += x.size();
+            // counting the rest of the output, which includes the size
+            // of the script and the satoshi value. 
             Standard += writer::var_int_size(x.size()) + 4;
         }
         
         void count_input_script(const uint64 script_size) {
             Standard += script_size + writer::var_int_size(script_size) + 40;
+        }
+        
+        transaction_data_type operator+(transaction_data_type t) const {
+            return {Data + t.Data, Standard + t.Standard};
         }
     };
     
@@ -65,6 +72,7 @@ namespace Gigamonkey::Bitcoin {
         
         // we use this to count the size of the tx as we build it. 
         transaction_data_type in_progress_tx_size_count = outputs_size;
+        // we add the length of the outputs, locktime, and version. 
         in_progress_tx_size_count.Standard += 8 + writer::var_int_size(payments.size() + change_scripts.size());
          
         funds to_redeem;
@@ -81,6 +89,7 @@ namespace Gigamonkey::Bitcoin {
                         in_progress_tx_size_count.count_input_script(entries.first().Redeemer->expected_size());
                         entries = entries.rest();
                     }
+                    in_progress_tx_size_count.Standard += writer::var_int_size(entries.size());
                     tx_fee = Fee * in_progress_tx_size_count;
                     break;
                 }
@@ -91,7 +100,7 @@ namespace Gigamonkey::Bitcoin {
                         remainder = remainder.rest();
                         in_progress_tx_size_count.count_input_script(x.Redeemer->expected_size());
                         to_redeem = to_redeem.insert(x);
-                        tx_fee = Fee * in_progress_tx_size_count;
+                        tx_fee = Fee * (in_progress_tx_size_count + transaction_data_type{0, writer::var_int_size(to_redeem.Entries.size())});
                     } while (to_redeem.Value < to_spend + tx_fee + Dust);
                     break;
                 }
@@ -104,7 +113,7 @@ namespace Gigamonkey::Bitcoin {
                         remainder = remainder.rest();
                         in_progress_tx_size_count.count_input_script(x.Redeemer->expected_size());
                         to_redeem = to_redeem.insert(x);
-                        tx_fee = Fee * in_progress_tx_size_count;
+                        tx_fee = Fee * (in_progress_tx_size_count + transaction_data_type{0, writer::var_int_size(to_redeem.Entries.size())});
                     } while (to_redeem.Value < to_spend + tx_fee + Dust);
                     break;
                 }
@@ -112,8 +121,6 @@ namespace Gigamonkey::Bitcoin {
                     return {}; 
             }
         }
-        
-        int expected_transaction_size = in_progress_tx_size_count.Data + in_progress_tx_size_count.Standard;
         
         // determine change output
         satoshi to_keep = to_redeem.Value - to_spend - tx_fee;
