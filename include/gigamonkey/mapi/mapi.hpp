@@ -25,6 +25,11 @@ namespace Gigamonkey::MAPI {
     
     using satoshi_per_byte = Bitcoin::satoshi_per_byte;
     
+    enum service {
+        mine, 
+        relay
+    };
+    
     struct fee {
         string feeType;
         satoshi_per_byte miningFee;
@@ -38,7 +43,14 @@ namespace Gigamonkey::MAPI {
         explicit fee(const json&);
         
         explicit operator json() const;
+        
+        satoshi_per_byte get(service z) const {
+            return z == mine ? miningFee : relayFee;
+        }
     };
+    
+    bool operator==(const fee &, const fee &);
+    bool operator!=(const fee &, const fee &);
     
     struct get_fee_quote_response {
         
@@ -63,6 +75,8 @@ namespace Gigamonkey::MAPI {
         get_fee_quote_response(const string&);
         
         explicit operator json() const;
+        
+        Bitcoin::fee to(service) const;
         
     };
     
@@ -306,6 +320,14 @@ namespace Gigamonkey::MAPI {
     
     std::ostream inline &operator<<(std::ostream &o, const submit_multiple_transactions_response& r) {
         return o << json(r);
+    }
+    
+    bool inline operator==(const fee &a, const fee &b) {
+        return a.feeType == b.feeType && a.miningFee == b.miningFee && a.relayFee == b.relayFee;
+    }
+    
+    bool inline operator!=(const fee &a, const fee &b) {
+        return !(a == b);
     }
     
 }

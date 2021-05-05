@@ -17,7 +17,7 @@ namespace Gigamonkey::MAPI {
     }
     
     json to_json(const satoshi_per_byte v) {
-        return json{{"satoshis", v.Satoshis}, {"bytes", v.Bytes}};
+        return json{{"satoshis", int64(v.Satoshis)}, {"bytes", v.Bytes}};
     }
     
     fee::fee(const json& j) : fee{} {
@@ -86,10 +86,24 @@ namespace Gigamonkey::MAPI {
         timestamp = j["timestamp"];
         expiryTime = j["expiryTime"];
         minerId = Bitcoin::pubkey{string(j["minerId"])};
-        currentHighestBlockHash = digest256{string(j["currentHighestBlockHash"])};
+        currentHighestBlockHash = digest256{string{"0x"} + string(j["currentHighestBlockHash"])};
         currentHighestBlockHeight = j["currentHighestBlockHeight"];
         fees = f;
         
+    }
+    
+    Bitcoin::fee get_fee_quote_response::to(service z) const {
+        data::map<string, fee> fz;
+        for (const fee& f : fees) {
+            fz = fz.insert(f.feeType, f);
+        }
+        
+        Bitcoin::fee x{};
+        if (!fz.contains("standard")) return x;
+        x.Standard = fz["standard"].get(z);
+        if (!fz.contains("data")) x.Data = x.Standard;
+        else x.Data = fz["data"].get(z);
+        return x;
     }
     
     conflicted_with::conflicted_with(const json& j) : conflicted_with{} {
@@ -99,7 +113,7 @@ namespace Gigamonkey::MAPI {
             j.contains("size") && j["size"].is_number_unsigned() && 
             j.contains("hex") && j["hex"].is_string())) return;
         
-        txid = digest256{string(j["txid"])};
+        txid = digest256{string{"0x"} + string(j["txid"])};
         size = uint64(j["size"]);
         hex = j["hex"];
         
@@ -127,7 +141,7 @@ namespace Gigamonkey::MAPI {
             conflictedWith = cw;
         }
         
-        txid = digest256{string(j["txid"])};
+        txid = digest256{string{"0x"} + string(j["txid"])};
         resultDescription = j["resultDescription"];
         
     }
@@ -152,7 +166,7 @@ namespace Gigamonkey::MAPI {
         apiVersion = j["apiVersion"];
         timestamp = j["timestamp"];
         minerId = Bitcoin::pubkey{string(j["minerId"])};
-        currentHighestBlockHash = digest256{string(j["currentHighestBlockHash"])};
+        currentHighestBlockHash = digest256{string{"0x"} + string(j["currentHighestBlockHash"])};
         currentHighestBlockHeight = j["currentHighestBlockHeight"];
         txSecondMempoolExpiry = uint32(j["txSecondMempoolExpiry"]);
         SubmissionResponse = sub;
@@ -319,7 +333,9 @@ namespace Gigamonkey::MAPI {
         
         JSONEnvelope envelope;
         try {
-            envelope = JSONEnvelope{Http->GET(Host, string{get_fee_quote_path})};
+            auto response = Http->GET(Host, string{get_fee_quote_path});
+            
+            envelope = JSONEnvelope{response};
         } catch (...) {
             return {};
         }

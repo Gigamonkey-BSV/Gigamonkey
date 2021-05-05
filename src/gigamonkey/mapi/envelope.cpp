@@ -22,7 +22,7 @@ namespace Gigamonkey {
     
     JSONEnvelope::JSONEnvelope(const string& e) : JSONEnvelope{} {
         
-        json j{e};
+        json j = json::parse(e);
         
         if (!(j.is_object() &&
             j.contains("payload") && j["payload"].is_string() &&
@@ -31,6 +31,10 @@ namespace Gigamonkey {
             j.contains("encoding") && j["encoding"].is_string() && 
             j.contains("mimetype") && j["mimetype"].is_string())) return;
         
+        ptr<bytes> sig = encoding::hex::read(string(j["signature"]));
+        
+        if (sig == nullptr) return;
+        
         string enc = j["encoding"];
         
         if (enc == "UTF-8") encoding = UTF_8;
@@ -38,7 +42,7 @@ namespace Gigamonkey {
         else return;
         
         payload = j["payload"];
-        signature = j["signature"];
+        signature = secp256k1::signature{*sig};
         publicKey = Bitcoin::pubkey{string(j["publicKey"])};
         mimetype = j["mimetype"];
         
