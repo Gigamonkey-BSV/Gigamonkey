@@ -1,7 +1,7 @@
 #include <gigamonkey/hash.hpp>
-#include <hash.h>
+#include <sv/hash.h>
 
-#include "arith_uint256.h"
+#include <sv/arith_uint256.h>
 
 namespace Gigamonkey {
     

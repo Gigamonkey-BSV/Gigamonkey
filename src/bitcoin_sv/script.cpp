@@ -2,12 +2,13 @@
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/script/machine.hpp>
-#include "script/interpreter.h"
-#include "pubkey.h"
-#include "taskcancellation.h"
-#include "streams.h"
-#include "config.h"
-#include "policy/policy.h"
+#include <gigamonkey/script/config.hpp>
+#include <sv/config.h>
+#include <sv/script/interpreter.h>
+#include <sv/pubkey.h>
+#include <sv/taskcancellation.h>
+#include <sv/streams.h>
+#include <sv/policy/policy.h>
 
 // not in use but required by config.h dependency
 bool fRequireStandard = true;

@@ -2,10 +2,10 @@
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/signature.hpp>
-#include <key.h>
-#include <pubkey.h>
-#include <script/interpreter.h>
-#include <streams.h>
+#include <sv/key.h>
+#include <sv/pubkey.h>
+#include <sv/script/interpreter.h>
+#include <sv/streams.h>
 
 namespace Gigamonkey::Bitcoin {
             
