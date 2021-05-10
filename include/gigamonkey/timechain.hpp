@@ -4,7 +4,7 @@
 #ifndef GIGAMONKEY_TIMECHAIN
 #define GIGAMONKEY_TIMECHAIN
 
-#include "primitives/block.h"
+#include <sv/primitives/block.h>
 #include <gigamonkey/hash.hpp>
 #include <gigamonkey/satoshi.hpp>
 #include <gigamonkey/merkle/proof.hpp>

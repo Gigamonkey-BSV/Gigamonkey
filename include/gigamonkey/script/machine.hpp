@@ -5,8 +5,8 @@
 #define GIGAMONKEY_SCRIPT_MACHINE
 
 #include <gigamonkey/script/script.hpp>
-#include <script/script_flags.h>
-#include <policy/policy.h>
+#include <sv/script/script_flags.h>
+#include <sv/policy/policy.h>
 
 namespace Gigamonkey::Bitcoin::interpreter { 
     

@@ -7,8 +7,8 @@
 #ifndef GIGAMONKEY_SCRIPT_SCRIPT
 #define GIGAMONKEY_SCRIPT_SCRIPT
 
-#include <script/opcodes.h>
-#include <script/script_error.h>
+#include <sv/script/opcodes.h>
+#include <sv/script/script_error.h>
 
 #include <boost/endian/conversion.hpp>
 

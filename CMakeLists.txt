@@ -118,9 +118,23 @@ if(nlohmann_json_FOUND)
 endif()
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/extern/data/")
-add_subdirectory("${CHAIN_SRC_ROOT}" bitcoin-sv)
 
 add_library(gigamonkey STATIC 
+    src/sv/utilstrencodings.cpp
+    src/sv/random.cpp
+    src/sv/big_int.cpp
+    src/sv/script/opcodes.cpp
+    src/sv/script/script_error.cpp
+    src/sv/script/script_num.cpp
+    src/sv/arith_uint256.cpp
+    src/sv/pubkey.cpp
+    src/sv/primitives/transaction.cpp
+    src/sv/script/limitedstack.cpp
+    src/sv/script/script.cpp
+    src/sv/config.cpp
+    src/sv/script/interpreter.cpp
+    src/sv/policy/policy.cpp
+    
     src/bitcoin_sv/hash.cpp
     src/bitcoin_sv/signature.cpp
     src/bitcoin_sv/script.cpp
@@ -151,7 +165,7 @@ add_library(gigamonkey STATIC
     src/gigamonkey/mapi/envelope.cpp
 )
 
-target_link_libraries(gigamonkey PUBLIC data common util bitcoinconsensus ${LIB_BITCOIN_LIBRARIES} ${OPENSSL_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} nlohmann_json::nlohmann_json )
+target_link_libraries(gigamonkey PUBLIC data util ${OPENSSL_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} nlohmann_json::nlohmann_json )
 
 target_include_directories(gigamonkey PUBLIC include)
 
