@@ -62,6 +62,9 @@ namespace Gigamonkey::Bitcoin::interpreter {
     
     bytes compile(instruction i); 
     
+    // ASM is a standard human format for Bitcoin scripts that is unique only if the script is minimally encoded. 
+    string ASM(bytes_view);
+    
     program decompile(bytes_view); 
     
     size_t inline size(program p) {

@@ -39,7 +39,7 @@ namespace Gigamonkey::Boost {
         bytes MinerAddress;
         
         if (!pattern{
-            push{x.Signature.Data}, 
+            push{x.Signature}, 
             pubkey_pattern(MinerPubkey), 
             push_size{4, Nonce}, 
             push_size{4, Timestamp}, 

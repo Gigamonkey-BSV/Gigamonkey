@@ -22,6 +22,7 @@ namespace Gigamonkey::work {
         explicit compact(uint32_little i);
         explicit compact(uint32 i);
         explicit compact(work::difficulty);
+        explicit compact(const uint256 &);
         
         byte exponent() const;
         
@@ -36,6 +37,14 @@ namespace Gigamonkey::work {
         explicit operator work::difficulty() const;
         
         explicit operator bytes_view() const;
+        
+        static compact min() {
+            return compact{3, 0x0001};
+        }
+        
+        static compact max() {
+            return compact{33, 0xffff};
+        }
     };
     
     uint256 expand(const compact&);
@@ -77,6 +86,8 @@ namespace Gigamonkey::work {
         
         difficulty();
         explicit difficulty(double x);
+        
+        explicit operator uint256() const;
         
         static difficulty minimum();
         

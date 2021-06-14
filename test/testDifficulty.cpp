@@ -54,6 +54,16 @@ namespace Gigamonkey::work {
         EXPECT_LT(difficulty(3) / difficulty(2), difficulty(2));
         EXPECT_GT(difficulty(2), difficulty(3) / difficulty(2));*/
         
+        compact ten_thousanth{work::difficulty{double(.0001)}}; 
+        compact one_thousand{work::difficulty{double(1000.)}}; 
+        compact one{work::difficulty{double(1.)}}; 
+        compact some_big_number{work::difficulty{double(1.)}}; 
+        
+        EXPECT_EQ(compact{ten_thousanth.difficulty()}, ten_thousanth);
+        EXPECT_EQ(compact{one_thousand.difficulty()}, one_thousand);
+        EXPECT_EQ(compact{one.difficulty()}, one);
+        EXPECT_EQ(compact{some_big_number.difficulty()}, some_big_number);
+        
     }
 
 }

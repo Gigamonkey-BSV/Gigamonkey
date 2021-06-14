@@ -421,7 +421,7 @@ namespace Gigamonkey {
             Boost::input_script input_script() const;
             
             bool valid() const {
-                return (work::proof::Puzzle.Mask == 0 || work::proof::Puzzle.Mask == work::ASICBoost::Mask) && work::proof::valid();
+                return (work::proof::Puzzle.Mask == -1 || work::proof::Puzzle.Mask == work::ASICBoost::Mask) && work::proof::valid();
             }
             
         };

@@ -14,7 +14,7 @@
 namespace Gigamonkey {
     
     // a representation of uints of any size. 
-    template <size_t size, unsigned int bits = 8 * size> struct uint : base_uint<bits> {
+    template <size_t size, unsigned int bits = 8 * size> struct uint : public base_uint<bits> {
         uint(uint64 u) : base_uint<bits>(u) {}
         uint() : uint(0) {}
         

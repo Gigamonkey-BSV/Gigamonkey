@@ -69,7 +69,9 @@ namespace Gigamonkey::Bitcoin {
             };
         }
         
-        Bitcoin::address address(Bitcoin::address::type) const;
+        Bitcoin::address address(Bitcoin::address::type t) const {
+            return Bitcoin::address{t, hash160(*this)};
+        }
         
         explicit operator string() const;
         

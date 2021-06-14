@@ -47,10 +47,8 @@ namespace Gigamonkey::Bitcoin {
     struct signature : bytes {
         constexpr static size_t MaxSignatureSize = secp256k1::signature::MaxSignatureSize + 1;
         
-        bytes Data;
-        
         signature() : bytes{} {}
-        explicit signature(const bytes_view data) : Data{data} {}
+        explicit signature(const bytes_view data) : bytes{data} {}
         
         signature(const secp256k1::signature raw, sighash::directive d) : bytes(raw.size() + 1) {
             bytes_writer(bytes::begin(), bytes::end()) << raw << d;
@@ -69,7 +67,7 @@ namespace Gigamonkey::Bitcoin {
             return x;
         } 
         
-        // the document that is signed by the signature. 
+        // the document that is signed to produce the signature. 
         struct document;
         
         static signature sign(const secp256k1::secret& s, sighash::directive d, const document&);
@@ -79,7 +77,7 @@ namespace Gigamonkey::Bitcoin {
     };
     
     std::ostream inline &operator<<(std::ostream& o, const signature& x) {
-        return o << "signature{" << data::encoding::hex::write(x.Data) << "}";
+        return o << "signature{" << data::encoding::hex::write(bytes_view(x)) << "}";
     }
     
     // incomplete types are used to construct the signature hash in Bitcoin transactions. 

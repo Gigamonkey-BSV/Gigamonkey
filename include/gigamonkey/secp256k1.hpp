@@ -121,7 +121,7 @@ namespace Gigamonkey::secp256k1 {
             return size == CompressedPubkeySize || size == UncompressedPubkeySize;
         }
         
-        pubkey() : bytes{} {}
+        pubkey() : bytes() {}
         explicit pubkey(bytes_view v) : bytes{v} {}
         
         bool valid() const;

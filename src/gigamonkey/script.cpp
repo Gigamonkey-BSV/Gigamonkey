@@ -342,6 +342,23 @@ namespace Gigamonkey::Bitcoin::interpreter {
         throw fail{};
     };
 
+    std::ostream& write_asm(std::ostream& o, instruction i) {
+        if (i.Op == OP_0) return o << "0";
+        if (is_push_data(i.Op)) return o << data::encoding::hex::write(i.Data);
+        return o << i.Op;
+    }
+    
+    string ASM(bytes_view b) {
+        std::stringstream ss;
+        program p = decompile(b);
+        if (p.size() != 0) {
+            auto i = p.begin();
+            write_asm(ss, *i);
+            while (++i != p.end()) write_asm(ss << " ", *i);
+        }
+        return ss.str();
+    }
+
     std::ostream& write_op_code(std::ostream& o, op x) {
         if (x == OP_FALSE) return o << "push_empty";
         if (is_push(x)) {

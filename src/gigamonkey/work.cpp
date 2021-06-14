@@ -6,6 +6,8 @@
 
 #include <sv/arith_uint256.h>
 
+#include <math.h>
+
 namespace Gigamonkey::work {
     
     proof cpu_solve(const puzzle& p, const solution& initial) {
@@ -50,5 +52,87 @@ namespace Gigamonkey::work {
         return expanded;
     }
     
+    compact::compact(const uint256 &n) {
+        
+        byte exponent;
+        uint24_little digits = 0;
+        const byte* data = n.data();
+        
+        byte first_digit_to_copy = 29;
+        byte digits_to_copy = 3;
+        
+        auto begin_copy = digits.begin();
+        
+        for(byte digit_index = 0; digit_index < 29; digit_index) if (data[digit_index]) {
+            first_digit_to_copy = digit_index;
+            exponent = 32 - first_digit_to_copy;
+            break;
+        }
+        
+        if (static_cast<char>(data[first_digit_to_copy] < 0)) {
+            exponent ++;
+            digits_to_copy = 2;
+            begin_copy++;
+        } 
+        
+        std::copy(data + first_digit_to_copy, data + first_digit_to_copy + digits_to_copy, begin_copy);
+        
+        *this = compact{exponent, digits};
+        
+    }
+    
+    compact::compact(work::difficulty d) {
+        
+        // this is the value we need to be less than to satisfy the given difficulty. 
+        double absolute = double(work::difficulty::unit()) / double(d);
+        
+        int exponent = 0;
+        
+        while (absolute > 1) {
+            absolute /= 256;
+            exponent++;
+        }
+        
+        if (exponent < 3) {
+            *this = min();
+            return;
+        }
+        
+        if (exponent > 32) {
+            *this = max();
+            return;
+        }
+        
+        uint24_little digits;
+        
+        auto digit_index = std::make_reverse_iterator(digits.end());
+        
+        absolute *= 256;
+        double whole;
+        absolute = modf(absolute, &whole);
+        int digit = int(whole);
+        
+        if (digit >= 0x80) {
+            *digit_index = 0;
+            digit_index++;
+            *digit_index = static_cast<byte>(digit);
+            digit_index++;
+            exponent++;
+        } else {
+            *digit_index = static_cast<byte>(digit);
+            digit_index++;
+        }
+        
+        while (digit_index != std::make_reverse_iterator(digits.begin())) {
+            absolute *= 256;
+            absolute = modf(absolute, &whole);
+            digit = int(whole);
+            *digit_index = static_cast<byte>(digit);
+            digit_index++;
+        }
+        
+        *this = compact(static_cast<byte>(exponent), digits);
+        
+    }
 }
 
