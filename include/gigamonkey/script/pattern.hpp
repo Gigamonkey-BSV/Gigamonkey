@@ -69,7 +69,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
         virtual bytes_view scan(bytes_view p) const final override;
     };
     
-    // A pattern that represents a single instruction. 
+    // A pattern that represents any string that is part of a program. 
     struct pattern::string final : pattern {
         bytes Program;
         string(program p) : Program{compile(p)} {}

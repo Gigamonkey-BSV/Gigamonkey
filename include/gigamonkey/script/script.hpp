@@ -40,6 +40,8 @@ namespace Gigamonkey::Bitcoin::interpreter {
         return o <= OP_PUSHDATA4;
     }
     
+    bool is_minimal(bytes_view);
+    
     // a single step in a program. 
     struct instruction; 
     
@@ -99,9 +101,8 @@ namespace Gigamonkey::Bitcoin::interpreter {
         bytes Data;
         
         instruction();
-        instruction(op p, bytes d);
         instruction(op p);
-        instruction(bytes_view);
+        instruction(bytes_view d) : instruction{push(d)} {}
         
         bytes data() const;
         
@@ -117,10 +118,14 @@ namespace Gigamonkey::Bitcoin::interpreter {
         static instruction op_code(op o);
         static instruction op_return(bytes_view b);
         static instruction read(bytes_view b);
+        static instruction push(bytes_view d);
         
     private:
         static bytes_writer write_push_data(bytes_writer w, op Push, size_t size);
+        instruction(op p, bytes d);
     };
+    
+    bool is_minimal(const instruction&);
     
     // instructions which can appear in script programs but which 
     // do not have names in the original Satoshi client. 
@@ -285,6 +290,11 @@ namespace Gigamonkey::Bitcoin::interpreter {
 
     bytes_writer inline operator<<(bytes_writer w, const instruction i) {
         return i.write(w);
+    }
+    
+    bool inline is_minimal(bytes_view b) {
+        for (const instruction &i : decompile(b)) if (!is_minimal(i)) return false;
+        return true;
     }
     
 }

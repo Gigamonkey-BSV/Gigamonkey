@@ -6,17 +6,33 @@
 
 namespace Gigamonkey::Bitcoin::interpreter {
     
-    instruction::instruction(bytes_view data) : Op{[](size_t size)->op{
-        if (size <= OP_PUSHSIZE75) return static_cast<op>(size);
-        if (size <= 0xffff) return OP_PUSHDATA1;
-        if (size <= 0xffffffff) return OP_PUSHDATA2;
-        return OP_PUSHDATA4;
-    }(data.size())}, Data{data} {} 
+    bool is_minimal(const instruction& i) {
+        if (!i.valid()) return false;
+        if (!is_push_data(i.Op)) return true;
+        if (i.Data.size() == 1 && (i.Data[0] == 0x81 || (i.Data[0] >= 1 && i.Data[0] <= 16))) return false;
+        if (i.Op == OP_PUSHDATA1) return i.Data.size() > 75;
+        if (i.Op == OP_PUSHDATA2) return i.Data.size() > 256;
+        if (i.Op == OP_PUSHDATA4) return i.Data.size() > 65536;
+        return true;
+    }
+    
+    instruction instruction::push(bytes_view data) {
+        int size = data.size();
+        if (size == 0) return instruction{OP_0};
+        if (size == 1) {
+            if (data[0] == 0x81) return instruction{OP_1NEGATE};
+            if (data[0] >= 0x01 && data[0] <= 0x20) return instruction{static_cast<op>(data[0] + 0x50)};
+        }
+        if (size <= OP_PUSHSIZE75) return instruction{static_cast<op>(size), data};
+        if (size <= 0xffff) return instruction{OP_PUSHDATA1, data};
+        if (size <= 0xffffffff) return instruction{OP_PUSHDATA2, data};
+        return instruction{OP_PUSHDATA4, data};
+    }
     
     bytes instruction::data() const {
         if (is_push_data(Op) || Op == OP_RETURN) return Data;
         if (!is_push(Op)) return {};
-        if (Op == OP_1NEGATE) return {OP_1NEGATE};
+        if (Op == OP_1NEGATE) return {0x81};
         return bytes{static_cast<byte>(Op - 0x50)};
     }
     

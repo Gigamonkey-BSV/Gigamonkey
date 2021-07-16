@@ -79,7 +79,11 @@ namespace Gigamonkey::secp256k1 {
         constexpr static size_t MaxSignatureSize = 72;
         
         secp256k1::point point() const;
+        explicit signature(const secp256k1::point&);
     };
+    
+    bool is_DER(const signature&);
+    bool is_low_S(const signature&);
     
     using digest = digest256;
     

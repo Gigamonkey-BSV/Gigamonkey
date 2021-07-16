@@ -730,6 +730,10 @@ namespace Gigamonkey::Boost {
         bool script_valid = Bitcoin::interpreter::evaluate(in, out).verify();
         EXPECT_TRUE(script_valid);
         
+        std::cout << "string is " << p.string() << std::endl;
+        
+        std::cout << "version is " << p.string().Category << std::endl;
+        std::cout << "nonce is is " << p.string().Nonce << std::endl;
     }
 
 }
