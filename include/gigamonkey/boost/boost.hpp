@@ -698,6 +698,25 @@ namespace Gigamonkey {
             GeneralPurposeBits{}, 
             MinerAddress{} {}
         
+        
+        inline input_script::input_script(
+            const Bitcoin::signature& signature, 
+            const Bitcoin::pubkey& pubkey, 
+            uint32_little nonce,
+            Bitcoin::timestamp timestamp,
+            uint64_big extra_nonce_2,
+            Stratum::session_id extra_nonce_1,
+            int32_little general_purpose_bits, 
+            const digest160& miner_address) : Type{Boost::bounty}, 
+            Signature{signature}, 
+            Pubkey{pubkey}, 
+            Nonce{nonce},
+            Timestamp{timestamp},
+            ExtraNonce2{extra_nonce_2},
+            ExtraNonce1{extra_nonce_1},
+            GeneralPurposeBits{general_purpose_bits}, 
+            MinerAddress{miner_address} {}
+        
         bool inline input_script::valid() const {
             return Type != Boost::invalid;
         }
@@ -720,6 +739,19 @@ namespace Gigamonkey {
             Stratum::session_id extra_nonce_1, 
             const digest160& miner_address) {
             return input_script{signature, pubkey, nonce, timestamp, extra_nonce_2, extra_nonce_1, miner_address};
+        }
+        
+        // construct a Boost bounty input script. 
+        input_script inline input_script::bounty(
+            const Bitcoin::signature& signature, 
+            const Bitcoin::pubkey& pubkey,  
+            uint32_little nonce,
+            Bitcoin::timestamp timestamp,
+            uint64_big extra_nonce_2,
+            Stratum::session_id extra_nonce_1, 
+            int32_little category_bits, 
+            const digest160& miner_address) {
+            return input_script{signature, pubkey, nonce, timestamp, extra_nonce_2, extra_nonce_1, category_bits, miner_address};
         }
         
         // construct a Boost contract input script.
