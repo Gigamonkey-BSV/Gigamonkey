@@ -110,7 +110,7 @@ namespace Gigamonkey::Bitcoin::hd {
             secret() = default;
 
             static secret read(string_view);
-            static secret from_seed(seed entropy, type net);
+            static secret from_seed(seed entropy, type net = main);
 
             string write() const;
             pubkey to_public() const;

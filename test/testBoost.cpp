@@ -687,7 +687,7 @@ namespace Gigamonkey::Boost {
         uint64_big expected_extra_nonce_2_number;
         boost::algorithm::unhex(given_extra_nonce_2.begin(), given_extra_nonce_2.end(), expected_extra_nonce_2_number.begin());
         
-        output_script locking_script_v1 = output_script::bounty(
+        output_script locking_script_bounty_v1 = output_script::bounty(
             expected_category_number_v1, 
             content, 
             compact, 
@@ -695,7 +695,7 @@ namespace Gigamonkey::Boost {
             expected_user_nonce_number, 
             bytes(given_additional_data), false);
         
-        output_script locking_script_v2 = output_script::bounty(
+        output_script locking_script_bounty_v2 = output_script::bounty(
             expected_category_number_v1, 
             content, 
             compact, 
@@ -703,19 +703,44 @@ namespace Gigamonkey::Boost {
             expected_user_nonce_number, 
             bytes(given_additional_data), true);
         
-        EXPECT_TRUE(locking_script_v1.valid());
-        EXPECT_TRUE(locking_script_v2.valid());
+        output_script locking_script_contract_v1 = output_script::contract(
+            expected_category_number_v1, 
+            content, 
+            compact, 
+            bytes(given_tag), 
+            expected_user_nonce_number, 
+            bytes(given_additional_data), 
+            miner_address.Digest, false);
+        
+        output_script locking_script_contract_v2 = output_script::contract(
+            expected_category_number_v1, 
+            content, 
+            compact, 
+            bytes(given_tag), 
+            expected_user_nonce_number, 
+            bytes(given_additional_data), 
+            miner_address.Digest, true);
+        
+        EXPECT_TRUE(locking_script_bounty_v1.valid());
+        EXPECT_TRUE(locking_script_bounty_v2.valid());
+        
+        EXPECT_TRUE(locking_script_contract_v1.valid());
+        EXPECT_TRUE(locking_script_contract_v2.valid());
         
         // test that category and user nonce are correct. This is actually trivial here but it is something
         // that needs to be done properly in the javascript lib. 
-        EXPECT_EQ(locking_script_v1.Category, expected_category_number_v1);
-        EXPECT_EQ(locking_script_v1.UserNonce, expected_user_nonce_number);
-        EXPECT_EQ(locking_script_v2.UserNonce, expected_user_nonce_number);
+        EXPECT_EQ(locking_script_bounty_v1.Category, expected_category_number_v1);
+        EXPECT_EQ(locking_script_bounty_v1.UserNonce, expected_user_nonce_number);
+        EXPECT_EQ(locking_script_bounty_v2.UserNonce, expected_user_nonce_number);
+        
+        EXPECT_EQ(locking_script_contract_v1.Category, expected_category_number_v1);
+        EXPECT_EQ(locking_script_contract_v1.UserNonce, expected_user_nonce_number);
+        EXPECT_EQ(locking_script_contract_v2.UserNonce, expected_user_nonce_number);
         
         Stratum::session_id extra_nonce_1{expected_extra_nonce_1_number};
         Bitcoin::timestamp timestamp{expected_time_number};
         
-        input_script unlocking_script_v1 = input_script::bounty(
+        input_script unlocking_script_bounty_v1 = input_script::bounty(
             Bitcoin::signature(bytes(given_signature)), 
             miner_pubkey, 
             expected_nonce_number_v1, 
@@ -724,7 +749,7 @@ namespace Gigamonkey::Boost {
             extra_nonce_1, 
             miner_address.Digest);
         
-        input_script unlocking_script_v2 = input_script::bounty(
+        input_script unlocking_script_bounty_v2 = input_script::bounty(
             Bitcoin::signature(bytes(given_signature)), 
             miner_pubkey, 
             expected_nonce_number_v2, 
@@ -734,17 +759,43 @@ namespace Gigamonkey::Boost {
             general_purpose_bits_number, 
             miner_address.Digest);
         
-        EXPECT_TRUE(unlocking_script_v1.valid());
-        EXPECT_TRUE(unlocking_script_v2.valid());
+        input_script unlocking_script_contract_v1 = input_script::contract(
+            Bitcoin::signature(bytes(given_signature)), 
+            miner_pubkey, 
+            expected_nonce_number_v1, 
+            timestamp, 
+            expected_extra_nonce_2_number, 
+            extra_nonce_1);
         
-        bytes out_v1 = locking_script_v1.write();
-        bytes in_v1 = unlocking_script_v1.write();
-        bytes out_v2 = locking_script_v2.write();
-        bytes in_v2 = unlocking_script_v2.write();
+        input_script unlocking_script_contract_v2 = input_script::contract(
+            Bitcoin::signature(bytes(given_signature)), 
+            miner_pubkey, 
+            expected_nonce_number_v2, 
+            timestamp, 
+            expected_extra_nonce_2_number, 
+            extra_nonce_1, 
+            general_purpose_bits_number);
+        
+        EXPECT_TRUE(unlocking_script_bounty_v1.valid());
+        EXPECT_TRUE(unlocking_script_bounty_v2.valid());
+        
+        EXPECT_TRUE(unlocking_script_contract_v1.valid());
+        EXPECT_TRUE(unlocking_script_contract_v2.valid());
+        
+        bytes out_bounty_v1 = locking_script_bounty_v1.write();
+        bytes in_bounty_v1 = unlocking_script_bounty_v1.write();
+        bytes out_bounty_v2 = locking_script_bounty_v2.write();
+        bytes in_bounty_v2 = unlocking_script_bounty_v2.write();
+        
+        bytes out_contract_v1 = locking_script_contract_v1.write();
+        bytes in_contract_v1 = unlocking_script_contract_v1.write();
+        bytes out_contract_v2 = locking_script_contract_v2.write();
+        bytes in_contract_v2 = unlocking_script_contract_v2.write();
         
         // expected scripts in ASM. 
         
-        string expected_locking_script_ASM_v1{"626F6F7374706F77 OP_DROP D2040000 68656C6C6F20616E696D616C0000000000000000000000000000000000000000 "
+        string expected_locking_script_ASM_bounty_v1{"626F6F7374706F77 OP_DROP D2040000 "
+            "68656C6C6F20616E696D616C0000000000000000000000000000000000000000 "
             "D80F271E 74686973206973206120746167 C8010000 74686973206973206D6F7265206164646974696F6E616C44617461 " 
             "OP_CAT OP_SWAP OP_5 OP_ROLL OP_DUP OP_TOALTSTACK OP_CAT OP_2 OP_PICK OP_TOALTSTACK OP_5 OP_ROLL OP_SIZE OP_4 OP_EQUALVERIFY "
             "OP_CAT OP_5 OP_ROLL OP_SIZE OP_8 OP_EQUALVERIFY OP_CAT OP_SWAP OP_CAT OP_HASH256 OP_SWAP OP_TOALTSTACK OP_CAT OP_CAT OP_SWAP "
@@ -754,11 +805,12 @@ namespace Gigamonkey::Boost {
             "OP_CAT OP_FROMALTSTACK OP_3 OP_SUB OP_8 OP_MUL OP_RSHIFT 00 OP_CAT OP_BIN2NUM OP_LESSTHAN OP_VERIFY OP_DUP OP_HASH160 "
             "OP_FROMALTSTACK OP_EQUALVERIFY OP_CHECKSIG"};
         
-        string expected_unlocking_script_ASM_v1{"300602010A02010B41 "
+        string expected_unlocking_script_ASM_bounty_v1{"300602010A02010B41 "
             "020000000000000000000000000000000000000000000000000000000000000007 F8FC1600 12300009 0000000300000003 02000000 "
             "1A7340DA6FB3F728439A4BECFCA9CBEDDAF8795F"};
         
-        string expected_locking_script_ASM_v2{"626F6F7374706F77 OP_DROP D2040000 68656C6C6F20616E696D616C0000000000000000000000000000000000000000 "
+        string expected_locking_script_ASM_bounty_v2{"626F6F7374706F77 OP_DROP D2040000 "
+            "68656C6C6F20616E696D616C0000000000000000000000000000000000000000 "
             "D80F271E 74686973206973206120746167 C8010000 74686973206973206D6F7265206164646974696F6E616C44617461 "
             "OP_CAT OP_SWAP OP_5 OP_ROLL OP_DUP OP_TOALTSTACK OP_CAT OP_2 OP_PICK OP_TOALTSTACK OP_6 OP_ROLL OP_SIZE OP_4 OP_EQUALVERIFY "
             "OP_CAT OP_6 OP_ROLL OP_SIZE OP_8 OP_EQUALVERIFY OP_CAT OP_SWAP OP_CAT OP_HASH256 OP_SWAP OP_TOALTSTACK OP_CAT OP_TOALTSTACK " 
@@ -769,27 +821,72 @@ namespace Gigamonkey::Boost {
             "OP_CAT OP_FROMALTSTACK OP_3 OP_SUB OP_8 OP_MUL OP_RSHIFT 00 OP_CAT OP_BIN2NUM OP_LESSTHAN OP_VERIFY OP_DUP OP_HASH160 "
             "OP_FROMALTSTACK OP_EQUALVERIFY OP_CHECKSIG"};
         
-        string expected_unlocking_script_ASM_v2{"300602010A02010B41 "
+        string expected_unlocking_script_ASM_bounty_v2{"300602010A02010B41 "
             "020000000000000000000000000000000000000000000000000000000000000007 04670400 12300009 0000000300000003 02000000 FFFFFFFF "
             "1A7340DA6FB3F728439A4BECFCA9CBEDDAF8795F"};
         
+        string expected_locking_script_ASM_contract_v1{"626F6F7374706F77 OP_DROP 1A7340DA6FB3F728439A4BECFCA9CBEDDAF8795F D2040000 "
+            "68656C6C6F20616E696D616C0000000000000000000000000000000000000000 "
+            "D80F271E 74686973206973206120746167 C8010000 74686973206973206D6F7265206164646974696F6E616C44617461 "
+            "OP_CAT OP_SWAP OP_5 OP_ROLL OP_DUP OP_TOALTSTACK OP_CAT OP_2 OP_PICK OP_TOALTSTACK OP_5 OP_ROLL OP_SIZE OP_4 OP_EQUALVERIFY "
+            "OP_CAT OP_5 OP_ROLL OP_SIZE OP_8 OP_EQUALVERIFY OP_CAT OP_SWAP OP_CAT OP_HASH256 OP_SWAP OP_TOALTSTACK OP_CAT OP_CAT OP_SWAP "
+            "OP_SIZE OP_4 OP_EQUALVERIFY OP_CAT OP_FROMALTSTACK OP_CAT OP_SWAP OP_SIZE OP_4 OP_EQUALVERIFY OP_CAT OP_HASH256 00 OP_CAT "
+            "OP_BIN2NUM OP_FROMALTSTACK OP_SIZE OP_4 OP_EQUALVERIFY OP_3 OP_SPLIT OP_DUP OP_BIN2NUM OP_3 21 OP_WITHIN OP_VERIFY "
+            "OP_TOALTSTACK OP_DUP OP_BIN2NUM 0 OP_GREATERTHAN OP_VERIFY 0000000000000000000000000000000000000000000000000000000000 "
+            "OP_CAT OP_FROMALTSTACK OP_3 OP_SUB OP_8 OP_MUL OP_RSHIFT 00 OP_CAT OP_BIN2NUM OP_LESSTHAN OP_VERIFY OP_DUP OP_HASH160 "
+            "OP_FROMALTSTACK OP_EQUALVERIFY OP_CHECKSIG"};
+        
+        string expected_unlocking_script_ASM_contract_v1{"300602010A02010B41 "
+            "020000000000000000000000000000000000000000000000000000000000000007 F8FC1600 12300009 0000000300000003 02000000"};
+        
+        string expected_locking_script_ASM_contract_v2{"626F6F7374706F77 OP_DROP 1A7340DA6FB3F728439A4BECFCA9CBEDDAF8795F D2040000 "
+            "68656C6C6F20616E696D616C0000000000000000000000000000000000000000 "
+            "D80F271E 74686973206973206120746167 C8010000 74686973206973206D6F7265206164646974696F6E616C44617461 "
+            "OP_CAT OP_SWAP OP_5 OP_ROLL OP_DUP OP_TOALTSTACK OP_CAT OP_2 OP_PICK OP_TOALTSTACK OP_6 OP_ROLL OP_SIZE OP_4 OP_EQUALVERIFY "
+            "OP_CAT OP_6 OP_ROLL OP_SIZE OP_8 OP_EQUALVERIFY OP_CAT OP_SWAP OP_CAT OP_HASH256 OP_SWAP OP_TOALTSTACK OP_CAT OP_TOALTSTACK "
+            "FF1F00E0 OP_DUP OP_INVERT OP_TOALTSTACK OP_AND OP_SWAP OP_FROMALTSTACK OP_AND OP_OR OP_FROMALTSTACK OP_CAT OP_SWAP OP_SIZE OP_4 "
+            "OP_EQUALVERIFY OP_CAT OP_FROMALTSTACK OP_CAT OP_SWAP OP_SIZE OP_4 OP_EQUALVERIFY OP_CAT OP_HASH256 00 OP_CAT OP_BIN2NUM "
+            "OP_FROMALTSTACK OP_SIZE OP_4 OP_EQUALVERIFY OP_3 OP_SPLIT OP_DUP OP_BIN2NUM OP_3 21 OP_WITHIN OP_VERIFY OP_TOALTSTACK OP_DUP "
+            "OP_BIN2NUM 0 OP_GREATERTHAN OP_VERIFY 0000000000000000000000000000000000000000000000000000000000 OP_CAT OP_FROMALTSTACK OP_3 "
+            "OP_SUB OP_8 OP_MUL OP_RSHIFT 00 OP_CAT OP_BIN2NUM OP_LESSTHAN OP_VERIFY OP_DUP OP_HASH160 OP_FROMALTSTACK OP_EQUALVERIFY OP_CHECKSIG"};
+        
+        string expected_unlocking_script_ASM_contract_v2{"300602010A02010B41 "
+            "020000000000000000000000000000000000000000000000000000000000000007 04670400 12300009 0000000300000003 02000000 FFFFFFFF"};
+        
         // test that the scripts are correct
-        EXPECT_EQ(Bitcoin::interpreter::ASM(out_v1), expected_locking_script_ASM_v1);
-        EXPECT_EQ(Bitcoin::interpreter::ASM(in_v1), expected_unlocking_script_ASM_v1);
-        EXPECT_EQ(Bitcoin::interpreter::ASM(out_v2), expected_locking_script_ASM_v2);
-        EXPECT_EQ(Bitcoin::interpreter::ASM(in_v2), expected_unlocking_script_ASM_v2);
+        EXPECT_EQ(Bitcoin::interpreter::ASM(out_bounty_v1), expected_locking_script_ASM_bounty_v1);
+        EXPECT_EQ(Bitcoin::interpreter::ASM(in_bounty_v1), expected_unlocking_script_ASM_bounty_v1);
+        EXPECT_EQ(Bitcoin::interpreter::ASM(out_bounty_v2), expected_locking_script_ASM_bounty_v2);
+        EXPECT_EQ(Bitcoin::interpreter::ASM(in_bounty_v2), expected_unlocking_script_ASM_bounty_v2);
         
-        proof p_v1{locking_script_v1, unlocking_script_v1};
-        EXPECT_TRUE(p_v1.valid());
+        EXPECT_EQ(Bitcoin::interpreter::ASM(out_contract_v1), expected_locking_script_ASM_contract_v1);
+        EXPECT_EQ(Bitcoin::interpreter::ASM(in_contract_v1), expected_unlocking_script_ASM_contract_v1);
+        EXPECT_EQ(Bitcoin::interpreter::ASM(out_contract_v2), expected_locking_script_ASM_contract_v2);
+        EXPECT_EQ(Bitcoin::interpreter::ASM(in_contract_v2), expected_unlocking_script_ASM_contract_v2);
         
-        proof p_v2{locking_script_v2, unlocking_script_v2};
-        EXPECT_TRUE(p_v2.valid());
+        proof p_bounty_v1{locking_script_bounty_v1, unlocking_script_bounty_v1};
+        EXPECT_TRUE(p_bounty_v1.valid());
         
-        bool script_valid_v1 = Bitcoin::interpreter::evaluate(in_v1, out_v1).verify();
-        EXPECT_TRUE(script_valid_v1);
+        proof p_bounty_v2{locking_script_bounty_v2, unlocking_script_bounty_v2};
+        EXPECT_TRUE(p_bounty_v2.valid());
         
-        bool script_valid_v2 = Bitcoin::interpreter::evaluate(in_v2, out_v2).verify();
-        EXPECT_TRUE(script_valid_v2);
+        proof p_contract_v1{locking_script_contract_v1, unlocking_script_contract_v1};
+        EXPECT_TRUE(p_contract_v1.valid());
+        
+        proof p_contract_v2{locking_script_contract_v2, unlocking_script_contract_v2};
+        EXPECT_TRUE(p_contract_v2.valid());
+        
+        bool script_valid_bounty_v1 = Bitcoin::interpreter::evaluate(in_bounty_v1, out_bounty_v1).verify();
+        EXPECT_TRUE(script_valid_bounty_v1);
+        
+        bool script_valid_bounty_v2 = Bitcoin::interpreter::evaluate(in_bounty_v2, out_bounty_v2).verify();
+        EXPECT_TRUE(script_valid_bounty_v2);
+        
+        bool script_valid_contract_v1 = Bitcoin::interpreter::evaluate(in_contract_v1, out_contract_v1).verify();
+        EXPECT_TRUE(script_valid_contract_v1);
+        
+        bool script_valid_contract_v2 = Bitcoin::interpreter::evaluate(in_contract_v2, out_contract_v2).verify();
+        EXPECT_TRUE(script_valid_contract_v2);
         
     }
 
