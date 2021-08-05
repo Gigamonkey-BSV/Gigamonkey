@@ -125,9 +125,8 @@ namespace Gigamonkey::Bitcoin::interpreter {
         if (z == -1) return OP_1NEGATE;
         if (z > 0 && z <= 16) return opcodetype(0x50 + z);
         if (z < 0 || z > 127) throw method::unimplemented{"push_value"};
-        data::math::number::N_bytes<data::endian::little> zz{static_cast<uint64>(z)};
         bytes b(1);
-        std::copy(zz.begin(), zz.begin() + 1, b.begin());
+        b[0] = static_cast<byte>(z);
         return instruction{b};
     }
     

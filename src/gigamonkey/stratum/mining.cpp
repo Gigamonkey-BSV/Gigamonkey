@@ -73,7 +73,7 @@ namespace Gigamonkey::Stratum::mining {
         }
         
         inline encoding::hex::fixed<4> write(const int32_little& x) {
-            return encoding::hex::write(bytes_view(x), endian::little, encoding::hex::lower);
+            return encoding::hex::write(x, encoding::hex::lower);
         }
         
         bool read(const json& j, int32_little& x) {

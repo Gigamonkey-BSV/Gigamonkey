@@ -7,6 +7,7 @@
 #include "types.hpp"
 #include <data/data.hpp>
 #include <data/encoding/integer.hpp>
+#include <data/encoding/words.hpp>
 #include <data/math/number/bytes/N.hpp>
 
 #include <sv/arith_uint256.h>
@@ -80,6 +81,15 @@ namespace Gigamonkey {
         const byte* data() const;
         
         explicit operator string() const;
+        
+        arithmetic::digits<endian::little> digits() const {
+            return {data::slice<byte>(const_cast<byte*>(data()), size)};
+        }
+        
+        arithmetic::digits<endian::big> reverse_digits() const {
+            return {data::slice<byte>(const_cast<byte*>(data()), size)};
+        }
+        
     };
     
     // sizes of standard hash functions. 
@@ -147,7 +157,7 @@ namespace Gigamonkey {
 
     template <size_t size, unsigned int bits> 
     inline uint<size, bits>::operator string() const {
-        return data::encoding::hexidecimal::write((data::bytes_view)(*this), data::endian::little);
+        return data::encoding::hexidecimal::write(this->digits());
     }
 
     template <size_t size, unsigned int bits> 
@@ -254,9 +264,10 @@ namespace Gigamonkey {
     
     template <size_t size, unsigned int bits>
     uint<size, bits>::uint(const N& n) : uint(0) {
-        data::math::number::N_bytes<data::endian::little> b{n};
-        if (b.size() > size) std::copy(b.begin(), b.begin() + size, begin());
-        else std::copy(b.begin(), b.end(), begin());
+        ptr<bytes> b = encoding::hex::read(encoding::hexidecimal::write(n).substr(2));
+        std::reverse(b->begin(), b->end());
+        if (b->size() > size) std::copy(b->begin(), b->begin() + size, begin());
+        else std::copy(b->begin(), b->end(), begin());
     }
     
     template <size_t size, unsigned int bits>

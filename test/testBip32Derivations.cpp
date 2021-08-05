@@ -60,11 +60,11 @@ protected:
     }
 };
 
-TEST_P(Bip32Tests,FromSeed) {
+TEST_P(Bip32Tests, FromSeed) {
     ASSERT_EQ(seedkey.write(),GetParam().secretkey);
 }
 
-TEST_P(Bip32Tests,DerivePrivate) {
+TEST_P(Bip32Tests, DerivePrivate) {
     Gigamonkey::Bitcoin::hd::bip32::secret current=seedkey;
     for(auto curData:GetParam().chain) {
         current=Gigamonkey::Bitcoin::hd::bip32::derive(current,std::get<0>(curData));
@@ -73,7 +73,7 @@ TEST_P(Bip32Tests,DerivePrivate) {
 }
 
 
-TEST_P(Bip32Tests,DerivePublicWithPrivate) {
+TEST_P(Bip32Tests, DerivePublicWithPrivate) {
     Gigamonkey::Bitcoin::hd::bip32::secret current=seedkey;
     for(auto curData:GetParam().chain) {
         current=Gigamonkey::Bitcoin::hd::bip32::derive(current,std::get<0>(curData));

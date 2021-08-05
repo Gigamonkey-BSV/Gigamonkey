@@ -20,8 +20,6 @@
 #include <data/math/number/gmp/N.hpp>
 #include <data/encoding/hex.hpp>
 
-#include <data/encoding/hex.hpp>
-
 inline bool implies(bool a, bool b) {
     return (!a) || b;
 }

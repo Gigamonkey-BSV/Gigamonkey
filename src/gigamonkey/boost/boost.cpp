@@ -382,9 +382,9 @@ namespace Gigamonkey::Boost {
             ", Masked : " << (s.UseGeneralPurposeBits ? "true" : "false" ) << 
             ", Content : " << s.Content << 
             ", Target : " << s.Target << 
-            ", Tag : " << data::encoding::hexidecimal::write(s.Tag, data::endian::little) << 
+            ", Tag : " << s.Tag << 
             ", UserNonce : " << s.UserNonce << 
-            ", AdditionalData : " << data::encoding::hexidecimal::write(s.AdditionalData, data::endian::little) << "}";
+            ", AdditionalData : " << s.AdditionalData << "}";
     }
 
     std::ostream& operator<<(std::ostream& o, const Gigamonkey::Boost::input_script s) {

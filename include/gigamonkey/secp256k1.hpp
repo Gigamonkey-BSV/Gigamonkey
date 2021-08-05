@@ -156,11 +156,11 @@ namespace Gigamonkey::secp256k1 {
     }
 
     std::ostream inline &operator<<(std::ostream &o, const pubkey &p) {
-        return o << "pubkey{" << data::encoding::hexidecimal::write(p, data::endian::little) << "}";
+        return o << "pubkey{" << data::encoding::hex::write(p) << "}";
     }
 
     std::ostream inline &operator<<(std::ostream &o, const signature &p) {
-        return o << "signature{" << data::encoding::hexidecimal::write(p, data::endian::little) << "}";
+        return o << "signature{" << data::encoding::hex::write(p) << "}";
     }
 
     Gigamonkey::bytes_writer inline operator<<(bytes_writer w, const secret& x) {

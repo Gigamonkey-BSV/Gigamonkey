@@ -252,7 +252,7 @@ namespace Gigamonkey::Boost {
         
         const digest160 Tag = Bitcoin::hash160(std::string{"kangaroos"});
         
-        const bytes AdditionalData{std::string{"contextual information aka metadata"}};
+        const bytes AdditionalData = bytes::from_string("contextual information aka metadata");
         
         Bitcoin::signature Signature{}; // Don't need a real signature. 
         
@@ -479,7 +479,6 @@ namespace Gigamonkey::Boost {
         EXPECT_TRUE(test_orthogonal(proofs, proofs_from_stratum)) << "could not reconstruct proofs from Stratum.";
         
     }
-
     
     TEST(BoostTest, DoExtraPoW1) {
         
@@ -498,6 +497,8 @@ namespace Gigamonkey::Boost {
         list<Boost::output> boost_outputs; 
         
         for(const Bitcoin::output& o : tx.Outputs) {
+            auto x = Boost::output_script::read(o.Script);
+            
             Boost::output b{o};
             if (b.valid()) boost_outputs = boost_outputs << b;
         }
@@ -615,9 +616,9 @@ namespace Gigamonkey::Boost {
     
     // this is used to test against the boostpow-js library. 
     TEST(BoostTest, TestAgainstBoostPoWJS) {
-        bytes content_string{string{"hello animal"}};
-        bytes tag_string{string{"this is a tag"}};
-        bytes data_string{string{"this is more additionalData"}};
+        bytes content_string = bytes::from_string("hello animal");
+        bytes tag_string = bytes::from_string("this is a tag");
+        bytes data_string = bytes::from_string("this is more additionalData");
         
         digest256 content{};
         std::copy(content_string.begin(), content_string.end(), content.begin());
@@ -855,6 +856,17 @@ namespace Gigamonkey::Boost {
         
         // test that the scripts are correct
         EXPECT_EQ(Bitcoin::interpreter::ASM(out_bounty_v1), expected_locking_script_ASM_bounty_v1);
+        
+        string ASM = Bitcoin::interpreter::ASM(out_bounty_v1);
+        for (int i = 0; i < ASM.size(); i++) {
+            if (ASM[i] != expected_locking_script_ASM_bounty_v1[i]) {
+                std::cout << "Difference found at character " << i << "; " << ASM[i] << " vs " << expected_locking_script_ASM_bounty_v1[i] << std::endl;
+                std::cout << ASM.substr(i) << std::endl;
+                std::cout << expected_locking_script_ASM_bounty_v1.substr(i) << std::endl;
+                break;
+            }
+        }
+        
         EXPECT_EQ(Bitcoin::interpreter::ASM(in_bounty_v1), expected_unlocking_script_ASM_bounty_v1);
         EXPECT_EQ(Bitcoin::interpreter::ASM(out_bounty_v2), expected_locking_script_ASM_bounty_v2);
         EXPECT_EQ(Bitcoin::interpreter::ASM(in_bounty_v2), expected_unlocking_script_ASM_bounty_v2);

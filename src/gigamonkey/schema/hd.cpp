@@ -30,9 +30,11 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
 
 
     secret derive(const secret& sec, uint32 child) {
+        Bitcoin::pubkey pub = sec.Secret.to_public();
+        
         secret derived;
         derived.Depth = sec.Depth + 1;
-        derived.Parent = fp(hash160(sec.Secret.to_public()));
+        derived.Parent = fp(hash160(pub));
         derived.Sequence = child;
         derived.Net = sec.Net;
 
@@ -44,9 +46,8 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
             std::copy(sec.Secret.Value.begin(), sec.Secret.Value.end(), data_bytes.begin());
             data_bytes.insert(data_bytes.begin(), (byte) 0);
         } else {
-            pubkey pub = sec.to_public();
             data_bytes.clear();
-            for (byte &b : pub.Pubkey) {
+            for (byte &b : pub) {
                 data_bytes.push_back(b);
             }
         }
@@ -283,7 +284,6 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
     bool secret::operator!=(const secret &rhs) const {
         return !(rhs == *this);
     }
-
 
     string pubkey::write() const {
         bytes output;

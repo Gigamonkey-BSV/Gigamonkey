@@ -83,13 +83,13 @@ namespace Gigamonkey::Merkle {
                     if (!Branches.contains(i)) {
                         uint32 n = Nodes.size();
                         Nodes[n] = tree_node{i};
-                        Branches = Branches.insert(i, index{n});
+                        Branches = Branches.insert(i, index{static_cast<int>(n)});
                         insert_path(d.Digests.rest(), d.Index, n);
                     }
                 }
                 
-                if (d.Index & 1) Nodes[n].Left = index{p};
-                else Nodes[n].Right = index{p};
+                if (d.Index & 1) Nodes[n].Left = index{static_cast<int>(p)};
+                else Nodes[n].Right = index{static_cast<int>(p)};
                 
             }
             
@@ -106,13 +106,13 @@ namespace Gigamonkey::Merkle {
                     if (!Branches.contains(i)) {
                         uint32 n = Nodes.size();
                         Nodes[n] = tree_node{i};
-                        Branches = Branches.insert(i, index{n});
+                        Branches = Branches.insert(i, index{static_cast<int>(n)});
                         insert_path(d.rest(), x >> 1, n);
                     } else n = Branches[i];
                 }
                 
-                if (x & 1) Nodes[n].Right = index{p};
-                else Nodes[n].Left = index{p};
+                if (x & 1) Nodes[n].Right = index{static_cast<int>(p)};
+                else Nodes[n].Left = index{static_cast<int>(p)};
                 
             }
             

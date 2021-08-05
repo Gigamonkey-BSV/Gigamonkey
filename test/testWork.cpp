@@ -51,7 +51,7 @@ namespace Gigamonkey::work {
         auto puzzles = outer<puzzle>([category](std::string m, compact t) -> puzzle {
             digest256 message_hash = sha256(m);
             return puzzle(category, message_hash, t, 
-                Merkle::path{}, bytes{}, bytes(m));
+                Merkle::path{}, bytes{}, bytes::from_string(m));
         }, messages, targets);
         
         // use standard mask for general purpose version bits that are used with ASICBoost. 
@@ -61,7 +61,7 @@ namespace Gigamonkey::work {
         auto puzzles_with_mask = outer<puzzle>([category, mask](std::string m, compact t) -> puzzle {
             digest256 message_hash = sha256(m);
             return puzzle(category, message_hash, t, 
-                Merkle::path{}, bytes{}, bytes(m), mask);
+                Merkle::path{}, bytes{}, bytes::from_string(m), mask);
         }, messages, targets);
         
         uint64_big extra_nonce = 90983;
