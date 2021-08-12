@@ -106,6 +106,10 @@ namespace Gigamonkey::Bitcoin {
                 return spent() - sent();
             }
             
+            double fee_per_bytes() const {
+                return double(fee()) / double((*this)->size());
+            }
+            
             bool valid() const;
             
             list<edge> incoming_edges() const {
