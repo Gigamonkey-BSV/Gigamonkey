@@ -8,6 +8,8 @@
 
 #include <gigamonkey/redeem.hpp>
 #include <gigamonkey/address.hpp>
+#include <data/crypto/NIST_DRBG.hpp>
+#include <data/encoding/hex.hpp>
 #include "gtest/gtest.h"
 #include <iostream>
 
@@ -96,6 +98,69 @@ namespace Gigamonkey::Bitcoin {
         
         EXPECT_FALSE(evaluate(redeem_p2pk_compressed, document_p2pkh_uncompressed).verify());
         EXPECT_FALSE(evaluate(redeem_p2pk_uncompressed, document_p2pkh_compressed).verify());
+        
+    }
+    
+    TEST(AddressTest, TestRecoverBase58) {
+        
+        ptr<crypto::entropy> entropy = std::static_pointer_cast<crypto::entropy>(std::make_shared<crypto::fixed_entropy>(
+            bytes_view(bytes::from_string("atehu=eSRCjt.r83085[934[498[35"))));
+        
+        crypto::nist::drbg random{crypto::nist::drbg::HMAC_DRBG, entropy, bytes{}, 305};
+        
+        digest160 pubkey_hash;
+        
+        random >> pubkey_hash.Value;
+        
+        string address = Bitcoin::address(Bitcoin::address::main, pubkey_hash).write();
+        
+        base58::check address_check(address);
+        
+        string characters = encoding::base58::characters();
+        
+        string replaced;
+        {
+        
+            int replace_at = std::uniform_int_distribution<int>(0, address.size() - 1)(random);
+            
+            char replace_with;
+            do {
+                replace_with = characters[std::uniform_int_distribution<int>(0, 57)(random)];
+            } while (replace_with == address[replace_at]);
+            
+            replaced = address;
+            replaced[replace_at] = replace_with;
+            
+        }
+        
+        string inserted;
+        {
+            
+            int insert_at = std::uniform_int_distribution<int>(0, address.size())(random);
+            char to_insert = characters[std::uniform_int_distribution<int>(0, 57)(random)];
+        
+            inserted.resize(address.size() + 1);
+            std::copy(address.begin(), address.begin() + insert_at, inserted.begin());
+            std::copy(address.begin() + insert_at, address.end(), inserted.begin() + insert_at + 1);
+            
+            inserted[insert_at] = to_insert;
+            
+        }
+        
+        string deleted;
+        {
+            
+            int delete_at = std::uniform_int_distribution<int>(0, address.size() - 1)(random);
+            
+            deleted.resize(address.size() - 1);
+            
+            std::copy(address.begin(), address.begin() + delete_at, deleted.begin());
+            std::copy(address.begin() + delete_at + 1, address.end(), deleted.begin() + delete_at);
+        }
+        
+        EXPECT_EQ(address_check, base58::check::recover(replaced));
+        EXPECT_EQ(address_check, base58::check::recover(inserted));
+        EXPECT_EQ(address_check, base58::check::recover(deleted));
         
     }
 

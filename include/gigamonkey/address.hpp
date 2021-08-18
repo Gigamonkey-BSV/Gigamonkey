@@ -115,6 +115,10 @@ namespace Gigamonkey::base58 {
         check(byte version, bytes data);
         check(string_view s);
         check(bytes p);
+        
+        // try all single letter replacements, insertions, and deletions
+        // to see if we can find a valid base58 check encoded string. 
+        static check recover(const string_view invalid);
     private:
         check();
 
