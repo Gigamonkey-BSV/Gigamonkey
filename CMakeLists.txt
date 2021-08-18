@@ -170,6 +170,10 @@ target_link_libraries(gigamonkey PUBLIC data util ${OPENSSL_LIBRARIES} ${CRYPTOP
 
 target_include_directories(gigamonkey PUBLIC include)
 
+add_executable(SecretShare secret_share.cpp)
+target_include_directories(SecretShare PUBLIC include)
+target_link_libraries(SecretShare PUBLIC gigamonkey)
+
 # Set C++ version
 target_compile_features(gigamonkey PUBLIC cxx_std_17)
 set_target_properties(gigamonkey PROPERTIES CXX_EXTENSIONS OFF)
