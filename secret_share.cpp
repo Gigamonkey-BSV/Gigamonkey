@@ -108,14 +108,29 @@ namespace Gigamonkey {
         
     }
     
+    string help() {
+        return 
+            "\thelp                                                  Show his message.\n"
+            "\tversion                                               Show version.\n"
+            "\tsplit <data:string> <shares:uint> <threshold:uint>    Split data into shares.\n"
+            "\tmerge <threshold:uint> <shares:string...>             Merge shares into data.";
+    }
+    
+    string version() {
+        return "1.0";
+    }
+    
     string secret_share(list<string> args) {
         
-        if (args.empty() || (args.first() != string{"split"} && args.first() != string{"merge"})) 
-            throw exception(1) << "First argument must be either split or merge.";
+        if (args.empty() || args.first() == string{"help"}) return help();
+        
+        if (args.first() == string{"version"}) return version();
         
         if (args.first() == string{"split"}) return secret_share_split(args.rest());
         
-        return secret_share_merge(args.rest());
+        if (args.first() == string{"merge"}) return secret_share_merge(args.rest());
+        
+        return help();
         
     }
     
