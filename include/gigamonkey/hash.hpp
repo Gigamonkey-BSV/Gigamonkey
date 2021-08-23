@@ -7,7 +7,7 @@
 #include "types.hpp"
 #include <data/data.hpp>
 #include <data/encoding/integer.hpp>
-#include <data/encoding/words.hpp>
+#include <data/encoding/endian/words.hpp>
 #include <data/math/number/bytes/N.hpp>
 
 #include <sv/arith_uint256.h>

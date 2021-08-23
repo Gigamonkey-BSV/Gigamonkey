@@ -3,7 +3,7 @@
 
 #include <gigamonkey/schema/hd.hpp>
 #include <data/encoding/base58.hpp>
-#include <data/encoding/endian.hpp>
+#include <data/encoding/endian/endian.hpp>
 #include <data/io/unimplemented.hpp>
 #include <cryptopp/cryptlib.h>
 #include <cryptopp/hmac.h>
