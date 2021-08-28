@@ -38,8 +38,6 @@ namespace Gigamonkey {
         
         string message = args[0];
         
-        std::cout << "arg 1 is " << args[1] << std::endl;
-        
         uint64 shares;
         {
             std::stringstream ss(args[1]);
@@ -94,6 +92,8 @@ namespace Gigamonkey {
         for (const string& x : args.rest()) {
             base58::check share = base58::check::recover(x);
             if (!share.valid()) throw exception(8) << "could not recover share " << i;
+            string encoded = share.encode();
+            if (encoded != x) std::cout << "recovered base 58 check string " << encoded << " from " << x << std::endl;
             shares[i] = crypto::secret_share{share.version(), share.payload()};
             i ++;
         }
