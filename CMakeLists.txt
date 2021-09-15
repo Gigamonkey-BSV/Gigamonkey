@@ -154,9 +154,9 @@ add_library(gigamonkey STATIC
     src/gigamonkey/spv.cpp
     src/gigamonkey/accounts.cpp
     src/gigamonkey/merkle/dual.cpp
+    src/gigamonkey/stratum/method.cpp
     src/gigamonkey/stratum/error.cpp
     src/gigamonkey/stratum/stratum.cpp
-    src/gigamonkey/stratum/difficulty.cpp
     src/gigamonkey/stratum/mining_subscribe.cpp
     src/gigamonkey/stratum/mining_authorize.cpp
     src/gigamonkey/stratum/mining.cpp

@@ -14,8 +14,12 @@ namespace Gigamonkey::Stratum {
             return response::valid(j) && response::result().is_boolean();
         }
         
+        bool result() const {
+            return response::result();
+        }
+        
         using response::response;
-        boolean_response(request_id id, bool r) : response{id, json(r)} {}
+        boolean_response(message_id id, bool r) : response{id, json(r)} {}
     };
 
 }

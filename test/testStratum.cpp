@@ -8,7 +8,7 @@
 #include "gtest/gtest.h"
 
 namespace Gigamonkey::Stratum {
-
+    
     TEST(StratumTest, TestStratumSessionID) {
         uint32 a = 303829;
         uint32 b = 773822929;
@@ -33,12 +33,13 @@ namespace Gigamonkey::Stratum {
         EXPECT_EQ(id_a, j_id_a);
         EXPECT_EQ(id_b, j_id_b);
     }
+    
 }
 
 namespace Gigamonkey::Stratum::mining { 
     TEST(StratumTest, TestBooleanResponse) {
         struct response_test_case {
-            request_id ID;
+            message_id ID;
             bool Result;
             
             operator boolean_response() const {
@@ -65,7 +66,7 @@ namespace Gigamonkey::Stratum::mining {
 
     TEST(StratumTest, TestMiningAuthorize) {
         struct request_test_case {
-            request_id ID;
+            message_id ID;
             authorize_request::parameters Params;
             
             operator authorize_request() const {
@@ -101,7 +102,7 @@ namespace Gigamonkey::Stratum::mining {
     
     TEST(StratumTest, TestMiningSubscribe) {
         struct request_test_case {
-            request_id ID;
+            message_id ID;
             subscribe_request::parameters Params;
             
             operator subscribe_request() const {
@@ -111,7 +112,7 @@ namespace Gigamonkey::Stratum::mining {
         };
         
         struct response_test_case {
-            request_id ID;
+            message_id ID;
             subscribe_response::parameters Result;
             
             operator subscribe_response() const {
@@ -166,8 +167,8 @@ namespace Gigamonkey::Stratum::mining {
     }
     
     TEST(StratumTest, TestMiningSubmit) {
-        struct notify_test_case {
-            request_id ID;
+        struct notification_test_case {
+            message_id ID;
             notify::parameters Params;
             
             operator notify() const {
@@ -175,7 +176,7 @@ namespace Gigamonkey::Stratum::mining {
             }
         };
         
-        std::vector<notify_test_case> notify_test_cases{};
+        std::vector<notification_test_case> notify_test_cases{};
         
         for (const auto& i : notify_test_cases) for (const auto& j : notify_test_cases) {
             auto notify_i = notify(i);
@@ -197,7 +198,7 @@ namespace Gigamonkey::Stratum::mining {
     
     TEST(StratumTest, TestMiningNotify) {
         struct request_test_case {
-            request_id ID;
+            message_id ID;
             share Params;
             
             operator submit_request() const {

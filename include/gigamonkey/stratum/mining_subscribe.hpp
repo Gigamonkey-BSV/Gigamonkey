@@ -58,8 +58,8 @@ namespace Gigamonkey::Stratum::mining {
         std::optional<session_id> extra_nonce_1() const;
         
         using request::request;
-        subscribe_request(request_id id, const string& u) : request{id, mining_subscribe, {u}} {}
-        subscribe_request(request_id id, const string& u, session_id i) : request{id, mining_subscribe, serialize(parameters{u, i})} {}
+        subscribe_request(message_id id, const string& u) : request{id, mining_subscribe, {u}} {}
+        subscribe_request(message_id id, const string& u, session_id i) : request{id, mining_subscribe, serialize(parameters{u, i})} {}
         
     };
     
@@ -96,7 +96,7 @@ namespace Gigamonkey::Stratum::mining {
         uint32 extra_nonce_2_size() const;
         
         using response::response;
-        subscribe_response(request_id id, list<subscription> sub, session_id i, uint32 x) : 
+        subscribe_response(message_id id, list<subscription> sub, session_id i, uint32 x) : 
             response{id, serialize(parameters{sub, i, x})} {}
         
     };

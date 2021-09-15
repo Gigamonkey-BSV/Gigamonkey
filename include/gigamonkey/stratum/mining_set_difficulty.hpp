@@ -1,8 +1,8 @@
 // Copyright (c) 2020 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#ifndef GIGAMONKEY_STRATUM_MINING_AUTHORIZE
-#define GIGAMONKEY_STRATUM_MINING_AUTHORIZE
+#ifndef GIGAMONKEY_STRATUM_MINING_SET_DIFFICULTY
+#define GIGAMONKEY_STRATUM_MINING_SET_DIFFICULTY
 
 #include <gigamonkey/stratum/stratum.hpp>
 #include <gigamonkey/stratum/difficulty.hpp>
@@ -12,7 +12,7 @@ namespace Gigamonkey::Stratum::mining {
         
         static Stratum::parameters serialize(const difficulty& d) {
             Stratum::parameters p;
-            p.push_back(d.Value);
+            p.push_back(d);
             return p;
         }
         

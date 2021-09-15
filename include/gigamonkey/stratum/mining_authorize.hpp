@@ -8,6 +8,8 @@
 
 namespace Gigamonkey::Stratum::mining {
     
+    // The original version of Stratum begins with mining.authorize. 
+    // In the extended version mining.authorize is the second message and mining.configure is the first. 
     struct authorize_request;
     using authorize_response = boolean_response;
     
@@ -34,8 +36,8 @@ namespace Gigamonkey::Stratum::mining {
         static std::optional<string> password(const json&);
         
         using request::request;
-        authorize_request(request_id id, string u);
-        authorize_request(request_id id, string u, string p);
+        authorize_request(message_id id, string u);
+        authorize_request(message_id id, string u, string p);
         
         string username() const;
         
@@ -60,10 +62,10 @@ namespace Gigamonkey::Stratum::mining {
     inline authorize_request::parameters::parameters(string u) : Username{u}, Password{} {}
     inline authorize_request::parameters::parameters(string u, string p) : Username{u}, Password{p} {}
     
-    inline authorize_request::authorize_request(request_id id, string u) : 
+    inline authorize_request::authorize_request(message_id id, string u) : 
         request{id, mining_authorize, {u}} {}
     
-    inline authorize_request::authorize_request(request_id id, string u, string p) : 
+    inline authorize_request::authorize_request(message_id id, string u, string p) : 
         request{id, mining_authorize, {u, p}} {}
         
     string inline authorize_request::username() const {
