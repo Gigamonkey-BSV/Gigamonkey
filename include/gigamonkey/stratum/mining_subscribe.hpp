@@ -85,6 +85,10 @@ namespace Gigamonkey::Stratum::mining {
         static Stratum::parameters serialize(const parameters&);
         static parameters deserialize(const Stratum::parameters&);
         
+        parameters result() const {
+            return deserialize(response::result());
+        }
+        
         static bool valid(const json& j);
         static list<subscription> subscriptions(const json& j);
         static session_id extra_nonce_1(const json& j);
@@ -136,7 +140,7 @@ namespace Gigamonkey::Stratum::mining {
         Subscriptions{s}, ExtraNonce1{n1}, ExtraNonce2Size{worker::ExtraNonce2_size} {}
     
     bool inline subscribe_response::parameters::operator==(const parameters& p) const {
-        return Subscriptions == p.Subscriptions && ExtraNonce1 == ExtraNonce1 && ExtraNonce2Size == ExtraNonce2Size;
+        return Subscriptions == p.Subscriptions && ExtraNonce1 == p.ExtraNonce1 && ExtraNonce2Size == p.ExtraNonce2Size;
     }
     
     bool inline subscribe_response::parameters::operator!=(const parameters& p) const {

@@ -28,7 +28,7 @@ namespace Gigamonkey::Stratum::mining {
             return notification::valid() && deserialize(notification::params()).valid();
         }
         
-        explicit operator difficulty() const {
+        difficulty params() const {
             return deserialize(notification::params());
         }
     };

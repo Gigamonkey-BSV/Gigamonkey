@@ -57,6 +57,10 @@ namespace Gigamonkey::Stratum::mining {
         static Stratum::parameters serialize(const parameters&);
         static parameters deserialize(const Stratum::parameters&);
         
+        parameters params() const {
+            return deserialize(notification::params());
+        }
+        
         using notification::notification;
         notify(const parameters& p) : notification{mining_notify, serialize(p)} {}
         notify(

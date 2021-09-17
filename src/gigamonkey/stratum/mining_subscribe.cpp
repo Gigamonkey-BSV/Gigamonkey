@@ -42,7 +42,7 @@ namespace Gigamonkey::Stratum::mining {
         return x;
     }
     
-    parameters subscribe_response::serialize(const parameters& p) {
+    Stratum::parameters subscribe_response::serialize(const parameters& p) {
         if (!p.valid()) return {};
         
         Stratum::parameters s;
@@ -53,8 +53,7 @@ namespace Gigamonkey::Stratum::mining {
             n++;
         }
         
-        Stratum::parameters x;
-        x.resize(3);
+        Stratum::parameters x(3);
         x[0] = s;
         to_json(x[1], p.ExtraNonce1);
         x[2] = p.ExtraNonce2Size;

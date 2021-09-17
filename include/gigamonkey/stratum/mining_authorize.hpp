@@ -30,6 +30,8 @@ namespace Gigamonkey::Stratum::mining {
         static Stratum::parameters serialize(const parameters&);
         static parameters deserialize(const Stratum::parameters&);
         
+        parameters params() const;
+        
         static bool valid(const json&);
         
         static string username(const json&);
@@ -78,6 +80,10 @@ namespace Gigamonkey::Stratum::mining {
     
     bool inline authorize_request::valid() const {
         return valid(*this);
+    }
+    
+    authorize_request::parameters inline authorize_request::params() const {
+        return deserialize(request::params());
     }
     
 }

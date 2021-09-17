@@ -82,8 +82,8 @@ namespace Gigamonkey::Stratum::mining {
         for (const auto& i : test_cases) for (const auto& j : test_cases) {
             auto request_i = authorize_request(i);
             auto request_j = authorize_request(j);
-            auto deserialized_i = authorize_request::deserialize(request_i.params());
-            auto deserialized_j = authorize_request::deserialize(request_j.params());
+            auto deserialized_i = authorize_request::deserialize(static_cast<request>(request_i).params());
+            auto deserialized_j = authorize_request::deserialize(static_cast<request>(request_j).params());
             EXPECT_EQ(request_i.valid(), deserialized_i.valid());
             if (i.ID == j.ID) {
                 EXPECT_EQ(i.ID, request_j.id());
@@ -148,8 +148,8 @@ namespace Gigamonkey::Stratum::mining {
         for (const auto& i : response_test_cases) for (const auto& j : response_test_cases) {
             auto response_i = subscribe_response(i);
             auto response_j = subscribe_response(j);
-            auto deserialized_i = subscribe_response::deserialize(response_i.result());
-            auto deserialized_j = subscribe_response::deserialize(response_j.result());
+            auto deserialized_i = subscribe_response::deserialize(static_cast<response>(response_i).result());
+            auto deserialized_j = subscribe_response::deserialize(static_cast<response>(response_j).result());
             EXPECT_EQ(response_i.valid(), deserialized_i.valid());
             if (i.ID == j.ID) {
                 EXPECT_EQ(i.ID, response_j.id());
@@ -181,8 +181,8 @@ namespace Gigamonkey::Stratum::mining {
         for (const auto& i : notify_test_cases) for (const auto& j : notify_test_cases) {
             auto notify_i = notify(i);
             auto notify_j = notify(j);
-            auto deserialized_i = notify::deserialize(notify_i.params());
-            auto deserialized_j = notify::deserialize(notify_j.params());
+            auto deserialized_i = notify::deserialize(static_cast<notification>(notify_i).params());
+            auto deserialized_j = notify::deserialize(static_cast<notification>(notify_j).params());
             EXPECT_EQ(notify_i.valid(), deserialized_i.valid());
             if (i.ID == j.ID) {
                 EXPECT_EQ(notify_i, notify_j);
@@ -211,19 +211,19 @@ namespace Gigamonkey::Stratum::mining {
         for (const auto& i : request_test_cases) for (const auto& j : request_test_cases) {
             auto request_i = submit_request(i);
             auto request_j = submit_request(j);
-            auto deserialized_i = submit_request::deserialize(request_i.params());
-            auto deserialized_j = submit_request::deserialize(request_j.params());
+            auto deserialized_i = submit_request::deserialize(static_cast<request>(request_i).params());
+            auto deserialized_j = submit_request::deserialize(static_cast<request>(request_j).params());
             EXPECT_EQ(request_i.valid(), deserialized_i.valid());
             if (i.ID == j.ID) {
                 EXPECT_EQ(i.ID, request_j.id());
                 EXPECT_EQ(request_i, request_j);
                 EXPECT_EQ(deserialized_i, deserialized_j);
-                EXPECT_EQ(i.Params, submit_request::deserialize(request_j.params()));
+                EXPECT_EQ(i.Params, submit_request::deserialize(static_cast<request>(request_j).params()));
             } else {
                 EXPECT_NE(i.ID, request_j.id());
                 EXPECT_NE(request_i, request_j);
                 EXPECT_NE(deserialized_i, deserialized_j);
-                EXPECT_NE(i.Params, submit_request::deserialize(request_j.params()));
+                EXPECT_NE(i.Params, submit_request::deserialize(static_cast<request>(request_j).params()));
             }
         }
     }
