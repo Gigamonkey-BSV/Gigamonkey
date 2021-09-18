@@ -31,7 +31,7 @@ namespace Gigamonkey::Stratum::mining {
     struct subscribe_request : request {
         struct parameters {
             string UserAgent;
-            std::optional<session_id> ExtraNonce1;
+            optional<session_id> ExtraNonce1;
             
             parameters(const string& u) : UserAgent{u}, ExtraNonce1{} {}
             parameters(const string& u, session_id i) : UserAgent{u}, ExtraNonce1{i} {}
@@ -51,11 +51,11 @@ namespace Gigamonkey::Stratum::mining {
         
         static bool valid(const json& j);
         static string user_agent(const json& j);
-        static std::optional<session_id> extra_nonce_1(const json& j);
+        static optional<session_id> extra_nonce_1(const json& j);
         
         bool valid() const;
         string user_agent() const;
-        std::optional<session_id> extra_nonce_1() const;
+        optional<session_id> extra_nonce_1() const;
         
         using request::request;
         subscribe_request(message_id id, const string& u) : request{id, mining_subscribe, {u}} {}
@@ -155,7 +155,7 @@ namespace Gigamonkey::Stratum::mining {
         return user_agent(*this);
     }
     
-    std::optional<session_id> inline subscribe_request::extra_nonce_1() const {
+    optional<session_id> inline subscribe_request::extra_nonce_1() const {
         return extra_nonce_1(*this);
     }
     
@@ -167,7 +167,7 @@ namespace Gigamonkey::Stratum::mining {
         return deserialize(j["params"]).UserAgent;
     }
     
-    std::optional<session_id> inline subscribe_request::extra_nonce_1(const json& j) {
+    optional<session_id> inline subscribe_request::extra_nonce_1(const json& j) {
         return deserialize(j["params"]).ExtraNonce1;
     }
         

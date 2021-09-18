@@ -87,11 +87,11 @@ namespace Gigamonkey::MAPI {
     
     struct submission_parameters {
         
-        std::optional<string> callbackUrl;
-        std::optional<string> callbackToken;
-        std::optional<bool> merkleProof;
-        std::optional<bool> dsCheck;
-        std::optional<string> callbackEncryption;
+        optional<string> callbackUrl;
+        optional<string> callbackToken;
+        optional<bool> merkleProof;
+        optional<bool> dsCheck;
+        optional<string> callbackEncryption;
         
         std::map<string, string> http_parameters() const;
         
@@ -158,7 +158,7 @@ namespace Gigamonkey::MAPI {
         Bitcoin::txid txid;
         return_result returnResult;
         string resultDescription;
-        std::optional<list<conflicted_with>> conflictedWith;
+        optional<list<conflicted_with>> conflictedWith;
         
         bool valid() const {
             return txid.valid() && (!conflictedWith.has_value() || conflictedWith->valid());
@@ -211,7 +211,7 @@ namespace Gigamonkey::MAPI {
         digest256 blockHash;
         uint64 blockHeight;
         Bitcoin::pubkey minerId;
-        std::optional<uint64> confirmations;
+        optional<uint64> confirmations;
         uint32 txSecondMempoolExpiry;
         
         bool valid() const {

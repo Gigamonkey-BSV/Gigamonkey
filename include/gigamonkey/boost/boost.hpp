@@ -175,7 +175,7 @@ namespace Gigamonkey {
             Bitcoin::timestamp Timestamp;
             bytes ExtraNonce2;
             Stratum::session_id ExtraNonce1;
-            std::optional<int32_little> GeneralPurposeBits;
+            optional<int32_little> GeneralPurposeBits;
             digest160 MinerAddress;
             
         private:

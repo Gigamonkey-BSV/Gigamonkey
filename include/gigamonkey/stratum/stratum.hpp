@@ -54,13 +54,13 @@ namespace Gigamonkey::Stratum {
         
         static message_id id(const json&);
         static json result(const json&);
-        static std::optional<Stratum::error> error(const json&);
+        static optional<Stratum::error> error(const json&);
         
         bool valid() const;
         
         message_id id() const;
         json result() const;
-        std::optional<Stratum::error> error() const;
+        optional<Stratum::error> error() const;
         
         response();
         response(message_id id, const json& p);
@@ -133,7 +133,7 @@ namespace Gigamonkey::Stratum {
         return result(*this);
     }
     
-    std::optional<Stratum::error> inline response::error() const {
+    optional<Stratum::error> inline response::error() const {
         return error(*this);
     }
     

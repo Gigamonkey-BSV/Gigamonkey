@@ -96,7 +96,7 @@ namespace Gigamonkey::work {
         
         // see BIP 320
         // https://en.bitcoin.it/wiki/BIP_0320
-        std::optional<int32_little> Bits;
+        optional<int32_little> Bits;
         
         share(Bitcoin::timestamp t, nonce n, bytes b, int32_little bits);
         share(Bitcoin::timestamp t, nonce n, bytes b);

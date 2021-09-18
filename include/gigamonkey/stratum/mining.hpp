@@ -25,7 +25,7 @@ namespace Gigamonkey::Stratum {
     struct worker {
         worker_name Name;
         session_id ExtraNonce1;
-        std::optional<int32_little> Mask;
+        optional<int32_little> Mask;
         constexpr static uint32 ExtraNonce2_size{8};
         
         worker();
