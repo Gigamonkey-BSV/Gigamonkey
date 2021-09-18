@@ -21,7 +21,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
         if (size == 0) return instruction{OP_0};
         if (size == 1) {
             if (data[0] == 0x81) return instruction{OP_1NEGATE};
-            if (data[0] >= 0x01 && data[0] <= 0x20) return instruction{static_cast<op>(data[0] + 0x50)};
+            if (data[0] >= 0x01 && data[0] <= 0x10) return instruction{static_cast<op>(data[0] + 0x50)};
         }
         if (size <= OP_PUSHSIZE75) return instruction{static_cast<op>(size), data};
         if (size <= 0xffff) return instruction{OP_PUSHDATA1, data};

@@ -80,6 +80,12 @@ namespace Gigamonkey {
         }
         return b;
     }
+
+    void inline wait_for_enter(std::string message = "Press enter to continue...") {
+        do {
+            std::cout << '\n' << message;
+        } while (std::cin.get() != '\n');
+    }
     
 }
 

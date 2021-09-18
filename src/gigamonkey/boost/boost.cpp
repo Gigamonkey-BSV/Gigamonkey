@@ -34,7 +34,6 @@ namespace Gigamonkey::Boost {
         bytes Timestamp;
         bytes Nonce;
         bytes ExtraNonce1;
-        bytes ExtraNonce2;
         bytes GeneralPurposeBits;
         bytes MinerAddress;
         
@@ -43,7 +42,7 @@ namespace Gigamonkey::Boost {
             pubkey_pattern(MinerPubkey), 
             push_size{4, Nonce}, 
             push_size{4, Timestamp}, 
-            push_size{8, ExtraNonce2}, 
+            push{x.ExtraNonce2}, 
             push_size{4, ExtraNonce1}, 
             interpreter::optional{push_size{4, GeneralPurposeBits}}, 
             interpreter::optional{push_size{20, MinerAddress}}}.match(b)) return {};
@@ -51,9 +50,10 @@ namespace Gigamonkey::Boost {
         x.Type = MinerAddress.size() == 0 ? Boost::contract : Boost::bounty;
         
         if (GeneralPurposeBits.size() != 0) {
+            if (x.ExtraNonce2.size() > 32) return {};
             x.GeneralPurposeBits = 0;
             std::copy(GeneralPurposeBits.begin(), GeneralPurposeBits.end(), x.GeneralPurposeBits->begin());
-        }
+        } else if (x.ExtraNonce2.size() != 8) return {};
         
         if (x.Type == Boost::bounty) std::copy(
             MinerAddress.begin(), 
@@ -81,11 +81,6 @@ namespace Gigamonkey::Boost {
             ExtraNonce1.end(), 
             x.ExtraNonce1.data());
         
-        std::copy(
-            ExtraNonce2.begin(), 
-            ExtraNonce2.end(), 
-            x.ExtraNonce2.data());
-        
         return x;
     }
     
@@ -112,8 +107,10 @@ namespace Gigamonkey::Boost {
             push{5}, OP_ROLL, OP_DUP, OP_TOALTSTACK, OP_CAT,              
             // copy target and push to altstack. 
             push{2}, OP_PICK, OP_TOALTSTACK, 
-            push{5}, OP_ROLL, OP_SIZE, push{4}, OP_EQUALVERIFY, OP_CAT,   // check size of extra_nonce_1
-            push{5}, OP_ROLL, OP_SIZE, push{8}, OP_EQUALVERIFY, OP_CAT,   // check size of extra_nonce_2
+            // check size of extra_nonce_1
+            push{5}, OP_ROLL, OP_SIZE, push{4}, OP_EQUALVERIFY, OP_CAT,   
+            // check size of extra_nonce_2
+            push{5}, OP_ROLL, OP_SIZE, push{8}, OP_EQUALVERIFY, OP_CAT,   
             // create metadata document and hash it.
             OP_SWAP, OP_CAT, OP_HASH256,                       
             OP_SWAP, OP_TOALTSTACK, OP_CAT, OP_CAT,              // target to altstack. 
@@ -143,11 +140,14 @@ namespace Gigamonkey::Boost {
             push{5}, OP_ROLL, OP_DUP, OP_TOALTSTACK, OP_CAT, 
             // copy target and push to altstack. 
             push{2}, OP_PICK, OP_TOALTSTACK, 
-            push{6}, OP_ROLL, OP_SIZE, push{4}, OP_EQUALVERIFY, OP_CAT,   // check size of extra_nonce_1
-            push{6}, OP_ROLL, OP_SIZE, push{8}, OP_EQUALVERIFY, OP_CAT,   // check size of extra_nonce_2
+            // check size of extra_nonce_1
+            push{6}, OP_ROLL, OP_SIZE, push{4}, OP_EQUALVERIFY, OP_CAT,   
+            // check size of extra_nonce_2
+            push{6}, OP_ROLL, OP_SIZE, push{32}, OP_LESSTHANOREQUAL, OP_VERIFY, OP_CAT,   
             // create metadata document and hash it.
-            OP_SWAP, OP_CAT, OP_HASH256,                       
-            OP_SWAP, OP_TOALTSTACK, OP_CAT, OP_TOALTSTACK, // target and content + merkleroot to altstack. 
+            OP_SWAP, OP_CAT, OP_HASH256, 
+            // target and content + merkleroot to altstack. 
+            OP_SWAP, OP_TOALTSTACK, OP_CAT, OP_TOALTSTACK, 
             push_hex("ff1f00e0"), OP_DUP, OP_INVERT, OP_TOALTSTACK, OP_AND, 
             // check size of general purpose bits 
             OP_SWAP, OP_FROMALTSTACK, OP_AND, OP_OR, 
@@ -239,8 +239,10 @@ namespace Gigamonkey::Boost {
             OP_5, OP_ROLL, OP_DUP, OP_TOALTSTACK, OP_CAT,              
             // expand compact form of target and push to altstack. 
             OP_2, OP_PICK, OP_TOALTSTACK, 
-            OP_6, OP_ROLL, OP_SIZE, OP_4, OP_EQUALVERIFY, OP_CAT,   // check size of extra_nonce_1
-            OP_6, OP_ROLL, OP_SIZE, OP_8, OP_EQUALVERIFY, OP_CAT,   // check size of extra_nonce_2
+            // check size of extra_nonce_1
+            OP_6, OP_ROLL, OP_SIZE, OP_4, OP_EQUALVERIFY, OP_CAT,   
+            // check size of extra_nonce_2
+            OP_6, OP_ROLL, OP_SIZE, push_data(bytes{32}), OP_LESSTHANOREQUAL, OP_VERIFY, OP_CAT,   
             // create metadata document and hash it.
             OP_SWAP, OP_CAT, OP_HASH256,    
             // target and content + merkleroot to altstack. 

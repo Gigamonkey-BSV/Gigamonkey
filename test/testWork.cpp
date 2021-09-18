@@ -67,13 +67,15 @@ namespace Gigamonkey::work {
         uint64_big extra_nonce = 90983;
         
         auto proofs = data::for_each([&extra_nonce](puzzle p) -> proof {
-            return cpu_solve(p, solution(Bitcoin::timestamp(1), 0, extra_nonce++, 353));
+            extra_nonce++;
+            return cpu_solve(p, solution(Bitcoin::timestamp(1), 0, (bytes_view)(extra_nonce), 353));
         }, puzzles); 
         
         // we add a non-trivial version mask. 
         auto proofs_with_mask = data::for_each([&extra_nonce](puzzle p) -> proof {
             // add a non-trivial version bits field. 
-            return cpu_solve(p, solution(share{Bitcoin::timestamp(1), 0, extra_nonce++, -1}, 353));
+            extra_nonce++;
+            return cpu_solve(p, solution(share{Bitcoin::timestamp(1), 0, (bytes_view)(extra_nonce), -1}, 353));
         }, puzzles_with_mask); 
         
         EXPECT_TRUE(dot_cross([](proof a, proof b) -> bool {

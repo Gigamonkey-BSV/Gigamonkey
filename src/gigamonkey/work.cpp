@@ -18,11 +18,23 @@ namespace Gigamonkey::work {
         // accept difficulties that are above the ordinary minimum. 
         if (p.Candidate.Target.difficulty() > difficulty::minimum()) return {}; 
         
+        if (initial.Share.ExtraNonce2.size() != 8) {
+            std::stringstream ss;
+            ss << "Extra nonce 2 must have size 8; its size is " << initial.Share.ExtraNonce2.size();
+            throw std::logic_error{ss.str()};
+        }
+        
+        uint64_big extra_nonce_2;
+        std::copy(initial.Share.ExtraNonce2.begin(), initial.Share.ExtraNonce2.end(), extra_nonce_2.begin());
+        
         proof pr{p, initial};
         
         while(!pr.valid()) {
             pr.Solution.Share.Nonce++;
-            if (pr.Solution.Share.Nonce == 0) pr.Solution.Share.ExtraNonce2++;
+            if (pr.Solution.Share.Nonce == 0) {
+                extra_nonce_2++;
+                std::copy(extra_nonce_2.begin(), extra_nonce_2.end(), pr.Solution.Share.ExtraNonce2.begin());
+            }
         }
         
         return pr;

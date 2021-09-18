@@ -89,18 +89,18 @@ namespace Gigamonkey {
                 int32_little category,
                 const uint256& content,
                 work::compact target, 
-                bytes_view tag, 
+                const bytes& tag, 
                 uint32_little user_nonce, 
-                bytes_view data,
+                const bytes& data,
                 bool use_general_purpose_bits = true);
             
             static output_script contract(
                 int32_little category,
                 const uint256& content,
                 work::compact target, 
-                bytes_view tag, 
+                const bytes& tag, 
                 uint32_little user_nonce, 
-                bytes_view data, 
+                const bytes& data, 
                 const digest160& miner_address, 
                 bool use_general_purpose_bits = true);
             
@@ -138,18 +138,18 @@ namespace Gigamonkey {
                 int32_little category, 
                 const uint256& content,
                 work::compact target, 
-                bytes_view tag, 
+                const bytes& tag, 
                 uint32_little user_nonce, 
-                bytes_view data, 
+                const bytes& data, 
                 bool use_general_purpose_bits = true);
             
             output_script(
                 int32_little category, 
                 const uint256& content,
                 work::compact target, 
-                bytes_view tag, 
+                const bytes& tag, 
                 uint32_little user_nonce, 
-                bytes_view data,
+                const bytes& data,
                 const digest160& miner_address, 
                 bool use_general_purpose_bits = true);
             
@@ -158,9 +158,9 @@ namespace Gigamonkey {
                 int32_little category, 
                 const uint256& content, 
                 work::compact target, 
-                bytes_view tag, 
+                const bytes& tag, 
                 uint32_little user_nonce, 
-                bytes_view data, 
+                const bytes& data, 
                 const digest160& miner_address, 
                 bool use_general_purpose_bits = true);
             
@@ -173,7 +173,7 @@ namespace Gigamonkey {
             Bitcoin::pubkey Pubkey;
             uint32_little Nonce;
             Bitcoin::timestamp Timestamp;
-            uint64_big ExtraNonce2;
+            bytes ExtraNonce2;
             Stratum::session_id ExtraNonce1;
             std::optional<int32_little> GeneralPurposeBits;
             digest160 MinerAddress;
@@ -185,7 +185,7 @@ namespace Gigamonkey {
                 const Bitcoin::pubkey& pubkey, 
                 uint32_little nonce,
                 Bitcoin::timestamp timestamp,
-                uint64_big extra_nonce_2,
+                const bytes& extra_nonce_2,
                 Stratum::session_id extra_nonce_1,
                 const digest160& miner_address);
             
@@ -195,7 +195,7 @@ namespace Gigamonkey {
                 const Bitcoin::pubkey& pubkey, 
                 uint32_little nonce,
                 Bitcoin::timestamp timestamp,
-                uint64_big extra_nonce_2,
+                const bytes& extra_nonce_2,
                 Stratum::session_id extra_nonce_1);
             
             // bounty type compatible with ASICBoost
@@ -204,7 +204,7 @@ namespace Gigamonkey {
                 const Bitcoin::pubkey& pubkey, 
                 uint32_little nonce,
                 Bitcoin::timestamp timestamp,
-                uint64_big extra_nonce_2,
+                const bytes& extra_nonce_2,
                 Stratum::session_id extra_nonce_1,
                 int32_little general_purpose_bits, 
                 const digest160& miner_address);
@@ -215,7 +215,7 @@ namespace Gigamonkey {
                 const Bitcoin::pubkey& pubkey, 
                 uint32_little nonce,
                 Bitcoin::timestamp timestamp,
-                uint64_big extra_nonce_2,
+                const bytes& extra_nonce_2,
                 Stratum::session_id extra_nonce_1,
                 int32_little general_purpose_bits);
                 
@@ -236,7 +236,7 @@ namespace Gigamonkey {
                 const Bitcoin::pubkey& pubkey,  
                 uint32_little nonce,
                 Bitcoin::timestamp timestamp,
-                uint64_big extra_nonce_2,
+                const bytes& extra_nonce_2,
                 Stratum::session_id extra_nonce_1, 
                 const digest160& miner_address);
             
@@ -246,7 +246,7 @@ namespace Gigamonkey {
                 const Bitcoin::pubkey& pubkey,  
                 uint32_little nonce,
                 Bitcoin::timestamp timestamp,
-                uint64_big extra_nonce_2,
+                const bytes& extra_nonce_2,
                 Stratum::session_id extra_nonce_1);
             
             // construct a Boost bounty input script. 
@@ -255,7 +255,7 @@ namespace Gigamonkey {
                 const Bitcoin::pubkey& pubkey,  
                 uint32_little nonce,
                 Bitcoin::timestamp timestamp,
-                uint64_big extra_nonce_2,
+                const bytes& extra_nonce_2,
                 Stratum::session_id extra_nonce_1, 
                 int32_little category_bits, 
                 const digest160& miner_address);
@@ -266,7 +266,7 @@ namespace Gigamonkey {
                 const Bitcoin::pubkey& pubkey,  
                 uint32_little nonce,
                 Bitcoin::timestamp timestamp,
-                uint64_big extra_nonce_2,
+                const bytes& extra_nonce_2,
                 Stratum::session_id extra_nonce_1, 
                 int32_little category_bits);
             
@@ -412,7 +412,7 @@ namespace Gigamonkey {
             //proof(const Boost::puzzle& p, const work::solution& x) : work::proof{work::puzzle(p), x}, Type{p.Type} {}
             proof(const Boost::output_script& out, const Boost::input_script& in);
             proof(type t, const work::string& w, const bytes& h, 
-                const Stratum::session_id& n1, const uint64_big& n2, const bytes& b, 
+                const Stratum::session_id& n1, const bytes& n2, const bytes& b, 
                 const Bitcoin::signature& x, const Bitcoin::pubkey& p);
             //proof(const work::proof& p, type t) : work::proof{p}, Type{t} {}
                 
@@ -544,9 +544,9 @@ namespace Gigamonkey {
             int32_little category, 
             const uint256& content, 
             work::compact target, 
-            bytes_view tag, 
+            const bytes& tag, 
             uint32_little user_nonce, 
-            bytes_view data, 
+            const bytes& data, 
             const digest160& miner_address, 
             bool masked_category) : output_script{type == Boost::invalid ? output_script{} : 
                 type == Boost::bounty ? output_script::bounty(category, content, target, tag, user_nonce, data, masked_category) : 
@@ -556,9 +556,9 @@ namespace Gigamonkey {
             int32_little category,
             const uint256& content,
             work::compact target, 
-            bytes_view tag, 
+            const bytes& tag, 
             uint32_little user_nonce, 
-            bytes_view data, bool masked_category) {
+            const bytes& data, bool masked_category) {
             if (tag.size() > 20) return output_script{};
             return output_script{category, content, target, tag, user_nonce, data, masked_category};    
         }
@@ -567,9 +567,9 @@ namespace Gigamonkey {
             int32_little category,
             const uint256& content,
             work::compact target, 
-            bytes_view tag, 
+            const bytes& tag, 
             uint32_little user_nonce, 
-            bytes_view data, 
+            const bytes& data, 
             const digest160& miner_address, 
             bool masked_category) {
             return output_script{category, 
@@ -635,9 +635,9 @@ namespace Gigamonkey {
             int32_little category, 
             const uint256& content,
             work::compact target, 
-            bytes_view tag, 
+            const bytes& tag, 
             uint32_little user_nonce, 
-            bytes_view data, bool use_general_purpose_bits) : Type{Boost::bounty},  
+            const bytes& data, bool use_general_purpose_bits) : Type{Boost::bounty},  
             MinerAddress{}, 
             Category{category},
             UseGeneralPurposeBits{use_general_purpose_bits}, 
@@ -651,9 +651,9 @@ namespace Gigamonkey {
             int32_little category, 
             const uint256& content,
             work::compact target, 
-            bytes_view tag, 
+            const bytes& tag, 
             uint32_little user_nonce, 
-            bytes_view data,
+            const bytes& data,
             const digest160& miner_address, 
             bool use_general_purpose_bits) : Type{Boost::contract}, 
             MinerAddress{miner_address}, 
@@ -670,7 +670,7 @@ namespace Gigamonkey {
             const Bitcoin::pubkey& pubkey, 
             uint32_little nonce,
             Bitcoin::timestamp timestamp,
-            uint64_big extra_nonce_2,
+            const bytes& extra_nonce_2,
             Stratum::session_id extra_nonce_1,
             const digest160& miner_address) : Type{Boost::bounty}, 
             Signature{signature}, 
@@ -687,7 +687,7 @@ namespace Gigamonkey {
             const Bitcoin::pubkey& pubkey, 
             uint32_little nonce,
             Bitcoin::timestamp timestamp,
-            uint64_big extra_nonce_2,
+            const bytes& extra_nonce_2,
             Stratum::session_id extra_nonce_1) : Type{Boost::contract}, 
             Signature{signature}, 
             Pubkey{pubkey}, 
@@ -703,7 +703,7 @@ namespace Gigamonkey {
             const Bitcoin::pubkey& pubkey, 
             uint32_little nonce,
             Bitcoin::timestamp timestamp,
-            uint64_big extra_nonce_2,
+            const bytes& extra_nonce_2,
             Stratum::session_id extra_nonce_1,
             int32_little general_purpose_bits, 
             const digest160& miner_address) : Type{Boost::bounty}, 
@@ -721,7 +721,7 @@ namespace Gigamonkey {
             const Bitcoin::pubkey& pubkey, 
             uint32_little nonce,
             Bitcoin::timestamp timestamp,
-            uint64_big extra_nonce_2,
+            const bytes& extra_nonce_2,
             Stratum::session_id extra_nonce_1,
             int32_little general_purpose_bits) : Type{Boost::contract}, 
             Signature{signature}, 
@@ -734,7 +734,8 @@ namespace Gigamonkey {
             MinerAddress{} {}
         
         bool inline input_script::valid() const {
-            return Type != Boost::invalid;
+            return Type != Boost::invalid && 
+                (ExtraNonce2.size() == 8 || (bool(GeneralPurposeBits) && ExtraNonce2.size() <= 32));
         }
         
         script inline input_script::write() const {
@@ -751,7 +752,7 @@ namespace Gigamonkey {
             const Bitcoin::pubkey& pubkey,  
             uint32_little nonce,
             Bitcoin::timestamp timestamp,
-            uint64_big extra_nonce_2,
+            const bytes& extra_nonce_2,
             Stratum::session_id extra_nonce_1, 
             const digest160& miner_address) {
             return input_script{signature, pubkey, nonce, timestamp, extra_nonce_2, extra_nonce_1, miner_address};
@@ -763,7 +764,7 @@ namespace Gigamonkey {
             const Bitcoin::pubkey& pubkey,  
             uint32_little nonce,
             Bitcoin::timestamp timestamp,
-            uint64_big extra_nonce_2,
+            const bytes& extra_nonce_2,
             Stratum::session_id extra_nonce_1, 
             int32_little category_bits, 
             const digest160& miner_address) {
@@ -776,7 +777,7 @@ namespace Gigamonkey {
             const Bitcoin::pubkey& pubkey,  
             uint32_little nonce,
             Bitcoin::timestamp timestamp,
-            uint64_big extra_nonce_2,
+            const bytes& extra_nonce_2,
             Stratum::session_id extra_nonce_1) {
             return input_script{signature, pubkey, nonce, timestamp, extra_nonce_2, extra_nonce_1};
         }
@@ -786,7 +787,7 @@ namespace Gigamonkey {
             const Bitcoin::pubkey& pubkey,  
             uint32_little nonce,
             Bitcoin::timestamp timestamp,
-            uint64_big extra_nonce_2,
+            const bytes& extra_nonce_2,
             Stratum::session_id extra_nonce_1, 
             int32_little category_bits) {
             return input_script{signature, pubkey, nonce, timestamp, extra_nonce_2, extra_nonce_1, category_bits};
@@ -920,7 +921,7 @@ namespace Gigamonkey {
             work::proof{static_cast<const work::job&>(j), h}, Type{j.Type}, Signature{x}, Pubkey{p} {}
         
         inline proof::proof(type t, const work::string& w, const bytes& h, 
-            const Stratum::session_id& n1, const uint64_big& n2, const bytes& b, 
+            const Stratum::session_id& n1, const bytes& n2, const bytes& b, 
             const Bitcoin::signature& x, const Bitcoin::pubkey& p) : 
             work::proof{w, {}, h, n1, n2, b}, Type{t}, Signature{x}, Pubkey{p} {}
             

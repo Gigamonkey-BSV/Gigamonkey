@@ -94,7 +94,7 @@ namespace Gigamonkey::Boost {
             const output_script& x, 
             const Stratum::job& sj, 
             Stratum::session_id n1, 
-            uint64_big n2, 
+            const bytes& n2, 
             Bitcoin::secret key) : 
             Puzzle{j}, Script{x}, Job{sj}, ExtraNonce1{n1}, ExtraNonce2{n2}, Key{key}, Bits{} {}
             
@@ -103,7 +103,7 @@ namespace Gigamonkey::Boost {
             const output_script& x, 
             const Stratum::job& sj, 
             Stratum::session_id n1, 
-            uint64_big n2, 
+            const bytes& n2, 
             Bitcoin::secret key, 
             int32_little bits) : 
             Puzzle{j}, Script{x}, Job{sj}, ExtraNonce1{n1}, ExtraNonce2{n2}, Key{key}, Bits{bits} {}
@@ -116,17 +116,21 @@ namespace Gigamonkey::Boost {
             uint64_big n2, uint64 key) {
             Bitcoin::secret s(Bitcoin::secret::main, secp256k1::secret(secp256k1::coordinate(key)));
             puzzle Puzzle{o, s};
+                
+            bytes extra_nonce_2(8);
+            std::copy(n2.begin(), n2.end(), extra_nonce_2.begin());
+            
             return test_case{Puzzle, o, 
                 Stratum::job{worker, Stratum::mining::notify::parameters{jobID, work::puzzle(Puzzle), start, true}}, 
-                worker.ExtraNonce1, n2, s};
+                worker.ExtraNonce1, extra_nonce_2, s};
         }
         
         static test_case build(Boost::type type, 
             const uint256& content, 
             work::compact target, 
-            bytes tag, 
+            const bytes& tag, 
             uint32_little user_nonce, 
-            bytes data, 
+            const bytes& data, 
             const Stratum::job_id jobID, 
             Bitcoin::timestamp start, 
             const Stratum::worker& worker, 
@@ -139,18 +143,21 @@ namespace Gigamonkey::Boost {
             output_script o = type == contract ? 
                 output_script::contract(1, content, target, tag, user_nonce, data, address, false) : 
                 output_script::bounty(1, content, target, tag, user_nonce, data, false);
+                
+            bytes extra_nonce_2(8);
+            std::copy(n2.begin(), n2.end(), extra_nonce_2.begin());
             
             return test_case(Puzzle, o, 
                 Stratum::job{worker, Stratum::mining::notify::parameters{jobID, work::puzzle(Puzzle), start, true}}, 
-                worker.ExtraNonce1, n2, s);
+                worker.ExtraNonce1, extra_nonce_2, s);
         }
         
         static test_case build(Boost::type type, 
             const uint256& content, 
             work::compact target, 
-            bytes tag, 
+            const bytes& tag, 
             uint32_little user_nonce, 
-            bytes data, 
+            const bytes& data, 
             int32_little bits, 
             const Stratum::job_id jobID, 
             Bitcoin::timestamp start, 
@@ -164,10 +171,13 @@ namespace Gigamonkey::Boost {
             output_script o = type == contract ? 
                 output_script::contract(1, content, target, tag, user_nonce, data, address, true) : 
                 output_script::bounty(1, content, target, tag, user_nonce, data, true);
+                
+            bytes extra_nonce_2(8);
+            std::copy(n2.begin(), n2.end(), extra_nonce_2.begin());
             
             return test_case(Puzzle, o, 
                 Stratum::job{worker, Stratum::mining::notify::parameters{jobID, work::puzzle(Puzzle), start, true}}, 
-                worker.ExtraNonce1, n2, s, bits);
+                worker.ExtraNonce1, extra_nonce_2, s, bits);
         }
         
     public:
@@ -175,7 +185,7 @@ namespace Gigamonkey::Boost {
         output_script Script;
         Stratum::job Job;
         Stratum::session_id ExtraNonce1;
-        uint64_big ExtraNonce2;
+        bytes ExtraNonce2;
         Bitcoin::secret Key;
         std::optional<int32_little> Bits;
         
@@ -518,14 +528,13 @@ namespace Gigamonkey::Boost {
         bytes pubkey(1);  
         uint32_little nonce{2089482288};
         uint32_little timestamp{};
-        uint64_big extra_nonce_2{};
         Stratum::session_id extra_nonce_1{}; 
         digest160 miner_address{};
         
         bytes signature_bytes = bytes(signature_hex);
         bytes minerPubKey_bytes = bytes(minerPubKey_hex);
         bytes extraNonce1_bytes = bytes(extraNonce1_hex);
-        bytes extraNonce2_bytes = bytes(extraNonce2_hex);
+        bytes extra_nonce_2 = bytes(extraNonce2_hex);
         bytes time_bytes = bytes(time_hex);
         bytes minerPubKeyHash_bytes = bytes(minerPubKeyHash_hex);
         
@@ -533,7 +542,6 @@ namespace Gigamonkey::Boost {
         std::copy(minerPubKey_bytes.begin(), minerPubKey_bytes.end(), pubkey.begin());
         std::copy(extraNonce1_bytes.begin(), extraNonce1_bytes.end(), extra_nonce_1.begin());
         
-        std::copy(extraNonce2_bytes.begin(), extraNonce2_bytes.end(), extra_nonce_2.begin());
         std::copy(time_bytes.begin(), time_bytes.end(), timestamp.begin());
         
         std::copy(minerPubKeyHash_bytes.begin(), minerPubKeyHash_bytes.end(), miner_address.begin());
@@ -583,20 +591,18 @@ namespace Gigamonkey::Boost {
         bytes pubkey(minerPubKey_hex.size() / 2);  
         uint32_little nonce{0x10AC9844};
         uint32_little timestamp{};
-        uint64_big extra_nonce_2{};
         Stratum::session_id extra_nonce_1{1174405125}; 
         digest160 miner_address{};
         
         bytes signature_bytes = bytes(signature_hex);
         bytes minerPubKey_bytes = bytes(minerPubKey_hex);
-        bytes extraNonce2_bytes = bytes(extraNonce2_hex);
+        bytes extra_nonce_2 = bytes(extraNonce2_hex);
         bytes time_bytes = bytes(time_hex);
         bytes minerPubKeyHash_bytes = bytes(minerPubKeyHash_hex);
             
         std::copy(signature_bytes.begin(), signature_bytes.end(), signature.begin());
         std::copy(minerPubKey_bytes.begin(), minerPubKey_bytes.end(), pubkey.begin());
         
-        std::copy(extraNonce2_bytes.begin(), extraNonce2_bytes.end(), extra_nonce_2.begin());
         std::copy(time_bytes.begin(), time_bytes.end(), timestamp.begin());
         
         std::copy(minerPubKeyHash_bytes.begin(), minerPubKeyHash_bytes.end(), miner_address.begin());
@@ -606,7 +612,10 @@ namespace Gigamonkey::Boost {
             Boost::puzzle::header(boost_script.Tag, miner_address), 
             Boost::puzzle::body(boost_script.UserNonce, boost_script.AdditionalData)};
         
-        extra_nonce_2 += 5;
+        uint64_big n2;
+        std::copy(extra_nonce_2.begin(), extra_nonce_2.end(), n2.begin());
+        n2 += 5;
+        std::copy(n2.begin(), n2.end(), extra_nonce_2.begin());
         
         work::proof pr = work::cpu_solve(puzzle, work::solution{Bitcoin::timestamp{timestamp}, nonce, extra_nonce_2, extra_nonce_1});
         
@@ -686,7 +695,9 @@ namespace Gigamonkey::Boost {
         
         // getExtraNonce2Number() => 12884901891
         uint64_big expected_extra_nonce_2_number;
+        bytes expected_extra_nonce_2(8);
         boost::algorithm::unhex(given_extra_nonce_2.begin(), given_extra_nonce_2.end(), expected_extra_nonce_2_number.begin());
+        std::copy(expected_extra_nonce_2_number.begin(), expected_extra_nonce_2_number.end(), expected_extra_nonce_2.begin());
         
         output_script locking_script_bounty_v1 = output_script::bounty(
             expected_category_number_v1, 
@@ -746,7 +757,7 @@ namespace Gigamonkey::Boost {
             miner_pubkey, 
             expected_nonce_number_v1, 
             timestamp, 
-            expected_extra_nonce_2_number, 
+            expected_extra_nonce_2, 
             extra_nonce_1, 
             miner_address.Digest);
         
@@ -755,7 +766,7 @@ namespace Gigamonkey::Boost {
             miner_pubkey, 
             expected_nonce_number_v2, 
             timestamp, 
-            expected_extra_nonce_2_number, 
+            expected_extra_nonce_2, 
             extra_nonce_1, 
             general_purpose_bits_number, 
             miner_address.Digest);
@@ -765,7 +776,7 @@ namespace Gigamonkey::Boost {
             miner_pubkey, 
             expected_nonce_number_v1, 
             timestamp, 
-            expected_extra_nonce_2_number, 
+            expected_extra_nonce_2, 
             extra_nonce_1);
         
         input_script unlocking_script_contract_v2 = input_script::contract(
@@ -773,7 +784,7 @@ namespace Gigamonkey::Boost {
             miner_pubkey, 
             expected_nonce_number_v2, 
             timestamp, 
-            expected_extra_nonce_2_number, 
+            expected_extra_nonce_2, 
             extra_nonce_1, 
             general_purpose_bits_number);
         
@@ -814,11 +825,11 @@ namespace Gigamonkey::Boost {
             "68656C6C6F20616E696D616C0000000000000000000000000000000000000000 "
             "D80F271E 74686973206973206120746167 C8010000 74686973206973206D6F7265206164646974696F6E616C44617461 "
             "OP_CAT OP_SWAP OP_5 OP_ROLL OP_DUP OP_TOALTSTACK OP_CAT OP_2 OP_PICK OP_TOALTSTACK OP_6 OP_ROLL OP_SIZE OP_4 OP_EQUALVERIFY "
-            "OP_CAT OP_6 OP_ROLL OP_SIZE OP_8 OP_EQUALVERIFY OP_CAT OP_SWAP OP_CAT OP_HASH256 OP_SWAP OP_TOALTSTACK OP_CAT OP_TOALTSTACK " 
-            "FF1F00E0 OP_DUP OP_INVERT OP_TOALTSTACK OP_AND OP_SWAP OP_FROMALTSTACK OP_AND OP_OR OP_FROMALTSTACK OP_CAT OP_SWAP OP_SIZE OP_4 "
-            "OP_EQUALVERIFY OP_CAT OP_FROMALTSTACK OP_CAT OP_SWAP OP_SIZE OP_4 OP_EQUALVERIFY OP_CAT OP_HASH256 00 OP_CAT OP_BIN2NUM "
-            "OP_FROMALTSTACK OP_SIZE OP_4 OP_EQUALVERIFY OP_3 OP_SPLIT OP_DUP OP_BIN2NUM OP_3 21 OP_WITHIN OP_VERIFY OP_TOALTSTACK OP_DUP "
-            "OP_BIN2NUM 0 OP_GREATERTHAN OP_VERIFY 0000000000000000000000000000000000000000000000000000000000 "
+            "OP_CAT OP_6 OP_ROLL OP_SIZE 20 OP_LESSTHANOREQUAL OP_VERIFY OP_CAT OP_SWAP OP_CAT OP_HASH256 OP_SWAP OP_TOALTSTACK OP_CAT "
+            "OP_TOALTSTACK FF1F00E0 OP_DUP OP_INVERT OP_TOALTSTACK OP_AND OP_SWAP OP_FROMALTSTACK OP_AND OP_OR OP_FROMALTSTACK OP_CAT " 
+            "OP_SWAP OP_SIZE OP_4 OP_EQUALVERIFY OP_CAT OP_FROMALTSTACK OP_CAT OP_SWAP OP_SIZE OP_4 OP_EQUALVERIFY OP_CAT OP_HASH256 " 
+            "00 OP_CAT OP_BIN2NUM OP_FROMALTSTACK OP_SIZE OP_4 OP_EQUALVERIFY OP_3 OP_SPLIT OP_DUP OP_BIN2NUM OP_3 21 OP_WITHIN OP_VERIFY "
+            "OP_TOALTSTACK OP_DUP OP_BIN2NUM 0 OP_GREATERTHAN OP_VERIFY 0000000000000000000000000000000000000000000000000000000000 "
             "OP_CAT OP_FROMALTSTACK OP_3 OP_SUB OP_8 OP_MUL OP_RSHIFT 00 OP_CAT OP_BIN2NUM OP_LESSTHAN OP_VERIFY OP_DUP OP_HASH160 "
             "OP_FROMALTSTACK OP_EQUALVERIFY OP_CHECKSIG"};
         
@@ -844,12 +855,13 @@ namespace Gigamonkey::Boost {
             "68656C6C6F20616E696D616C0000000000000000000000000000000000000000 "
             "D80F271E 74686973206973206120746167 C8010000 74686973206973206D6F7265206164646974696F6E616C44617461 "
             "OP_CAT OP_SWAP OP_5 OP_ROLL OP_DUP OP_TOALTSTACK OP_CAT OP_2 OP_PICK OP_TOALTSTACK OP_6 OP_ROLL OP_SIZE OP_4 OP_EQUALVERIFY "
-            "OP_CAT OP_6 OP_ROLL OP_SIZE OP_8 OP_EQUALVERIFY OP_CAT OP_SWAP OP_CAT OP_HASH256 OP_SWAP OP_TOALTSTACK OP_CAT OP_TOALTSTACK "
-            "FF1F00E0 OP_DUP OP_INVERT OP_TOALTSTACK OP_AND OP_SWAP OP_FROMALTSTACK OP_AND OP_OR OP_FROMALTSTACK OP_CAT OP_SWAP OP_SIZE OP_4 "
-            "OP_EQUALVERIFY OP_CAT OP_FROMALTSTACK OP_CAT OP_SWAP OP_SIZE OP_4 OP_EQUALVERIFY OP_CAT OP_HASH256 00 OP_CAT OP_BIN2NUM "
-            "OP_FROMALTSTACK OP_SIZE OP_4 OP_EQUALVERIFY OP_3 OP_SPLIT OP_DUP OP_BIN2NUM OP_3 21 OP_WITHIN OP_VERIFY OP_TOALTSTACK OP_DUP "
-            "OP_BIN2NUM 0 OP_GREATERTHAN OP_VERIFY 0000000000000000000000000000000000000000000000000000000000 OP_CAT OP_FROMALTSTACK OP_3 "
-            "OP_SUB OP_8 OP_MUL OP_RSHIFT 00 OP_CAT OP_BIN2NUM OP_LESSTHAN OP_VERIFY OP_DUP OP_HASH160 OP_FROMALTSTACK OP_EQUALVERIFY OP_CHECKSIG"};
+            "OP_CAT OP_6 OP_ROLL OP_SIZE 20 OP_LESSTHANOREQUAL OP_VERIFY OP_CAT OP_SWAP OP_CAT OP_HASH256 OP_SWAP OP_TOALTSTACK OP_CAT " 
+            "OP_TOALTSTACK FF1F00E0 OP_DUP OP_INVERT OP_TOALTSTACK OP_AND OP_SWAP OP_FROMALTSTACK OP_AND OP_OR OP_FROMALTSTACK OP_CAT " 
+            "OP_SWAP OP_SIZE OP_4 OP_EQUALVERIFY OP_CAT OP_FROMALTSTACK OP_CAT OP_SWAP OP_SIZE OP_4 OP_EQUALVERIFY OP_CAT OP_HASH256 " 
+            "00 OP_CAT OP_BIN2NUM OP_FROMALTSTACK OP_SIZE OP_4 OP_EQUALVERIFY OP_3 OP_SPLIT OP_DUP OP_BIN2NUM OP_3 21 OP_WITHIN OP_VERIFY "
+            "OP_TOALTSTACK OP_DUP OP_BIN2NUM 0 OP_GREATERTHAN OP_VERIFY 0000000000000000000000000000000000000000000000000000000000 " 
+            "OP_CAT OP_FROMALTSTACK OP_3 OP_SUB OP_8 OP_MUL OP_RSHIFT 00 OP_CAT OP_BIN2NUM OP_LESSTHAN OP_VERIFY OP_DUP OP_HASH160 " 
+            "OP_FROMALTSTACK OP_EQUALVERIFY OP_CHECKSIG"};
         
         string expected_unlocking_script_ASM_contract_v2{"300602010A02010B41 "
             "020000000000000000000000000000000000000000000000000000000000000007 04670400 12300009 0000000300000003 02000000 FFFFFFFF"};
@@ -858,14 +870,6 @@ namespace Gigamonkey::Boost {
         EXPECT_EQ(Bitcoin::interpreter::ASM(out_bounty_v1), expected_locking_script_ASM_bounty_v1);
         
         string ASM = Bitcoin::interpreter::ASM(out_bounty_v1);
-        for (int i = 0; i < ASM.size(); i++) {
-            if (ASM[i] != expected_locking_script_ASM_bounty_v1[i]) {
-                std::cout << "Difference found at character " << i << "; " << ASM[i] << " vs " << expected_locking_script_ASM_bounty_v1[i] << std::endl;
-                std::cout << ASM.substr(i) << std::endl;
-                std::cout << expected_locking_script_ASM_bounty_v1.substr(i) << std::endl;
-                break;
-            }
-        }
         
         EXPECT_EQ(Bitcoin::interpreter::ASM(in_bounty_v1), expected_unlocking_script_ASM_bounty_v1);
         EXPECT_EQ(Bitcoin::interpreter::ASM(out_bounty_v2), expected_locking_script_ASM_bounty_v2);

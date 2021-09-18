@@ -92,14 +92,14 @@ namespace Gigamonkey::work {
         nonce Nonce;
         
         // Extra nonce is a part of Stratum but not part of the Bitcoin protocol. That is why we use big-endian. 
-        uint64_big ExtraNonce2;
+        bytes ExtraNonce2;
         
         // see BIP 320
         // https://en.bitcoin.it/wiki/BIP_0320
         std::optional<int32_little> Bits;
         
-        share(Bitcoin::timestamp t, nonce n, uint64_big b, int32_little bits);
-        share(Bitcoin::timestamp t, nonce n, uint64_big b);
+        share(Bitcoin::timestamp t, nonce n, bytes b, int32_little bits);
+        share(Bitcoin::timestamp t, nonce n, bytes b);
         share();
         
         bool valid() const;
@@ -116,7 +116,7 @@ namespace Gigamonkey::work {
         
         solution() : Share{}, ExtraNonce1{} {}
         solution(const share& x, Stratum::session_id n1) : Share{x}, ExtraNonce1{n1} {}
-        solution(Bitcoin::timestamp t, nonce n, uint64_big b, Stratum::session_id n1) : solution{share{t, n, b}, n1} {}
+        solution(Bitcoin::timestamp t, nonce n, bytes_view b, Stratum::session_id n1) : solution{share{t, n, b}, n1} {}
         
         bool valid() const {
             return Share.valid();
@@ -137,7 +137,7 @@ namespace Gigamonkey::work {
             Merkle::path mp, 
             const bytes& h, 
             const Stratum::session_id& n1, 
-            const uint64_big& n2, 
+            const bytes& n2, 
             const bytes& b);
         
         bytes meta() const;
@@ -238,10 +238,10 @@ namespace Gigamonkey::work {
         return o << "proof{Puzzle: " << p.Puzzle << ", Solution: " << p.Solution << "}";
     }
     
-    inline share::share(Bitcoin::timestamp t, nonce n, uint64_big b)
+    inline share::share(Bitcoin::timestamp t, nonce n, bytes b)
         : Timestamp{t}, Nonce{n}, ExtraNonce2{b}, Bits{} {}
     
-    inline share::share(Bitcoin::timestamp t, nonce n, uint64_big b, int32_little bits)
+    inline share::share(Bitcoin::timestamp t, nonce n, bytes b, int32_little bits)
         : Timestamp{t}, Nonce{n}, ExtraNonce2{b}, Bits{bits} {}
     
     inline share::share() : Timestamp{}, Nonce{}, ExtraNonce2{} {};
@@ -275,7 +275,7 @@ namespace Gigamonkey::work {
         Merkle::path mp, 
         const bytes& h, 
         const Stratum::session_id& n1, 
-        const uint64_big& n2, 
+        const bytes& n2, 
         const bytes& b) : 
         Puzzle{w.Category, w.Digest, w.Target, {}, h, b}, 
         Solution{share{w.Timestamp, w.Nonce, n2}, n1} {

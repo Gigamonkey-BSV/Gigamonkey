@@ -160,6 +160,7 @@ add_library(gigamonkey STATIC
     src/gigamonkey/stratum/mining_subscribe.cpp
     src/gigamonkey/stratum/mining_authorize.cpp
     src/gigamonkey/stratum/mining.cpp
+    src/gigamonkey/stratum/extensions.cpp
     src/gigamonkey/boost/boost.cpp
     src/gigamonkey/mapi/mapi.cpp
     src/gigamonkey/mapi/envelope.cpp
