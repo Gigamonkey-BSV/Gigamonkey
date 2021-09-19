@@ -9,19 +9,26 @@
 #include "timechain.hpp"
 
 namespace Gigamonkey::Bitcoin {
-    // the sighash directive determines what parts of a 
-    // transaction are signed to spend funds that require
-    // a signature. 
+    // The sighash directive is the last byte of a Bitcoin signature. 
+    // It determines what parts of a transaction were signed. 
+    // By default you would use fork_id | all, until fork_id becomes
+    // depricated and then you would just use all. 
     namespace sighash {
         
         using directive = byte;
     
         enum type : byte {
             unsupported = 0,
+            // all outputs are signed
             all = 1,
-            none = 2,
-            single = 3,
+            // no outputs are signed, meaning they can be changed and the signature is still valid.
+            none = 2, 
+            // the output with the same index number as the input in which this sig
+            single = 3, 
+            // added in Bitcoin Cash, used to implement replace protection. The signature algorithm 
+            // is different when enabled. Will be depricated eventually. 
             fork_id = 0x40,
+            // If enabled, inputs are not signed, meaning anybody can add new inputs to this tx.
             anyone_can_pay = 0x80
         };
         
@@ -43,7 +50,8 @@ namespace Gigamonkey::Bitcoin {
         return sighash::directive(t + sighash::fork_id * fork_id + sighash::anyone_can_pay * anyone_can_pay);
     }
     
-    // this represents a signature that will appear in a Bitcoin script. 
+    // a Bitcoin signature. It consists of an secp256k1::signature with a
+    // sighash directive at the end. This is what goes in an input script. 
     struct signature : bytes {
         constexpr static size_t MaxSignatureSize = secp256k1::signature::MaxSignatureSize + 1;
         
@@ -76,14 +84,12 @@ namespace Gigamonkey::Bitcoin {
         
     };
     
-    std::ostream inline &operator<<(std::ostream& o, const signature& x) {
-        return o << "signature{" << data::encoding::hex::write(bytes_view(x)) << "}";
-    }
-    
     // incomplete types are used to construct the signature hash in Bitcoin transactions. 
     // this is necessary because the input script is not known before it is created.
     namespace incomplete {
         
+        // an incomplete input is missing the script, which cannot be signed because if it 
+        // was, it would contain signatures that would have to sign themselves somehow. 
         struct input {
             outpoint Reference;
             uint32_little Sequence;
@@ -112,8 +118,15 @@ namespace Gigamonkey::Bitcoin {
     
     struct signature::document {
     
+        // the preveious output that is being redeemed by the
+        // input that will contain the signature of this document. 
         output Previous; 
+        
+        // the incomplete transaction that will contain this signature 
+        // in one of its input scripts. 
         incomplete::transaction Transaction; 
+        
+        // the index of the input containing the signature. 
         index Index;
         
         digest256 hash(sighash::directive d) const;
@@ -133,6 +146,10 @@ namespace Gigamonkey::Bitcoin {
         std::ostream inline &operator<<(std::ostream &o, const input &i) {
             return o << "input{" << i.Reference << ", ___, " << i.Sequence << "}";
         }
+    }
+    
+    std::ostream inline &operator<<(std::ostream& o, const signature& x) {
+        return o << "signature{" << data::encoding::hex::write(bytes_view(x)) << "}";
     }
     
 }
