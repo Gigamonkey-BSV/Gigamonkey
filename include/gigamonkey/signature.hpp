@@ -94,7 +94,11 @@ namespace Gigamonkey::Bitcoin {
             outpoint Reference;
             uint32_little Sequence;
             
-            Bitcoin::input complete(bytes_view script) {
+            input() : Reference{}, Sequence{} {}
+            input(outpoint r, uint32_little x = Bitcoin::input::Finalized) : 
+                Reference{r}, Sequence{x} {}
+            
+            Bitcoin::input complete(bytes_view script) const {
                 return Bitcoin::input{Reference, script, Sequence};
             }
         };
@@ -107,9 +111,13 @@ namespace Gigamonkey::Bitcoin {
             uint32_little Locktime;
             
             transaction(int32_little v, list<input> i, list<output> o, uint32_little l = 0);
+            transaction(list<input> i, list<output> o, uint32_little l = 0) : 
+                transaction{int32_little{Bitcoin::transaction::LatestVersion}, i, o, l} {}
             
             bytes write() const;
             static transaction read(bytes_view);
+            
+            Bitcoin::transaction complete(list<bytes> scripts) const;
         };
         
         std::ostream &operator<<(std::ostream &, const input &);

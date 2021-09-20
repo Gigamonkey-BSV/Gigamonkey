@@ -9,6 +9,18 @@
 
 namespace Gigamonkey::Bitcoin {
             
+    Bitcoin::transaction incomplete::transaction::complete(list<bytes> scripts) const {
+        if (scripts.size() != Inputs.size()) return {};
+        list<Bitcoin::input> in;
+        list<output> out;
+        for (const input& i : Inputs) {
+            in = in << i.complete(scripts.first());
+            scripts = scripts.rest();
+        }
+        for (const output& o : Outputs) out = out << o;
+        return Bitcoin::transaction{Version, in, out, Locktime};
+    }
+    
     incomplete::transaction::transaction(int32_little v, list<input> i, list<output> o, uint32_little l) : 
         Version{v}, Inputs(i.size()), Outputs(o.size()), Locktime{l} {
         for (int n = 0; n < Inputs.size(); n++) {
