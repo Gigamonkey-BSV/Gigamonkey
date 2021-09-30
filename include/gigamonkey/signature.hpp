@@ -80,7 +80,7 @@ namespace Gigamonkey::Bitcoin {
         
         static signature sign(const secp256k1::secret& s, sighash::directive d, const document&);
         
-        static bool verify(const signature& x, const secp256k1::pubkey& p, sighash::directive d, const document&);
+        static bool verify(const signature& x, const secp256k1::pubkey& p, const document&);
         
     };
     
@@ -97,6 +97,7 @@ namespace Gigamonkey::Bitcoin {
             input() : Reference{}, Sequence{} {}
             input(outpoint r, uint32_little x = Bitcoin::input::Finalized) : 
                 Reference{r}, Sequence{x} {}
+            input(const Bitcoin::input &in) : Reference{in.Reference}, Sequence{in.Sequence} {}
             
             Bitcoin::input complete(bytes_view script) const {
                 return Bitcoin::input{Reference, script, Sequence};
@@ -113,6 +114,11 @@ namespace Gigamonkey::Bitcoin {
             transaction(int32_little v, list<input> i, list<output> o, uint32_little l = 0);
             transaction(list<input> i, list<output> o, uint32_little l = 0) : 
                 transaction{int32_little{Bitcoin::transaction::LatestVersion}, i, o, l} {}
+            transaction(const Bitcoin::transaction& tx) : 
+                transaction(tx.Version, 
+                    data::for_each([](const Bitcoin::input& i) -> input {
+                        return input{i};
+                    }, tx.Inputs), tx.Outputs, tx.Locktime) {}
             
             bytes write() const;
             static transaction read(bytes_view);
@@ -135,7 +141,7 @@ namespace Gigamonkey::Bitcoin {
         incomplete::transaction Transaction; 
         
         // the index of the input containing the signature. 
-        index Index;
+        index InputIndex;
         
         digest256 hash(sighash::directive d) const;
         bytes write() const;
@@ -146,8 +152,8 @@ namespace Gigamonkey::Bitcoin {
         return signature{s.sign(doc.hash(d)), d};
     }
     
-    bool inline signature::verify(const signature& x, const secp256k1::pubkey& p, sighash::directive d, const document& doc) {
-        return p.verify(doc.hash(d), x.raw());
+    bool inline signature::verify(const signature& x, const secp256k1::pubkey& p, const document& doc) {
+        return p.verify(doc.hash(x.sighash()), x.raw());
     }
     
     namespace incomplete {

@@ -303,5 +303,13 @@ namespace Gigamonkey::Bitcoin {
         return true;
     }
     
+    std::ostream& operator<<(std::ostream& o, const input& p) {
+        return o << "input{Reference : " << p.Reference << ", Script : " << interpreter::ASM(p.Script) << ", Sequence : " << p.Sequence << "}";
+    }
+
+    inline std::ostream& operator<<(std::ostream& o, const output& p) {
+        return o << "output{Value : " << p.Value << ", Script : " << interpreter::ASM(p.Script) << "}";
+    }
+    
 }
 

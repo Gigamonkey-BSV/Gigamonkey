@@ -57,7 +57,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
         CTransaction ctx{deserialize, stream}; 
         
         return evaluate(unlock, lock.Previous.Script, 
-            TransactionSignatureChecker(&ctx, lock.Index, Amount(int64(lock.Previous.Value))));
+            TransactionSignatureChecker(&ctx, lock.InputIndex, Amount(int64(lock.Previous.Value))));
     }
     
     std::ostream& operator<<(std::ostream& o, const machine& i) {

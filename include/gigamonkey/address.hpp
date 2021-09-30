@@ -75,7 +75,9 @@ namespace Gigamonkey::Bitcoin {
         
         explicit operator string() const;
         
-        bool verify(const signature &x, const signature::document& document, sighash::directive d) const;
+        bool verify(const signature &x, const signature::document& document) const {
+            return signature::verify(x, *this, document);
+        }
     };
 
     // A Bitcoin checksum takes the hash256 value of a string

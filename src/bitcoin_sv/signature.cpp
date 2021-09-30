@@ -61,7 +61,7 @@ namespace Gigamonkey::Bitcoin {
         CTransaction ctx{deserialize, stream};
         
         ::uint256 tmp = SignatureHash(
-            CScript(Previous.Script.begin(), Previous.Script.end()), ctx, Index, SigHashType(d), 
+            CScript(Previous.Script.begin(), Previous.Script.end()), ctx, InputIndex, SigHashType(d), 
             Amount((int64)Previous.Value));
         
         digest<32> out;

@@ -353,14 +353,6 @@ namespace Gigamonkey::Bitcoin {
     inline std::ostream& operator<<(std::ostream& o, const outpoint& p) {
         return o << "outpoint{" << p.Digest << ":" << p.Index << "}";
     }
-    
-    inline std::ostream& operator<<(std::ostream& o, const input& p) {
-        return o << "input{Reference : " << p.Reference << ", Script : " << p.Script << ", Sequence : " << p.Sequence << "}";
-    }
-
-    inline std::ostream& operator<<(std::ostream& o, const output& p) {
-        return o << "output{Value : " << p.Value << ", Script : " << p.Script << "}";
-    }
 
     writer inline operator<<(writer w, const header& h) {
         return w << h.Version << h.Previous << h.MerkleRoot << h.Timestamp << h.Target << h.Nonce;
