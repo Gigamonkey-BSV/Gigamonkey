@@ -6,6 +6,7 @@
 #include <gigamonkey/address.hpp>
 #include "gtest/gtest.h"
 #include <gigamonkey/wif.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace Gigamonkey::Bitcoin {
     
@@ -64,8 +65,8 @@ namespace Gigamonkey::Bitcoin {
         test_data write() const {
             return test_data{SecretWIFCompressed.write(), 
                 SecretWIFUncompressed.write(), 
-                string(PubkeyHexCompressed),
-                string(PubkeyHexUncompressed), 
+                boost::to_upper_copy(string(PubkeyHexCompressed)),
+                boost::to_upper_copy(string(PubkeyHexUncompressed)), 
                 AddressBase58.write()
             };
         }

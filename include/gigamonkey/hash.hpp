@@ -294,7 +294,9 @@ namespace Gigamonkey {
 
     template <size_t size, unsigned int bits> 
     inline uint<size, bits>::operator string() const {
-        return data::encoding::hexidecimal::write(this->digits());
+        bytes r(32);
+        std::copy(begin(), end(), r.rbegin());
+        return string{"0x"} + data::encoding::hex::write(r, data::encoding::hex::lower);
     }
 
     template <size_t size, unsigned int bits> 

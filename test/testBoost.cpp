@@ -867,18 +867,37 @@ namespace Gigamonkey::Boost {
             "020000000000000000000000000000000000000000000000000000000000000007 04670400 12300009 0000000300000003 02000000 FFFFFFFF"};
         
         // test that the scripts are correct
-        EXPECT_EQ(Bitcoin::interpreter::ASM(out_bounty_v1), expected_locking_script_ASM_bounty_v1);
+        EXPECT_EQ(
+            boost::to_upper_copy(Bitcoin::interpreter::ASM(out_bounty_v1)), 
+            expected_locking_script_ASM_bounty_v1);
         
-        string ASM = Bitcoin::interpreter::ASM(out_bounty_v1);
+        EXPECT_EQ(
+            boost::to_upper_copy(Bitcoin::interpreter::ASM(in_bounty_v1)), 
+            expected_unlocking_script_ASM_bounty_v1);
         
-        EXPECT_EQ(Bitcoin::interpreter::ASM(in_bounty_v1), expected_unlocking_script_ASM_bounty_v1);
-        EXPECT_EQ(Bitcoin::interpreter::ASM(out_bounty_v2), expected_locking_script_ASM_bounty_v2);
-        EXPECT_EQ(Bitcoin::interpreter::ASM(in_bounty_v2), expected_unlocking_script_ASM_bounty_v2);
+        EXPECT_EQ(
+            boost::to_upper_copy(Bitcoin::interpreter::ASM(out_bounty_v2)), 
+            expected_locking_script_ASM_bounty_v2);
         
-        EXPECT_EQ(Bitcoin::interpreter::ASM(out_contract_v1), expected_locking_script_ASM_contract_v1);
-        EXPECT_EQ(Bitcoin::interpreter::ASM(in_contract_v1), expected_unlocking_script_ASM_contract_v1);
-        EXPECT_EQ(Bitcoin::interpreter::ASM(out_contract_v2), expected_locking_script_ASM_contract_v2);
-        EXPECT_EQ(Bitcoin::interpreter::ASM(in_contract_v2), expected_unlocking_script_ASM_contract_v2);
+        EXPECT_EQ(
+            boost::to_upper_copy(Bitcoin::interpreter::ASM(in_bounty_v2)), 
+            expected_unlocking_script_ASM_bounty_v2);
+        
+        EXPECT_EQ(
+            boost::to_upper_copy(Bitcoin::interpreter::ASM(out_contract_v1)), 
+            expected_locking_script_ASM_contract_v1);
+        
+        EXPECT_EQ(
+            boost::to_upper_copy(Bitcoin::interpreter::ASM(in_contract_v1)), 
+            expected_unlocking_script_ASM_contract_v1);
+        
+        EXPECT_EQ(
+            boost::to_upper_copy(Bitcoin::interpreter::ASM(out_contract_v2)), 
+            expected_locking_script_ASM_contract_v2);
+        
+        EXPECT_EQ(
+            boost::to_upper_copy(Bitcoin::interpreter::ASM(in_contract_v2)), 
+            expected_unlocking_script_ASM_contract_v2);
         
         proof p_bounty_v1{locking_script_bounty_v1, unlocking_script_bounty_v1};
         EXPECT_TRUE(p_bounty_v1.valid());

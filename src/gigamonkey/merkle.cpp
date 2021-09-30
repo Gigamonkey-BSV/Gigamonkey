@@ -166,14 +166,6 @@ namespace Gigamonkey::Merkle {
         }
         return l.Digest;
     }
-        
-    branch branch::rest() const {
-        if (Digests.empty()) return *this;
-        digest256 next;
-        if (Leaf.Index & 1) next = hash_concatinated(Digests.first(), Leaf.Digest);
-        else next = hash_concatinated(Leaf.Digest, Digests.first());
-        return branch{leaf{next, Leaf.Index >> 1}, Digests.rest()};
-    }
     
     const list<proof> tree::proofs() const {
         

@@ -93,9 +93,13 @@ namespace Gigamonkey::Merkle {
         
         leaf();
         leaf(digest d, uint32 i);
-        explicit leaf(digest d) : leaf(d, 0) {}
+        explicit leaf(const digest& d) : leaf(d, 0) {}
         
         bool valid() const;
+        
+        leaf next(const digest& d) const {
+            return {Index & 1 ? hash_concatinated(d, Digest) : hash_concatinated(Digest, d), Index >> 1};
+        }
     };
     
     inline digest path::derive_root(const digest& l) const {
@@ -122,8 +126,11 @@ namespace Gigamonkey::Merkle {
         leaf first() const;
         
         operator leaf() const;
-        
-        branch rest() const;
+    
+        branch rest() const {
+            if (Digests.empty()) return *this;
+            return branch{Leaf.next(Digests.first()), Digests.rest()};
+        }
         
         digest root() const {
             return Merkle::root(Leaf, Digests);
@@ -259,11 +266,11 @@ namespace Gigamonkey::Merkle {
     inline path::path() : Index{0}, Digests{} {}
     
     inline path::path(uint32 i, const digests p) : Index{i}, Digests{p} {}
-        
+    
     inline bool path::valid() const {
         return Digests.valid();
     }
-        
+    
     inline leaf::leaf() : Digest{}, Index{0} {}
     
     inline leaf::leaf(digest d, uint32 i) : Digest{d}, Index{i} {}
@@ -277,15 +284,15 @@ namespace Gigamonkey::Merkle {
     inline branch::branch(leaf l, digests p) : Leaf{l}, Digests{p} {}
     
     inline branch::branch(leaf l) : Leaf{l}, Digests{} {}
-        
+    
     inline bool branch::valid() const {
         return Leaf.valid() && Digests.valid();
     }
-        
+    
     inline bool branch::empty() const {
         return Digests.empty();
     }
-        
+    
     inline leaf branch::first() const {
         return Leaf;
     }
@@ -293,11 +300,11 @@ namespace Gigamonkey::Merkle {
     inline branch::operator leaf() const {
         return Leaf;
     }
-        
+    
     inline branch::operator path() const {
         return path{Leaf.Index, Digests};
     }
-        
+    
     inline branch::operator entry() const {
         return entry{Leaf.Digest, operator path()};
     }
