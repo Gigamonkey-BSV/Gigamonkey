@@ -120,6 +120,11 @@ namespace Gigamonkey::Bitcoin::interpreter {
         static instruction read(bytes_view b);
         static instruction push(bytes_view d);
         
+        static size_t min_push_size(bytes_view b) {
+            auto x = b.size();
+            return x == 0 || (x == 1 && (b[0] == 0x81 || (b[0] >= 1 && b[0] <= 16))) ? 1 : x < 75 ? x + 2 : x < 0xff ? x + 3 : x + 5;
+        }
+        
     private:
         static bytes_writer write_push_data(bytes_writer w, op Push, size_t size);
         instruction(op p, bytes d);

@@ -446,7 +446,9 @@ namespace Gigamonkey::Boost {
         
         // serialized forms of the output and input scripts. 
         list<script> serialized_output_scripts = data::for_each([](const output_script o) -> script {
-            return o.write();
+            auto script = o.write();
+            EXPECT_EQ(script.size(), o.serialized_size());
+            return script;
         }, output_scripts);
         
         auto unserialized_output_scripts = data::for_each([](const script o) -> output_script {
@@ -456,7 +458,9 @@ namespace Gigamonkey::Boost {
         EXPECT_TRUE(test_orthogonal(output_scripts, unserialized_output_scripts)) << "could not serialize and deserialize output scripts.";
         
         list<script> serialized_input_scripts = data::for_each([](const input_script i) -> script {
-            return i.write();
+            auto script = i.write();
+            EXPECT_EQ(script.size(), i.serialized_size());
+            return script;
         }, input_scripts);
         
         auto unserialized_input_scripts = data::for_each([](const script o) -> input_script {

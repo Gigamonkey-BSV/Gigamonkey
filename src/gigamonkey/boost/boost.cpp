@@ -242,7 +242,7 @@ namespace Gigamonkey::Boost {
             // check size of extra_nonce_1
             OP_6, OP_ROLL, OP_SIZE, OP_4, OP_EQUALVERIFY, OP_CAT,   
             // check size of extra_nonce_2
-            OP_6, OP_ROLL, OP_SIZE, push_data(bytes{32}), OP_LESSTHANOREQUAL, OP_VERIFY, OP_CAT,   
+            OP_6, OP_ROLL, OP_SIZE, push_value(32), OP_LESSTHANOREQUAL, OP_VERIFY, OP_CAT,   
             // create metadata document and hash it.
             OP_SWAP, OP_CAT, OP_HASH256,    
             // target and content + merkleroot to altstack. 

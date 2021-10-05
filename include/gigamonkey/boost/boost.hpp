@@ -288,12 +288,14 @@ namespace Gigamonkey {
                 const work::solution&, Boost::type, 
                 bool category_mask);
             
-            static uint64 expected_size(Boost::type t, bool use_general_purpose_bits) {
+            static uint64 expected_size(Boost::type t, bool use_general_purpose_bits, bool compressed_pubkey = true) {
                 return t == Boost::invalid ? 0 : 
                     Bitcoin::signature::MaxSignatureSize + 
-                    (t == Boost::bounty ? 34 : 0) + 
-                    (use_general_purpose_bits ? 5 : 0) + 46;
+                    (compressed_pubkey ? 34 : 66) + 
+                    (t == Boost::bounty ? 21 : 0) + 
+                    (use_general_purpose_bits ? 5 : 0) + 23;
             }
+            
         };
         
         // A boost output cannot be redeemed until after a miner address
@@ -588,7 +590,11 @@ namespace Gigamonkey {
         inline output_script::output_script(bytes b) : output_script{read(b)} {}
         
         size_t inline output_script::serialized_size() const {
-            return write().size();
+            return Type == Boost::invalid ? 0 : 
+                Bitcoin::interpreter::instruction::min_push_size(Tag) + 
+                Bitcoin::interpreter::instruction::min_push_size(AdditionalData) + 
+                (Type == Boost::contract ? 21 : 0) + 110 + 
+                (UseGeneralPurposeBits ? 76 : 59);
         }
         
         Boost::type inline output_script::type(script x) {
@@ -743,7 +749,11 @@ namespace Gigamonkey {
         }
         
         size_t inline input_script::serialized_size() const {
-            return write().size();
+            return Type == Boost::invalid ? 0 :
+                Bitcoin::interpreter::instruction::min_push_size(Signature) + 
+                Bitcoin::interpreter::instruction::min_push_size(Pubkey) +
+                    (Type == Boost::bounty ? 21 : 0) + 
+                    (bool(GeneralPurposeBits) ? 5 : 0) + 23;
         }
         
         // construct a Boost bounty input script. 
