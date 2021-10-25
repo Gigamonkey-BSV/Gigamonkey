@@ -6,9 +6,11 @@
 
 #include <sv/primitives/block.h>
 #include <gigamonkey/hash.hpp>
+#include <gigamonkey/p2p/var_int.hpp>
 #include <gigamonkey/satoshi.hpp>
 #include <gigamonkey/merkle/proof.hpp>
 #include <gigamonkey/work/target.hpp>
+#include <gigamonkey/script/instruction.hpp>
 
 namespace Gigamonkey::Bitcoin {
     
@@ -27,37 +29,37 @@ namespace Gigamonkey::Bitcoin {
     writer operator<<(writer w, const outpoint& h);
     reader operator>>(reader r, outpoint& h);
 
-    std::ostream& operator<<(std::ostream& o, const outpoint& p);
+    std::ostream &operator<<(std::ostream& o, const outpoint& p);
     
     struct input;
     
     bool operator==(const input&, const input&);
     bool operator!=(const input&, const input&);
     
-    writer operator<<(writer w, const input& h);
-    reader operator>>(reader r, input& h);
+    writer &operator<<(writer &w, const input& h);
+    reader &operator>>(reader &r, input& h);
 
-    std::ostream& operator<<(std::ostream& o, const input& p);
+    std::ostream &operator<<(std::ostream& o, const input& p);
     
     struct output;
     
     bool operator==(const output&, const output&);
     bool operator!=(const output&, const output&);
     
-    writer operator<<(writer w, const output& h);
-    reader operator>>(reader r, output& h);
+    writer &operator<<(writer &w, const output& h);
+    reader &operator>>(reader &r, output& h);
 
-    std::ostream& operator<<(std::ostream& o, const output& p);
+    std::ostream &operator<<(std::ostream& o, const output& p);
     
     struct transaction;
     
     bool operator==(const transaction&, const transaction&);
     bool operator!=(const transaction&, const transaction&);
     
-    writer operator<<(writer w, const transaction& h);
-    reader operator>>(reader r, transaction& h);
+    writer &operator<<(writer &w, const transaction& h);
+    reader &operator>>(reader &r, transaction& h);
 
-    std::ostream& operator<<(std::ostream& o, const transaction& p);
+    std::ostream &operator<<(std::ostream& o, const transaction& p);
     
     struct header;
     
@@ -69,20 +71,20 @@ namespace Gigamonkey::Bitcoin {
     bool operator>=(const header&, const header&);
     bool operator<=(const header&, const header&);
     
-    writer operator<<(writer w, const header& h);
-    reader operator>>(reader r, header& h);
+    writer &operator<<(writer &w, const header& h);
+    reader &operator>>(reader &r, header& h);
 
-    std::ostream& operator<<(std::ostream& o, const header& h);
+    std::ostream &operator<<(std::ostream& o, const header& h);
     
     struct block;
     
     bool operator==(const block&, const block&);
     bool operator!=(const block&, const block&);
     
-    writer operator<<(writer w, const block& h);
-    reader operator>>(reader r, block& h);
+    writer &operator<<(writer &w, const block& h);
+    reader &operator>>(reader &r, block& h);
 
-    std::ostream& operator<<(std::ostream& o, const block& p);
+    std::ostream &operator<<(std::ostream& o, const block& p);
 
     // The header is the first 80 bytes of a Bitcoin block. 
     struct header {
@@ -95,6 +97,9 @@ namespace Gigamonkey::Bitcoin {
         static uint32_little nonce(const slice<80>);
         static digest256 hash(const slice<80> h);
         static bool valid(const slice<80> h);
+        
+        template <typename reader> static reader &read(reader&, header&);
+        template <typename writer> static writer &write(writer&, const header&);
         
         int32_little Version;
         digest256 Previous;
@@ -112,18 +117,14 @@ namespace Gigamonkey::Bitcoin {
             Bitcoin::timestamp ts,
             Bitcoin::target t,
             uint32_little n) : Version{v}, Previous{p}, MerkleRoot{mr}, Timestamp{ts}, Target{t}, Nonce{n} {}
-            
-        static header read(slice<80> x) {
-            return header{
-                version(x), 
-                digest256{previous(x)}, 
-                digest256{merkle_root(x)}, 
-                Bitcoin::timestamp{timestamp(x)}, 
-                Bitcoin::target{target(x)}, 
-                nonce(x)};
-        }
         
-        explicit header(slice<80> x) : header(read(x)) {}
+        explicit header(slice<80> x) : header {
+            version(x), 
+            digest256{previous(x)}, 
+            digest256{merkle_root(x)}, 
+            Bitcoin::timestamp{timestamp(x)}, 
+            Bitcoin::target{target(x)}, 
+            nonce(x)} {}
         
         explicit header(const CBlockHeader&);
         
@@ -145,6 +146,9 @@ namespace Gigamonkey::Bitcoin {
         static Bitcoin::txid digest(slice<36>);
         static Gigamonkey::index index(slice<36>);
         
+        template <typename reader> static reader &read(reader&, outpoint&);
+        template <typename writer> static writer &write(writer&, const outpoint&);
+        
         // the hash of a previous transaction. 
         txid Digest; 
         
@@ -163,6 +167,9 @@ namespace Gigamonkey::Bitcoin {
         static slice<36> previous(bytes_view);
         static bytes_view script(bytes_view);
         static uint32_little sequence(bytes_view);
+        
+        template <typename reader> static reader &read(reader&, input&);
+        template <typename writer> static writer &write(writer&, const input&);
         
         outpoint Reference; 
         Gigamonkey::script Script;
@@ -187,6 +194,9 @@ namespace Gigamonkey::Bitcoin {
         
         static satoshi value(bytes_view);
         static bytes_view script(bytes_view);
+        
+        template <typename reader> static reader &read(reader&, output&);
+        template <typename writer> static writer &write(writer&, const output&);
     
         satoshi Value; 
         Gigamonkey::script Script;
@@ -195,6 +205,7 @@ namespace Gigamonkey::Bitcoin {
         output(satoshi v, const Gigamonkey::script& x) : Value{v}, Script{x} {}
         
         explicit output(bytes_view);
+        explicit operator bytes() const;
         
         bool valid() const;
         
@@ -213,6 +224,9 @@ namespace Gigamonkey::Bitcoin {
         
         static txid id(bytes_view);
         
+        template <typename reader> static reader &read(reader&, transaction&);
+        template <typename writer> static writer &write(writer&, const transaction&);
+        
         constexpr static int32 LatestVersion = 2;
         
         int32_little Version;
@@ -228,12 +242,11 @@ namespace Gigamonkey::Bitcoin {
             
         transaction() : Version{}, Inputs{}, Outputs{}, Locktime{} {};
         
-        transaction(bytes_view b) : transaction{read(b)} {}
+        explicit transaction(bytes_view b);
         
         bool valid() const;
         
-        static transaction read(bytes_view);
-        bytes write() const;
+        explicit operator bytes() const;
         
         txid id() const;
         
@@ -248,8 +261,8 @@ namespace Gigamonkey::Bitcoin {
         }
     };
     
-    txid inline id(const transaction& b) {
-        return hash256(b.write());
+    txid inline id(const transaction& t) {
+        return hash256(bytes(t));
     }
     
     digest256 inline merkle_root(const list<transaction> t) {
@@ -258,7 +271,7 @@ namespace Gigamonkey::Bitcoin {
     
     struct block {
         static inline bool valid(bytes_view b) {
-            return Bitcoin::block::read(b).valid();
+            return block{b}.valid();
         }
         
         static const slice<80> header(bytes_view);
@@ -269,7 +282,10 @@ namespace Gigamonkey::Bitcoin {
             for (bytes_view x : transactions(b)) ids = ids << hash256(x);
             return Merkle::root(ids);
         }
-    
+        
+        template <typename reader> static reader &read(reader&, block&);
+        template <typename writer> static writer &write(writer&, const block&);
+        
         Bitcoin::header Header;
         list<transaction> Transactions;
         
@@ -286,8 +302,9 @@ namespace Gigamonkey::Bitcoin {
             return true;
         }
         
-        static block read(bytes_view b);
-        bytes write() const;
+        explicit block(bytes_view b);
+        
+        explicit operator bytes() const;
         
         size_t serialized_size() const;
     };
@@ -341,7 +358,7 @@ namespace Gigamonkey::Bitcoin {
         return !(a == b);
     }
     
-    inline std::ostream& operator<<(std::ostream& o, const header& h) {
+    std::ostream inline &operator<<(std::ostream& o, const header& h) {
         return o << "header{Version : " << h.Version <<
             ", Previous : " << h.Previous << 
             ", MerkleRoot : " << h.MerkleRoot << 
@@ -349,49 +366,133 @@ namespace Gigamonkey::Bitcoin {
             ", Target : " << h.Target << 
             ", Nonce : " << h.Nonce << "}";
     }
-
-    inline std::ostream& operator<<(std::ostream& o, const outpoint& p) {
+    
+    std::ostream inline &operator<<(std::ostream& o, const outpoint& p) {
         return o << "outpoint{" << p.Digest << ":" << p.Index << "}";
     }
+    
+    std::ostream inline &operator<<(std::ostream& o, const input& p) {
+        return o << "input{Reference : " << p.Reference << ", Script : " << interpreter::ASM(p.Script) << ", Sequence : " << p.Sequence << "}";
+    }
 
-    writer inline operator<<(writer w, const header& h) {
+    std::ostream inline &operator<<(std::ostream& o, const output& p) {
+        return o << "output{Value : " << p.Value << ", Script : " << interpreter::ASM(p.Script) << "}";
+    }
+
+    std::ostream inline &operator<<(std::ostream& o, const transaction& p) {
+        return o << "transaction{Version : " << p.Version << ", Inputs : " << p.Inputs << ", Outputs: " << p.Outputs << ", " << p.Locktime << "}";
+    }
+    
+    writer inline &operator<<(writer &w, const header &h) {
+        return header::write(w, h);
+    }
+    
+    reader inline &operator>>(reader &r, header &h) {
+        return header::read(r, h);
+    }
+    
+    writer inline &operator<<(writer &w, const outpoint &o) {
+        return outpoint::write(w, o);
+    }
+    
+    reader inline &operator>>(reader &r, outpoint &o) {
+        return outpoint::read(r, o);
+    }
+    
+    reader inline &operator>>(reader &r, input &in) {
+        return input::read(r, in);
+    }
+    
+    writer inline &operator<<(writer &w, const input &in) {
+        return input::write(w, in);
+    }
+    
+    reader inline &operator>>(reader &r, output &out) {
+        return output::read(r, out);
+    }
+    
+    writer inline &operator<<(writer &w, const output &out) {
+        return output::write(w, out);
+    }
+    
+    reader inline &operator>>(reader &r, transaction &t) {
+        return transaction::read(r, t);
+    }
+
+    writer inline &operator<<(writer &w, const transaction &t) {
+        std::cout << "writing tx... " << std::endl;
+        return transaction::write(w, t);
+    }
+
+    reader inline &operator>>(reader &r, block &b) {
+        return block::read(r, b);
+    }
+    
+    writer inline &operator<<(writer &w, const block &b) {
+        return block::write(w, b);
+    }
+    
+    template <typename writer> 
+    writer inline &header::write(writer &w, const header &h) {
         return w << h.Version << h.Previous << h.MerkleRoot << h.Timestamp << h.Target << h.Nonce;
     }
-
-    reader inline operator>>(reader r, header& h) {
+    
+    template <typename reader> 
+    reader inline &header::read(reader &r, header &h) {
         return r >> h.Version >> h.Previous >> h.MerkleRoot >> h.Timestamp >> h.Target >> h.Nonce;
     }
-
-    writer inline operator<<(writer w, const outpoint& o) {
+    
+    template <typename writer> 
+    writer inline &outpoint::write(writer &w, const outpoint &o) {
         return w << o.Digest << o.Index;
     }
-
-    reader inline operator>>(reader r, outpoint& o) {
+    
+    template <typename reader> 
+    reader inline &outpoint::read(reader &r, outpoint &o) {
         return r >> o.Digest >> o.Index;
     }
-
-    reader inline operator>>(reader r, input& in) {
-        return r >> in.Reference >> in.Script >> in.Sequence;
-    }
-
-    reader inline operator>>(reader r, output& out) {
-        return r >> out.Value >> out.Script;
+    
+    template <typename reader> 
+    reader inline &input::read(reader &r, input &in) {
+        return read_bytes(outpoint::read(r, in.Reference), in.Script) >> in.Sequence;
     }
     
-    reader inline operator>>(reader r, transaction& t) {
-        return r >> t.Version >> t.Inputs >> t.Outputs >> t.Locktime;
-    }
-
-    writer inline operator<<(writer w, const transaction& t) {
-        return w << t.Version << t.Inputs << t.Outputs << t.Locktime;
-    }
-
-    reader inline operator>>(reader r, block& b) {
-        return r >> b.Header >> b.Transactions;
+    template <typename writer> 
+    writer inline &input::write(writer &w, const input &in) {
+        return write_bytes(outpoint::write(w, in.Reference), in.Script) << in.Sequence;
     }
     
-    writer inline operator<<(writer w, const block& b) {
-        return w << b.Header << b.Transactions;
+    template <typename reader> 
+    reader inline &output::read(reader &r, output &out) {
+        return read_bytes(r >> out.Value, out.Script);
+    }
+    
+    template <typename writer> 
+    writer inline &output::write(writer &w, const output &out) {
+        return write_bytes(w << out.Value, out.Script);
+    }
+    
+    template <typename reader> 
+    reader inline &transaction::read(reader &r, transaction &t) {
+        r >> t.Version;
+        std::cout << "Read version " << t.Version << std::endl;
+        return read_sequence(read_sequence(r, t.Inputs), t.Outputs) >> t.Locktime;
+        //return read_sequence(read_sequence(r >> t.Version, t.Inputs), t.Outputs) >> t.Locktime;
+    }
+    
+    template <typename writer> 
+    writer inline &transaction::write(writer &w, const transaction &t) {
+        return write_sequence(write_sequence(w << t.Version, t.Inputs), t.Outputs) << t.Locktime;
+    }
+    
+    template <typename reader> 
+    reader inline &block::read(reader &r, block &b) {
+        return read_sequence(header::read(r, b.Header), b.Transactions);
+    }
+    
+    template <typename writer> 
+    writer inline &block::write(writer &w, const block &b) {
+        return write_sequence(header::write(w, b.Header), b.Transactions);
     }
    
     digest256 inline header::previous(const slice<80> x) {
@@ -408,18 +509,6 @@ namespace Gigamonkey::Bitcoin {
         
     txid inline transaction::id() const {
         return Bitcoin::id(*this);
-    }
-    
-    inline block block::read(bytes_view b) {
-        block bl;
-        reader(b) >> bl;
-        return bl;
-    }
-    
-    inline bytes block::write() const {
-        bytes b(serialized_size());
-        writer(b) << *this;
-        return b;
     }
     
     inline bool operator>(const outpoint& a, const outpoint& b) {

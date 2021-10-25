@@ -4,7 +4,7 @@
 #ifndef GIGAMONKEY_MAPI_MAPI
 #define GIGAMONKEY_MAPI_MAPI
 
-#include <data/networking/http.hpp>
+//#include <data/networking/http.hpp>
 #include <gigamonkey/wallet.hpp>
 
 namespace Gigamonkey::MAPI {
@@ -276,7 +276,7 @@ namespace Gigamonkey::MAPI {
         explicit operator json() const;
         
     };
-    
+    /*
     struct merchant_api {
         using http = data::networking::http;
         
@@ -304,7 +304,7 @@ namespace Gigamonkey::MAPI {
         constexpr static char query_transaction_status_path[] = "/mapi/tx/";
         constexpr static char submit_multiple_transactions_path[] = "/mapi/txs";
         
-    };
+    };*/
     
     std::ostream inline &operator<<(std::ostream &o, const get_fee_quote_response& r) {
         return o << json(r);

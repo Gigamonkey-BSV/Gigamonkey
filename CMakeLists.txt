@@ -94,14 +94,6 @@ if(NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/data/CMakeLists.txt")
     message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
 endif()
 
-if(NOT CHAIN_SRC_ROOT)
-	message(FATAL_ERROR "Root dir of chain's source code not defined! (-DCHAIN_SRC_ROOT=<path>)")
-endif()
-message("-- Root Dir of ${CHAIN_NAME}: ${CHAIN_SRC_ROOT} (-DCHAIN_SRC_ROOT=${CHAIN_SRC_ROOT})")
-if (NOT EXISTS "${CHAIN_SRC_ROOT}/src/version.h")
-	message(FATAL_ERROR "The source code of bitcoin SV does not exist!")
-endif()
-
 ## Enable testing
 include(CTest)
 

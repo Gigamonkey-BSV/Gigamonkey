@@ -257,11 +257,11 @@ namespace Gigamonkey::BitcoinAssociation {
         : Txid{b.Leaf.Digest}, Path{Merkle::path(b)}, BlockHash{block_hash} {}
     
     inline proofs_serialization_standard::proofs_serialization_standard(const Bitcoin::transaction& t, const Merkle::path& p) 
-        : Transaction{t.write()}, Path{p} {}
+        : Transaction{bytes(t)}, Path{p} {}
     
     inline proofs_serialization_standard::proofs_serialization_standard(
         const Bitcoin::transaction& t, const Merkle::path& p, const Bitcoin::header& h) 
-        : Transaction{t.write()}, Path{p}, BlockHeader{h} {}
+        : Transaction{bytes(t)}, Path{p}, BlockHeader{h} {}
     
     optional<digest256> inline proofs_serialization_standard::block_hash() const {
         return BlockHash;

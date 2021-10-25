@@ -310,36 +310,26 @@ namespace Gigamonkey {
     }
 
     template <size_t size, unsigned int bits> 
-    inline bytes_writer operator<<(bytes_writer w, const uint<size, bits>& s) {
+    inline bytes_writer &operator<<(bytes_writer &w, const uint<size, bits>& s) {
         return w << data::bytes_view(s);
     }
 
     template <size_t size, unsigned int bits>
-    inline bytes_reader operator>>(bytes_reader r, uint<size, bits>& s) {
+    inline bytes_reader &operator>>(bytes_reader &r, uint<size, bits>& s) {
         data::bytes b(size);
-        bytes_reader rx = r >> b;
+        r >> b;
         std::copy(b.begin(), b.end(), s.begin());
-        return rx;
+        return r;
     }
 
     template <size_t size> 
-    inline bytes_writer operator<<(bytes_writer w, const digest<size>& s) {
+    inline bytes_writer &operator<<(bytes_writer &w, const digest<size>& s) {
         return w << s.Value;
     }
 
     template <size_t size> 
-    inline bytes_reader operator>>(bytes_reader r, digest<size>& s) {
+    inline bytes_reader &operator>>(bytes_reader &r, digest<size>& s) {
         return r >> s.Value;
-    }
-
-    template <size_t size> 
-    inline Bitcoin::writer operator<<(Bitcoin::writer w, const digest<size>& s) {
-        return Bitcoin::writer{w.Writer << s};
-    }
-
-    template <size_t size>
-    inline Bitcoin::reader operator>>(Bitcoin::reader r, digest<size>& s) {
-        return Bitcoin::reader{r.Reader >> s};
     }
     
 }

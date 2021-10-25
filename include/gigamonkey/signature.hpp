@@ -120,8 +120,8 @@ namespace Gigamonkey::Bitcoin {
                         return input{i};
                     }, tx.Inputs), tx.Outputs, tx.Locktime) {}
             
-            bytes write() const;
-            static transaction read(bytes_view);
+            explicit operator bytes() const;
+            explicit transaction(bytes_view);
             
             Bitcoin::transaction complete(list<bytes> scripts) const;
         };

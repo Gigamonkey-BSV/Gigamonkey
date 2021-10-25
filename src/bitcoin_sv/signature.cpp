@@ -34,17 +34,17 @@ namespace Gigamonkey::Bitcoin {
         }
     }
     
-    bytes incomplete::transaction::write() const {
+    incomplete::transaction::operator bytes() const {
         list<output> outputs;
         for (const output& o : Outputs) outputs = outputs << o;
         list<Bitcoin::input> inputs;
         for (const input& in : Inputs) inputs = inputs << Bitcoin::input{in.Reference, {}, in.Sequence};
-        return Bitcoin::transaction{Version, inputs, outputs, Locktime}.write();
+        return bytes(Bitcoin::transaction{Version, inputs, outputs, Locktime});
     }
     
-    incomplete::transaction incomplete::transaction::read(bytes_view b) {
-        auto tx = Bitcoin::transaction::read(b);
-        return incomplete::transaction{tx.Version, 
+    incomplete::transaction::transaction(bytes_view b) {
+        auto tx = Bitcoin::transaction{b};
+        *this = incomplete::transaction{tx.Version, 
             data::for_each([](const Bitcoin::input& in) -> incomplete::input {
                     return {in.Reference, in.Sequence};
                 }, tx.Inputs), 
@@ -52,8 +52,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     digest256 signature::document::hash(sighash::directive d) const {
-        
-        bytes tx = Transaction.write();
+        bytes tx = bytes(Transaction);
         
         CDataStream stream{(const char*)(tx.data()), 
             (const char*)(tx.data() + tx.size()), SER_NETWORK, PROTOCOL_VERSION};

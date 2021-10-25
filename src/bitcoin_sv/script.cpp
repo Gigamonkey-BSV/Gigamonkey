@@ -50,7 +50,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
     }
     
     result evaluate(const script& unlock, const signature::document& lock) {
-        bytes tx = lock.Transaction.write();
+        bytes tx = bytes(lock.Transaction);
         
         CDataStream stream{(const char*)(tx.data()), 
             (const char*)(tx.data() + tx.size()), SER_NETWORK, PROTOCOL_VERSION};
@@ -75,7 +75,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
             return; 
         }
         
-        bytes tx_bytes = tx.write();
+        bytes tx_bytes = bytes(tx);
         
         CDataStream stream{(const char*)(tx_bytes.data()), 
         (const char*)(tx_bytes.data() + tx_bytes.size()), SER_NETWORK, PROTOCOL_VERSION};

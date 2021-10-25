@@ -65,7 +65,7 @@ namespace Gigamonkey::Bitcoin {
             }
             
             explicit operator Bitcoin::transaction() const {
-                return Bitcoin::transaction::read(this->operator*());
+                return Bitcoin::transaction{this->operator*()};
             }
             
         };
@@ -178,13 +178,13 @@ namespace Gigamonkey::Bitcoin {
     }
     
     Bitcoin::output inline ledger::double_entry::output(uint32 i) const {
-        auto t = Bitcoin::transaction::read(ptr<bytes>::operator*());
+        auto t = Bitcoin::transaction{ptr<bytes>::operator*()};
         if (!t.valid() || t.Outputs.size() <= i) return {};
         return t.Outputs[i];
     }
     
     Bitcoin::input inline ledger::double_entry::input(uint32 i) const {
-        auto t = Bitcoin::transaction::read(ptr<bytes>::operator*());
+        auto t = Bitcoin::transaction{ptr<bytes>::operator*()};
         if (!t.valid() || t.Inputs.size() <= i) return {};
         return t.Inputs[i];
     }

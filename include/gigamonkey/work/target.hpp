@@ -265,6 +265,7 @@ namespace Gigamonkey::work {
     }
     
     inline bool compact::valid() const {
+        uint32 compact = *this;
         return expand() != 0;
     }
     

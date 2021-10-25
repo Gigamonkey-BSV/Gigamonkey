@@ -35,7 +35,7 @@ namespace Gigamonkey::Bitcoin {
             ind++;
         }
         
-        return {ledger::double_entry{std::make_shared<bytes>(transaction{inputs, out, locktime}.write()), {}, {}}, prevouts};
+        return {ledger::double_entry{std::make_shared<bytes>(bytes(transaction{inputs, out, locktime})), {}, {}}, prevouts};
         
     }
     
@@ -52,7 +52,7 @@ namespace Gigamonkey::Bitcoin {
         uint32 index = 0;
         for (const edge& e: edges) {
             if (!interpreter::evaluate(e.Input.Script, 
-                signature::document{e.Output, incomplete::transaction::read(ptr<bytes>::operator*()), index})) return false;
+                signature::document{e.Output, incomplete::transaction{ptr<bytes>::operator*()}, index})) return false;
             index++;
         }
         

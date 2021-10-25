@@ -24,11 +24,11 @@ namespace Gigamonkey::Bitcoin {
             (interpreter::is_op_return(x) ? Data : Standard) += x.size();
             // counting the rest of the output, which includes the size
             // of the script and the satoshi value. 
-            Standard += writer::var_int_size(x.size()) + 4;
+            Standard += var_int_size(x.size()) + 4;
         }
         
         void count_input_script(const uint64 script_size) {
-            Standard += script_size + writer::var_int_size(script_size) + 40;
+            Standard += script_size + var_int_size(script_size) + 40;
         }
         
         transaction_data_type operator+(transaction_data_type t) const {
@@ -73,7 +73,7 @@ namespace Gigamonkey::Bitcoin {
         // we use this to count the size of the tx as we build it. 
         transaction_data_type in_progress_tx_size_count = outputs_size;
         // we add the length of the outputs, locktime, and version. 
-        in_progress_tx_size_count.Standard += 8 + writer::var_int_size(payments.size() + change_scripts.size());
+        in_progress_tx_size_count.Standard += 8 + var_int_size(payments.size() + change_scripts.size());
          
         funds to_redeem;
         list<spendable> remainder;
@@ -89,7 +89,7 @@ namespace Gigamonkey::Bitcoin {
                         in_progress_tx_size_count.count_input_script(entries.first().Redeemer->expected_size());
                         entries = entries.rest();
                     }
-                    in_progress_tx_size_count.Standard += writer::var_int_size(entries.size());
+                    in_progress_tx_size_count.Standard += var_int_size(entries.size());
                     tx_fee = Fee * in_progress_tx_size_count;
                     break;
                 }
@@ -100,7 +100,7 @@ namespace Gigamonkey::Bitcoin {
                         remainder = remainder.rest();
                         in_progress_tx_size_count.count_input_script(x.Redeemer->expected_size());
                         to_redeem = to_redeem.insert(x);
-                        tx_fee = Fee * (in_progress_tx_size_count + transaction_data_type{0, writer::var_int_size(to_redeem.Entries.size())});
+                        tx_fee = Fee * (in_progress_tx_size_count + transaction_data_type{0, var_int_size(to_redeem.Entries.size())});
                     } while (to_redeem.Value < to_spend + tx_fee + Dust);
                     break;
                 }
@@ -113,7 +113,7 @@ namespace Gigamonkey::Bitcoin {
                         remainder = remainder.rest();
                         in_progress_tx_size_count.count_input_script(x.Redeemer->expected_size());
                         to_redeem = to_redeem.insert(x);
-                        tx_fee = Fee * (in_progress_tx_size_count + transaction_data_type{0, writer::var_int_size(to_redeem.Entries.size())});
+                        tx_fee = Fee * (in_progress_tx_size_count + transaction_data_type{0, var_int_size(to_redeem.Entries.size())});
                     } while (to_redeem.Value < to_spend + tx_fee + Dust);
                     break;
                 }

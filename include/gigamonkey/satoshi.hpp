@@ -24,13 +24,13 @@ namespace Gigamonkey::Bitcoin {
         satoshi operator-() const;
     };
 
-    inline bytes_writer operator<<(bytes_writer w, const satoshi& s) {
+    inline bytes_writer &operator<<(bytes_writer &w, const satoshi& s) {
         return w << (data::int64_little)(s);
     }
 
-    inline bytes_reader operator>>(bytes_reader r, satoshi& s) {
+    inline bytes_reader &operator>>(bytes_reader &r, satoshi& s) {
         uint64_little x;
-        r = r >> x;
+        r >> x;
         s = satoshi(x);
         return r;
     }

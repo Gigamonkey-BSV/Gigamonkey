@@ -752,8 +752,9 @@ namespace Gigamonkey {
             return Type == Boost::invalid ? 0 :
                 Bitcoin::interpreter::instruction::min_push_size(Signature) + 
                 Bitcoin::interpreter::instruction::min_push_size(Pubkey) +
+                Bitcoin::interpreter::instruction::min_push_size(ExtraNonce2) +
                     (Type == Boost::bounty ? 21 : 0) + 
-                    (bool(GeneralPurposeBits) ? 5 : 0) + 23;
+                    (bool(GeneralPurposeBits) ? 5 : 0) + 13;
         }
         
         // construct a Boost bounty input script. 

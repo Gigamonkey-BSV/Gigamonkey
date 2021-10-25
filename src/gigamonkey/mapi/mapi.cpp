@@ -328,7 +328,7 @@ namespace Gigamonkey::MAPI {
         return params;
         
     }
-    
+    /*
     get_fee_quote_response merchant_api::get_fee_quote() {
         
         JSONEnvelope envelope;
@@ -346,6 +346,22 @@ namespace Gigamonkey::MAPI {
         
     }
     
+    query_transaction_status_response merchant_api::query_transaction_status(const Bitcoin::txid& id) {
+        
+        JSONEnvelope envelope;
+        try {
+            envelope = JSONEnvelope{Http->GET(Host, 
+                string{query_transaction_status_path} + string(id.Value).substr(2))};
+        } catch (...) {
+            return {};
+        }
+        
+        if (!envelope.valid()) return {};
+        
+        return query_transaction_status_response{envelope.payload};
+        
+    }*/
+    /*
     submit_transaction_response merchant_api::submit_transaction(submit_transaction_request request) {
         
         if (!request.valid()) return {};
@@ -375,22 +391,6 @@ namespace Gigamonkey::MAPI {
         if (!envelope.valid()) return {};
         
         return submit_transaction_response{envelope.payload};
-        
-    }
-    
-    query_transaction_status_response merchant_api::query_transaction_status(const Bitcoin::txid& id) {
-        
-        JSONEnvelope envelope;
-        try {
-            envelope = JSONEnvelope{Http->GET(Host, 
-                string{query_transaction_status_path} + string(id.Value).substr(2))};
-        } catch (...) {
-            return {};
-        }
-        
-        if (!envelope.valid()) return {};
-        
-        return query_transaction_status_response{envelope.payload};
         
     }
     
@@ -433,6 +433,6 @@ namespace Gigamonkey::MAPI {
         
         return submit_multiple_transactions_response{envelope.payload};
         
-    }
+    }*/
     
 }

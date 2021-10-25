@@ -12,9 +12,10 @@ namespace Gigamonkey::base58 {
         std::string encoded_0{"14HV44ipwoaqfg"};
         std::string encoded_3{"kCr8KebD6cWdVj"};
         
-        EXPECT_EQ(check(0, *encoding::hex::read(hex)), check(encoded_0));
+        bytes decoded_hex = *encoding::hex::read(hex);
         
-        EXPECT_EQ(check(3, *encoding::hex::read(hex)), check(encoded_3));
+        EXPECT_EQ(check(0, decoded_hex), check(encoded_0));
+        EXPECT_EQ(check(3, decoded_hex), check(encoded_3));
         
     }
 

@@ -57,13 +57,6 @@ namespace Gigamonkey::Bitcoin::interpreter {
         return 0; // invalid 
     }
     
-    bytes_writer instruction::write_push_data(bytes_writer w, op Push, size_t size) {
-        if (Push <= OP_PUSHSIZE75) return w << static_cast<byte>(Push);
-        if (Push == OP_PUSHDATA1) return w << static_cast<byte>(OP_PUSHDATA1) << static_cast<byte>(size); 
-        if (Push == OP_PUSHDATA2) return w << static_cast<byte>(OP_PUSHDATA2) << static_cast<uint16_little>(size); 
-        return w << static_cast<byte>(OP_PUSHDATA2) << static_cast<uint32_little>(size);
-    }
-    
     bool valid_program(program p, stack<op> x) {
         if (p.empty()) return false;
         if (!p.first().valid()) return false;
@@ -137,16 +130,16 @@ namespace Gigamonkey::Bitcoin::interpreter {
     }
     
     struct script_writer {
-        bytes_writer Writer;
-        script_writer operator<<(instruction o) const {
-            return script_writer{write(Writer, o)};
+        bytes_writer &Writer;
+        script_writer operator<<(instruction o) {
+            return script_writer{instruction::write(Writer, o)};
         }
         
-        script_writer operator<<(program p) const {
+        script_writer operator<<(program p) {
             return p.size() == 0 ? script_writer{Writer} : (script_writer{Writer} << p.first() << p.rest());
         }
         
-        script_writer(bytes_writer w) : Writer{w} {}
+        script_writer(bytes_writer &w) : Writer{w} {}
     };
     
     bytes_reader read_push(bytes_reader read, instruction& rest) {
@@ -155,17 +148,17 @@ namespace Gigamonkey::Bitcoin::interpreter {
         if (rest.Op <= OP_PUSHSIZE75) size = rest.Op;
         if (rest.Op == OP_PUSHDATA1) {
             byte x;
-            r = r >> x;
+            r >> x;
             size = x;
         }
         if (rest.Op == OP_PUSHDATA2) {
             uint16_little x;
-            r = r >> x;
+            r >> x;
             size = x;
         }
         if (rest.Op == OP_PUSHDATA4) {
             uint32_little x;
-            r = r >> x;
+            r >> x;
             size = x;
         }
         
@@ -175,13 +168,13 @@ namespace Gigamonkey::Bitcoin::interpreter {
         }
         
         rest.Data = bytes(size);
-        r = r >> rest.Data;
+        r >> rest.Data;
         return r;
     }
     
     struct script_reader {
         bytes_reader Reader;
-        script_reader operator>>(instruction& i) const {
+        script_reader operator>>(instruction& i) {
             if ((Reader.Reader.End - Reader.Reader.Begin) == 0) {
                 i = {};
                 return *this;
@@ -210,13 +203,15 @@ namespace Gigamonkey::Bitcoin::interpreter {
     
     bytes compile(program p) {
         bytes compiled(size(p));
-        script_writer{bytes_writer{compiled.begin(), compiled.end()}} << p;
+        bytes_writer b{compiled.begin(), compiled.end()};
+        script_writer{b} << p;
         return compiled;
     }
     
     bytes compile(instruction i) {
         bytes compiled(size(i));
-        script_writer{bytes_writer{compiled.begin(), compiled.end()}} << i;
+        bytes_writer b{compiled.begin(), compiled.end()};
+        script_writer{b} << i;
         return compiled;
     }
     

@@ -34,6 +34,7 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_EQ(pubkey_compressed, pubkey_uncompressed.compress());
         EXPECT_EQ(pubkey_uncompressed, pubkey_compressed.decompress());
         
+        // now we make four scripts. 
         bytes script_p2pk_compressed = pay_to_pubkey::script(pubkey_compressed);
         bytes script_p2pk_uncompressed = pay_to_pubkey::script(pubkey_uncompressed);
         
@@ -44,7 +45,6 @@ namespace Gigamonkey::Bitcoin {
         bytes script_p2pkh_uncompressed = pay_to_address::script(address_uncompressed.Digest);
         
         // now we make four previous outputs that we will try to redeem. 
-        
         output output_p2pk_compressed{redeemed_value, script_p2pk_compressed};
         output output_p2pk_uncompressed{redeemed_value, script_p2pk_uncompressed};
         
@@ -52,7 +52,6 @@ namespace Gigamonkey::Bitcoin {
         output output_p2pkh_uncompressed{redeemed_value, script_p2pkh_uncompressed};
         
         // we only need 3 redeemers because the redeem script is the same for p2pk compressed and uncompressed. 
-        
         redeem_pay_to_pubkey p2pk_redeemer(key);
         redeem_pay_to_address p2pkh_compressed_redeemer(key, pubkey_compressed);
         redeem_pay_to_address p2pkh_uncompressed_redeemer(key, pubkey_uncompressed);
