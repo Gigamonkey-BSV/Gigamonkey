@@ -7,10 +7,7 @@
 #ifndef GIGAMONKEY_SCRIPT_SCRIPT
 #define GIGAMONKEY_SCRIPT_SCRIPT
 
-//#include <sv/script/opcodes.h>
-#include <sv/script/script_error.h>
-
-//#include <boost/endian/conversion.hpp>
+#include <gigamonkey/script/error.h>
 
 #include <gigamonkey/script/instruction.hpp>
 #include <gigamonkey/wif.hpp>
@@ -56,10 +53,6 @@ namespace Gigamonkey::Bitcoin::interpreter {
     
     bool inline operator!=(const result &a, const result &b) {
         return !(a == b);
-    }
-    
-    instruction inline push_data(const pubkey &p) {
-        return instruction{write(p.size(), p)};
     }
     
 }

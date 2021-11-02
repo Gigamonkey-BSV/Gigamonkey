@@ -79,11 +79,11 @@ namespace Gigamonkey::Bitcoin {
     }
     
     bool input::valid() const {
-        return interpreter::decompile(Script) != interpreter::program{};
+        return decompile(Script) != program{};
     }
     
     bool output::valid() const {
-        return Value < 2100000000000000 && interpreter::decompile(Script) != interpreter::program{};
+        return Value < 2100000000000000 && decompile(Script) != program{};
     }
     
     size_t transaction::serialized_size() const {

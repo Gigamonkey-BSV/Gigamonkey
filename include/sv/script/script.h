@@ -1,6 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Bitcoin Core developers
 // Copyright (c) 2018-2019 Bitcoin Association
+// Copyright (d) 2021 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #ifndef BITCOIN_SCRIPT_SCRIPT_H
@@ -11,7 +12,7 @@
 #include <sv/prevector.h>
 #include <sv/serialize.h>
 #include <sv/span.h>
-#include "opcodes.h"
+#include <gigamonkey/script/opcodes.h>
 
 #include <cassert>
 #include <climits>

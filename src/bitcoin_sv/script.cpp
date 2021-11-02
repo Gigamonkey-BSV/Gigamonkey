@@ -2,7 +2,6 @@
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/script/machine.hpp>
-#include <gigamonkey/script/config.hpp>
 #include <sv/config.h>
 #include <sv/script/interpreter.h>
 #include <sv/pubkey.h>
@@ -60,15 +59,15 @@ namespace Gigamonkey::Bitcoin::interpreter {
             TransactionSignatureChecker(&ctx, lock.InputIndex, Amount(int64(lock.Previous.Value))));
     }
     
-    std::ostream& operator<<(std::ostream& o, const machine& i) {
-        return o << "machine{\n\tProgram: " << i.Program << ",\n\tState: {Halt: " << (i.State.Halt ? "true" : "false") 
-            << ", Success: " << (i.State.Success ? "true" : "false") << ", Error: " 
-            << i.State.Error << ", Flags: " << i.State.Flags << ",\n\t\tStack: " << i.State.Stack << ",\n\t\tAltStack: " 
-            << i.State.AltStack << ", Exec: " << i.State.Exec << ", Else: " << i.State.Else << "}}";
-    }
-    
     machine::machine(program p, uint32 flags, uint32 index, satoshi value, transaction tx) : 
         Program{p}, State{flags}, Transaction{tx}, Index{index}, SignatureChecker{nullptr}, Tx{nullptr} {
+        
+        auto script_error = verify(p, flags);
+        if (script_error != SCRIPT_ERR_OK) {
+            State.Halt = true;
+            State.Error = script_error;
+            return;
+        }
         
         if (!tx.valid()) {
             SignatureChecker = new DummySignatureChecker{};
@@ -85,19 +84,15 @@ namespace Gigamonkey::Bitcoin::interpreter {
     }
     
     machine::state machine::state::step(const BaseSignatureChecker& x, instruction i) const {
-                
-        if (Error || Halt) return *this;
+        
+        if (Halt) return *this;
         
         const GlobalConfig& config = GlobalConfig::GetConfig();
         bool consensus = false;
         
-        bytes compiled = compile(i);
-        CScript z(compiled.begin(), compiled.end());
-        
         LimitedStack stack(config.GetMaxStackMemoryUsage(Flags & SCRIPT_UTXO_AFTER_GENESIS, consensus));
         LimitedStack altstack {stack.makeChildStack()};
         
-        // TODO copy from stacks onto limited stack
         for (const bytes& b : Stack.reverse()) stack.push_back(b);
         for (const bytes& b : AltStack.reverse()) altstack.push_back(b);
         
@@ -119,10 +114,12 @@ namespace Gigamonkey::Bitcoin::interpreter {
         state m{Flags};
         m.Counter = Counter;
         
+        bytes compiled = compile(i);
+        
         std::optional<bool> result = EvalScript(
             config, consensus, 
             task::CCancellationSource::Make()->GetToken(), 
-            stack, z, Flags, x, 
+            stack, CScript(compiled.begin(), compiled.end()), Flags, x, 
             altstack, m.Counter,
             v_exec, v_else, &m.Error);
         
@@ -149,7 +146,6 @@ namespace Gigamonkey::Bitcoin::interpreter {
             i.Op == OP_CHECKSIGVERIFY || 
             i.Op == OP_CHECKMULTISIGVERIFY) && (!result.has_value() || !result.value())) {
             m.Halt = true;
-            m.Success = false;
         }
         
         return m;

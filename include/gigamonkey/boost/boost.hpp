@@ -224,7 +224,7 @@ namespace Gigamonkey {
             
             bool valid() const;
             
-            Bitcoin::interpreter::program program() const; 
+            Bitcoin::program program() const; 
             
             script write() const;
             
@@ -590,10 +590,11 @@ namespace Gigamonkey {
         inline output_script::output_script(bytes b) : output_script{read(b)} {}
         
         size_t inline output_script::serialized_size() const {
+            using namespace Bitcoin;
             return Type == Boost::invalid ? 0 : 
-                Bitcoin::interpreter::instruction::min_push_size(Tag) + 
-                Bitcoin::interpreter::instruction::min_push_size(AdditionalData) + 
-                (Type == Boost::contract ? 21 : 0) + 110 + 
+                instruction::min_push_size(Tag) + 
+                instruction::min_push_size(AdditionalData) + 
+                (Type == Boost::contract ? 21 : 0) + 112 + 
                 (UseGeneralPurposeBits ? 76 : 59);
         }
         
@@ -745,16 +746,17 @@ namespace Gigamonkey {
         }
         
         script inline input_script::write() const {
-            return Bitcoin::interpreter::compile(program());
+            return Bitcoin::compile(program());
         }
         
         size_t inline input_script::serialized_size() const {
+            using namespace Bitcoin;
             return Type == Boost::invalid ? 0 :
-                Bitcoin::interpreter::instruction::min_push_size(Signature) + 
-                Bitcoin::interpreter::instruction::min_push_size(Pubkey) +
-                Bitcoin::interpreter::instruction::min_push_size(ExtraNonce2) +
+                instruction::min_push_size(Signature) + 
+                instruction::min_push_size(Pubkey) +
+                instruction::min_push_size(ExtraNonce2) +
                     (Type == Boost::bounty ? 21 : 0) + 
-                    (bool(GeneralPurposeBits) ? 5 : 0) + 13;
+                    (bool(GeneralPurposeBits) ? 5 : 0) + 15;
         }
         
         // construct a Boost bounty input script. 

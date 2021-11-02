@@ -8,12 +8,14 @@
 
 namespace Gigamonkey::Bitcoin::interpreter { 
     
+    // script patterns that can be used to recognize transaction formats and scrape data from them. 
+    
     class push;
+    class push_size;
     struct optional;
     struct alternatives;
     struct repeated;
     
-    // for matching and scraping values.
     struct pattern {
         bool match(bytes_view b) const {
             try {
@@ -73,6 +75,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
     struct pattern::string final : pattern {
         bytes Program;
         string(program p) : Program{compile(p)} {}
+        string(const bytes& p) : Program{p} {}
         
         virtual bytes_view scan(bytes_view p) const final override;
     };
@@ -91,7 +94,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
         // match any push data.
         push() : Type{any}, Value{0}, Data{}, Read{Data} {}
         // match any push data of the given value
-        push(int64 v) : Type{value}, Value{v}, Data{}, Read{Data} {}
+        push(const Z& v) : Type{value}, Value{v}, Data{}, Read{Data} {}
         // match a push of the given data. 
         push(bytes_view b) : Type{data}, Value{0}, Data{b}, Read{Data} {}
         // match any push data and save the result.
@@ -101,7 +104,6 @@ namespace Gigamonkey::Bitcoin::interpreter {
         
         virtual bytes_view scan(bytes_view p) const final override;
         
-        //operator instruction() const;
     };
     
     class push_size final : public pattern {
@@ -202,6 +204,19 @@ namespace Gigamonkey::Bitcoin::interpreter {
         virtual bytes_view scan(bytes_view) const final override;
     };
     
+    // OP_RETURN followed by arbitrary data. 
+    struct op_return_data final : public pattern {
+        // match OP_RETURN followed by any data. 
+        op_return_data() : pattern{} {}
+        
+        op_return_data(const bytes& d) : pattern{string{d}} {}
+        
+        template <typename... P>
+        op_return_data(P... p) : pattern{p...} {}
+        
+        virtual bytes_view scan(bytes_view p) const final override;
+    };
+    
 }
 
 namespace Gigamonkey::Bitcoin {
@@ -215,22 +230,29 @@ namespace Gigamonkey::Bitcoin {
     struct op_return_data {
         static interpreter::pattern pattern() {
             using namespace interpreter;
-            static interpreter::pattern Pattern{optional{OP_FALSE}, OP_RETURN, repeated{push{}, 0}};
+            static interpreter::pattern Pattern{optional{OP_FALSE}, interpreter::op_return_data{}};
             return Pattern;
         }
         
-        static Gigamonkey::script script(list<bytes> push);
+        static Gigamonkey::script script(const bytes_view data, bool safe = true) {
+            using namespace interpreter;
+            return compile(safe ? 
+                program{OP_FALSE, instruction::op_return_data(data)} : 
+                program{instruction::op_return_data(data)});
+        }
+    
+        static bool match(const bytes_view p) {
+            return (p.size() > 1 && p[0] == 0x6a) || (p.size() > 2 && p[0] == 0x00 && p[1] == 0x6a);
+        }
         
-        list<bytes> Push;
+        bytes Data;
         bool Safe; // whether op_false is pushed before op_return
-        bool Valid;
         
         bytes script() const {
-            return script(Push);
+            return script(Data, Safe);
         };
         
-        op_return_data(bytes_view);
-        op_return_data(list<bytes> p) : Push{p}, Safe{true}, Valid{true} {}
+        op_return_data(bytes_view b, bool safe = true) : Data{b}, Safe{safe} {}
     };
     
     struct pay_to_pubkey {

@@ -37,11 +37,11 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         derived.Parent = fp(hash160(pub));
         derived.Sequence = child;
         derived.Net = sec.Net;
-
+        
         bool is_hardened = child >= 0x80000000;
-
+        
         data::bytes data_bytes(32);
-
+        
         if (is_hardened) {
             std::copy(sec.Secret.Value.begin(), sec.Secret.Value.end(), data_bytes.begin());
             data_bytes.insert(data_bytes.begin(), (byte) 0);
@@ -51,12 +51,12 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
                 data_bytes.push_back(b);
             }
         }
-
+        
         data_bytes.push_back(child >> 24);
         data_bytes.push_back((child >> 16) & 0xff);
         data_bytes.push_back((child >> 8) & 0xff);
         data_bytes.push_back(child & 0xff);
-
+        
         byte hmaced[CryptoPP::HMAC<CryptoPP::SHA512>::DIGESTSIZE];
         try {
             CryptoPP::HMAC<CryptoPP::SHA512> hmac(sec.ChainCode.data(), sec.ChainCode.size());
@@ -67,32 +67,30 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         }
         
         bytes left;
-        for (int i = 0; i < 32; i++)
-            left.push_back(hmaced[i]);
-
+        for (int i = 0; i < 32; i++) left.push_back(hmaced[i]);
+        
         std::reverse(left.begin(), left.end());
         uint256 ll = uint256{};
-
+        
         std::copy(left.begin(), left.end(), ll.begin());
-
-        if (ll > CURVE_ORDER)
-            return derive(sec, child + 1);
-
+        
+        if (ll > CURVE_ORDER) return derive(sec, child + 1);
+        
         uint256 k = uint256{};
         std::copy(sec.Secret.Value.begin(), sec.Secret.Value.end(), k.begin());
         std::reverse(k.begin(), k.end());
-        N keyCode = (N) ll;
-        keyCode += (N) k;
-        keyCode %= (N) CURVE_ORDER;
-
+        auto keyCode = (data::math::number::gmp::N) ll;
+        keyCode += (data::math::number::gmp::N) k;
+        keyCode %= (data::math::number::gmp::N) CURVE_ORDER;
+        
         if (keyCode == 0)
             return derive(sec, child + 1);
         bytes child_key;
-
+        
         for (unsigned char &itr2 : k) {
             child_key.push_back(itr2);
         }
-
+        
         secp256k1::coordinate key{keyCode};
         std::reverse(key.begin(), key.end());
         derived.Secret = secp256k1::secret{key};
@@ -100,8 +98,8 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
             derived.ChainCode.push_back(hmaced[i]);
         return derived;
     }
-
-
+    
+    
     pubkey derive(const pubkey &pub, uint32 child) {
         pubkey derived;
         derived.Depth = pub.Depth + 1;

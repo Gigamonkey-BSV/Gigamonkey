@@ -1,7 +1,8 @@
 // Copyright (c) 2020 Bitcoin Association
+// Copyright (d) 2021 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file
 // LICENSE.
-#include <sv/script/opcodes.h>
+#include <gigamonkey/script/opcodes.h>
 
 #include <iostream>
 

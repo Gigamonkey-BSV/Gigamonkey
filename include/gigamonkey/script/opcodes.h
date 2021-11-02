@@ -11,9 +11,17 @@ enum opcodetype
     // push value
     OP_0 = 0x00,
     OP_FALSE = OP_0,
+    
+    // the next byte provides the size to be pushed to the stack. 
     OP_PUSHDATA1 = 0x4c,
+    
+    // the next two bytes provide the size to be pushed to the stack as a little-endian uint16 
     OP_PUSHDATA2 = 0x4d,
+    
+    // the next four bytes provide the size to be pushed to the stack as a little-endian uint32 
     OP_PUSHDATA4 = 0x4e,
+    
+    // push specific values to the stack. 
     OP_1NEGATE = 0x4f,
     OP_RESERVED = 0x50,
     OP_1 = 0x51,

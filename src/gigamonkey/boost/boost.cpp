@@ -7,11 +7,11 @@ namespace Gigamonkey::Bitcoin::interpreter {
     // The Bitcoin script pattern which takes a target in 
     // exponential format and converts it to expanded format. 
     const program expand_target = program{
-        OP_SIZE, push_value(4), OP_EQUALVERIFY, push_value(3), OP_SPLIT,
-        OP_DUP, OP_BIN2NUM, push_value(3), push_value(33), OP_WITHIN, OP_VERIFY, OP_TOALTSTACK,
+        OP_SIZE, push_data(4), OP_EQUALVERIFY, push_data(3), OP_SPLIT,
+        OP_DUP, OP_BIN2NUM, push_data(3), push_data(33), OP_WITHIN, OP_VERIFY, OP_TOALTSTACK,
         OP_DUP, OP_BIN2NUM, OP_0, OP_GREATERTHAN, OP_VERIFY, // significant must be positive
-        push_hex("0000000000000000000000000000000000000000000000000000000000"), 
-        OP_CAT, OP_FROMALTSTACK, push_value(3), OP_SUB, push_value(8), OP_MUL, OP_RSHIFT};
+        push_data(bytes(29, 0x00)), 
+        OP_CAT, OP_FROMALTSTACK, push_data(3), OP_SUB, push_data(8), OP_MUL, OP_RSHIFT};
     
     // check top stack element for positive zero (as opposed to negative zero) 
     // and replace it with true or false. 
@@ -19,9 +19,9 @@ namespace Gigamonkey::Bitcoin::interpreter {
         OP_NOTIF, OP_TRUE, OP_ELSE, OP_FALSE, OP_ENDIF, OP_ELSE, OP_DROP, OP_FALSE, OP_ENDIF};
     
     const program check_negative_zero = program{OP_DUP, OP_NOTIF, OP_1, OP_RSHIFT, 
-        push_hex("40"), OP_EQUAL, OP_IF, OP_TRUE, OP_ELSE, OP_FALSE, OP_ENDIF, OP_ELSE, OP_DROP, OP_FALSE, OP_ENDIF};
+        push_data(bytes{0x40}), OP_EQUAL, OP_IF, OP_TRUE, OP_ELSE, OP_FALSE, OP_ENDIF, OP_ELSE, OP_DROP, OP_FALSE, OP_ENDIF};
     
-    const program ensure_positive = program{push_hex("00"), OP_CAT, OP_BIN2NUM};
+    const program ensure_positive = program{push_data(bytes{0x00}), OP_CAT, OP_BIN2NUM};
 }
 
 namespace Gigamonkey::Boost {
@@ -148,7 +148,7 @@ namespace Gigamonkey::Boost {
             OP_SWAP, OP_CAT, OP_HASH256, 
             // target and content + merkleroot to altstack. 
             OP_SWAP, OP_TOALTSTACK, OP_CAT, OP_TOALTSTACK, 
-            push_hex("ff1f00e0"), OP_DUP, OP_INVERT, OP_TOALTSTACK, OP_AND, 
+            push_data(work::ASICBoost::Mask), OP_DUP, OP_INVERT, OP_TOALTSTACK, OP_AND, 
             // check size of general purpose bits 
             OP_SWAP, OP_FROMALTSTACK, OP_AND, OP_OR, 
             OP_FROMALTSTACK, OP_CAT,                             // attach content + merkleroot
@@ -203,11 +203,11 @@ namespace Gigamonkey::Boost {
         return x;
     }
     
-    Bitcoin::interpreter::program input_script::program() const {
+    Bitcoin::program input_script::program() const {
         using namespace Bitcoin::interpreter;
         using namespace Bitcoin;
         if (Type == Boost::invalid) return {};
-        interpreter::program p{
+        Bitcoin::program p{
             push_data(bytes_view(Signature)), 
             push_data(Pubkey),
             push_data(Nonce),
@@ -221,8 +221,9 @@ namespace Gigamonkey::Boost {
     
     script output_script::write() const {
         using namespace Bitcoin::interpreter;
+        using namespace Bitcoin;
         if (Type == Boost::invalid) return {};
-        program boost_output_script = program{push_hex("626F6F7374706F77"), OP_DROP}; // "boostpow"
+        program boost_output_script = program{push_data(bytes{0x62, 0x6F, 0x6F, 0x73, 0x74, 0x70, 0x6F, 0x77}), OP_DROP}; // "boostpow"
         
         if (Type == Boost::contract) 
             boost_output_script = boost_output_script.append(push_data(MinerAddress));
@@ -242,12 +243,12 @@ namespace Gigamonkey::Boost {
             // check size of extra_nonce_1
             OP_6, OP_ROLL, OP_SIZE, OP_4, OP_EQUALVERIFY, OP_CAT,   
             // check size of extra_nonce_2
-            OP_6, OP_ROLL, OP_SIZE, push_value(32), OP_LESSTHANOREQUAL, OP_VERIFY, OP_CAT,   
+            OP_6, OP_ROLL, OP_SIZE, push_data(32), OP_LESSTHANOREQUAL, OP_VERIFY, OP_CAT,   
             // create metadata document and hash it.
             OP_SWAP, OP_CAT, OP_HASH256,    
             // target and content + merkleroot to altstack. 
             OP_SWAP, OP_TOALTSTACK, OP_CAT, OP_TOALTSTACK, 
-            push_hex("ff1f00e0"), OP_DUP, OP_INVERT, OP_TOALTSTACK, OP_AND, 
+            push_data(work::ASICBoost::Mask), OP_DUP, OP_INVERT, OP_TOALTSTACK, OP_AND, 
             // general purpose bits 
             OP_SWAP, OP_FROMALTSTACK, OP_AND, OP_OR, 
             OP_FROMALTSTACK, OP_CAT,                                // attach content + merkleroot
@@ -294,16 +295,6 @@ namespace Gigamonkey::Boost {
         
         return compile(boost_output_script);
     }
-    /*
-    work::puzzle puzzle(Boost::output_script o, digest160 miner) { 
-        if (o.Type == Boost::invalid || (o.Type == Boost::contract && o.MinerAddress != miner)) return {};
-        
-        return work::puzzle{
-            o.Category, o.Content, o.Target, 
-            Merkle::path{list<digest256>{}, 0}, 
-            write(o.Tag.size() + 168, o.Tag, o.UserNonce, o.MinerAddress), 
-            o.AdditionalData};
-    }*/
     
     inline bool between_inclusive(int x, int y, int z) {
         return x <= y && y <= z;

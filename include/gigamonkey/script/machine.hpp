@@ -5,8 +5,7 @@
 #define GIGAMONKEY_SCRIPT_MACHINE
 
 #include <gigamonkey/script/script.hpp>
-#include <sv/script/script_flags.h>
-#include <sv/policy/policy.h>
+#include <data/io/wait_for_enter.hpp>
 
 namespace Gigamonkey::Bitcoin::interpreter { 
     
@@ -51,14 +50,11 @@ namespace Gigamonkey::Bitcoin::interpreter {
     
         machine(program p, uint32 flags = StandardScriptVerifyFlags(true, true), uint32 index = 0, satoshi value = 0, transaction tx = {});
         
-        bool halt() const {
-            return State.Halt || State.Error || Program.empty();
-        }
-        
         void step() {
-            if (halt()) return;
+            if (State.Halt) return;
             State = State.step(*SignatureChecker, Program.first());
             Program = Program.rest();
+            if (data::empty(Program)) State.Halt = true;
         };
         
         ~machine() {
@@ -72,6 +68,8 @@ namespace Gigamonkey::Bitcoin::interpreter {
     };
     
     std::ostream& operator<<(std::ostream&, const machine&);
+    
+    void step_through(machine& m);
     
 }
 

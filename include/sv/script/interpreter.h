@@ -1,14 +1,15 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Bitcoin Core developers
 // Copyright (c) 2018-2019 Bitcoin Association
+// Copyright (d) 2021 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #ifndef BITCOIN_SCRIPT_INTERPRETER_H
 #define BITCOIN_SCRIPT_INTERPRETER_H
 
 #include <sv/primitives/transaction.h>
-#include <sv/script/script_flags.h>
-#include "script_error.h"
+#include <gigamonkey/script/flags.h>
+#include <gigamonkey/script/error.h>
 #include "sighashtype.h"
 #include "limitedstack.h"
 

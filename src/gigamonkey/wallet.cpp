@@ -21,7 +21,7 @@ namespace Gigamonkey::Bitcoin {
         
         void count_output_script(const script& x) {
             // op_return output scripts are cheap. 
-            (interpreter::is_op_return(x) ? Data : Standard) += x.size();
+            (op_return_data::match(x) ? Data : Standard) += x.size();
             // counting the rest of the output, which includes the size
             // of the script and the satoshi value. 
             Standard += var_int_size(x.size()) + 4;

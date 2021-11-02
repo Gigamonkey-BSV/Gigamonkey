@@ -133,7 +133,10 @@ add_library(gigamonkey STATIC
     #src/bitcoin_sv/sv.cpp 
     src/gigamonkey/timestamp.cpp
     src/gigamonkey/secp256k1.cpp
-    src/gigamonkey/script.cpp
+    src/gigamonkey/number.cpp
+    src/gigamonkey/script/instruction.cpp
+    src/gigamonkey/script/script.cpp
+    src/gigamonkey/script/machine.cpp
     src/gigamonkey/address.cpp
     src/gigamonkey/wif.cpp
     src/gigamonkey/merkle.cpp

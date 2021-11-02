@@ -2,6 +2,7 @@
 // Copyright (c) 2009-2016 The Bitcoin Core developers
 // Copyright (c) 2017 The Bitcoin developers
 // Copyright (c) 2018-2019 Bitcoin Association
+// Copyright (d) 2021 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #ifndef BITCOIN_VALIDATION_H
@@ -20,7 +21,7 @@
 //#include "fs.h"
 //#include "mining/journal_change_set.h"
 #include "protocol.h" // For CMessageHeader::MessageMagic
-#include "script/script_error.h"
+#include <gigamonkey/script/error.h>
 #include "sync.h"
 #include "streams.h"
 #include "task.h"

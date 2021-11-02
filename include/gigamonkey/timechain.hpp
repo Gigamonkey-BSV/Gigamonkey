@@ -137,6 +137,9 @@ namespace Gigamonkey::Bitcoin {
         }
         
         bool valid() const;
+        
+        int16 version() const;
+        const transaction& coinbase() const;
     };
 
     // an outpoint is a reference to a previous output. 
@@ -372,11 +375,11 @@ namespace Gigamonkey::Bitcoin {
     }
     
     std::ostream inline &operator<<(std::ostream& o, const input& p) {
-        return o << "input{Reference : " << p.Reference << ", Script : " << interpreter::ASM(p.Script) << ", Sequence : " << p.Sequence << "}";
+        return o << "input{Reference : " << p.Reference << ", Script : " << ASM(p.Script) << ", Sequence : " << p.Sequence << "}";
     }
 
     std::ostream inline &operator<<(std::ostream& o, const output& p) {
-        return o << "output{Value : " << p.Value << ", Script : " << interpreter::ASM(p.Script) << "}";
+        return o << "output{Value : " << p.Value << ", Script : " << ASM(p.Script) << "}";
     }
 
     std::ostream inline &operator<<(std::ostream& o, const transaction& p) {
@@ -420,7 +423,6 @@ namespace Gigamonkey::Bitcoin {
     }
 
     writer inline &operator<<(writer &w, const transaction &t) {
-        std::cout << "writing tx... " << std::endl;
         return transaction::write(w, t);
     }
 
@@ -474,10 +476,7 @@ namespace Gigamonkey::Bitcoin {
     
     template <typename reader> 
     reader inline &transaction::read(reader &r, transaction &t) {
-        r >> t.Version;
-        std::cout << "Read version " << t.Version << std::endl;
-        return read_sequence(read_sequence(r, t.Inputs), t.Outputs) >> t.Locktime;
-        //return read_sequence(read_sequence(r >> t.Version, t.Inputs), t.Outputs) >> t.Locktime;
+        return read_sequence(read_sequence(r >> t.Version, t.Inputs), t.Outputs) >> t.Locktime;
     }
     
     template <typename writer> 
