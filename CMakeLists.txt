@@ -121,7 +121,6 @@ add_library(gigamonkey STATIC
     src/sv/arith_uint256.cpp
     src/sv/pubkey.cpp
     src/sv/primitives/transaction.cpp
-    src/sv/script/limitedstack.cpp
     src/sv/script/script.cpp
     src/sv/config.cpp
     src/sv/script/interpreter.cpp
@@ -130,9 +129,9 @@ add_library(gigamonkey STATIC
     src/bitcoin_sv/hash.cpp
     src/bitcoin_sv/signature.cpp
     src/bitcoin_sv/script.cpp
-    #src/bitcoin_sv/sv.cpp 
     src/gigamonkey/timestamp.cpp
     src/gigamonkey/secp256k1.cpp
+    src/gigamonkey/signature.cpp
     src/gigamonkey/number.cpp
     src/gigamonkey/script/instruction.cpp
     src/gigamonkey/script/script.cpp

@@ -21,13 +21,12 @@
 
 namespace Gigamonkey::Bitcoin::hd::bip32 {
 
-    uint256 CURVE_ORDER = uint256("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141");
+    uint256 CURVE_ORDER = secp256k1::secret::order();
 
     uint32_t fp(const digest160& hash) {
         const byte *hsh = hash.Value.data();
         return (uint32_t) hsh[0] << 24 | (uint32_t) hsh[1] << 16 | (uint32_t) hsh[2] << 8 | (uint32_t) hsh[3];
     }
-
 
     secret derive(const secret& sec, uint32 child) {
         Bitcoin::pubkey pub = sec.Secret.to_public();
@@ -91,7 +90,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
             child_key.push_back(itr2);
         }
         
-        secp256k1::coordinate key{keyCode};
+        uint256 key{keyCode};
         std::reverse(key.begin(), key.end());
         derived.Secret = secp256k1::secret{key};
         for (int i = 32; i < 64; i++)
@@ -181,7 +180,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         bytes_view chain_code = view.substr(12, 32);
         bytes_view key = view.substr(12 + 32 + 1);
 
-        secp256k1::coordinate keyuint;
+        uint256 keyuint;
 
         auto tmpItr = key.begin();
         auto keyItr = keyuint.begin();
@@ -208,7 +207,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         }
 
         secret secret1;
-        secret1.Secret = secp256k1::secret{secp256k1::coordinate{hmaced}};
+        std::copy(std::begin(hmaced), std::begin(hmaced) + 32, secret1.Secret.Value.begin());
         secret1.ChainCode = chain_code();
         for (int i = 0; i < 32; i++) {
             secret1.ChainCode.push_back(hmaced[32 + i]);

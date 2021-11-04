@@ -12,6 +12,7 @@
 #include <gigamonkey/script/error.h>
 #include "sighashtype.h"
 #include "limitedstack.h"
+#include <data/cross.hpp>
 
 #include <cstdint>
 #include <optional>
@@ -29,8 +30,7 @@ namespace task
   class CCancellationToken;
 }
 
-bool CheckSignatureEncoding(const std::vector<uint8_t> &vchSig, uint32_t flags,
-                            ScriptError *serror);
+bool CheckSignatureEncoding(data::bytes_view vchSig, uint32_t flags, ScriptError *serror);
 
 uint256 SignatureHash(const CScript &scriptCode, const CTransaction &txTo,
                       unsigned int nIn, SigHashType sigHashType,

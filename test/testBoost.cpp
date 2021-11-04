@@ -114,9 +114,9 @@ namespace Gigamonkey::Boost {
             Bitcoin::timestamp start, 
             const Stratum::worker& worker, 
             uint64_big n2, uint64 key) {
-            Bitcoin::secret s(Bitcoin::secret::main, secp256k1::secret(secp256k1::coordinate(key)));
+            Bitcoin::secret s(Bitcoin::secret::main, secp256k1::secret(uint256(key)));
             puzzle Puzzle{o, s};
-                
+            
             bytes extra_nonce_2(8);
             std::copy(n2.begin(), n2.end(), extra_nonce_2.begin());
             
@@ -136,7 +136,7 @@ namespace Gigamonkey::Boost {
             const Stratum::worker& worker, 
             uint64_big n2, 
             uint64 key) { 
-            Bitcoin::secret s(Bitcoin::secret::main, secp256k1::secret(secp256k1::coordinate(key)));
+            Bitcoin::secret s(Bitcoin::secret::main, secp256k1::secret(uint256(key)));
             digest160 address = s.address().Digest;
             puzzle Puzzle{type, 1, content, target, tag, user_nonce, data, s, false};
             
@@ -164,7 +164,7 @@ namespace Gigamonkey::Boost {
             const Stratum::worker& worker, 
             uint64_big n2, 
             uint64 key) { 
-            Bitcoin::secret s(Bitcoin::secret::main, secp256k1::secret(secp256k1::coordinate(key)));
+            Bitcoin::secret s(Bitcoin::secret::main, secp256k1::secret(uint256(key)));
             digest160 address = s.address().Digest;
             puzzle Puzzle{type, 1, content, target, tag, user_nonce, data, s, true};
             

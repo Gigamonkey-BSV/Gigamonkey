@@ -8,66 +8,43 @@
 #include <sv/streams.h>
 
 namespace Gigamonkey::Bitcoin {
-            
-    Bitcoin::transaction incomplete::transaction::complete(list<bytes> scripts) const {
-        if (scripts.size() != Inputs.size()) return {};
-        list<Bitcoin::input> in;
-        list<output> out;
-        for (const input& i : Inputs) {
-            in = in << i.complete(scripts.first());
-            scripts = scripts.rest();
-        }
-        for (const output& o : Outputs) out = out << o;
-        return Bitcoin::transaction{Version, in, out, Locktime};
-    }
     
-    incomplete::transaction::transaction(int32_little v, list<input> i, list<output> o, uint32_little l) : 
-        Version{v}, Inputs(i.size()), Outputs(o.size()), Locktime{l} {
-        for (int n = 0; n < Inputs.size(); n++) {
-            Inputs[n] = i.first();
-            i = i.rest();
-        }
+    digest256 signature::original_hash(const document &doc, sighash::directive d) {
+        if (!sighash::valid(d) || sighash::has_fork_id(d)) return {};
         
-        for (int n = 0; n < Outputs.size(); n++) {
-            Outputs[n] = o.first();
-            o = o.rest();
-        }
-    }
-    
-    incomplete::transaction::operator bytes() const {
-        list<output> outputs;
-        for (const output& o : Outputs) outputs = outputs << o;
-        list<Bitcoin::input> inputs;
-        for (const input& in : Inputs) inputs = inputs << Bitcoin::input{in.Reference, {}, in.Sequence};
-        return bytes(Bitcoin::transaction{Version, inputs, outputs, Locktime});
-    }
-    
-    incomplete::transaction::transaction(bytes_view b) {
-        auto tx = Bitcoin::transaction{b};
-        *this = incomplete::transaction{tx.Version, 
-            data::for_each([](const Bitcoin::input& in) -> incomplete::input {
-                    return {in.Reference, in.Sequence};
-                }, tx.Inputs), 
-            tx.Outputs, tx.Locktime};
-    }
-    
-    digest256 signature::document::hash(sighash::directive d) const {
-        bytes tx = bytes(Transaction);
+        bytes serialized = bytes(doc.Transaction);
         
-        CDataStream stream{(const char*)(tx.data()), 
-            (const char*)(tx.data() + tx.size()), SER_NETWORK, PROTOCOL_VERSION};
+        CDataStream stream{(const char*)(serialized.data()), 
+            (const char*)(serialized.data() + serialized.size()), SER_NETWORK, PROTOCOL_VERSION};
         
         CTransaction ctx{deserialize, stream};
         
-        ::uint256 tmp = SignatureHash(
-            CScript(Previous.Script.begin(), Previous.Script.end()), ctx, InputIndex, SigHashType(d), 
-            Amount((int64)Previous.Value));
+        ::uint256 tmp = SignatureHash(CScript(doc.Previous.Script.begin(), doc.Previous.Script.end()), 
+            ctx, doc.InputIndex, SigHashType(d), Amount((int64)doc.Previous.Value), nullptr, false);
         
         digest<32> out;
         std::copy(tmp.begin(), tmp.end(), out.begin());
         
         return out;
+    }
+    
+    digest256 signature::Amaury_hash(const document &doc, sighash::directive d) {
+        if (!sighash::valid(d)) return {};
         
+        bytes serialized = bytes(doc.Transaction);
+        
+        CDataStream stream{(const char*)(serialized.data()), 
+            (const char*)(serialized.data() + serialized.size()), SER_NETWORK, PROTOCOL_VERSION};
+        
+        CTransaction ctx{deserialize, stream};
+        
+        ::uint256 tmp = SignatureHash(CScript(doc.Previous.Script.begin(), doc.Previous.Script.end()), 
+            ctx, doc.InputIndex, SigHashType(d | sighash::fork_id), Amount((int64)doc.Previous.Value), nullptr, true);
+        
+        digest<32> out;
+        std::copy(tmp.begin(), tmp.end(), out.begin());
+        
+        return out;
     }
 
 }

@@ -40,8 +40,6 @@ namespace Gigamonkey {
     
     using json = nlohmann::json;
     
-    using N = data::math::number::gmp::N;
-    
     template<typename x> using optional = std::optional<x>;
     
     using ostream = std::ostream;

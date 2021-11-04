@@ -134,7 +134,7 @@ namespace Gigamonkey::Bitcoin {
     
     using program = list<instruction>;
     
-    ScriptError verify(program, uint32 flags = StandardScriptVerifyFlags(true, true));
+    ScriptError verify(program, uint32 flags = 0);
     
     bool inline valid(program p) {
         return verify(p) == SCRIPT_ERR_OK;
@@ -162,7 +162,7 @@ namespace Gigamonkey::Bitcoin {
         
         bytes data() const;
         
-        ScriptError verify(uint32 flags = StandardScriptVerifyFlags(true, true)) const;
+        ScriptError verify(uint32 flags = 0) const;
         
         bool valid() const {
             return verify() == SCRIPT_ERR_OK;

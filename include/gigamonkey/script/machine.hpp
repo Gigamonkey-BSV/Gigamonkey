@@ -27,8 +27,9 @@ namespace Gigamonkey::Bitcoin::interpreter {
             
             long Counter;
             
-            state(uint32 flags) : Halt{false}, Success{false}, Error{SCRIPT_ERR_OK}, Flags{flags}, Stack{}, AltStack{}, Exec{}, Else{}, Counter{0} {}
-                
+            state(uint32 flags) : Halt{false}, Success{false}, Error{SCRIPT_ERR_OK}, 
+                Flags{flags}, Stack{}, AltStack{}, Exec{}, Else{}, Counter{0} {}
+            
             state step(const BaseSignatureChecker&, instruction) const;
         
             state run(const BaseSignatureChecker& x, program p) const {

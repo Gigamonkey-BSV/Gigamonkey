@@ -90,8 +90,11 @@ namespace Gigamonkey::Bitcoin::interpreter {
         const GlobalConfig& config = GlobalConfig::GetConfig();
         bool consensus = false;
         
-        LimitedStack stack(config.GetMaxStackMemoryUsage(Flags & SCRIPT_UTXO_AFTER_GENESIS, consensus));
-        LimitedStack altstack {stack.makeChildStack()};
+        // whether this op code will be executed. 
+        bool executed = !count(Exec.begin(), Exec.end(), false);
+        
+        ::LimitedStack stack(config.GetMaxStackMemoryUsage(Flags & SCRIPT_UTXO_AFTER_GENESIS, consensus));
+        ::LimitedStack altstack {stack.makeChildStack()};
         
         for (const bytes& b : Stack.reverse()) stack.push_back(b);
         for (const bytes& b : AltStack.reverse()) altstack.push_back(b);
@@ -139,13 +142,15 @@ namespace Gigamonkey::Bitcoin::interpreter {
         for (int i = 0; i < v_exec.size(); i++) m.Exec = m.Exec << v_exec[i];
         for (int i = 0; i < v_else.size(); i++) m.Else = m.Else << v_else[i];
         
-        if ((i.Op == OP_RETURN || 
+        if (executed && (
+            i.Op == OP_RETURN || 
             i.Op == OP_VERIFY || 
             i.Op == OP_EQUALVERIFY || 
             i.Op == OP_NUMEQUALVERIFY || 
             i.Op == OP_CHECKSIGVERIFY || 
-            i.Op == OP_CHECKMULTISIGVERIFY) && (!result.has_value() || !result.value())) {
+            i.Op == OP_CHECKMULTISIGVERIFY)) {
             m.Halt = true;
+            m.Success = result.has_value() && result.value();
         }
         
         return m;

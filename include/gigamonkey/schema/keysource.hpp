@@ -41,7 +41,7 @@ namespace Gigamonkey::Bitcoin {
         
         ptr<keysource> rest() const override {
             ptr<increment_key> k = std::make_shared<increment_key>(Key);
-            k->Key.Secret = k->Key.Secret + secp256k1::secret{1};
+            k->Key.Secret = k->Key.Secret + secp256k1::secret{uint256{1}};
             return k;
         }
     };

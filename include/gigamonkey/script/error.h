@@ -1,6 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Bitcoin Core developers
 // Copyright (c) 2019 Bitcoin Association
+// Copyright (c) 2021 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #ifndef BITCOIN_SCRIPT_SCRIPT_ERROR_H
@@ -85,5 +86,30 @@ typedef enum ScriptError_t
 const char *ScriptErrorString(const ScriptError error);
 
 std::ostream& operator<<(std::ostream&, const ScriptError);
+
+namespace Gigamonkey::Bitcoin {
+    
+    struct script_error {
+        ScriptError Error;
+        operator bool() const {
+            return Error != SCRIPT_ERR_OK;
+        }
+        
+        script_error(ScriptError x) : Error{x} {}
+        
+        bool operator==(script_error x) const {
+            return Error == x.Error;
+        }
+        
+        bool operator!=(script_error x) const {
+            return Error != x.Error;
+        }
+    };
+
+    std::ostream inline &operator<<(std::ostream &o, const script_error x) {
+        return o << x.Error;
+    }
+    
+}
 
 #endif // BITCOIN_SCRIPT_SCRIPT_ERROR_H

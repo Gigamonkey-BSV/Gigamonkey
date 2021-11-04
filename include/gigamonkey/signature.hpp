@@ -8,6 +8,8 @@
 #include "hash.hpp"
 #include "timechain.hpp"
 
+#include <gigamonkey/script/error.h>
+
 namespace Gigamonkey::Bitcoin {
     // The sighash directive is the last byte of a Bitcoin signature. 
     // It determines what parts of a transaction were signed. 
@@ -32,16 +34,20 @@ namespace Gigamonkey::Bitcoin {
             anyone_can_pay = 0x80
         };
         
-        inline type base(directive d) {
+        type inline base(directive d) {
             return type(uint32(d) & 0x1f);
         }
         
-        inline bool is_anyone_can_pay(directive d) {
+        bool inline is_anyone_can_pay(directive d) {
             return (uint32(d) & anyone_can_pay) != 0;
         }
         
-        inline bool has_fork_id(directive d) {
+        bool inline has_fork_id(directive d) {
             return (uint32(d) & fork_id) != 0;
+        }
+        
+        bool inline valid(directive d) {
+            return !(d & 0x3c);
         }
         
     };
@@ -53,26 +59,44 @@ namespace Gigamonkey::Bitcoin {
     // a Bitcoin signature. It consists of an secp256k1::signature with a
     // sighash directive at the end. This is what goes in an input script. 
     struct signature : bytes {
-        constexpr static size_t MaxSignatureSize = secp256k1::signature::MaxSignatureSize + 1;
+        constexpr static size_t MaxSignatureSize = 73;
+        
+        static Bitcoin::sighash::directive sighash(bytes_view x) {
+            return x.size() > 0 ? x[x.size() - 1] : 0;
+        }
+        
+        static bytes_view raw(bytes_view x) {
+            return x.size() > 0 ? x.substr(0, x.size() - 1) : bytes_view{};
+        }
+        
+        secp256k1::signature raw() const {
+            return secp256k1::signature{raw(*this)};
+        }
+        
+        secp256k1::point point() const {
+            return secp256k1::point(raw());
+        }
+        
+        Bitcoin::sighash::directive sighash() const {
+            return sighash(*this);
+        }
         
         signature() : bytes{} {}
         explicit signature(const bytes_view data) : bytes{data} {}
         
+        signature(const secp256k1::point raw, sighash::directive d) : bytes(secp256k1::signature::serialized_size(raw) + 1) {
+            bytes_writer w(bytes::begin(), bytes::end());
+            secp256k1::signature::write(w, raw);
+            w << d;
+        }
+        
         signature(const secp256k1::signature raw, sighash::directive d) : bytes(raw.size() + 1) {
-            bytes_writer(bytes::begin(), bytes::end()) << raw << d;
-        } 
+            bytes_writer w(bytes::begin(), bytes::end());
+            w << raw << d;
+        }
         
-        Bitcoin::sighash::directive sighash() const {
-            return bytes::operator[](-1);
-        } 
-        
-        secp256k1::signature raw() const {
-            secp256k1::signature x;
-            if (bytes::size() != 0) {
-                x.resize(bytes::size() - 1);
-                std::copy(bytes::begin(), bytes::end() - 1, x.begin());
-            }
-            return x;
+        static bool DER(bytes_view x) {
+            return secp256k1::signature::minimal(raw(x));
         } 
         
         // the document that is signed to produce the signature. 
@@ -80,7 +104,12 @@ namespace Gigamonkey::Bitcoin {
         
         static signature sign(const secp256k1::secret& s, sighash::directive d, const document&);
         
-        static bool verify(const signature& x, const secp256k1::pubkey& p, const document&);
+        static script_error verify(const signature& x, const secp256k1::pubkey& p, const document&, uint32 flags = 0);
+        
+        static digest256 hash(const document&, sighash::directive d);
+        static digest256 original_hash(const document&, sighash::directive d);
+        static digest256 Amaury_hash(const document&, sighash::directive d);
+        static digest256 Bitcoin_Cash_hash(const document&, sighash::directive d);
         
     };
     
@@ -143,17 +172,10 @@ namespace Gigamonkey::Bitcoin {
         // the index of the input containing the signature. 
         index InputIndex;
         
-        digest256 hash(sighash::directive d) const;
-        bytes write() const;
-        
     };
     
     signature inline signature::sign(const secp256k1::secret& s, sighash::directive d, const document& doc) {
-        return signature{s.sign(doc.hash(d)), d};
-    }
-    
-    bool inline signature::verify(const signature& x, const secp256k1::pubkey& p, const document& doc) {
-        return p.verify(doc.hash(x.sighash()), x.raw());
+        return signature{s.sign(hash(doc, d)), d};
     }
     
     namespace incomplete {
@@ -164,6 +186,14 @@ namespace Gigamonkey::Bitcoin {
     
     std::ostream inline &operator<<(std::ostream& o, const signature& x) {
         return o << "signature{" << data::encoding::hex::write(bytes_view(x)) << "}";
+    }
+    
+    digest256 inline signature::hash(const document &doc, sighash::directive d) {
+        return Bitcoin_Cash_hash(doc, d);
+    }
+    
+    digest256 inline signature::Bitcoin_Cash_hash(const document &doc, sighash::directive d) {
+        return sighash::has_fork_id(d) ? Amaury_hash(doc, d) : original_hash(doc, d - sighash::fork_id);
     }
     
 }

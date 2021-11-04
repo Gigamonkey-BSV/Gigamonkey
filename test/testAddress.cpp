@@ -19,7 +19,7 @@ namespace Gigamonkey::Bitcoin {
         using namespace interpreter;
         
         // We start with a secret key. 
-        secret key{secret::test, secp256k1::secret{secp256k1::coordinate{"0x00000000000000000000000000000000000000000000000000000000000101a7"}}};
+        secret key{secret::test, secp256k1::secret{uint256{"0x00000000000000000000000000000000000000000000000000000000000101a7"}}};
         
         satoshi redeemed_value = 6767;
         
@@ -74,29 +74,29 @@ namespace Gigamonkey::Bitcoin {
         bytes redeem_p2pkh_compressed = p2pkh_compressed_redeemer.redeem(document_p2pkh_compressed, directive);
         bytes redeem_p2pkh_uncompressed = p2pkh_uncompressed_redeemer.redeem(document_p2pkh_uncompressed, directive);
         
-        EXPECT_TRUE(evaluate(redeem_p2pk_compressed, document_p2pk_compressed).verify());
-        EXPECT_TRUE(evaluate(redeem_p2pk_uncompressed, document_p2pk_uncompressed).verify());
+        EXPECT_TRUE(evaluate(redeem_p2pk_compressed, document_p2pk_compressed));
+        EXPECT_TRUE(evaluate(redeem_p2pk_uncompressed, document_p2pk_uncompressed));
         
-        EXPECT_TRUE(evaluate(redeem_p2pkh_compressed, document_p2pkh_compressed).verify());
-        EXPECT_TRUE(evaluate(redeem_p2pkh_uncompressed, document_p2pkh_uncompressed).verify());
+        EXPECT_TRUE(evaluate(redeem_p2pkh_compressed, document_p2pkh_compressed));
+        EXPECT_TRUE(evaluate(redeem_p2pkh_uncompressed, document_p2pkh_uncompressed));
         
-        EXPECT_FALSE(evaluate(redeem_p2pk_uncompressed, document_p2pk_compressed).verify());
-        EXPECT_FALSE(evaluate(redeem_p2pk_compressed, document_p2pk_uncompressed).verify());
+        EXPECT_FALSE(evaluate(redeem_p2pk_uncompressed, document_p2pk_compressed));
+        EXPECT_FALSE(evaluate(redeem_p2pk_compressed, document_p2pk_uncompressed));
         
-        EXPECT_FALSE(evaluate(redeem_p2pkh_uncompressed, document_p2pkh_compressed).verify());
-        EXPECT_FALSE(evaluate(redeem_p2pkh_compressed, document_p2pkh_uncompressed).verify());
+        EXPECT_FALSE(evaluate(redeem_p2pkh_uncompressed, document_p2pkh_compressed));
+        EXPECT_FALSE(evaluate(redeem_p2pkh_compressed, document_p2pkh_uncompressed));
         
-        EXPECT_FALSE(evaluate(redeem_p2pkh_compressed, document_p2pk_compressed).verify());
-        EXPECT_FALSE(evaluate(redeem_p2pkh_uncompressed, document_p2pk_uncompressed).verify());
+        EXPECT_FALSE(evaluate(redeem_p2pkh_compressed, document_p2pk_compressed));
+        EXPECT_FALSE(evaluate(redeem_p2pkh_uncompressed, document_p2pk_uncompressed));
         
-        EXPECT_FALSE(evaluate(redeem_p2pk_compressed, document_p2pkh_compressed).verify());
-        EXPECT_FALSE(evaluate(redeem_p2pk_uncompressed, document_p2pkh_uncompressed).verify());
+        EXPECT_FALSE(evaluate(redeem_p2pk_compressed, document_p2pkh_compressed));
+        EXPECT_FALSE(evaluate(redeem_p2pk_uncompressed, document_p2pkh_uncompressed));
         
-        EXPECT_FALSE(evaluate(redeem_p2pkh_compressed, document_p2pk_uncompressed).verify());
-        EXPECT_FALSE(evaluate(redeem_p2pkh_uncompressed, document_p2pk_compressed).verify());
+        EXPECT_FALSE(evaluate(redeem_p2pkh_compressed, document_p2pk_uncompressed));
+        EXPECT_FALSE(evaluate(redeem_p2pkh_uncompressed, document_p2pk_compressed));
         
-        EXPECT_FALSE(evaluate(redeem_p2pk_compressed, document_p2pkh_uncompressed).verify());
-        EXPECT_FALSE(evaluate(redeem_p2pk_uncompressed, document_p2pkh_compressed).verify());
+        EXPECT_FALSE(evaluate(redeem_p2pk_compressed, document_p2pkh_uncompressed));
+        EXPECT_FALSE(evaluate(redeem_p2pk_uncompressed, document_p2pkh_compressed));
         
     }
     
