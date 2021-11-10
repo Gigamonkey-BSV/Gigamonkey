@@ -159,7 +159,15 @@ add_library(gigamonkey STATIC
     src/gigamonkey/boost/boost.cpp
     src/gigamonkey/mapi/mapi.cpp
     src/gigamonkey/mapi/envelope.cpp
-    
+
+    src/gigamonkey/script/counter.cpp
+    src/gigamonkey/script/machine.cpp
+	src/gigamonkey/p2p/node.cpp
+	src/gigamonkey/p2p/node_manager.cpp
+	src/gigamonkey/p2p/address.cpp
+	src/gigamonkey/p2p/messages/message.cpp
+	src/gigamonkey/p2p/messages/message_header.cpp
+
 )
 
 target_link_libraries(gigamonkey PUBLIC data util ${OPENSSL_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} nlohmann_json::nlohmann_json )
