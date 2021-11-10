@@ -61,7 +61,7 @@ set(Boost_USE_DEBUG_RUNTIME     OFF         CACHE BOOL "") # '-g' tag
 set(Boost_COMPILER              "-mgw49"    CACHE STRING "")
 
 # Include Boost
-find_package(Boost 1.72.0 COMPONENTS system locale  REQUIRED)
+find_package(Boost 1.72.0 COMPONENTS system locale program_options REQUIRED)
 
 if(Boost_FOUND)
 
@@ -160,7 +160,12 @@ add_library(gigamonkey STATIC
     src/gigamonkey/mapi/envelope.cpp
     src/gigamonkey/script/counter.cpp
     src/gigamonkey/script/machine.cpp
-    
+	src/gigamonkey/p2p/node.cpp
+	src/gigamonkey/p2p/node_manager.cpp
+	src/gigamonkey/p2p/address.cpp
+	src/gigamonkey/p2p/messages/message.cpp
+	src/gigamonkey/p2p/messages/message_header.cpp
+
 )
 
 target_link_libraries(gigamonkey PUBLIC data util ${OPENSSL_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} nlohmann_json::nlohmann_json )
