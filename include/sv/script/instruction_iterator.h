@@ -5,6 +5,7 @@
 #pragma once
 
 #include "instruction.h"
+#include <tuple>
 
 namespace bsv
 {

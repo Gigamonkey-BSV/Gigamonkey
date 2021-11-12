@@ -7,7 +7,6 @@
 #define BITCOIN_UINT256_H
 
 #include <sv/crypto/common.h>
-#include "utilstrencodings.h"
 
 #include <cassert>
 #include <cstdint>
@@ -51,48 +50,6 @@ public:
     friend inline bool operator<(const base_blob &a, const base_blob &b) {
         return a.Compare(b) < 0;
     }
-
-    std::string GetHex() const {
-        std::string hex(WIDTH * 2, 0);
-        for(unsigned int i = 0; i < WIDTH; ++i) {
-            uint8_t c = data[WIDTH - i - 1];
-            hex[i * 2] = hexmap[c >> 4];
-            hex[i * 2 + 1] = hexmap[c & 15];
-        }
-        return hex;
-    }
-
-    void SetHex(const char *psz) {
-        memset(data, 0, sizeof(data));
-        // skip leading spaces
-        while (isspace(*psz))
-            ++psz;
-
-        // skip 0x
-        if (psz[0] == '0' && tolower(psz[1]) == 'x')
-            psz += 2;
-
-        // hex string to uint
-        const char *pbegin = psz;
-        while (::HexDigit(*psz) != -1)
-            ++psz;
-
-        --psz;
-        uint8_t *p1 = data;
-        uint8_t *pend = p1 + WIDTH;
-        while (psz >= pbegin && p1 < pend) {
-            *p1 = ::HexDigit(*psz);
-            --psz;
-            if (psz >= pbegin) {
-                *p1 |= uint8_t(::HexDigit(*psz) << 4);
-                --psz;
-                ++p1;
-            }
-        }
-    }
-    void SetHex(const std::string &str) { SetHex(str.c_str()); };
-
-    std::string ToString() const { return GetHex(); };
 
     uint8_t *begin() { return &data[0]; }
 
@@ -167,40 +124,6 @@ namespace std
             return static_cast<size_t>(u.GetCheapHash());
         }
     };
-}
-
-/**
- * uint256 from const char *.
- * This is a separate function because the constructor uint256(const char*) can
- * result in dangerously catching uint256(0).
- */
-inline uint256 uint256S(const char *str) {
-    uint256 rv;
-    rv.SetHex(str);
-    return rv;
-}
-
-/**
- * uint256 from std::string.
- * This is a separate function because the constructor uint256(const std::string
- * &str) can result in dangerously catching uint256(0) via std::string(const
- * char*).
- */
-inline uint256 uint256S(const std::string &str) {
-    uint256 rv;
-    rv.SetHex(str);
-    return rv;
-}
-
-inline uint160 uint160S(const char *str) {
-    uint160 rv;
-    rv.SetHex(str);
-    return rv;
-}
-inline uint160 uint160S(const std::string &str) {
-    uint160 rv;
-    rv.SetHex(str);
-    return rv;
 }
 
 #endif // BITCOIN_UINT256_H

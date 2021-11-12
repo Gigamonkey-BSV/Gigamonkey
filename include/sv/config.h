@@ -20,6 +20,7 @@ static_assert(sizeof(void*) >= 8, "32 bit systems are not supported");
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <set>
 
 class CChainParams;
 struct DefaultBlockSizeParams;

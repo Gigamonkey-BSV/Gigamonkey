@@ -11,8 +11,6 @@
 
 namespace Gigamonkey::Bitcoin::interpreter { 
     
-    result verify_signature(bytes_view sig, bytes_view pub, const sighash::document &doc, uint32 flags);
-    
     // a Bitcoin script interpreter that can be advanced step-by-step.
     struct machine {
         bool Halt;
@@ -50,14 +48,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
     
         machine(program p, uint32 flags = StandardScriptVerifyFlags(true, true));
         
-        void step() {
-            if (Halt) return;
-            auto err = State.step(); 
-            if (err.Error || err.Success) {
-                Halt = true;
-                Result = err;
-            }
-        }
+        void step();
         
         result run();
         
@@ -93,16 +84,21 @@ namespace Gigamonkey::Bitcoin::interpreter {
         static const element &script_bool(bool b) {
             return b ? script_true() : script_false();
         }
+        
+        static const CScriptNum &script_zero() {
+            static CScriptNum Zero(0);
+            return Zero;
+        }
+        
+        static const CScriptNum &script_one() {
+            static CScriptNum One(1);
+            return One;
+        }
     };
     
     std::ostream& operator<<(std::ostream&, const machine&);
     
     void step_through(machine& m);
-        
-    result inline machine::run() {
-        while (!Halt) step();
-        return Result;
-    }
     
 }
 

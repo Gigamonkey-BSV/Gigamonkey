@@ -12,6 +12,7 @@
 #include <gigamonkey/script/instruction.hpp>
 #include <gigamonkey/sighash.hpp>
 #include <gigamonkey/satoshi.hpp>
+#include <sv/script/script_num.h>
 
 namespace Gigamonkey::Bitcoin { 
     
@@ -61,6 +62,10 @@ namespace Gigamonkey::Bitcoin {
         sighash::document add_script_code(bytes_view script_code) const {
             return sighash::document{RedeemedValue, script_code, Transaction, InputIndex};
         }
+        
+        // holdovers from Bitcoin Core. 
+        bool check_locktime(const CScriptNum &) const;
+        bool check_sequence(const CScriptNum &) const;
     };
     
     bool inline operator==(const result &a, const result &b) {

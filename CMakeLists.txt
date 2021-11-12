@@ -113,14 +113,12 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/extern/data/")
 
 add_library(gigamonkey STATIC 
     
-    src/sv/utilstrencodings.cpp
     src/sv/random.cpp
     src/sv/big_int.cpp
     src/sv/script/opcodes.cpp
     src/sv/script/script_error.cpp
     src/sv/script/script_num.cpp
     src/sv/arith_uint256.cpp
-    src/sv/pubkey.cpp
     src/sv/script/script.cpp
     src/sv/config.cpp
     src/sv/script/interpreter.cpp

@@ -6,8 +6,6 @@
 #ifndef BITCOIN_AMOUNT_H
 #define BITCOIN_AMOUNT_H
 
-#include "serialize.h"
-
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -131,14 +129,6 @@ public:
     }
 
     std::string ToString() const;
-
-    // serialization support
-    ADD_SERIALIZE_METHODS;
-
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream &s, Operation ser_action) {
-        READWRITE(amount);
-    }
 };
 
 static const Amount COIN(100000000);
@@ -208,13 +198,6 @@ public:
         return *this;
     }
     std::string ToString() const;
-
-    ADD_SERIALIZE_METHODS;
-
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream &s, Operation ser_action) {
-        READWRITE(nSatoshisPerK);
-    }
 };
 
 #endif //  BITCOIN_AMOUNT_H

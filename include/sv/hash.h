@@ -9,7 +9,6 @@
 #include <sv/crypto/ripemd160.h>
 #include <sv/crypto/sha256.h>
 #include <sv/prevector.h>
-#include "serialize.h"
 #include <sv/uint256.h>
 #include "version.h"
 
@@ -130,81 +129,6 @@ inline uint160 Hash160(const std::vector<uint8_t> &vch) {
 template <unsigned int N>
 inline uint160 Hash160(const prevector<N, uint8_t> &vch) {
     return Hash160(vch.begin(), vch.end());
-}
-
-/** A writer stream (for serialization) that computes a 256-bit hash. */
-class CHashWriter {
-private:
-    CHash256 ctx;
-
-    const int nType;
-    const int nVersion;
-
-public:
-    CHashWriter(int nTypeIn, int nVersionIn)
-        : nType(nTypeIn), nVersion(nVersionIn) {}
-
-    int GetType() const { return nType; }
-    int GetVersion() const { return nVersion; }
-
-    void write(const char *pch, size_t size) {
-        ctx.Write((const uint8_t *)pch, size);
-    }
-
-    // invalidates the object
-    uint256 GetHash() {
-        uint256 result;
-        ctx.Finalize((uint8_t *)&result);
-        return result;
-    }
-
-    template <typename T> CHashWriter &operator<<(const T &obj) {
-        // Serialize to this stream
-        ::Serialize(*this, obj);
-        return (*this);
-    }
-};
-
-/**
- * Reads data from an underlying stream, while hashing the read data.
- */
-template <typename Source> class CHashVerifier : public CHashWriter {
-private:
-    Source *source;
-
-public:
-    CHashVerifier(Source *source_)
-        : CHashWriter(source_->GetType(), source_->GetVersion()),
-          source(source_) {}
-
-    void read(char *pch, size_t nSize) {
-        source->read(pch, nSize);
-        this->write(pch, nSize);
-    }
-
-    void ignore(size_t nSize) {
-        char data[1024];
-        while (nSize > 0) {
-            size_t now = std::min<size_t>(nSize, 1024);
-            read(data, now);
-            nSize -= now;
-        }
-    }
-
-    template <typename T> CHashVerifier<Source> &operator>>(T &obj) {
-        // Unserialize from this stream
-        ::Unserialize(*this, obj);
-        return (*this);
-    }
-};
-
-/** Compute the 256-bit hash of an object's serialization. */
-template <typename T>
-uint256 SerializeHash(const T &obj, int nType = SER_GETHASH,
-                      int nVersion = PROTOCOL_VERSION) {
-    CHashWriter ss(nType, nVersion);
-    ss << obj;
-    return ss.GetHash();
 }
 
 unsigned int MurmurHash3(unsigned int nHashSeed,

@@ -10,7 +10,6 @@
 #include <sv/consensus/consensus.h>
 #include <sv/crypto/common.h>
 #include <sv/prevector.h>
-#include <sv/serialize.h>
 #include <sv/span.h>
 #include <gigamonkey/script/opcodes.h>
 
@@ -60,13 +59,6 @@ public:
         : CScriptBase(pbegin, pend) {}
     CScript(const uint8_t *pbegin, const uint8_t *pend)
         : CScriptBase(pbegin, pend) {}
-
-    ADD_SERIALIZE_METHODS;
-
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream &s, Operation ser_action) {
-        READWRITE(static_cast<CScriptBase &>(*this));
-    }
 
     CScript &operator+=(const CScript &b) {
         insert(end(), b.begin(), b.end());

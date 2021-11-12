@@ -4,16 +4,13 @@
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <sv/script/interpreter.h>
-#include <sv/primitives/transaction.h>
 #include <gigamonkey/script/flags.h>
 #include <gigamonkey/signature.hpp>
 #include <sv/crypto/ripemd160.h>
 #include <sv/crypto/sha1.h>
 #include <sv/crypto/sha256.h>
-#include <sv/pubkey.h>
 #include <sv/script/script.h>
 #include <sv/script/script_num.h>
-#include <sv/taskcancellation.h>
 #include <sv/uint256.h>
 #include <sv/consensus/consensus.h>
 #include <sv/script_config.h>
@@ -116,184 +113,16 @@ bool CastToBool(const valtype &vch) {
     return false;
 }
 
-static bool IsCompressedOrUncompressedPubKey(const valtype &vchPubKey) {
-    if (vchPubKey.size() < 33) {
-        //  Non-canonical public key: too short
-        return false;
-    }
-    if (vchPubKey[0] == 0x04) {
-        if (vchPubKey.size() != 65) {
-            //  Non-canonical public key: invalid length for uncompressed key
-            return false;
-        }
-    } else if (vchPubKey[0] == 0x02 || vchPubKey[0] == 0x03) {
-        if (vchPubKey.size() != 33) {
-            //  Non-canonical public key: invalid length for compressed key
-            return false;
-        }
-    } else {
-        //  Non-canonical public key: neither compressed nor uncompressed
-        return false;
-    }
-    return true;
-}
-
-static bool IsCompressedPubKey(const valtype &vchPubKey) {
-    if (vchPubKey.size() != 33) {
-        //  Non-canonical public key: invalid length for compressed key
-        return false;
-    }
-    if (vchPubKey[0] != 0x02 && vchPubKey[0] != 0x03) {
-        //  Non-canonical public key: invalid prefix for compressed key
-        return false;
-    }
-    return true;
-}
-
-static bool IsLowDERSignature(data::bytes_view vchSig, ScriptError *serror) {
-    if (!Gigamonkey::Bitcoin::signature::DER(vchSig)) {
-        return set_error(serror, SCRIPT_ERR_SIG_DER);
-    }
-    
-    if (!Gigamonkey::secp256k1::signature::normalized(vchSig.substr(0, vchSig.size() - 1))) {
-        return set_error(serror, SCRIPT_ERR_SIG_HIGH_S);
-    }
-    
-    return true;
-}
-
-static SigHashType GetHashType(const valtype &vchSig) {
-    if (vchSig.size() == 0) {
-        return SigHashType(0);
-    }
-
-    return SigHashType(vchSig[vchSig.size() - 1]);
-}
-
-static void CleanupScriptCode(CScript &scriptCode,
-                              const std::vector<uint8_t> &vchSig,
-                              uint32_t flags) {
-    // Drop the signature in scripts when SIGHASH_FORKID is not used.
-    SigHashType sigHashType = GetHashType(vchSig);
-    if (!(flags & SCRIPT_ENABLE_SIGHASH_FORKID) || !sigHashType.hasForkId()) {
-        scriptCode.FindAndDelete(CScript(vchSig));
-    }
-}
-
-bool CheckSignatureEncoding(data::bytes_view vchSig, uint32_t flags,
-                            ScriptError *serror) {
-    // Empty signature. Not strictly DER encoded, but allowed to provide a
-    // compact way to provide an invalid signature for use with CHECK(MULTI)SIG
-    if (vchSig.size() == 0) {
-        return true;
-    }
-    
-    if ((flags & (SCRIPT_VERIFY_DERSIG | SCRIPT_VERIFY_LOW_S |
-                  SCRIPT_VERIFY_STRICTENC)) != 0 &&
-        !Gigamonkey::Bitcoin::signature::DER(vchSig)) {
-        return set_error(serror, SCRIPT_ERR_SIG_DER);
-    }
-    
-    if ((flags & SCRIPT_VERIFY_LOW_S) != 0 &&
-        !IsLowDERSignature(vchSig, serror)) {
-        // serror is set
-        return false;
-    }
-    
-    if ((flags & SCRIPT_VERIFY_STRICTENC) != 0) {
-        if (!GetHashType(vchSig).isDefined()) {
-            return set_error(serror, SCRIPT_ERR_SIG_HASHTYPE);
-        }
-        bool usesForkId = GetHashType(vchSig).hasForkId();
-        bool forkIdEnabled = flags & SCRIPT_ENABLE_SIGHASH_FORKID;
-        if (!forkIdEnabled && usesForkId) {
-            return set_error(serror, SCRIPT_ERR_ILLEGAL_FORKID);
-        }
-        if (forkIdEnabled && !usesForkId) {
-            return set_error(serror, SCRIPT_ERR_MUST_USE_FORKID);
-        }
-    }
-    
-    return true;
-}
-
-static bool CheckPubKeyEncoding(const valtype &vchPubKey, uint32_t flags,
-                                ScriptError *serror) {
-    if ((flags & SCRIPT_VERIFY_STRICTENC) != 0 &&
-        !IsCompressedOrUncompressedPubKey(vchPubKey)) {
-        return set_error(serror, SCRIPT_ERR_PUBKEYTYPE);
-    }
-    // Only compressed keys are accepted when
-    // SCRIPT_VERIFY_COMPRESSED_PUBKEYTYPE is enabled.
-    if (flags & SCRIPT_VERIFY_COMPRESSED_PUBKEYTYPE &&
-        !IsCompressedPubKey(vchPubKey)) {
-        return set_error(serror, SCRIPT_ERR_NONCOMPRESSED_PUBKEY);
-    }
-    return true;
-}
-
-static bool CheckMinimalPush(const valtype &data, opcodetype opcode) {
-    if (data.size() == 0) {
-        // Could have used OP_0.
-        return opcode == OP_0;
-    }
-    if (data.size() == 1 && data[0] >= 1 && data[0] <= 16) {
-        // Could have used OP_1 .. OP_16.
-        return opcode == OP_1 + (data[0] - 1);
-    }
-    if (data.size() == 1 && data[0] == 0x81) {
-        // Could have used OP_1NEGATE.
-        return opcode == OP_1NEGATE;
-    }
-    if (data.size() <= 75) {
-        // Could have used a direct push (opcode indicating number of bytes
-        // pushed + those bytes).
-        return opcode == data.size();
-    }
-    if (data.size() <= 255) {
-        // Could have used OP_PUSHDATA.
-        return opcode == OP_PUSHDATA1;
-    }
-    if (data.size() <= 65535) {
-        // Could have used OP_PUSHDATA2.
-        return opcode == OP_PUSHDATA2;
-    }
-    return true;
-}
-
-static bool IsOpcodeDisabled(opcodetype opcode) {
-    switch (opcode) {
-        case OP_2MUL:
-        case OP_2DIV:
-            // Disabled opcodes.
-            return true;
-
-        default:
-            break;
-    }
-
-    return false;
-}
-
 static bool IsInvalidBranchingOpcode(opcodetype opcode) {
     return opcode == OP_VERNOTIF || opcode == OP_VERIF;
-}
-
-inline bool IsValidMaxOpsPerScript(uint64_t nOpCount,
-                                   const CScriptConfig &config,
-                                   bool isGenesisEnabled, bool consensus)
-{
-    return (nOpCount <= config.GetMaxOpsPerScript(isGenesisEnabled, consensus));
 }
 
 std::optional<bool> EvalScript(
     const CScriptConfig& config,
     bool consensus,
-    const task::CCancellationToken& token,
     LimitedStack& stack,
     const CScript& script,
     uint32_t flags,
-    const BaseSignatureChecker& checker,
     LimitedStack& altstack,
     long& ipc,
     std::vector<bool>& vfExec,
@@ -320,19 +149,14 @@ std::optional<bool> EvalScript(
     {
         return set_error(serror, SCRIPT_ERR_SCRIPT_SIZE);
     }
-    uint64_t nOpCount = 0;
+    
     const bool fRequireMinimal = (flags & SCRIPT_VERIFY_MINIMALDATA) != 0;
     
     // if OP_RETURN is found in executed branches after genesis is activated,
     // we still have to check if the rest of the script is valid
     bool nonTopLevelReturnAfterGenesis = false;
     
-    try {
         while (pc < pend) {
-            if (token.IsCanceled())
-            {
-                return {};
-            }
 
             //
             // Read instruction
@@ -342,35 +166,10 @@ std::optional<bool> EvalScript(
             }
             ipc = pc - script.begin();
 
-            if (!utxo_after_genesis && (vchPushValue.size() > MAX_SCRIPT_ELEMENT_SIZE_BEFORE_GENESIS))
-            {
-                return set_error(serror, SCRIPT_ERR_PUSH_SIZE);
-            }
-
             // Do not execute instructions if Genesis OP_RETURN was found in executed branches.
             bool fExec = !count(vfExec.begin(), vfExec.end(), false) && (!nonTopLevelReturnAfterGenesis || opcode == OP_RETURN);
 
-            //
-            // Check opcode limits.
-            //
-            // Push values are not taken into consideration.
-            // Note how OP_RESERVED does not count towards the opcode limit.
-            if ((opcode > OP_16) && !IsValidMaxOpsPerScript(++nOpCount, config, utxo_after_genesis, consensus)) {
-                return set_error(serror, SCRIPT_ERR_OP_COUNT);
-            }
-
-            // Some opcodes are disabled.
-            if (IsOpcodeDisabled(opcode) && (!utxo_after_genesis || fExec )) {
-                return set_error(serror, SCRIPT_ERR_DISABLED_OPCODE);
-            }
-
-            if (fExec && 0 <= opcode && opcode <= OP_PUSHDATA4) {
-                if (fRequireMinimal &&
-                    !CheckMinimalPush(vchPushValue, opcode)) {
-                    return set_error(serror, SCRIPT_ERR_MINIMALDATA);
-                }
-                stack.push_back(vchPushValue);
-            } else if (fExec || (OP_IF <= opcode && opcode <= OP_ENDIF)) {
+            if (fExec || (OP_IF <= opcode && opcode <= OP_ENDIF)) {
                 switch (opcode) {
                     //
                     // Push value
@@ -406,106 +205,8 @@ std::optional<bool> EvalScript(
                     case OP_NOP:
                         break;
 
-                    case OP_CHECKLOCKTIMEVERIFY: {
-                        if (!(flags & SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY) || utxo_after_genesis) {
-                            // not enabled; treat as a NOP2
-                            if (flags &
-                                SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS) {
-                                return set_error(
-                                    serror,
-                                    SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS);
-                            }
-                            break;
-                        }
-
-                        if (stack.size() < 1) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-
-                        // Note that elsewhere numeric opcodes are limited to
-                        // operands in the range -2**31+1 to 2**31-1, however it
-                        // is legal for opcodes to produce results exceeding
-                        // that range. This limitation is implemented by
-                        // CScriptNum's default 4-byte limit.
-                        //
-                        // If we kept to that limit we'd have a year 2038
-                        // problem, even though the nLockTime field in
-                        // transactions themselves is uint32 which only becomes
-                        // meaningless after the year 2106.
-                        //
-                        // Thus as a special case we tell CScriptNum to accept
-                        // up to 5-byte bignums, which are good until 2**39-1,
-                        // well beyond the 2**32-1 limit of the nLockTime field
-                        // itself.
-                        const CScriptNum nLockTime(stack.stacktop(-1).GetElement(),
-                                                   fRequireMinimal, 5);
-
-                        // In the rare event that the argument may be < 0 due to
-                        // some arithmetic being done first, you can always use
-                        // 0 MAX CHECKLOCKTIMEVERIFY.
-                        if (nLockTime < 0) {
-                            return set_error(serror,
-                                             SCRIPT_ERR_NEGATIVE_LOCKTIME);
-                        }
-
-                        // Actually compare the specified lock time with the
-                        // transaction.
-                        if (!checker.CheckLockTime(nLockTime)) {
-                            return set_error(serror,
-                                             SCRIPT_ERR_UNSATISFIED_LOCKTIME);
-                        }
-
-                        break;
-                    }
-
-                    case OP_CHECKSEQUENCEVERIFY: {
-                        if (!(flags & SCRIPT_VERIFY_CHECKSEQUENCEVERIFY) || utxo_after_genesis) {
-                            // not enabled; treat as a NOP3
-                            if (flags &
-                                SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS) {
-                                return set_error(
-                                    serror,
-                                    SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS);
-                            }
-                            break;
-                        }
-
-                        if (stack.size() < 1) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-
-                        // nSequence, like nLockTime, is a 32-bit unsigned
-                        // integer field. See the comment in CHECKLOCKTIMEVERIFY
-                        // regarding 5-byte numeric operands.
-                        const CScriptNum nSequence(stack.stacktop(-1).GetElement(),
-                                                   fRequireMinimal, 5);
-
-                        // In the rare event that the argument may be < 0 due to
-                        // some arithmetic being done first, you can always use
-                        // 0 MAX CHECKSEQUENCEVERIFY.
-                        if (nSequence < 0) {
-                            return set_error(serror,
-                                             SCRIPT_ERR_NEGATIVE_LOCKTIME);
-                        }
-
-                        // To provide for future soft-fork extensibility, if the
-                        // operand has the disabled lock-time flag set,
-                        // CHECKSEQUENCEVERIFY behaves as a NOP.
-                        if ((nSequence &
-                             CTxIn::SEQUENCE_LOCKTIME_DISABLE_FLAG) != bnZero) {
-                            break;
-                        }
-
-                        // Compare the specified sequence number with the input.
-                        if (!checker.CheckSequence(nSequence)) {
-                            return set_error(serror,
-                                             SCRIPT_ERR_UNSATISFIED_LOCKTIME);
-                        }
-
-                        break;
-                    }
+                    case OP_CHECKLOCKTIMEVERIFY: 
+                    case OP_CHECKSEQUENCEVERIFY: throw std::logic_error{"should not evaluate this"};
 
                     case OP_NOP1:
                     case OP_NOP4:
@@ -586,21 +287,7 @@ std::optional<bool> EvalScript(
                         }
                     } break;
 
-                    case OP_RETURN: {
-                        if (utxo_after_genesis) {
-                            if (vfExec.empty()) {
-                                // Terminate the execution as successful. The remaining of the script does not affect the validity (even in
-                                // presence of unbalanced IFs, invalid opcodes etc)
-                                return set_success(serror);
-                            }
-
-                            // op_return encountered inside if statement after genesis --> check for invalid grammar
-                            nonTopLevelReturnAfterGenesis = true;
-                        } else {
-                            // Pre-Genesis OP_RETURN marks script as invalid
-                            return set_error(serror, SCRIPT_ERR_OP_RETURN);
-                        }
-                    } break;
+                    case OP_RETURN: throw std::logic_error{"should not reach here"};
 
                     //
                     // Stack ops
@@ -907,8 +594,6 @@ std::optional<bool> EvalScript(
                             do
                             {
                                 values = LShift(values, n.getint());
-                                if(token.IsCanceled())
-                                    return {};
                                 n -= utxo_after_genesis
                                          ? CScriptNum{bsv::bint{INT32_MAX}}
                                          : CScriptNum{INT32_MAX};
@@ -948,8 +633,6 @@ std::optional<bool> EvalScript(
                             do
                             {
                                 values = RShift(values, n.getint());
-                                if(token.IsCanceled())
-                                    return {};
                                 n -= utxo_after_genesis
                                          ? CScriptNum{bsv::bint{INT32_MAX}}
                                          : CScriptNum{INT32_MAX};
@@ -1386,31 +1069,6 @@ std::optional<bool> EvalScript(
                 return set_error(serror, SCRIPT_ERR_STACK_SIZE);
             }
         }
-    }
-    catch(scriptnum_overflow_error& err)
-    {
-        return set_error(serror, SCRIPT_ERR_SCRIPTNUM_OVERFLOW);
-    }
-    catch(scriptnum_minencode_error& err)
-    {
-        return set_error(serror, SCRIPT_ERR_SCRIPTNUM_MINENCODE);
-    }
-    catch(stack_overflow_error& err)
-    {
-        return set_error(serror, SCRIPT_ERR_STACK_SIZE);
-    }
-    catch(const bsv::big_int_error&)
-    {
-        return set_error(serror, SCRIPT_ERR_BIG_INT);
-    }
-    catch(...)
-    {
-        return set_error(serror, SCRIPT_ERR_UNKNOWN_ERROR);
-    }
-
-    if (!vfExec.empty()) {
-        return set_error(serror, SCRIPT_ERR_UNBALANCED_CONDITIONAL);
-    }
 
     return set_success(serror);
 }
@@ -1418,27 +1076,23 @@ std::optional<bool> EvalScript(
 std::optional<bool> EvalScript(
     const CScriptConfig& config,
     bool consensus,
-    const task::CCancellationToken& token,
     LimitedStack& stack,
     const CScript& script,
     uint32_t flags,
-    const BaseSignatureChecker& checker,
     ScriptError* serror)
 {
     LimitedStack altstack {stack.makeChildStack()};
     long ipc{0};
     std::vector<bool> vfExec, vfElse;
-    return EvalScript(config, consensus, token, stack, script, flags, checker, altstack, ipc, vfExec, vfElse, serror);
+    return EvalScript(config, consensus, stack, script, flags, altstack, ipc, vfExec, vfElse, serror);
 }
 
 std::optional<bool> VerifyScript(
     const CScriptConfig& config,
     bool consensus,
-    const task::CCancellationToken& token,
     const CScript& scriptSig,
     const CScript& scriptPubKey,
     uint32_t flags,
-    const BaseSignatureChecker& checker,
     ScriptError* serror)
 {
     set_error(serror, SCRIPT_ERR_UNKNOWN_ERROR);
@@ -1455,7 +1109,7 @@ std::optional<bool> VerifyScript(
     LimitedStack stack(config.GetMaxStackMemoryUsage(flags & SCRIPT_UTXO_AFTER_GENESIS, consensus));
     LimitedStack stackCopy(config.GetMaxStackMemoryUsage(flags & SCRIPT_UTXO_AFTER_GENESIS, consensus));
     
-    if (auto res = EvalScript(config, consensus, token, stack, scriptSig, flags, checker, serror);
+    if (auto res = EvalScript(config, consensus, stack, scriptSig, flags, serror);
         !res.has_value() || !res.value())
     {
         return res;
@@ -1465,7 +1119,7 @@ std::optional<bool> VerifyScript(
         stackCopy = stack.makeRootStackCopy();
     }
     
-    if (auto res = EvalScript(config, consensus, token, stack, scriptPubKey, flags, checker, serror);
+    if (auto res = EvalScript(config, consensus, stack, scriptPubKey, flags, serror);
         !res.has_value() || !res.value())
     {
         return res;
@@ -1501,7 +1155,7 @@ std::optional<bool> VerifyScript(
         CScript pubKey2(pubKeySerialized.begin(), pubKeySerialized.end());
         stack.pop_back();
 
-        if (auto res = EvalScript(config, consensus, token, stack, pubKey2, flags, checker, serror);
+        if (auto res = EvalScript(config, consensus, stack, pubKey2, flags, serror);
             !res.has_value() || !res.value())
         {
             return res;
