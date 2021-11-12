@@ -10,36 +10,40 @@
 #include <gigamonkey/script/error.h>
 
 #include <gigamonkey/script/instruction.hpp>
-#include <gigamonkey/wif.hpp>
+#include <gigamonkey/sighash.hpp>
+#include <gigamonkey/satoshi.hpp>
 
-namespace Gigamonkey::Bitcoin::interpreter { 
+namespace Gigamonkey::Bitcoin { 
     
     // the result returned from a script evaluatuon. 
     // There is a success or failure and a possible error. 
     struct result; 
     
     // Test validity of a script. All signature operations succeed. 
-    result evaluate(const script& unlock, const script& lock);
+    result evaluate(const script& unlock, const script& lock, uint32 flags = StandardScriptVerifyFlags(true, true));
+    
+    struct redemption_document;
     
     // Evaluate script with real signature operations. 
-    result evaluate(const script& unlock, const signature::document &lock);
+    result evaluate(const script& unlock, const script& lock, const redemption_document &doc, uint32 flags = StandardScriptVerifyFlags(true, true));
     
     bool operator==(const result &, const result &);
     bool operator!=(const result &, const result &);
     
     struct result {
         ScriptError Error;
-        bool Return;
+        bool Success;
         
-        result() : Error{SCRIPT_ERR_OK}, Return{false} {}
-        result(ScriptError err) : Error{err}, Return{false} {}
+        result() : result{false} {}
+        result(bool b) : Error{SCRIPT_ERR_OK}, Success{b} {}
+        result(ScriptError err) : Error{err}, Success{false} {}
         
         bool valid() const {
             return !Error;
         }
         
         bool verify() const {
-            return !Error && Return;
+            return !Error && Success;
         }
         
         operator bool() const {
@@ -47,12 +51,29 @@ namespace Gigamonkey::Bitcoin::interpreter {
         }
     };
     
+    struct redemption_document {
+        satoshi RedeemedValue;
+        
+        incomplete::transaction Transaction;
+        
+        index InputIndex;
+        
+        sighash::document add_script_code(bytes_view script_code) const {
+            return sighash::document{RedeemedValue, script_code, Transaction, InputIndex};
+        }
+    };
+    
     bool inline operator==(const result &a, const result &b) {
-        return a.Return == b.Return && a.Error == b.Error;
+        return a.Success == b.Success && a.Error == b.Error;
     }
     
     bool inline operator!=(const result &a, const result &b) {
         return !(a == b);
+    }
+    
+    std::ostream inline &operator<<(std::ostream &o, const result &r) {
+        if (r.Error) return o << r.Error;
+        return o << (r.Success ? "success" : "failure");
     }
     
 }

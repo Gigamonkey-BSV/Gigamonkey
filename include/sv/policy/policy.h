@@ -9,6 +9,7 @@
 #include <sv/consensus/consensus.h>
 #include <sv/script/interpreter.h>
 #include <sv/script/standard.h>
+#include <sv/amount.h>
 
 #include <optional>
 #include <string>

@@ -462,7 +462,7 @@ namespace Gigamonkey {
                 bool use_general_purpose_bits) : 
                 Secret{k}, Pubkey{p}, Solution{z}, Type{t}, UseGeneralPurposeBits{use_general_purpose_bits} {}
             
-            bytes redeem(const Bitcoin::signature::document& document, Bitcoin::sighash::directive d) const override {
+            bytes redeem(const Bitcoin::sighash::document& document, Bitcoin::sighash::directive d) const override {
                 return input_script{Bitcoin::signature::sign(Secret.Secret, d, document), Pubkey, Solution, Type, UseGeneralPurposeBits}.write();
             }
             

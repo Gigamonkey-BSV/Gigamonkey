@@ -58,7 +58,7 @@ namespace Gigamonkey::Bitcoin {
         
         secp256k1::signature sign(const digest256& d) const;
         
-        signature sign(const signature::document& document, sighash::directive d = directive(sighash::all)) const;
+        signature sign(const sighash::document& document, sighash::directive d = directive(sighash::all)) const;
         
         bytes encrypt(const bytes& message) const;
         bytes decrypt(const bytes& message) const;
@@ -113,7 +113,7 @@ namespace Gigamonkey::Bitcoin {
         return Secret.sign(d);
     }
     
-    inline signature secret::sign(const signature::document& document, sighash::directive d) const {
+    inline signature secret::sign(const sighash::document& document, sighash::directive d) const {
         return signature::sign(Secret, d, document);
     }
         

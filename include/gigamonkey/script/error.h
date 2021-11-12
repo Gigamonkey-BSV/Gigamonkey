@@ -87,29 +87,4 @@ const char *ScriptErrorString(const ScriptError error);
 
 std::ostream& operator<<(std::ostream&, const ScriptError);
 
-namespace Gigamonkey::Bitcoin {
-    
-    struct script_error {
-        ScriptError Error;
-        operator bool() const {
-            return Error != SCRIPT_ERR_OK;
-        }
-        
-        script_error(ScriptError x) : Error{x} {}
-        
-        bool operator==(script_error x) const {
-            return Error == x.Error;
-        }
-        
-        bool operator!=(script_error x) const {
-            return Error != x.Error;
-        }
-    };
-
-    std::ostream inline &operator<<(std::ostream &o, const script_error x) {
-        return o << x.Error;
-    }
-    
-}
-
 #endif // BITCOIN_SCRIPT_SCRIPT_ERROR_H

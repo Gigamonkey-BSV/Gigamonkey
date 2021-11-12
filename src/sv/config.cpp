@@ -5,7 +5,7 @@
 #include <sv/config.h>
 //#include "chainparams.h"
 #include <sv/consensus/consensus.h>
-#include <sv/validation.h>
+//#include <sv/validation.h>
 #include <sv/util.h>
 //#include "consensus/merkle.h"
 
@@ -48,7 +48,6 @@ void GlobalConfig::Reset()
 {
     feePerKB = CFeeRate {};
     blockMinFeePerKB = CFeeRate{DEFAULT_BLOCK_MIN_TX_FEE};
-    preferredBlockFileSize = DEFAULT_PREFERRED_BLOCKFILE_SIZE;
 
     setDefaultBlockSizeParamsCalled = false;
 
@@ -65,16 +64,11 @@ void GlobalConfig::Reset()
     acceptNonStdConsolidationInput = DEFAULT_ACCEPT_NON_STD_CONSOLIDATION_INPUT;
 
     dataCarrierSize = DEFAULT_DATA_CARRIER_SIZE;
-    limitAncestorCount = DEFAULT_ANCESTOR_LIMIT;
-    limitSecondaryMempoolAncestorCount = DEFAULT_SECONDARY_MEMPOOL_ANCESTOR_LIMIT;
     
     testBlockCandidateValidity = false;
 
     genesisActivationHeight = 0;
 
-    mMaxParallelBlocks = DEFAULT_SCRIPT_CHECK_POOL_SIZE;
-    mPerBlockScriptValidatorThreadsCount = DEFAULT_SCRIPTCHECK_THREADS;
-    mPerBlockScriptValidationMaxBatchSize = DEFAULT_SCRIPT_CHECK_MAX_BATCH_SIZE;
     maxOpsPerScriptPolicy = DEFAULT_OPS_PER_SCRIPT_POLICY_AFTER_GENESIS;
     maxTxSigOpsCountPolicy = DEFAULT_TX_SIGOPS_COUNT_POLICY_AFTER_GENESIS;
     maxPubKeysPerMultiSig = DEFAULT_PUBKEYS_PER_MULTISIG_POLICY_AFTER_GENESIS;
@@ -91,16 +85,9 @@ void GlobalConfig::Reset()
     mMaxCoinsViewCacheSize = 0;
     mMaxCoinsProviderCacheSize = DEFAULT_COINS_PROVIDER_CACHE_SIZE;
 
-    maxProtocolRecvPayloadLength = DEFAULT_MAX_PROTOCOL_RECV_PAYLOAD_LENGTH;
-    maxProtocolSendPayloadLength = DEFAULT_MAX_PROTOCOL_RECV_PAYLOAD_LENGTH * MAX_PROTOCOL_SEND_PAYLOAD_FACTOR;
-
-    recvInvQueueFactor = DEFAULT_RECV_INV_QUEUE_FACTOR;
-
     mMaxMempool = DEFAULT_MAX_MEMPOOL_SIZE * ONE_MEGABYTE;
     mMaxMempoolSizeDisk = mMaxMempool * DEFAULT_MAX_MEMPOOL_SIZE_DISK_FACTOR;
     mMempoolMaxPercentCPFP = DEFAULT_MEMPOOL_MAX_PERCENT_CPFP;
-    mMemPoolExpiry = DEFAULT_MEMPOOL_EXPIRY * SECONDS_IN_ONE_HOUR;
-    mStopAtHeight = DEFAULT_STOPATHEIGHT;
     mPromiscuousMempoolFlags = 0;
     mIsSetPromiscuousMempoolFlags = false;
 

@@ -17,7 +17,7 @@ namespace Gigamonkey::Bitcoin {
             // This information must be provided in the event that a signature is required. 
             // However, not all input scripts have signatures. Therefore, we can't assume that
             // a key is here either or that any signature is created. 
-            virtual bytes redeem(const signature::document& document, sighash::directive d) const = 0;
+            virtual bytes redeem(const sighash::document& document, sighash::directive d) const = 0;
             virtual uint32 expected_size() const = 0;
             virtual uint32 sigops() const = 0;
             
@@ -33,7 +33,11 @@ namespace Gigamonkey::Bitcoin {
             if (Redeemer == nullptr) return {};
             incomplete::input in = tx.Inputs[i];
             if (Previous.Key != in.Reference) return {};
-            return in.complete(Redeemer->redeem(signature::document{Previous.Value, tx, i}, d));
+            return in.complete(Redeemer->redeem(sighash::document{
+                Previous.Value.Value, 
+                // TODO This isn't correct since the script isn't always the same as the script code. 
+                Previous.Value.Script, 
+                tx, i}, d));
         }
         
         satoshi value() const {
@@ -80,7 +84,7 @@ namespace Gigamonkey::Bitcoin {
         
         redeem_pay_to_pubkey(const secret& s) : Secret{s} {}
         
-        bytes redeem(const signature::document& document, sighash::directive d) const override {
+        bytes redeem(const sighash::document& document, sighash::directive d) const override {
             return pay_to_pubkey::redeem(Secret.sign(document, d));
         }
         
@@ -99,7 +103,7 @@ namespace Gigamonkey::Bitcoin {
         
         redeem_pay_to_address(const secret& s, const pubkey& p) : Secret{s}, Pubkey{p} {}
         
-        bytes redeem(const signature::document& document, sighash::directive d) const override {
+        bytes redeem(const sighash::document& document, sighash::directive d) const override {
             return pay_to_address::redeem(Secret.sign(document, d), Pubkey);
         }
         

@@ -318,7 +318,6 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         if (!tmp.valid())
             return pubkey();
         auto view = tmp.payload();
-        //std::cout << data::encoding::hex::write(view) << std::endl;
         if (view.length() != 77) {
             return pubkey();
         }

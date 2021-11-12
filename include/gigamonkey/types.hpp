@@ -80,6 +80,36 @@ namespace Gigamonkey {
         return b;
     }
     
+    // lazy bytes writer can be used without knowing the size
+    // of the data to be written beforehand. 
+    struct lazy_bytes_writer {
+        list<bytes> Bytes;
+        
+        lazy_bytes_writer &operator<<(const bytes_view b) {
+            Bytes = Bytes << b;
+            return *this;
+        }
+        
+        lazy_bytes_writer &operator<<(const byte b) {
+            Bytes = Bytes << bytes({b});
+            return *this;
+        }
+    
+        template <boost::endian::order Order, bool is_signed, std::size_t bytes>
+        lazy_bytes_writer &operator<<(const endian::arithmetic<Order, is_signed, bytes> &x) {
+            return operator<<(bytes_view(x));
+        }
+        
+        operator bytes() const {
+            size_t size = 0;
+            for (const bytes &b : Bytes) size += b.size();
+            bytes z(size);
+            bytes_writer w{z.begin(), z.end()};
+            for (const bytes &b : Bytes) w << b;
+            return z;
+        }
+    };
+    
 }
 
 namespace Gigamonkey::Bitcoin {

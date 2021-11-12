@@ -8,6 +8,7 @@
 
 #include <gigamonkey/redeem.hpp>
 #include <gigamonkey/address.hpp>
+#include <gigamonkey/script/machine.hpp>
 #include <data/crypto/NIST_DRBG.hpp>
 #include <data/encoding/hex.hpp>
 #include "gtest/gtest.h"
@@ -44,62 +45,57 @@ namespace Gigamonkey::Bitcoin {
         bytes script_p2pkh_compressed = pay_to_address::script(address_compressed.Digest);
         bytes script_p2pkh_uncompressed = pay_to_address::script(address_uncompressed.Digest);
         
-        // now we make four previous outputs that we will try to redeem. 
-        output output_p2pk_compressed{redeemed_value, script_p2pk_compressed};
-        output output_p2pk_uncompressed{redeemed_value, script_p2pk_uncompressed};
-        
-        output output_p2pkh_compressed{redeemed_value, script_p2pkh_compressed};
-        output output_p2pkh_uncompressed{redeemed_value, script_p2pkh_uncompressed};
-        
         // we only need 3 redeemers because the redeem script is the same for p2pk compressed and uncompressed. 
         redeem_pay_to_pubkey p2pk_redeemer(key);
         redeem_pay_to_address p2pkh_compressed_redeemer(key, pubkey_compressed);
         redeem_pay_to_address p2pkh_uncompressed_redeemer(key, pubkey_uncompressed);
         
-        incomplete::transaction tx{
-            transaction::LatestVersion, 
-            list<incomplete::input>{incomplete::input{outpoint{txid{307}, 7}}}, 
-            list<output>{}, 0};
-        
-        signature::document document_p2pk_compressed{output_p2pk_compressed, tx, 0};
-        signature::document document_p2pk_uncompressed{output_p2pk_uncompressed, tx, 0};
-        signature::document document_p2pkh_compressed{output_p2pkh_compressed, tx, 0};
-        signature::document document_p2pkh_uncompressed{output_p2pkh_uncompressed, tx, 0};
+        redemption_document doc{redeemed_value, 
+            incomplete::transaction{
+                transaction::LatestVersion, 
+                list<incomplete::input>{incomplete::input{outpoint{txid{307}, 7}}}, 
+                list<output>{}, 0}, 0};
         
         sighash::directive directive = sighash::all | sighash::fork_id;
         
-        bytes redeem_p2pk_compressed = p2pk_redeemer.redeem(document_p2pk_compressed, directive);
-        bytes redeem_p2pk_uncompressed = p2pk_redeemer.redeem(document_p2pk_uncompressed, directive);
+        bytes redeem_p2pk_compressed = p2pk_redeemer.redeem(doc.add_script_code(script_p2pk_compressed), directive);
+        bytes redeem_p2pk_uncompressed = p2pk_redeemer.redeem(doc.add_script_code(script_p2pk_uncompressed), directive);
         
-        bytes redeem_p2pkh_compressed = p2pkh_compressed_redeemer.redeem(document_p2pkh_compressed, directive);
-        bytes redeem_p2pkh_uncompressed = p2pkh_uncompressed_redeemer.redeem(document_p2pkh_uncompressed, directive);
+        bytes redeem_p2pkh_compressed = p2pkh_compressed_redeemer.redeem(doc.add_script_code(script_p2pkh_compressed), directive);
+        bytes redeem_p2pkh_uncompressed = p2pkh_uncompressed_redeemer.redeem(doc.add_script_code(script_p2pkh_uncompressed), directive);
         
-        EXPECT_TRUE(evaluate(redeem_p2pk_compressed, document_p2pk_compressed));
-        EXPECT_TRUE(evaluate(redeem_p2pk_uncompressed, document_p2pk_uncompressed));
+        auto evaluate_p2pk_compressed = evaluate(redeem_p2pk_compressed, script_p2pk_compressed, doc);
+        auto evaluate_p2pk_uncompressed = evaluate(redeem_p2pk_uncompressed, script_p2pk_uncompressed, doc);
         
-        EXPECT_TRUE(evaluate(redeem_p2pkh_compressed, document_p2pkh_compressed));
-        EXPECT_TRUE(evaluate(redeem_p2pkh_uncompressed, document_p2pkh_uncompressed));
+        auto evaluate_p2pkh_compressed = evaluate(redeem_p2pkh_compressed, script_p2pkh_compressed, doc);
+        auto evaluate_p2pkh_uncompressed = evaluate(redeem_p2pkh_uncompressed, script_p2pkh_uncompressed, doc);
         
-        EXPECT_FALSE(evaluate(redeem_p2pk_uncompressed, document_p2pk_compressed));
-        EXPECT_FALSE(evaluate(redeem_p2pk_compressed, document_p2pk_uncompressed));
+        EXPECT_TRUE(evaluate_p2pk_compressed) << evaluate_p2pk_compressed;
+        EXPECT_TRUE(evaluate_p2pk_uncompressed) << evaluate_p2pk_uncompressed;
         
-        EXPECT_FALSE(evaluate(redeem_p2pkh_uncompressed, document_p2pkh_compressed));
-        EXPECT_FALSE(evaluate(redeem_p2pkh_compressed, document_p2pkh_uncompressed));
+        EXPECT_TRUE(evaluate_p2pkh_compressed) << evaluate_p2pkh_compressed;
+        EXPECT_TRUE(evaluate_p2pkh_uncompressed) << evaluate_p2pkh_uncompressed;
         
-        EXPECT_FALSE(evaluate(redeem_p2pkh_compressed, document_p2pk_compressed));
-        EXPECT_FALSE(evaluate(redeem_p2pkh_uncompressed, document_p2pk_uncompressed));
+        EXPECT_FALSE(evaluate(redeem_p2pk_uncompressed, script_p2pk_compressed, doc));
+        EXPECT_FALSE(evaluate(redeem_p2pk_compressed, script_p2pk_uncompressed, doc));
         
-        EXPECT_FALSE(evaluate(redeem_p2pk_compressed, document_p2pkh_compressed));
-        EXPECT_FALSE(evaluate(redeem_p2pk_uncompressed, document_p2pkh_uncompressed));
+        EXPECT_FALSE(evaluate(redeem_p2pkh_uncompressed, script_p2pkh_compressed, doc));
+        EXPECT_FALSE(evaluate(redeem_p2pkh_compressed, script_p2pkh_uncompressed, doc));
         
-        EXPECT_FALSE(evaluate(redeem_p2pkh_compressed, document_p2pk_uncompressed));
-        EXPECT_FALSE(evaluate(redeem_p2pkh_uncompressed, document_p2pk_compressed));
+        EXPECT_FALSE(evaluate(redeem_p2pkh_compressed, script_p2pk_compressed, doc));
+        EXPECT_FALSE(evaluate(redeem_p2pkh_uncompressed, script_p2pk_uncompressed, doc));
         
-        EXPECT_FALSE(evaluate(redeem_p2pk_compressed, document_p2pkh_uncompressed));
-        EXPECT_FALSE(evaluate(redeem_p2pk_uncompressed, document_p2pkh_compressed));
+        EXPECT_FALSE(evaluate(redeem_p2pk_compressed, script_p2pkh_compressed, doc));
+        EXPECT_FALSE(evaluate(redeem_p2pk_uncompressed, script_p2pkh_uncompressed, doc));
+        
+        EXPECT_FALSE(evaluate(redeem_p2pkh_compressed, script_p2pk_uncompressed, doc));
+        EXPECT_FALSE(evaluate(redeem_p2pkh_uncompressed, script_p2pk_compressed, doc));
+        
+        EXPECT_FALSE(evaluate(redeem_p2pk_compressed, script_p2pkh_uncompressed, doc));
+        EXPECT_FALSE(evaluate(redeem_p2pk_uncompressed, script_p2pkh_compressed, doc));
         
     }
-    
+    /*
     TEST(AddressTest, TestRecoverBase58) {
         
         ptr<crypto::entropy> entropy = std::static_pointer_cast<crypto::entropy>(std::make_shared<crypto::fixed_entropy>(
@@ -161,7 +157,7 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_EQ(address_check, base58::check::recover(inserted));
         EXPECT_EQ(address_check, base58::check::recover(deleted));
         
-    }
+    }*/
 
 }
 

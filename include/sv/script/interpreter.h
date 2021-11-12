@@ -7,9 +7,10 @@
 #ifndef BITCOIN_SCRIPT_INTERPRETER_H
 #define BITCOIN_SCRIPT_INTERPRETER_H
 
-#include <sv/primitives/transaction.h>
+#include <sv/script/script_num.h>
 #include <gigamonkey/script/flags.h>
 #include <gigamonkey/script/error.h>
+#include <sv/hash.h>
 #include "sighashtype.h"
 #include "limitedstack.h"
 #include <data/cross.hpp>
@@ -30,14 +31,6 @@ namespace task
   class CCancellationToken;
 }
 
-bool CheckSignatureEncoding(data::bytes_view vchSig, uint32_t flags, ScriptError *serror);
-
-uint256 SignatureHash(const CScript &scriptCode, const CTransaction &txTo,
-                      unsigned int nIn, SigHashType sigHashType,
-                      const Amount amount,
-                      const PrecomputedTransactionData *cache = nullptr,
-                      bool enabledSighashForkid = true);
-
 class BaseSignatureChecker {
 public:
     virtual bool CheckSig(const std::vector<uint8_t> &scriptSig,
@@ -55,43 +48,6 @@ public:
     }
 
     virtual ~BaseSignatureChecker() {}
-};
-
-class TransactionSignatureChecker : public BaseSignatureChecker {
-private:
-    const CTransaction *txTo;
-    unsigned int nIn;
-    const Amount amount;
-    const PrecomputedTransactionData *txdata;
-
-protected:
-    virtual bool VerifySignature(const std::vector<uint8_t> &vchSig,
-                                 const CPubKey &vchPubKey,
-                                 const uint256 &sighash) const;
-
-public:
-    TransactionSignatureChecker(const CTransaction *txToIn, unsigned int nInIn,
-                                const Amount amountIn)
-        : txTo(txToIn), nIn(nInIn), amount(amountIn), txdata(nullptr) {}
-    TransactionSignatureChecker(const CTransaction *txToIn, unsigned int nInIn,
-                                const Amount amountIn,
-                                const PrecomputedTransactionData &txdataIn)
-        : txTo(txToIn), nIn(nInIn), amount(amountIn), txdata(&txdataIn) {}
-    bool CheckSig(const std::vector<uint8_t> &scriptSig,
-                  const std::vector<uint8_t> &vchPubKey,
-                  const CScript &scriptCode, bool enabledSighashForkid) const override;
-    bool CheckLockTime(const CScriptNum &nLockTime) const override;
-    bool CheckSequence(const CScriptNum &nSequence) const override;
-};
-
-class MutableTransactionSignatureChecker : public TransactionSignatureChecker {
-private:
-    const CTransaction txTo;
-
-public:
-    MutableTransactionSignatureChecker(const CMutableTransaction *txToIn,
-                                       unsigned int nInIn, const Amount amount)
-        : TransactionSignatureChecker(&txTo, nInIn, amount), txTo(*txToIn) {}
 };
 
 /**

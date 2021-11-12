@@ -112,6 +112,7 @@ endif()
 add_subdirectory("${PROJECT_SOURCE_DIR}/extern/data/")
 
 add_library(gigamonkey STATIC 
+    
     src/sv/utilstrencodings.cpp
     src/sv/random.cpp
     src/sv/big_int.cpp
@@ -120,22 +121,20 @@ add_library(gigamonkey STATIC
     src/sv/script/script_num.cpp
     src/sv/arith_uint256.cpp
     src/sv/pubkey.cpp
-    src/sv/primitives/transaction.cpp
     src/sv/script/script.cpp
     src/sv/config.cpp
     src/sv/script/interpreter.cpp
-    src/sv/policy/policy.cpp
     
     src/bitcoin_sv/hash.cpp
-    src/bitcoin_sv/signature.cpp
-    src/bitcoin_sv/script.cpp
-    src/gigamonkey/timestamp.cpp
+    
     src/gigamonkey/secp256k1.cpp
-    src/gigamonkey/signature.cpp
     src/gigamonkey/number.cpp
+    src/gigamonkey/timestamp.cpp
+    src/gigamonkey/incomplete.cpp
+    src/gigamonkey/sighash.cpp
+    src/gigamonkey/signature.cpp
     src/gigamonkey/script/instruction.cpp
     src/gigamonkey/script/script.cpp
-    src/gigamonkey/script/machine.cpp
     src/gigamonkey/address.cpp
     src/gigamonkey/wif.cpp
     src/gigamonkey/merkle.cpp
@@ -159,6 +158,9 @@ add_library(gigamonkey STATIC
     src/gigamonkey/boost/boost.cpp
     src/gigamonkey/mapi/mapi.cpp
     src/gigamonkey/mapi/envelope.cpp
+    src/gigamonkey/script/counter.cpp
+    src/gigamonkey/script/machine.cpp
+    
 )
 
 target_link_libraries(gigamonkey PUBLIC data util ${OPENSSL_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} nlohmann_json::nlohmann_json )

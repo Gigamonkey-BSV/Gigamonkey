@@ -4,7 +4,6 @@
 #ifndef GIGAMONKEY_TIMECHAIN
 #define GIGAMONKEY_TIMECHAIN
 
-#include <sv/primitives/block.h>
 #include <gigamonkey/hash.hpp>
 #include <gigamonkey/p2p/var_int.hpp>
 #include <gigamonkey/satoshi.hpp>
@@ -125,10 +124,6 @@ namespace Gigamonkey::Bitcoin {
             Bitcoin::timestamp{timestamp(x)}, 
             Bitcoin::target{target(x)}, 
             nonce(x)} {}
-        
-        explicit header(const CBlockHeader&);
-        
-        explicit operator CBlockHeader() const;
         
         uint<80> write() const;
         

@@ -9,7 +9,7 @@
 #include "arith_uint256.h"
 #include <sv/consensus/params.h>
 #include "pow.h"
-#include <sv/primitives/block.h>
+//#include <sv/primitives/block.h>
 #include "tinyformat.h"
 #include "uint256.h"
 
@@ -423,7 +423,7 @@ public:
     }
 
     CBlockIndex() { SetNull(); }
-
+    /*
     CBlockIndex(const CBlockHeader &block) {
         SetNull();
 
@@ -437,7 +437,7 @@ public:
         nTimeReceived = block.nTime;
         nBits = block.nBits;
         nNonce = block.nNonce;
-    }
+    }*/
 
     void LoadFromPersistentData(const CBlockIndex& other, CBlockIndex* previous)
     {
@@ -524,7 +524,7 @@ public:
         nUndoPos = 0;
         mDiskBlockMetaData = {};
     }
-
+/*
     CBlockHeader GetBlockHeader() const {
         CBlockHeader block;
         block.nVersion = nVersion;
@@ -536,7 +536,7 @@ public:
         block.nBits = nBits;
         block.nNonce = nNonce;
         return block;
-    }
+    }*/
 
     uint256 GetBlockHash() const { return *phashBlock; }
 
@@ -739,7 +739,7 @@ public:
      * Return a CBlockLocator that refers to a block in this chain (by default
      * the tip).
      */
-    CBlockLocator GetLocator(const CBlockIndex *pindex = nullptr) const;
+    //CBlockLocator GetLocator(const CBlockIndex *pindex = nullptr) const;
 
     /**
      * Find the last common block between this chain and a block index entry.

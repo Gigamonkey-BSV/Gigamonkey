@@ -474,11 +474,22 @@ namespace Gigamonkey::Boost {
         }, serialized_input_scripts, serialized_output_scripts);
         
         bool check_scripts = dot_cross([](bytes_view in, bytes_view out) {
-            using namespace Bitcoin::interpreter;
-            return Bitcoin::interpreter::evaluate(in, out).verify();
+            return Bitcoin::evaluate(in, out);
         }, serialized_input_scripts.rest(), serialized_output_scripts.rest());
         
         EXPECT_TRUE(check_scripts) << "Boost scripts are not valid.";
+        
+        /*{
+            auto in = serialized_input_scripts.rest();
+            auto out = serialized_output_scripts.rest();
+            
+            while (!data::empty(in)) {
+                Bitcoin::interpreter::machine m{in.first(), out.first()};
+                step_through(m);
+                in = in.rest();
+                out = out.rest();
+            }
+        }*/
     
         // Phase 7: proofs from Stratum jobs and shares. 
         
@@ -910,16 +921,16 @@ namespace Gigamonkey::Boost {
         proof p_contract_v2{locking_script_contract_v2, unlocking_script_contract_v2};
         EXPECT_TRUE(p_contract_v2.valid());
         
-        bool script_valid_bounty_v1 = Bitcoin::interpreter::evaluate(in_bounty_v1, out_bounty_v1).verify();
+        bool script_valid_bounty_v1 = Bitcoin::evaluate(in_bounty_v1, out_bounty_v1).verify();
         EXPECT_TRUE(script_valid_bounty_v1);
         
-        bool script_valid_bounty_v2 = Bitcoin::interpreter::evaluate(in_bounty_v2, out_bounty_v2).verify();
+        bool script_valid_bounty_v2 = Bitcoin::evaluate(in_bounty_v2, out_bounty_v2).verify();
         EXPECT_TRUE(script_valid_bounty_v2);
         
-        bool script_valid_contract_v1 = Bitcoin::interpreter::evaluate(in_contract_v1, out_contract_v1).verify();
+        bool script_valid_contract_v1 = Bitcoin::evaluate(in_contract_v1, out_contract_v1).verify();
         EXPECT_TRUE(script_valid_contract_v1);
         
-        bool script_valid_contract_v2 = Bitcoin::interpreter::evaluate(in_contract_v2, out_contract_v2).verify();
+        bool script_valid_contract_v2 = Bitcoin::evaluate(in_contract_v2, out_contract_v2).verify();
         EXPECT_TRUE(script_valid_contract_v2);
         
     }

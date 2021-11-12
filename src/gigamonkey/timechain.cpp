@@ -54,25 +54,6 @@ namespace Gigamonkey::Bitcoin {
         std::copy(x.begin(), x.end(), y.begin());
         return y;
     }
-    
-    header::header(const CBlockHeader& b) : 
-        Version{int32_little{b.nVersion}}, 
-        Previous{satoshi_uint256_to_uint256(b.hashPrevBlock)}, 
-        MerkleRoot{satoshi_uint256_to_uint256(b.hashMerkleRoot)}, 
-        Timestamp{uint32_little{b.nTime}}, 
-        Target{uint32_little{b.nBits}}, 
-        Nonce{b.nNonce} {};
-        
-    header::operator CBlockHeader() const {
-        CBlockHeader h;
-        h.nVersion = Version;
-        h.nTime = Timestamp.Value;
-        h.nBits = Target;
-        h.nNonce = Nonce;
-        std::copy(Previous.Value.begin(), Previous.Value.end(), h.hashPrevBlock.begin());
-        std::copy(MerkleRoot.Value.begin(), MerkleRoot.Value.end(), h.hashMerkleRoot.begin());
-        return h;
-    }
         
     bool header::valid() const {
         return header_valid_work(write()) && header_valid(*this);
@@ -129,6 +110,13 @@ namespace Gigamonkey::Bitcoin {
         } catch (std::bad_alloc n) {
             *this = block{};
         }
+    }
+    
+    output::operator bytes() const {
+        bytes b(serialized_size());
+        writer w{b.begin(), b.end()};
+        w << *this;
+        return b;
     }
     
     transaction::operator bytes() const {

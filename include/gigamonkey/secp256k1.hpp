@@ -16,6 +16,8 @@ namespace Gigamonkey::secp256k1 {
     struct point {
         coordinate R;
         coordinate S;
+        
+        point(const coordinate &r, const coordinate &s) : R{r}, S{s} {}
     };
     
     bool operator==(const point &, const point &);
@@ -84,10 +86,10 @@ namespace Gigamonkey::secp256k1 {
             return valid(b) && b.size() == CompressedSize;
         }
         
-        static bool verify(bytes_view pubkey, const digest&, const signature&);
+        static bool verify(bytes_view pubkey, const digest&, bytes_view sig);
         static bytes compress(bytes_view);
         static bytes decompress(bytes_view);
-        static bytes negate(bytes_view);
+        static bytes negate(bytes_view);        
         static bytes plus_pubkey(bytes_view, bytes_view);
         static bytes plus_secret(bytes_view, const uint256&);
         static bytes times(bytes_view, bytes_view);
@@ -167,7 +169,7 @@ namespace Gigamonkey::secp256k1 {
         return !(a == b);
     }
     
-    template <typename reader> static reader &read(reader& r, point& p) {
+    template <typename reader> reader &signature::read(reader& r, point& p) {
         byte size;
         byte r_size;
         byte s_size;
@@ -192,10 +194,11 @@ namespace Gigamonkey::secp256k1 {
         return r;
     }
     
-    template <typename writer> static writer &write(writer& w, const point& p) {
+    template <typename writer> writer &signature::write(writer& w, const point& p) {
         size_t r_size = p.R.size();
         size_t s_size = p.S.size();
-        return w << 0x30 << byte(r_size + s_size + 4) << 0x02 << byte(r_size) << p.R << 0x02 << byte(s_size) << p.S;
+        return w << byte(0x30) << byte(r_size + s_size + 4) << byte(0x02) << 
+            byte(r_size) << p.R << byte(0x02) << byte(s_size) << p.S;
     }
     
     std::ostream inline &operator<<(std::ostream &o, const secret &s) {

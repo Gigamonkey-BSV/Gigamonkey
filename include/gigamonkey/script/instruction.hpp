@@ -208,7 +208,7 @@ namespace Gigamonkey::Bitcoin {
     
     bool inline is_push(program p) {
         if (data::empty(p)) return true;
-        return is_push(p.first()) && is_push(p.rest());
+        return is_push(p.first().Op) && is_push(p.rest());
     }
     
     bool inline operator==(const instruction &a, const instruction &b) {

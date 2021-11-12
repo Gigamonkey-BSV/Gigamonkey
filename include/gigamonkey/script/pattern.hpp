@@ -5,6 +5,7 @@
 #define GIGAMONKEY_SCRIPT_PATTERN
 
 #include <gigamonkey/script/script.hpp>
+#include <gigamonkey/address.hpp>
 
 namespace Gigamonkey::Bitcoin::interpreter { 
     

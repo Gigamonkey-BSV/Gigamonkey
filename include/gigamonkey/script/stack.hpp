@@ -158,7 +158,30 @@ namespace Gigamonkey::Bitcoin::interpreter {
         const LimitedStack* getParentStack() const;
 
         friend class LimitedVector<valtype>;
+        
+        typename std::vector<LimitedVector<valtype>>::const_iterator begin() const {
+            return stack.begin();
+        }
+        
+        typename std::vector<LimitedVector<valtype>>::const_iterator end() const {
+            return stack.end();
+        }
     };
+    
+    template <typename valtype> ostream &operator<<(ostream &o, const LimitedStack<valtype>& stack) {
+        o << "{";
+        if (stack.size() > 0) {
+            auto i = stack.begin();
+            auto e = stack.end();
+            while(true) {
+                o << i->GetElement();
+                i++;
+                if (i == e) break;
+                o << ", ";
+            }
+        }
+        return o << "}";
+    }
     
     template <typename valtype>
     LimitedVector<valtype>::LimitedVector(const valtype& stackElementIn, LimitedStack<valtype>& stackIn) : stackElement(stackElementIn), stack(stackIn)

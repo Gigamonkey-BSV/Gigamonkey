@@ -13,10 +13,10 @@
 #endif
 
 #include "amount.h"
-#include "blockstreams.h"
+//#include "blockstreams.h"
 #include "blockvalidation.h"
 #include "chain.h"
-#include "coins.h"
+//#include "coins.h"
 #include "consensus/consensus.h"
 //#include "fs.h"
 //#include "mining/journal_change_set.h"

@@ -7,7 +7,8 @@
 #define BITCOIN_COMPRESSOR_H
 
 #include "consensus/consensus.h"
-#include "primitives/transaction.h"
+#include <gigamonkey/script/opcodes.h>
+//#include "primitives/transaction.h"
 #include "serialize.h"
 
 class CKeyID;
@@ -108,6 +109,7 @@ private:
 };
 
 /** wrapper for CTxOut that provides a more compact serialization */
+/*
 class CTxOutCompressor {
 private:
     CTxOut &txout;
@@ -133,6 +135,6 @@ public:
         CScriptCompressor cscript(REF(txout.scriptPubKey));
         READWRITE(cscript);
     }
-};
+};*/
 
 #endif // BITCOIN_COMPRESSOR_H

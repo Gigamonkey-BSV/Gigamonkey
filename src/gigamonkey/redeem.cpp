@@ -51,8 +51,8 @@ namespace Gigamonkey::Bitcoin {
         
         uint32 index = 0;
         for (const edge& e: edges) {
-            if (!interpreter::evaluate(e.Input.Script, 
-                signature::document{e.Output, incomplete::transaction{ptr<bytes>::operator*()}, index})) return false;
+            if (!evaluate(e.Input.Script, e.Output.Script, 
+                redemption_document{e.Output.Value, incomplete::transaction{ptr<bytes>::operator*()}, index})) return false;
             index++;
         }
         

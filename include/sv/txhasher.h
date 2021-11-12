@@ -5,7 +5,7 @@
 #ifndef BITCOIN_TXHASHER_H
 #define BITCOIN_TXHASHER_H
 
-#include "primitives/transaction.h"
+//#include "primitives/transaction.h"
 #include "hash.h"
 
 /**

@@ -11,7 +11,7 @@ static_assert(sizeof(void*) >= 8, "32 bit systems are not supported");
 #include "consensus/consensus.h"
 #include "policy/policy.h"
 #include "script/standard.h"
-#include "validation.h"
+//#include "validation.h"
 #include "script_config.h"
 
 #include <boost/noncopyable.hpp>
