@@ -108,9 +108,9 @@ namespace Gigamonkey::Bitcoin::interpreter {
         return Result;
     }
     
-    machine::state::state(std::optional<redemption_document> doc, program_counter pc, uint32 flags) : 
-        Flags{flags}, Document{doc}, Counter{pc}, 
-        Stack{GlobalConfig::GetConfig().GetMaxStackMemoryUsage(Flags & SCRIPT_UTXO_AFTER_GENESIS, false)}, 
+    machine::state::state(uint32 flags, bool consensus, std::optional<redemption_document> doc, program_counter pc) : 
+        Flags{flags}, Consensus{consensus}, Document{doc}, Counter{pc}, 
+        Stack{GlobalConfig::GetConfig().GetMaxStackMemoryUsage(Flags & SCRIPT_UTXO_AFTER_GENESIS, consensus)}, 
         AltStack{Stack.makeChildStack()}, Exec{}, Else{}, OpCount{0} {}
     
     machine::machine(const script &unlock, const script &lock, const redemption_document &doc, uint32 flags) : 
@@ -166,10 +166,9 @@ namespace Gigamonkey::Bitcoin::interpreter {
     result machine::state::step() {
         
         const GlobalConfig& config = GlobalConfig::GetConfig();
-        bool consensus = false;
     
         const bool utxo_after_genesis{(Flags & SCRIPT_UTXO_AFTER_GENESIS) != 0};
-        const uint64_t maxScriptNumLength = config.GetMaxScriptNumLength(utxo_after_genesis, consensus);
+        const uint64_t maxScriptNumLength = config.GetMaxScriptNumLength(utxo_after_genesis, Consensus);
         const bool fRequireMinimal = (Flags & SCRIPT_VERIFY_MINIMALDATA) != 0;
         
         // this will always be valid because we've already checked for invalid op codes. 
@@ -182,7 +181,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
         //
         // Push values are not taken into consideration.
         // Note how OP_RESERVED does not count towards the opcode limit.
-        if ((Op > OP_16) && !IsValidMaxOpsPerScript(++OpCount, config, utxo_after_genesis, consensus)) return SCRIPT_ERR_OP_COUNT;
+        if ((Op > OP_16) && !IsValidMaxOpsPerScript(++OpCount, config, utxo_after_genesis, Consensus)) return SCRIPT_ERR_OP_COUNT;
 
         if (!utxo_after_genesis && (next.size() - 1 > MAX_SCRIPT_ELEMENT_SIZE_BEFORE_GENESIS))
             return SCRIPT_ERR_PUSH_SIZE;
@@ -805,11 +804,11 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 if (nKeysCountSigned < 0) return SCRIPT_ERR_PUBKEY_COUNT;
                 
                 uint64_t nKeysCount = static_cast<uint64_t>(nKeysCountSigned);
-                if (nKeysCount > config.GetMaxPubKeysPerMultiSig(utxo_after_genesis, consensus)) 
+                if (nKeysCount > config.GetMaxPubKeysPerMultiSig(utxo_after_genesis, Consensus)) 
                     return SCRIPT_ERR_PUBKEY_COUNT;
                 
                 OpCount += nKeysCount;
-                if (!IsValidMaxOpsPerScript(OpCount, config, utxo_after_genesis, consensus)) 
+                if (!IsValidMaxOpsPerScript(OpCount, config, utxo_after_genesis, Consensus)) 
                     return SCRIPT_ERR_OP_COUNT;
                 
                 uint64_t ikey = ++i;
@@ -920,7 +919,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 
                 long count;
                 std::optional<bool> result = EvalScript(
-                    config, consensus, 
+                    config, Consensus, 
                     Stack, CScript(next.begin(), next.end()), Flags, 
                     AltStack, count,
                     Exec, Else, &err);
