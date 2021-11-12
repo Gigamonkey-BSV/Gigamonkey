@@ -149,6 +149,19 @@ namespace Gigamonkey::Bitcoin::interpreter {
     sighash::document *add_script_code(redemption_document &doc, bytes_view script_code) {
         return new sighash::document(doc.RedeemedValue, script_code, doc.Transaction, doc.InputIndex);
     }
+
+    bool CastToBool(const valtype &vch) {
+        for (size_t i = 0; i < vch.size(); i++) {
+            if (vch[i] != 0) {
+                // Can be negative zero
+                if (i == vch.size() - 1 && vch[i] == 0x80) {
+                    return false;
+                }
+                return true;
+            }
+        }
+        return false;
+    }
     
     result machine::state::step() {
         
@@ -156,6 +169,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
         bool consensus = false;
     
         const bool utxo_after_genesis{(Flags & SCRIPT_UTXO_AFTER_GENESIS) != 0};
+        const uint64_t maxScriptNumLength = config.GetMaxScriptNumLength(utxo_after_genesis, consensus);
         const bool fRequireMinimal = (Flags & SCRIPT_VERIFY_MINIMALDATA) != 0;
         
         // this will always be valid because we've already checked for invalid op codes. 
@@ -182,16 +196,568 @@ namespace Gigamonkey::Bitcoin::interpreter {
         
         if (executed && 0 <= Op && Op <= OP_PUSHDATA4) {
             Stack.push_back(next.substr(1));
-            return SCRIPT_ERR_OK;
-        }
-        
-        switch (Op) {
+        } else switch (Op) {
+            //
+            // Push value
+            //
+            case OP_1NEGATE:
+            case OP_1:
+            case OP_2:
+            case OP_3:
+            case OP_4:
+            case OP_5:
+            case OP_6:
+            case OP_7:
+            case OP_8:
+            case OP_9:
+            case OP_10:
+            case OP_11:
+            case OP_12:
+            case OP_13:
+            case OP_14:
+            case OP_15:
+            case OP_16: {
+                // ( -- value)
+                CScriptNum bn((int)Op - (int)(OP_1 - 1));
+                Stack.push_back(bn.getvch());
+                // The result of these opcodes should always be the
+                // minimal way to push the data they push, so no need
+                // for a CheckMinimalPush here.
+            } break;
+
+            //
+            // Control
+            //
+            case OP_NOP:
+                break;
+            
+            case OP_CHECKLOCKTIMEVERIFY: {
+                if (!(Flags & SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY) || utxo_after_genesis) {
+                    // not enabled; treat as a NOP2
+                    if (Flags & SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS) return SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS;
+                    break;
+                }
+
+                if (Stack.size() < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+
+                // Note that elsewhere numeric opcodes are limited to
+                // operands in the range -2**31+1 to 2**31-1, however it
+                // is legal for opcodes to produce results exceeding
+                // that range. This limitation is implemented by
+                // CScriptNum's default 4-byte limit.
+                //
+                // If we kept to that limit we'd have a year 2038
+                // problem, even though the nLockTime field in
+                // transactions themselves is uint32 which only becomes
+                // meaningless after the year 2106.
+                //
+                // Thus as a special case we tell CScriptNum to accept
+                // up to 5-byte bignums, which are good until 2**39-1,
+                // well beyond the 2**32-1 limit of the nLockTime field
+                // itself.
+                const CScriptNum nLockTime(Stack.stacktop(-1).GetElement(), fRequireMinimal, 5);
+
+                // In the rare event that the argument may be < 0 due to
+                // some arithmetic being done first, you can always use
+                // 0 MAX CHECKLOCKTIMEVERIFY.
+                if (nLockTime < 0) return SCRIPT_ERR_NEGATIVE_LOCKTIME;
+
+                // Actually compare the specified lock time with the
+                // transaction.
+                if (bool(Document) && !Document->check_locktime(nLockTime)) return SCRIPT_ERR_UNSATISFIED_LOCKTIME;
+
+            } break;
+
+            case OP_CHECKSEQUENCEVERIFY: {
+                if (!(Flags & SCRIPT_VERIFY_CHECKSEQUENCEVERIFY) || utxo_after_genesis) {
+                    // not enabled; treat as a NOP3
+                    if (Flags & SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS) return SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS;
+                    break;
+                }
+
+                if (Stack.size() < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+
+                // nSequence, like nLockTime, is a 32-bit unsigned
+                // integer field. See the comment in CHECKLOCKTIMEVERIFY
+                // regarding 5-byte numeric operands.
+                const CScriptNum nSequence(Stack.stacktop(-1).GetElement(), fRequireMinimal, 5);
+
+                // In the rare event that the argument may be < 0 due to
+                // some arithmetic being done first, you can always use
+                // 0 MAX CHECKSEQUENCEVERIFY.
+                if (nSequence < 0) return SCRIPT_ERR_NEGATIVE_LOCKTIME;
+
+                // To provide for future soft-fork extensibility, if the
+                // operand has the disabled lock-time flag set,
+                // CHECKSEQUENCEVERIFY behaves as a NOP.
+                if ((nSequence & CTxIn::SEQUENCE_LOCKTIME_DISABLE_FLAG) != script_zero()) return SCRIPT_ERR_OK;
+
+                // Compare the specified sequence number with the input.
+                if (bool(Document) && !Document->check_sequence(nSequence)) return SCRIPT_ERR_UNSATISFIED_LOCKTIME;
+
+            } break;
+            
+            case OP_NOP1:
+            case OP_NOP4:
+            case OP_NOP5:
+            case OP_NOP6:
+            case OP_NOP7:
+            case OP_NOP8:
+            case OP_NOP9:
+            case OP_NOP10: {
+                if (Flags & SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS) return SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS;
+            } break;
+
+            case OP_VERIFY: {
+                // (true -- ) or
+                // (false -- false) and return
+                if (Stack.size() < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                
+                if (CastToBool(Stack.stacktop(-1).GetElement())) Stack.pop_back();
+                else return SCRIPT_ERR_VERIFY;
+                
+            } break;
             
             case OP_RETURN: {
                 if (utxo_after_genesis) {
                     if (Exec.empty()) return true;
                     // Pre-Genesis OP_RETURN marks script as invalid
                 } else return SCRIPT_ERR_OP_RETURN;
+            } break;
+                    
+            //
+            // Stack ops
+            //
+            case OP_TOALTSTACK: {
+                if (Stack.size() < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                AltStack.moveTopToStack(Stack);
+            } break;
+
+            case OP_FROMALTSTACK: {
+                if (AltStack.size() < 1) return SCRIPT_ERR_INVALID_ALTSTACK_OPERATION;
+                Stack.moveTopToStack(AltStack);
+            } break;
+
+            case OP_2DROP: {
+                // (x1 x2 -- )
+                if (Stack.size() < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                    
+                Stack.pop_back();
+                Stack.pop_back();
+                
+            } break;
+
+            case OP_2DUP: {
+                // (x1 x2 -- x1 x2 x1 x2)
+                if (Stack.size() < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                
+                LimitedVector vch1 = Stack.stacktop(-2);
+                LimitedVector vch2 = Stack.stacktop(-1);
+                
+                Stack.push_back(vch1);
+                Stack.push_back(vch2);
+                
+            } break;
+
+            case OP_3DUP: {
+                // (x1 x2 x3 -- x1 x2 x3 x1 x2 x3)
+                if (Stack.size() < 3) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                
+                LimitedVector vch1 = Stack.stacktop(-3);
+                LimitedVector vch2 = Stack.stacktop(-2);
+                LimitedVector vch3 = Stack.stacktop(-1);
+                
+                Stack.push_back(vch1);
+                Stack.push_back(vch2);
+                Stack.push_back(vch3);
+                
+            } break;
+
+            case OP_2OVER: {
+                // (x1 x2 x3 x4 -- x1 x2 x3 x4 x1 x2)
+                if (Stack.size() < 4) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                
+                LimitedVector vch1 = Stack.stacktop(-4);
+                LimitedVector vch2 = Stack.stacktop(-3);
+                Stack.push_back(vch1);
+                Stack.push_back(vch2);
+            } break;
+
+            case OP_2ROT: {
+                // (x1 x2 x3 x4 x5 x6 -- x3 x4 x5 x6 x1 x2)
+                if (Stack.size() < 6) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                
+                LimitedVector vch1 = Stack.stacktop(-6);
+                LimitedVector vch2 = Stack.stacktop(-5);
+                
+                Stack.erase(- 6, - 4);
+                Stack.push_back(vch1);
+                Stack.push_back(vch2);
+                
+            } break;
+
+            case OP_2SWAP: {
+                
+                // (x1 x2 x3 x4 -- x3 x4 x1 x2)
+                if (Stack.size() < 4) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                
+                Stack.swapElements(Stack.size() - 4, Stack.size() - 2);
+                Stack.swapElements(Stack.size() - 3, Stack.size() - 1);
+                
+            } break;
+            
+            case OP_IFDUP: {
+                // (x - 0 | x x)
+                if (Stack.size() < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                
+                LimitedVector vch = Stack.stacktop(-1);
+                if (CastToBool(vch.GetElement())) {
+                    Stack.push_back(vch);
+                }
+                
+            } break;
+
+            case OP_DEPTH: {
+                // -- stacksize
+                const CScriptNum bn(bsv::bint{Stack.size()});
+                Stack.push_back(bn.getvch());
+                
+            } break;
+
+            case OP_DROP: {
+                // (x -- )
+                if (Stack.size() < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                Stack.pop_back();
+                
+            } break;
+
+            case OP_DUP: {
+                // (x -- x x)
+                if (Stack.size() < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                
+                LimitedVector vch = Stack.stacktop(-1);
+                Stack.push_back(vch);
+                
+            } break;
+
+            case OP_NIP: {
+                // (x1 x2 -- x2)
+                if (Stack.size() < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                Stack.erase(-2);
+                
+            } break;
+
+            case OP_OVER: {
+                // (x1 x2 -- x1 x2 x1)
+                if (Stack.size() < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                LimitedVector vch = Stack.stacktop(-2);
+                Stack.push_back(vch);
+                
+            } break;
+
+            case OP_PICK:
+            case OP_ROLL: {
+                // (xn ... x2 x1 x0 n - xn ... x2 x1 x0 xn)
+                // (xn ... x2 x1 x0 n - ... x2 x1 x0 xn)
+                if (Stack.size() < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+
+                const auto& top{Stack.stacktop(-1).GetElement()};
+                const CScriptNum sn{
+                    top, fRequireMinimal,
+                    maxScriptNumLength,
+                    utxo_after_genesis};
+                Stack.pop_back();
+                if(sn < 0 || sn >= Stack.size()) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                
+                const auto n{sn.to_size_t_limited()};
+                LimitedVector vch = Stack.stacktop(-n - 1);
+
+                if (Op == OP_ROLL) {
+                    Stack.erase(- n - 1);
+                }
+                Stack.push_back(vch);
+                
+            } break;
+
+            case OP_ROT: {
+                // (x1 x2 x3 -- x2 x3 x1)
+                //  x2 x1 x3  after first swap
+                //  x2 x3 x1  after second swap
+                if (Stack.size() < 3) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                Stack.swapElements(Stack.size() - 3, Stack.size() - 2);
+                Stack.swapElements(Stack.size() - 2, Stack.size() - 1);
+                
+            } break;
+
+            case OP_SWAP: {
+                // (x1 x2 -- x2 x1)
+                if (Stack.size() < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                Stack.swapElements(Stack.size() - 2, Stack.size() - 1);
+                
+            } break;
+
+            case OP_TUCK: {
+                // (x1 x2 -- x2 x1 x2)
+                if (Stack.size() < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                LimitedVector vch = Stack.stacktop(-1);
+                Stack.insert(-2, vch);
+                
+            } break;
+
+            case OP_SIZE: {
+                // (in -- in size)
+                if (Stack.size() < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+
+                CScriptNum bn(bsv::bint{Stack.stacktop(-1).size()});
+                Stack.push_back(bn.getvch());
+                
+            } break;
+
+            //
+            // Bitwise logic
+            //
+            case OP_AND:
+            case OP_OR:
+            case OP_XOR: {
+                // (x1 x2 - out)
+                if (Stack.size() < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                
+                LimitedVector<element> &vch1 = Stack.stacktop(-2);
+                LimitedVector<element> &vch2 = Stack.stacktop(-1);
+
+                // Inputs must be the same size
+                if (vch1.size() != vch2.size()) return SCRIPT_ERR_INVALID_OPERAND_SIZE;
+
+                // To avoid allocating, we modify vch1 in place.
+                switch (Op) {
+                    case OP_AND: for (size_t i = 0; i < vch1.size(); ++i) vch1[i] &= vch2[i];
+                        break;
+                        
+                    case OP_OR: for (size_t i = 0; i < vch1.size(); ++i) vch1[i] |= vch2[i];
+                        break;
+                        
+                    case OP_XOR: for (size_t i = 0; i < vch1.size(); ++i) vch1[i] ^= vch2[i];
+                        break;
+                        
+                    default:
+                        break;
+                }
+
+                // And pop vch2.
+                Stack.pop_back();
+            } break;
+
+            case OP_INVERT: {
+                // (x -- out)
+                if (Stack.size() < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                
+                LimitedVector<element> &vch1 = Stack.stacktop(-1);
+                // To avoid allocating, we modify vch1 in place
+                for(size_t i=0; i<vch1.size(); i++) vch1[i] = ~vch1[i];
+                
+            } break;
+
+            case OP_EQUAL:
+            case OP_EQUALVERIFY: {
+                // (x1 x2 - bool)
+                if (Stack.size() < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                
+                LimitedVector<element> &vch1 = Stack.stacktop(-2);
+                LimitedVector<element> &vch2 = Stack.stacktop(-1);
+
+                bool fEqual = (vch1.GetElement() == vch2.GetElement());
+                // OP_NOTEQUAL is disabled because it would be too
+                // easy to say something like n != 1 and have some
+                // wiseguy pass in 1 with extra zero bytes after it
+                // (numerically, 0x01 == 0x0001 == 0x000001)
+                // if (opcode == OP_NOTEQUAL)
+                //    fEqual = !fEqual;
+                Stack.pop_back();
+                Stack.pop_back();
+                Stack.push_back(fEqual ? script_true() : script_false());
+                
+                if (Op == OP_EQUALVERIFY) {
+                    if (fEqual) Stack.pop_back();
+                    else return SCRIPT_ERR_EQUALVERIFY;
+                }
+                
+            } break;
+
+            //
+            // Numeric
+            //
+            case OP_1ADD:
+            case OP_1SUB:
+            case OP_NEGATE:
+            case OP_ABS:
+            case OP_NOT:
+            case OP_0NOTEQUAL: {
+                // (in -- out)
+                if (Stack.size() < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                
+                const auto &top{Stack.stacktop(-1).GetElement()};
+                CScriptNum bn{top, fRequireMinimal, maxScriptNumLength, utxo_after_genesis};
+                
+                switch (Op) {
+                    case OP_1ADD:
+                        bn += utxo_after_genesis ? CScriptNum{bsv::bint{1}} : script_one();
+                        break;
+                    case OP_1SUB:
+                        bn -= utxo_after_genesis ? CScriptNum{bsv::bint{1}} : script_one();
+                        // bn -= bnOne;
+                        break;
+                    case OP_NEGATE:
+                        bn = -bn;
+                        break;
+                    case OP_ABS:
+                        if (bn < script_zero()) bn = -bn;
+                        break;
+                    case OP_NOT:
+                        bn = (bn == script_zero());
+                        break;
+                    case OP_0NOTEQUAL:
+                        bn = (bn != script_zero());
+                        break;
+                    default:
+                        assert(!"invalid opcode");
+                        break;
+                }
+                
+                Stack.pop_back();
+                Stack.push_back(bn.getvch());
+            } break;
+
+            case OP_ADD:
+            case OP_SUB:
+            case OP_MUL:
+            case OP_DIV:
+            case OP_MOD:
+            case OP_BOOLAND:
+            case OP_BOOLOR:
+            case OP_NUMEQUAL:
+            case OP_NUMEQUALVERIFY:
+            case OP_NUMNOTEQUAL:
+            case OP_LESSTHAN:
+            case OP_GREATERTHAN:
+            case OP_LESSTHANOREQUAL:
+            case OP_GREATERTHANOREQUAL:
+            case OP_MIN:
+            case OP_MAX: {
+                // (x1 x2 -- out)
+                if (Stack.size() < 2) SCRIPT_ERR_INVALID_STACK_OPERATION;
+
+                const auto& arg_2 = Stack.stacktop(-2);                        
+                const auto& arg_1 = Stack.stacktop(-1);
+
+                CScriptNum bn1(arg_2.GetElement(), fRequireMinimal,
+                                maxScriptNumLength,
+                                utxo_after_genesis);
+                
+                CScriptNum bn2(arg_1.GetElement(), fRequireMinimal,
+                                maxScriptNumLength,
+                                utxo_after_genesis);
+                CScriptNum bn;
+                switch (Op) {
+                    case OP_ADD:
+                        bn = bn1 + bn2;
+                        break;
+
+                    case OP_SUB:
+                        bn = bn1 - bn2;
+                        break;
+
+                    case OP_MUL:
+                        bn = bn1 * bn2;
+                        break;
+
+                    case OP_DIV:
+                        // denominator must not be 0
+                        if (bn2 == script_zero()) return SCRIPT_ERR_DIV_BY_ZERO;
+                        bn = bn1 / bn2;
+                        break;
+
+                    case OP_MOD:
+                        // divisor must not be 0
+                        if (bn2 == script_zero()) return SCRIPT_ERR_MOD_BY_ZERO;
+                        bn = bn1 % bn2;
+                        break;
+
+                    case OP_BOOLAND:
+                        bn = (bn1 != script_zero() && bn2 != script_zero());
+                        break;
+                    case OP_BOOLOR:
+                        bn = (bn1 != script_zero() || bn2 != script_zero());
+                        break;
+                    case OP_NUMEQUAL:
+                        bn = (bn1 == bn2);
+                        break;
+                    case OP_NUMEQUALVERIFY:
+                        bn = (bn1 == bn2);
+                        break;
+                    case OP_NUMNOTEQUAL:
+                        bn = (bn1 != bn2);
+                        break;
+                    case OP_LESSTHAN:
+                        bn = (bn1 < bn2);
+                        break;
+                    case OP_GREATERTHAN:
+                        bn = (bn1 > bn2);
+                        break;
+                    case OP_LESSTHANOREQUAL:
+                        bn = (bn1 <= bn2);
+                        break;
+                    case OP_GREATERTHANOREQUAL:
+                        bn = (bn1 >= bn2);
+                        break;
+                    case OP_MIN:
+                        bn = (bn1 < bn2 ? bn1 : bn2);
+                        break;
+                    case OP_MAX:
+                        bn = (bn1 > bn2 ? bn1 : bn2);
+                        break;
+                    default:
+                        assert(!"invalid opcode");
+                        break;
+                }
+                
+                Stack.pop_back();
+                Stack.pop_back();
+                Stack.push_back(bn.getvch());
+
+                if (Op == OP_NUMEQUALVERIFY) {
+                    if (CastToBool(Stack.stacktop(-1).GetElement())) Stack.pop_back();
+                    else return SCRIPT_ERR_NUMEQUALVERIFY;
+                }
+            } break;
+
+            case OP_WITHIN: {
+                // (x min max -- out)
+                if (Stack.size() < 3) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                
+                const auto& top_3{Stack.stacktop(-3).GetElement()};
+                const CScriptNum bn1{
+                    top_3, fRequireMinimal,
+                    maxScriptNumLength,
+                    utxo_after_genesis};
+                    
+                const auto& top_2{Stack.stacktop(-2).GetElement()};
+                const CScriptNum bn2{
+                    top_2, fRequireMinimal,
+                    maxScriptNumLength,
+                    utxo_after_genesis};
+                    
+                const auto& top_1{Stack.stacktop(-1).GetElement()};
+                const CScriptNum bn3{
+                    top_1, fRequireMinimal,
+                    maxScriptNumLength,
+                    utxo_after_genesis};
+                    
+                const bool fValue = (bn2 <= bn1 && bn1 < bn3);
+                Stack.pop_back();
+                Stack.pop_back();
+                Stack.pop_back();
+
+                Stack.push_back(fValue ? script_true() : script_false());
             } break;
             
             // we take care of this elsewhere. 
@@ -349,72 +915,6 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 
             } break;
             
-            case OP_CHECKLOCKTIMEVERIFY: {
-                if (!(Flags & SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY) || utxo_after_genesis) {
-                    // not enabled; treat as a NOP2
-                    if (Flags & SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS) return SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS;
-                    break;
-                }
-
-                if (Stack.size() < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
-
-                // Note that elsewhere numeric opcodes are limited to
-                // operands in the range -2**31+1 to 2**31-1, however it
-                // is legal for opcodes to produce results exceeding
-                // that range. This limitation is implemented by
-                // CScriptNum's default 4-byte limit.
-                //
-                // If we kept to that limit we'd have a year 2038
-                // problem, even though the nLockTime field in
-                // transactions themselves is uint32 which only becomes
-                // meaningless after the year 2106.
-                //
-                // Thus as a special case we tell CScriptNum to accept
-                // up to 5-byte bignums, which are good until 2**39-1,
-                // well beyond the 2**32-1 limit of the nLockTime field
-                // itself.
-                const CScriptNum nLockTime(Stack.stacktop(-1).GetElement(), fRequireMinimal, 5);
-
-                // In the rare event that the argument may be < 0 due to
-                // some arithmetic being done first, you can always use
-                // 0 MAX CHECKLOCKTIMEVERIFY.
-                if (nLockTime < 0) return SCRIPT_ERR_NEGATIVE_LOCKTIME;
-
-                // Actually compare the specified lock time with the
-                // transaction.
-                if (bool(Document) && !Document->check_locktime(nLockTime)) return SCRIPT_ERR_UNSATISFIED_LOCKTIME;
-
-            } break;
-
-            case OP_CHECKSEQUENCEVERIFY: {
-                if (!(Flags & SCRIPT_VERIFY_CHECKSEQUENCEVERIFY) || utxo_after_genesis) {
-                    // not enabled; treat as a NOP3
-                    if (Flags & SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS) return SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS;
-                    break;
-                }
-
-                if (Stack.size() < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
-
-                // nSequence, like nLockTime, is a 32-bit unsigned
-                // integer field. See the comment in CHECKLOCKTIMEVERIFY
-                // regarding 5-byte numeric operands.
-                const CScriptNum nSequence(Stack.stacktop(-1).GetElement(), fRequireMinimal, 5);
-
-                // In the rare event that the argument may be < 0 due to
-                // some arithmetic being done first, you can always use
-                // 0 MAX CHECKSEQUENCEVERIFY.
-                if (nSequence < 0) return SCRIPT_ERR_NEGATIVE_LOCKTIME;
-
-                // To provide for future soft-fork extensibility, if the
-                // operand has the disabled lock-time flag set,
-                // CHECKSEQUENCEVERIFY behaves as a NOP.
-                if ((nSequence & CTxIn::SEQUENCE_LOCKTIME_DISABLE_FLAG) != script_zero()) return SCRIPT_ERR_OK;
-
-                // Compare the specified sequence number with the input.
-                if (bool(Document) && !Document->check_sequence(nSequence)) return SCRIPT_ERR_UNSATISFIED_LOCKTIME;
-
-            } break;
-            
             default: {
                 ScriptError err;
                 
@@ -429,6 +929,10 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 
             }
         }
+
+        // Size limits
+        if (!utxo_after_genesis && (Stack.size() + AltStack.size() > MAX_STACK_ELEMENTS_BEFORE_GENESIS))
+            return SCRIPT_ERR_STACK_SIZE;
         
         return SCRIPT_ERR_OK;
         

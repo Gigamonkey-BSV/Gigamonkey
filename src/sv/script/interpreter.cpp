@@ -190,37 +190,18 @@ std::optional<bool> EvalScript(
                     case OP_13:
                     case OP_14:
                     case OP_15:
-                    case OP_16: {
-                        // ( -- value)
-                        CScriptNum bn((int)opcode - (int)(OP_1 - 1));
-                        stack.push_back(bn.getvch());
-                        // The result of these opcodes should always be the
-                        // minimal way to push the data they push, so no need
-                        // for a CheckMinimalPush here.
-                    } break;
-
-                    //
-                    // Control
-                    //
+                    case OP_16: 
                     case OP_NOP:
-                        break;
-
-                    case OP_CHECKLOCKTIMEVERIFY: 
-                    case OP_CHECKSEQUENCEVERIFY: throw std::logic_error{"should not evaluate this"};
-
                     case OP_NOP1:
+                    case OP_CHECKLOCKTIMEVERIFY: 
+                    case OP_CHECKSEQUENCEVERIFY: 
                     case OP_NOP4:
                     case OP_NOP5:
                     case OP_NOP6:
                     case OP_NOP7:
                     case OP_NOP8:
                     case OP_NOP9:
-                    case OP_NOP10: {
-                        if (flags & SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS) {
-                            return set_error(
-                                serror, SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS);
-                        }
-                    } break;
+                    case OP_NOP10: throw std::logic_error{"should not evaluate this"};
 
                     case OP_IF:
                     case OP_NOTIF: {
@@ -272,297 +253,36 @@ std::optional<bool> EvalScript(
                         vfElse.pop_back();
                     } break;
 
-                    case OP_VERIFY: {
-                        // (true -- ) or
-                        // (false -- false) and return
-                        if (stack.size() < 1) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-                        bool fValue = CastToBool(stack.stacktop(-1).GetElement());
-                        if (fValue) {
-                            stack.pop_back();
-                        } else {
-                            return set_error(serror, SCRIPT_ERR_VERIFY);
-                        }
-                    } break;
-
-                    case OP_RETURN: throw std::logic_error{"should not reach here"};
-
-                    //
-                    // Stack ops
-                    //
-                    case OP_TOALTSTACK: {
-                        if (stack.size() < 1) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-                        altstack.moveTopToStack(stack);
-                    } break;
-
-                    case OP_FROMALTSTACK: {
-                        if (altstack.size() < 1) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_ALTSTACK_OPERATION);
-                        }
-                        stack.moveTopToStack(altstack);
-                    } break;
-
-                    case OP_2DROP: {
-                        // (x1 x2 -- )
-                        if (stack.size() < 2) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-                        stack.pop_back();
-                        stack.pop_back();
-                    } break;
-
-                    case OP_2DUP: {
-                        // (x1 x2 -- x1 x2 x1 x2)
-                        if (stack.size() < 2) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-                        LimitedVector vch1 = stack.stacktop(-2);
-                        LimitedVector vch2 = stack.stacktop(-1);
-                        stack.push_back(vch1);
-                        stack.push_back(vch2);
-                    } break;
-
-                    case OP_3DUP: {
-                        // (x1 x2 x3 -- x1 x2 x3 x1 x2 x3)
-                        if (stack.size() < 3) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-                        LimitedVector vch1 = stack.stacktop(-3);
-                        LimitedVector vch2 = stack.stacktop(-2);
-                        LimitedVector vch3 = stack.stacktop(-1);
-                        stack.push_back(vch1);
-                        stack.push_back(vch2);
-                        stack.push_back(vch3);
-                    } break;
-
-                    case OP_2OVER: {
-                        // (x1 x2 x3 x4 -- x1 x2 x3 x4 x1 x2)
-                        if (stack.size() < 4) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-                        LimitedVector vch1 = stack.stacktop(-4);
-                        LimitedVector vch2 = stack.stacktop(-3);
-                        stack.push_back(vch1);
-                        stack.push_back(vch2);
-                    } break;
-
-                    case OP_2ROT: {
-                        // (x1 x2 x3 x4 x5 x6 -- x3 x4 x5 x6 x1 x2)
-                        if (stack.size() < 6) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-                        LimitedVector vch1 = stack.stacktop(-6);
-                        LimitedVector vch2 = stack.stacktop(-5);
-                        stack.erase(- 6, - 4);
-                        stack.push_back(vch1);
-                        stack.push_back(vch2);
-                    } break;
-
-                    case OP_2SWAP: {
-                        // (x1 x2 x3 x4 -- x3 x4 x1 x2)
-                        if (stack.size() < 4) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-                        stack.swapElements(stack.size() - 4, stack.size() - 2);
-                        stack.swapElements(stack.size() - 3, stack.size() - 1);
-                    } break;
-
-                    case OP_IFDUP: {
-                        // (x - 0 | x x)
-                        if (stack.size() < 1) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-                        LimitedVector vch = stack.stacktop(-1);
-                        if (CastToBool(vch.GetElement())) {
-                            stack.push_back(vch);
-                        }
-                    } break;
-
-                    case OP_DEPTH: {
-                        // -- stacksize
-                        const CScriptNum bn(bsv::bint{stack.size()});
-                        stack.push_back(bn.getvch());
-                    } break;
-
-                    case OP_DROP: {
-                        // (x -- )
-                        if (stack.size() < 1) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-                        stack.pop_back();
-                    } break;
-
-                    case OP_DUP: {
-                        // (x -- x x)
-                        if (stack.size() < 1) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-                        LimitedVector vch = stack.stacktop(-1);
-                        stack.push_back(vch);
-                    } break;
-
-                    case OP_NIP: {
-                        // (x1 x2 -- x2)
-                        if (stack.size() < 2) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-                        stack.erase(-2);
-                    } break;
-
-                    case OP_OVER: {
-                        // (x1 x2 -- x1 x2 x1)
-                        if (stack.size() < 2) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-                        LimitedVector vch = stack.stacktop(-2);
-                        stack.push_back(vch);
-                    } break;
-
+                    case OP_VERIFY: 
+                    case OP_RETURN: 
+                    case OP_TOALTSTACK: 
+                    case OP_FROMALTSTACK:
+                    case OP_2DROP: 
+                    case OP_2DUP:
+                    case OP_3DUP: 
+                    case OP_2OVER: 
+                    case OP_2ROT: 
+                    case OP_2SWAP: 
+                    case OP_IFDUP:
+                    case OP_DEPTH:
+                    case OP_DROP: 
+                    case OP_DUP: 
+                    case OP_NIP: 
+                    case OP_OVER: 
                     case OP_PICK:
-                    case OP_ROLL: {
-                        // (xn ... x2 x1 x0 n - xn ... x2 x1 x0 xn)
-                        // (xn ... x2 x1 x0 n - ... x2 x1 x0 xn)
-                        if (stack.size() < 2) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-
-                        const auto& top{stack.stacktop(-1).GetElement()};
-                        const CScriptNum sn{
-                            top, fRequireMinimal,
-                            maxScriptNumLength,
-                            utxo_after_genesis};
-                        stack.pop_back();
-                        if(sn < 0 || sn >= stack.size())
-                        {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-                        const auto n{sn.to_size_t_limited()};
-                        LimitedVector vch = stack.stacktop(-n - 1);
-
-                        if (opcode == OP_ROLL) {
-                            stack.erase(- n - 1);
-                        }
-                        stack.push_back(vch);
-                    } break;
-
-                    case OP_ROT: {
-                        // (x1 x2 x3 -- x2 x3 x1)
-                        //  x2 x1 x3  after first swap
-                        //  x2 x3 x1  after second swap
-                        if (stack.size() < 3) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-                        stack.swapElements(stack.size() - 3, stack.size() - 2);
-                        stack.swapElements(stack.size() - 2, stack.size() - 1);
-                    } break;
-
-                    case OP_SWAP: {
-                        // (x1 x2 -- x2 x1)
-                        if (stack.size() < 2) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-                        stack.swapElements(stack.size() - 2, stack.size() - 1);
-                    } break;
-
-                    case OP_TUCK: {
-                        // (x1 x2 -- x2 x1 x2)
-                        if (stack.size() < 2) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-                        LimitedVector vch = stack.stacktop(-1);
-                        stack.insert(-2, vch);
-                    } break;
-
-                    case OP_SIZE: {
-                        // (in -- in size)
-                        if (stack.size() < 1) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-
-                        CScriptNum bn(bsv::bint{stack.stacktop(-1).size()});
-                        stack.push_back(bn.getvch());
-                    } break;
+                    case OP_ROLL: 
+                    case OP_ROT: 
+                    case OP_SWAP: 
+                    case OP_TUCK: 
+                    case OP_SIZE: 
 
                     //
                     // Bitwise logic
                     //
                     case OP_AND:
                     case OP_OR:
-                    case OP_XOR: {
-                        // (x1 x2 - out)
-                        if (stack.size() < 2) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-                        LimitedVector &vch1 = stack.stacktop(-2);
-                        LimitedVector &vch2 = stack.stacktop(-1);
-
-                        // Inputs must be the same size
-                        if (vch1.size() != vch2.size()) {
-                            return set_error(serror,
-                                             SCRIPT_ERR_INVALID_OPERAND_SIZE);
-                        }
-
-                        // To avoid allocating, we modify vch1 in place.
-                        switch (opcode) {
-                            case OP_AND:
-                                for (size_t i = 0; i < vch1.size(); ++i) {
-                                    vch1[i] &= vch2[i];
-                                }
-                                break;
-                            case OP_OR:
-                                for (size_t i = 0; i < vch1.size(); ++i) {
-                                    vch1[i] |= vch2[i];
-                                }
-                                break;
-                            case OP_XOR:
-                                for (size_t i = 0; i < vch1.size(); ++i) {
-                                    vch1[i] ^= vch2[i];
-                                }
-                                break;
-                            default:
-                                break;
-                        }
-
-                        // And pop vch2.
-                        stack.pop_back();
-                    } break;
-
-                    case OP_INVERT: {
-                        // (x -- out)
-                        if (stack.size() < 1) {
-                            return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-                        LimitedVector &vch1 = stack.stacktop(-1);
-                        // To avoid allocating, we modify vch1 in place
-                        for(size_t i=0; i<vch1.size(); i++)
-                        {
-                            vch1[i] = ~vch1[i];
-                        }
-                    } break;
+                    case OP_XOR: 
+                    case OP_INVERT: throw std::logic_error{"should not evaluate this"};
 
                     case OP_LSHIFT:
                     {
@@ -643,37 +363,7 @@ std::optional<bool> EvalScript(
                     break;
 
                     case OP_EQUAL:
-                    case OP_EQUALVERIFY:
-                        // case OP_NOTEQUAL: // use OP_NUMNOTEQUAL
-                        {
-                            // (x1 x2 - bool)
-                            if (stack.size() < 2) {
-                                return set_error(
-                                    serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                            }
-                            LimitedVector &vch1 = stack.stacktop(-2);
-                            LimitedVector &vch2 = stack.stacktop(-1);
-
-                            bool fEqual = (vch1.GetElement() == vch2.GetElement());
-                            // OP_NOTEQUAL is disabled because it would be too
-                            // easy to say something like n != 1 and have some
-                            // wiseguy pass in 1 with extra zero bytes after it
-                            // (numerically, 0x01 == 0x0001 == 0x000001)
-                            // if (opcode == OP_NOTEQUAL)
-                            //    fEqual = !fEqual;
-                            stack.pop_back();
-                            stack.pop_back();
-                            stack.push_back(fEqual ? vchTrue : vchFalse);
-                            if (opcode == OP_EQUALVERIFY) {
-                                if (fEqual) {
-                                    stack.pop_back();
-                                } else {
-                                    return set_error(serror,
-                                                     SCRIPT_ERR_EQUALVERIFY);
-                                }
-                            }
-                        }
-                        break;
+                    case OP_EQUALVERIFY: 
 
                     //
                     // Numeric
@@ -683,50 +373,7 @@ std::optional<bool> EvalScript(
                     case OP_NEGATE:
                     case OP_ABS:
                     case OP_NOT:
-                    case OP_0NOTEQUAL: {
-                        // (in -- out)
-                        if (stack.size() < 1) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-                        const auto &top{stack.stacktop(-1).GetElement()};
-                        CScriptNum bn{top, fRequireMinimal,
-                                      maxScriptNumLength,
-                                      utxo_after_genesis};
-                        switch (opcode) {
-                            case OP_1ADD:
-                                bn += utxo_after_genesis
-                                          ? CScriptNum{bsv::bint{1}}
-                                          : bnOne;
-                                break;
-                            case OP_1SUB:
-                                bn -= utxo_after_genesis
-                                          ? CScriptNum{bsv::bint{1}}
-                                          : bnOne;
-                                // bn -= bnOne;
-                                break;
-                            case OP_NEGATE:
-                                bn = -bn;
-                                break;
-                            case OP_ABS:
-                                if (bn < bnZero) {
-                                    bn = -bn;
-                                }
-                                break;
-                            case OP_NOT:
-                                bn = (bn == bnZero);
-                                break;
-                            case OP_0NOTEQUAL:
-                                bn = (bn != bnZero);
-                                break;
-                            default:
-                                assert(!"invalid opcode");
-                                break;
-                        }
-                        stack.pop_back();
-                        stack.push_back(bn.getvch());
-                    } break;
-
+                    case OP_0NOTEQUAL: 
                     case OP_ADD:
                     case OP_SUB:
                     case OP_MUL:
@@ -742,134 +389,8 @@ std::optional<bool> EvalScript(
                     case OP_LESSTHANOREQUAL:
                     case OP_GREATERTHANOREQUAL:
                     case OP_MIN:
-                    case OP_MAX: {
-                        // (x1 x2 -- out)
-                        if (stack.size() < 2) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-
-                        const auto& arg_2 = stack.stacktop(-2);                        
-                        const auto& arg_1 = stack.stacktop(-1);
-
-                        CScriptNum bn1(arg_2.GetElement(), fRequireMinimal,
-                                       maxScriptNumLength,
-                                       utxo_after_genesis);
-                        CScriptNum bn2(arg_1.GetElement(), fRequireMinimal,
-                                       maxScriptNumLength,
-                                       utxo_after_genesis);
-                        CScriptNum bn;
-                        switch (opcode) {
-                            case OP_ADD:
-                                bn = bn1 + bn2;
-                                break;
-
-                            case OP_SUB:
-                                bn = bn1 - bn2;
-                                break;
-
-                            case OP_MUL:
-                                bn = bn1 * bn2;
-                                break;
-
-                            case OP_DIV:
-                                // denominator must not be 0
-                                if (bn2 == bnZero) {
-                                    return set_error(serror,
-                                                     SCRIPT_ERR_DIV_BY_ZERO);
-                                }
-                                bn = bn1 / bn2;
-                                break;
-
-                            case OP_MOD:
-                                // divisor must not be 0
-                                if (bn2 == bnZero) {
-                                    return set_error(serror,
-                                                     SCRIPT_ERR_MOD_BY_ZERO);
-                                }
-                                bn = bn1 % bn2;
-                                break;
-
-                            case OP_BOOLAND:
-                                bn = (bn1 != bnZero && bn2 != bnZero);
-                                break;
-                            case OP_BOOLOR:
-                                bn = (bn1 != bnZero || bn2 != bnZero);
-                                break;
-                            case OP_NUMEQUAL:
-                                bn = (bn1 == bn2);
-                                break;
-                            case OP_NUMEQUALVERIFY:
-                                bn = (bn1 == bn2);
-                                break;
-                            case OP_NUMNOTEQUAL:
-                                bn = (bn1 != bn2);
-                                break;
-                            case OP_LESSTHAN:
-                                bn = (bn1 < bn2);
-                                break;
-                            case OP_GREATERTHAN:
-                                bn = (bn1 > bn2);
-                                break;
-                            case OP_LESSTHANOREQUAL:
-                                bn = (bn1 <= bn2);
-                                break;
-                            case OP_GREATERTHANOREQUAL:
-                                bn = (bn1 >= bn2);
-                                break;
-                            case OP_MIN:
-                                bn = (bn1 < bn2 ? bn1 : bn2);
-                                break;
-                            case OP_MAX:
-                                bn = (bn1 > bn2 ? bn1 : bn2);
-                                break;
-                            default:
-                                assert(!"invalid opcode");
-                                break;
-                        }
-                        stack.pop_back();
-                        stack.pop_back();
-                        stack.push_back(bn.getvch());
-
-                        if (opcode == OP_NUMEQUALVERIFY) {
-                            if (CastToBool(stack.stacktop(-1).GetElement())) {
-                                stack.pop_back();
-                            } else {
-                                return set_error(serror,
-                                                 SCRIPT_ERR_NUMEQUALVERIFY);
-                            }
-                        }
-                    } break;
-
-                    case OP_WITHIN: {
-                        // (x min max -- out)
-                        if (stack.size() < 3) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-
-                        const auto& top_3{stack.stacktop(-3).GetElement()};
-                        const CScriptNum bn1{
-                            top_3, fRequireMinimal,
-                            maxScriptNumLength,
-                            utxo_after_genesis};
-                        const auto& top_2{stack.stacktop(-2).GetElement()};
-                        const CScriptNum bn2{
-                            top_2, fRequireMinimal,
-                            maxScriptNumLength,
-                            utxo_after_genesis};
-                        const auto& top_1{stack.stacktop(-1).GetElement()};
-                        const CScriptNum bn3{
-                            top_1, fRequireMinimal,
-                            maxScriptNumLength,
-                            utxo_after_genesis};
-                        const bool fValue = (bn2 <= bn1 && bn1 < bn3);
-                        stack.pop_back();
-                        stack.pop_back();
-                        stack.pop_back();
-
-                        stack.push_back(fValue ? vchTrue : vchFalse);
-                    } break;
+                    case OP_MAX: 
+                    case OP_WITHIN: throw std::logic_error{"should not evaluate here"};
 
                     //
                     // Crypto
@@ -1060,13 +581,6 @@ std::optional<bool> EvalScript(
                         return set_error(serror, SCRIPT_ERR_BAD_OPCODE);
                     }
                 }
-            }
-
-            // Size limits
-            if (!utxo_after_genesis &&
-               (stack.size() + altstack.size() > MAX_STACK_ELEMENTS_BEFORE_GENESIS))
-            {
-                return set_error(serror, SCRIPT_ERR_STACK_SIZE);
             }
         }
 
