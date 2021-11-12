@@ -7,6 +7,7 @@
 #include <gigamonkey/script/script.hpp>
 #include <gigamonkey/script/stack.hpp>
 #include <gigamonkey/script/counter.hpp>
+#include <gigamonkey/script/config.hpp>
 #include <data/io/wait_for_enter.hpp>
 
 namespace Gigamonkey::Bitcoin::interpreter { 
@@ -19,6 +20,8 @@ namespace Gigamonkey::Bitcoin::interpreter {
         struct state {
             uint32 Flags;
             bool Consensus;
+            
+            script_config Config;
             
             std::optional<redemption_document> Document;
             

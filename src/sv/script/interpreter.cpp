@@ -6,6 +6,7 @@
 #include <sv/script/interpreter.h>
 #include <gigamonkey/script/flags.h>
 #include <gigamonkey/signature.hpp>
+#include <gigamonkey/script/config.hpp>
 #include <sv/crypto/ripemd160.h>
 #include <sv/crypto/sha1.h>
 #include <sv/crypto/sha256.h>
@@ -13,7 +14,6 @@
 #include <sv/script/script_num.h>
 #include <sv/uint256.h>
 #include <sv/consensus/consensus.h>
-#include <sv/script_config.h>
 
 namespace {
 
