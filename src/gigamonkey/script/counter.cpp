@@ -11,8 +11,9 @@ namespace Gigamonkey::Bitcoin::interpreter {
         bytes_writer w{r.begin(), r.end()};
         int bytes_written = 0;
         while (true) {
-            bytes_view next = p.next_instruction();
+            bytes_view next = p.Next;
             if (next == bytes_view{}) break;
+            p = p.next();
             if (next == instruction) continue;
             w << next;
             bytes_written += next.size();
@@ -21,80 +22,50 @@ namespace Gigamonkey::Bitcoin::interpreter {
         return r;
     }
     
-    bytes_view program_counter::next_instruction() {
-        if (Counter == Script.size()) return bytes_view{};
+    bytes_view program_counter::read_instruction(bytes_view subscript) {
+        if (subscript.size() == 0) return bytes_view{};
         
-        auto last = Counter;
+        op Op = op(subscript[0]);
         
-        op Op = op(Script[Counter]);
+        if (!is_push_data(Op)) return bytes_view{subscript.data(), 1};
         
-        if (!is_push_data(Op)) {
-            Counter++;
-            if (Op == OP_CODESEPARATOR) LastCodeSeparator = Counter;
-            return bytes_view{Script.data() + last, 1};
-        }
-        
-        if (Op <= OP_PUSHSIZE75) {
-            size_t size = std::min(size_t(Op + 1), Script.size() - last);
-            Counter += size;
-            return bytes_view{Script.data() + last, size};
-        }
+        if (Op <= OP_PUSHSIZE75) return bytes_view{subscript.data(), std::min(size_t(Op + 1), subscript.size())};
         
         if (Op == OP_PUSHDATA1) {
-            if (Counter + 2 > Script.size()) {
-                Counter = Script.size();
-                return bytes_view{Script.data() + Counter, 1};
-            }
+            if (2 > subscript.size()) return bytes_view{subscript.data(), subscript.size()};
             
-            byte size = Script[Counter + 1];
+            byte size = subscript[1];
             
-            if (Counter + 2 + size > Script.size()) {
-                Counter = Script.size();
-                return bytes_view{Script.data() + Counter, 2};
-            }
+            if (2 + size > subscript.size()) return bytes_view{subscript.data(), subscript.size()};
             
-            Counter += 2 + size;
-            return bytes_view{Script.data() + last, size_t(2) + size};
+            return bytes_view{subscript.data(), size_t(2) + size};
         }
         
         if (Op == OP_PUSHDATA2) {
-            if (Counter + 3 > Script.size()) {
-                Counter = Script.size();
-                return bytes_view{Script.data() + Counter, 1};
-            }
+            if (3 > subscript.size()) return bytes_view{subscript.data(), subscript.size()};
             
             uint16_little size;
-            std::copy(Script.begin() + Counter + 1, Script.begin() + Counter + 3, size.begin());
+            std::copy(subscript.begin() + 1, subscript.begin() + 3, size.begin());
             
-            if (Counter + 3 + size > Script.size()) {
-                Counter = Script.size();
-                return bytes_view{Script.data() + Counter, 3};
-            }
+            if (3 + size > subscript.size()) return bytes_view{subscript.data(), subscript.size()};
             
-            Counter += 3 + size;
-            return bytes_view{Script.data() + last, size_t(3) + size};
+            return bytes_view{subscript.data(), size_t(3) + size};
         }
         
         if (Op == OP_PUSHDATA4) {
-            if (Counter + 5 > Script.size()) {
-                Counter = Script.size();
-                return bytes_view{Script.data() + Counter, 1};
-            }
+            if (5 > subscript.size()) return bytes_view{subscript.data(), subscript.size()};
             
             uint32_little size;
-            std::copy(Script.begin() + Counter + 1, Script.begin() + Counter + 5, size.begin());
+            std::copy(subscript.begin() + 1, subscript.begin() + 5, size.begin());
             
-            if (Counter + 4 + size > Script.size()) {
-                Counter = Script.size();
-                return bytes_view{Script.data() + Counter, 5};
-            }
+            if (5 + size > subscript.size()) return bytes_view{subscript.data(), 5};
             
-            Counter += 5 + size;
-            return bytes_view{Script.data() + last, size_t(5) + size};
+            return bytes_view{subscript.data(), size_t(5) + size};
         }
         
         // should never happen
         return bytes_view{};
     }
+    
     
 }

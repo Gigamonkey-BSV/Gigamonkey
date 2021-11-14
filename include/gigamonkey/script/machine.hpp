@@ -25,6 +25,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
             
             std::optional<redemption_document> Document;
             
+            bytes Script;
             program_counter Counter;
             
             LimitedStack<element> Stack;
@@ -35,7 +36,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
             
             long OpCount;
             
-            state(uint32 flags, bool consensus, std::optional<redemption_document> doc, program_counter pc);
+            state(uint32 flags, bool consensus, std::optional<redemption_document> doc, const bytes &script);
             
             program unread() const {
                 return decompile(bytes_view{Counter.Script}.substr(Counter.Counter));
@@ -68,7 +69,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
         }
         
         machine(std::optional<redemption_document> doc, const program unlock, const program lock, uint32 flags) : 
-            Halt{false}, Result{false}, State{flags, false, doc, program_counter{compile(full(unlock, lock))}} {
+            Halt{false}, Result{false}, State{flags, false, doc, compile(full(unlock, lock))} {
             if (auto err = check_scripts(unlock, lock, flags); err) {
                 Halt = true;
                 Result = err;

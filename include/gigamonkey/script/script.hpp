@@ -9,7 +9,6 @@
 
 #include <gigamonkey/script/error.h>
 
-#include <gigamonkey/script/instruction.hpp>
 #include <gigamonkey/sighash.hpp>
 #include <gigamonkey/satoshi.hpp>
 #include <sv/script/script_num.h>

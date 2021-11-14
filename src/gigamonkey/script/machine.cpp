@@ -107,8 +107,8 @@ namespace Gigamonkey::Bitcoin::interpreter {
         return Result;
     }
     
-    machine::state::state(uint32 flags, bool consensus, std::optional<redemption_document> doc, program_counter pc) : 
-        Flags{flags}, Consensus{consensus}, Config{}, Document{doc}, Counter{pc}, 
+    machine::state::state(uint32 flags, bool consensus, std::optional<redemption_document> doc, const bytes &script) : 
+        Flags{flags}, Consensus{consensus}, Config{}, Document{doc}, Script{script}, Counter{program_counter{Script}}, 
         Stack{Config.GetMaxStackMemoryUsage(Flags & SCRIPT_UTXO_AFTER_GENESIS, consensus)}, 
         AltStack{Stack.makeChildStack()}, Exec{}, Else{}, OpCount{0} {}
     
@@ -162,6 +162,22 @@ namespace Gigamonkey::Bitcoin::interpreter {
         return false;
     }
     
+    bytes_view get_push_data(bytes_view instruction) {
+        if (instruction.size() < 1) return {};
+        
+        op Op = op(instruction[0]);
+        
+        if (!is_push_data(Op)) return {};
+        
+        if (Op <= OP_PUSHSIZE75) return instruction.substr(1);
+        
+        if (Op == OP_PUSHDATA1) return instruction.substr(2);
+        
+        if (Op == OP_PUSHDATA2) return instruction.substr(3);
+        
+        return instruction.substr(5);
+    }
+    
     result machine::state::step() {
     
         const bool utxo_after_genesis{(Flags & SCRIPT_UTXO_AFTER_GENESIS) != 0};
@@ -169,10 +185,11 @@ namespace Gigamonkey::Bitcoin::interpreter {
         const bool fRequireMinimal = (Flags & SCRIPT_VERIFY_MINIMALDATA) != 0;
         
         // this will always be valid because we've already checked for invalid op codes. 
-        bytes_view next = Counter.next_instruction();
-        if (next == bytes_view{}) return true;
+        //bytes_view next = Counter.next_instruction();
         
-        op Op = op(next[0]);
+        if (Counter.Next == bytes_view{}) return true;
+        
+        op Op = op(Counter.Next[0]);
         
         // Check opcode limits.
         //
@@ -180,7 +197,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
         // Note how OP_RESERVED does not count towards the opcode limit.
         if ((Op > OP_16) && !IsValidMaxOpsPerScript(++OpCount, Config, utxo_after_genesis, Consensus)) return SCRIPT_ERR_OP_COUNT;
 
-        if (!utxo_after_genesis && (next.size() - 1 > MAX_SCRIPT_ELEMENT_SIZE_BEFORE_GENESIS))
+        if (!utxo_after_genesis && (Counter.Next.size() - 1 > MAX_SCRIPT_ELEMENT_SIZE_BEFORE_GENESIS))
             return SCRIPT_ERR_PUSH_SIZE;
         
         // whether this op code will be executed. 
@@ -191,7 +208,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
         if (IsOpcodeDisabled(Op) && (!utxo_after_genesis || executed )) return SCRIPT_ERR_DISABLED_OPCODE;
         
         if (executed && 0 <= Op && Op <= OP_PUSHDATA4) {
-            Stack.push_back(next.substr(1));
+            Stack.push_back(get_push_data(Counter.Next));
         } else switch (Op) {
             //
             // Push value
@@ -917,7 +934,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 long count;
                 std::optional<bool> result = EvalScript(
                     Config, Consensus, 
-                    Stack, CScript(next.begin(), next.end()), Flags, 
+                    Stack, CScript(Counter.Next.begin(), Counter.Next.end()), Flags, 
                     AltStack, count,
                     Exec, Else, &err);
                 
@@ -929,6 +946,8 @@ namespace Gigamonkey::Bitcoin::interpreter {
         // Size limits
         if (!utxo_after_genesis && (Stack.size() + AltStack.size() > MAX_STACK_ELEMENTS_BEFORE_GENESIS))
             return SCRIPT_ERR_STACK_SIZE;
+        
+        Counter = Counter.next();
         
         return SCRIPT_ERR_OK;
         

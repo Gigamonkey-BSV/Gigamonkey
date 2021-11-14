@@ -133,6 +133,8 @@ add_library(gigamonkey STATIC
     src/gigamonkey/signature.cpp
     src/gigamonkey/script/instruction.cpp
     src/gigamonkey/script/script.cpp
+    src/gigamonkey/script/counter.cpp
+    src/gigamonkey/script/pattern.cpp
     src/gigamonkey/address.cpp
     src/gigamonkey/wif.cpp
     src/gigamonkey/merkle.cpp

@@ -7,20 +7,10 @@
 #include <gigamonkey/script/pattern.hpp>
 #include <data/math/number/bytes/N.hpp>
 #include <sv/script/script.h>
+#include <gigamonkey/script/script.hpp>
 #include <gigamonkey/script/bitcoin_core.hpp>
 
 namespace Gigamonkey::Bitcoin::interpreter {
-    
-    bool provably_prunable_recurse(program p) {
-        if (p.size() < 2) return false;
-        if (p.size() == 2) return p.first().Op == OP_FALSE && p.rest().first() == OP_RETURN;
-        return provably_prunable_recurse(p);
-    }
-    
-    bool provably_prunable(program p) {
-        if (!p.valid()) return false;
-        return provably_prunable_recurse(p);
-    }
     
     bool push::match(const instruction& i) const {
         switch (Type) {

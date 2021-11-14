@@ -4,7 +4,7 @@
 #ifndef GIGAMONKEY_SCRIPT_PATTERN
 #define GIGAMONKEY_SCRIPT_PATTERN
 
-#include <gigamonkey/script/script.hpp>
+#include <gigamonkey/script/instruction.hpp>
 #include <gigamonkey/address.hpp>
 
 namespace Gigamonkey::Bitcoin::interpreter { 
@@ -51,7 +51,9 @@ namespace Gigamonkey::Bitcoin::interpreter {
         virtual ~pattern() {}
         
         struct sequence;
+        
     protected:
+        
         struct atom;
         struct string;
         ptr<pattern> Pattern;
