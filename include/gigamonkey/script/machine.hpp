@@ -58,23 +58,28 @@ namespace Gigamonkey::Bitcoin::interpreter {
         result run();
         
     private:
+
+        static bool isP2SH(const program p) {
+            bytes script = compile(p);
+            return script.size() == 23 && script[0] == OP_HASH160 &&
+                script[1] == 0x14 && script[22] == OP_EQUAL;
+        }
         
         program inline full(const program unlock, const program lock) {
-            return unlock << OP_CODESEPARATOR << lock;
+            if (!isP2SH(lock) || data::empty(unlock)) return unlock << OP_CODESEPARATOR << lock;
+            return unlock << OP_CODESEPARATOR << lock << OP_CODESEPARATOR << decompile(data::reverse(unlock).first().data());
         }
         
         ScriptError check_scripts(const program unlock, const program lock, uint32 flags) {
             if (flags & SCRIPT_VERIFY_SIGPUSHONLY && !is_push(unlock)) return SCRIPT_ERR_SIG_PUSHONLY;
-            return verify(unlock << OP_CODESEPARATOR << lock, flags);
+            if (isP2SH(lock)) {
+                if (unlock.empty()) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                if (!is_push(unlock)) return SCRIPT_ERR_SIG_PUSHONLY;
+            }
+            return verify(full(unlock, lock), flags);
         }
         
-        machine(std::optional<redemption_document> doc, const program unlock, const program lock, uint32 flags) : 
-            Halt{false}, Result{false}, State{flags, false, doc, compile(full(unlock, lock))} {
-            if (auto err = check_scripts(unlock, lock, flags); err) {
-                Halt = true;
-                Result = err;
-            }
-        }
+        machine(std::optional<redemption_document> doc, const program unlock, const program lock, uint32 flags);
         
         static const element &script_false() {
             static element False(0);

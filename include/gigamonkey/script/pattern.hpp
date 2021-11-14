@@ -324,6 +324,75 @@ namespace Gigamonkey::Bitcoin {
             return compile(program{} << push_data(s) << push_data(p));
         }
     };
+    
+    struct pay_to_hash {
+        static interpreter::pattern pattern(bytes& hash) {
+            using namespace interpreter;
+            return {OP_HASH160, push_size{20, hash}, OP_EQUALVERIFY};
+        }
+        
+        static bytes script(const digest160& a) {
+            using namespace interpreter;
+            return compile(program{OP_HASH160, bytes_view(a), OP_EQUALVERIFY});
+        }
+        
+        digest160 Hash;
+        
+        bool valid() const {
+            return Hash.valid();
+        }
+        
+        bytes script() const {
+            return script(Hash);
+        }
+        
+        pay_to_hash(bytes_view script) : Hash{} {
+            using namespace interpreter;
+            bytes hash{20};
+            if (!pattern(hash).match(script)) return;
+            std::copy(hash.begin(), hash.end(), Hash.Value.begin());
+        }
+        
+        static bytes redeem(const bytes_view s) {
+            using namespace interpreter;
+            return compile(program{} << push_data(s));
+        }
+    };
+    
+    // an obsolete pattern that was introduced by Gavin. 
+    struct pay_to_script_hash {
+        static interpreter::pattern pattern(bytes& hash) {
+            using namespace interpreter;
+            return {OP_HASH160, push_size{20, hash}, OP_EQUAL};
+        }
+        
+        static bytes script(const digest160& a) {
+            using namespace interpreter;
+            return compile(program{OP_HASH160, bytes_view(a), OP_EQUAL});
+        }
+        
+        digest160 Hash;
+        
+        bool valid() const {
+            return Hash.valid();
+        }
+        
+        bytes script() const {
+            return script(Hash);
+        }
+        
+        pay_to_script_hash(bytes_view script) : Hash{} {
+            using namespace interpreter;
+            bytes hash{20};
+            if (!pattern(hash).match(script)) return;
+            std::copy(hash.begin(), hash.end(), Hash.Value.begin());
+        }
+        
+        static bytes redeem(const bytes_view s) {
+            using namespace interpreter;
+            return compile(program{} << push_data(s));
+        }
+    };
 }
 
 namespace Gigamonkey::Bitcoin::interpreter { 

@@ -63,6 +63,25 @@ namespace Gigamonkey::Bitcoin::interpreter {
         std::cout << "Result " << m.Result << std::endl;
     }
     
+    machine::state::state(uint32 flags, bool consensus, std::optional<redemption_document> doc, const bytes &script) : 
+        Flags{flags}, Consensus{consensus}, Config{}, Document{doc}, Script{script}, Counter{program_counter{Script}}, 
+        Stack{Config.GetMaxStackMemoryUsage(Flags & SCRIPT_UTXO_AFTER_GENESIS, consensus)}, 
+        AltStack{Stack.makeChildStack()}, Exec{}, Else{}, OpCount{0} {}
+    
+    machine::machine(const script &unlock, const script &lock, const redemption_document &doc, uint32 flags) : 
+        machine{{doc}, decompile(unlock), decompile(lock), flags} {}
+    
+    machine::machine(const script &unlock, const script &lock, uint32 flags) : 
+        machine{{}, decompile(unlock), decompile(lock), flags} {}
+    
+    machine::machine(std::optional<redemption_document> doc, const program unlock, const program lock, uint32 flags) : 
+        Halt{false}, Result{false}, State{flags, false, doc, compile(full(unlock, lock))} {
+        if (auto err = check_scripts(unlock, lock, flags); err) {
+            Halt = true;
+            Result = err;
+        }
+    }
+    
     result state_step(machine::state &x) {
         return x.step();
     }
@@ -106,17 +125,6 @@ namespace Gigamonkey::Bitcoin::interpreter {
         Halt = true;
         return Result;
     }
-    
-    machine::state::state(uint32 flags, bool consensus, std::optional<redemption_document> doc, const bytes &script) : 
-        Flags{flags}, Consensus{consensus}, Config{}, Document{doc}, Script{script}, Counter{program_counter{Script}}, 
-        Stack{Config.GetMaxStackMemoryUsage(Flags & SCRIPT_UTXO_AFTER_GENESIS, consensus)}, 
-        AltStack{Stack.makeChildStack()}, Exec{}, Else{}, OpCount{0} {}
-    
-    machine::machine(const script &unlock, const script &lock, const redemption_document &doc, uint32 flags) : 
-        machine{{doc}, decompile(unlock), decompile(lock), flags} {}
-    
-    machine::machine(const script &unlock, const script &lock, uint32 flags) : 
-        machine{{}, decompile(unlock), decompile(lock), flags} {}
     
     inline bool IsValidMaxOpsPerScript(uint64_t nOpCount,
                                     const CScriptConfig &config,
