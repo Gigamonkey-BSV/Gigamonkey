@@ -376,6 +376,8 @@ namespace Gigamonkey::Bitcoin {
         
         if (utxo_after_genesis && !script_genesis) return SCRIPT_ERR_IMPOSSIBLE_ENCODING;
         
+        if (flags & SCRIPT_VERIFY_CLEANSTACK || !(flags & SCRIPT_VERIFY_P2SH)) return SCRIPT_ERR_CLEANSTACK; 
+        
         if (data::empty(p)) return SCRIPT_ERR_OK;
         
         // first we check for OP_RETURN data. 

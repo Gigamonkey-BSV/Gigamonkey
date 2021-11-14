@@ -195,7 +195,10 @@ namespace Gigamonkey::Bitcoin::interpreter {
         // this will always be valid because we've already checked for invalid op codes. 
         //bytes_view next = Counter.next_instruction();
         
-        if (Counter.Next == bytes_view{}) return true;
+        if (Counter.Next == bytes_view{}) {
+            if ((Flags & SCRIPT_VERIFY_CLEANSTACK) != 0 && Stack.size() != 1) return SCRIPT_ERR_CLEANSTACK;
+            return true;
+        }
         
         op Op = op(Counter.Next[0]);
         
