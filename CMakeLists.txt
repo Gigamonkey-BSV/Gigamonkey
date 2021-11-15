@@ -162,9 +162,13 @@ add_library(gigamonkey STATIC
     src/gigamonkey/script/machine.cpp
 	src/gigamonkey/p2p/node.cpp
 	src/gigamonkey/p2p/node_manager.cpp
-	src/gigamonkey/p2p/address.cpp
-	src/gigamonkey/p2p/messages/message.cpp
-	src/gigamonkey/p2p/messages/message_header.cpp
+		src/gigamonkey/p2p/networks.cpp
+		src/gigamonkey/p2p/messages/utils.cpp
+		src/gigamonkey/p2p/address.cpp
+		src/gigamonkey/p2p/messages/message.cpp
+		src/gigamonkey/p2p/messages/message_header.cpp
+		src/gigamonkey/p2p/messages/message_payload.cpp
+
 
 )
 

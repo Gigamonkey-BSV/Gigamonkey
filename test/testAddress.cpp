@@ -15,7 +15,7 @@
 #include <iostream>
 
 namespace Gigamonkey::Bitcoin {
-    
+
     TEST(AddressTest, TestAddresses) {
         using namespace interpreter;
         

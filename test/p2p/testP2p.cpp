@@ -3,12 +3,13 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 
-#include <gigamonkey/p2p/node.hpp>
-#include <gigamonkey/p2p/messages/message_header.hpp>
-#include <gigamonkey/p2p/messages/version_message.hpp>
+#include "gigamonkey/p2p/node.hpp"
+#include "gigamonkey/p2p/messages/message_header.hpp"
+#include "gigamonkey/p2p/messages/version_message.hpp"
 #include "gtest/gtest.h"
 #include "gigamonkey/p2p/address.hpp"
 #include "data/cross.hpp"
+#include "../testUtils.h"
 #include <iostream>
 #include <boost/type_index.hpp>
 #include <boost/iostreams/device/array.hpp>
@@ -18,16 +19,7 @@
 
 
 namespace Gigamonkey::Bitcoin::P2P {
-    std::vector<unsigned char> strToTestVector(std::string input) {
-        std::vector<unsigned char> ret;
-        if (input.size() % 2 != 0) {
-            return ret;
-        }
-        for (int i = 0; i < input.size(); i += 2) {
-            ret.push_back(std::stoi(input.substr(i, 2), nullptr, 16));
-        }
-        return ret;
-    }
+
 
     TEST(TestP2P,TestEndian) {
         uint16_t test;

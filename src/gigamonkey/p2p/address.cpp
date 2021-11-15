@@ -7,7 +7,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include "data/encoding/endian/endian.hpp"
-
+#include "data/cross.hpp"
+#include <gigamonkey/p2p/messages/utils.hpp>
 namespace Gigamonkey::Bitcoin::P2P
 {
     Address::Address() {
@@ -16,60 +17,39 @@ namespace Gigamonkey::Bitcoin::P2P
 
     std::istream &operator>>(std::istream &in, Address &d) {
         if(!d.isInitial()) {
-            boost::array<unsigned char,4> timeBytes{};
-            for (int i = 0; i < 4; i++)
-                in >> timeBytes[i];
-            int32_t time = (timeBytes[3] << 24 | timeBytes[2] << 16 | timeBytes[1] << 8 | timeBytes[0]);
+            data::int32_little time;
+            Messages::decode(in,time);
             d.setTimestamp(time);
         }
-        boost::array<unsigned char,8> servicesBytes{};
-        for (int i = 0; i < 8; i++)
-            in >> servicesBytes[i];
-        uint64_t services = (servicesBytes[7] << 56 |servicesBytes[6] << 48 |servicesBytes[5] << 40 |servicesBytes[4] << 32 | servicesBytes[3] << 24 | servicesBytes[2] << 16 | servicesBytes[1] << 8 | servicesBytes[0]);
+
+        data::uint64_little services;
+        Messages::decode(in,services);
         d.setServices(services);
         boost::array<unsigned char,16> ip{};
         for(int i=0;i<16;i++) {
             in >> ip[i];
         }
         d.setIP(ip);
-        //data::uint16_big port;
-
-        //in >> port;
-        boost::array<unsigned char,2> portBytes{};
-        for (int i = 0; i < 2; i++)
-            in >> portBytes[i];
-        uint16_t port = ( portBytes[0] << 8 | portBytes[1   ]);
+        data::uint16_big port{};
+        Messages::decode(in,port);
         d.setPort(port);
         return in;
     }
 
     std::ostream &operator<<(std::ostream &out, Address &d) {
         if(!d.isInitial()) {
-            unsigned char* initial;
-            int32_t initial_num=d.getTimestamp();
-            initial=(unsigned char*)&initial_num;
-            for(int i=0;i<4;i++){
-                unsigned char tmp = initial[i];
-                out << tmp;
-            }
+
+            data::int32_little timestamp=d.getTimestamp();
+            Messages::encode(out,timestamp);
         }
-        unsigned char* services;
-        uint64_t services_num=d.getServices();
-        services = (unsigned char*)&services_num;
-        for(int i=0;i<8;i++){
-            unsigned char tmp = services[i];
-            out << tmp;
-        }
+        data::uint64_little services_num=d.getServices();
+        Messages::encode(out,services_num);
+
         auto ips=d.getIP();
         for(auto ipByte : ips)
             out << ipByte;
-
-        unsigned char* port;
-        int16_t port_num=d.getPort();
-        port=(unsigned char*)&port_num;
-        out << port[1];
-        out << port[0];
-        //out << d.getPort();
+        data::uint16_big port_num=d.getPort();
+        Messages::encode(out,port_num);
         return out;
     }
 
@@ -101,27 +81,27 @@ namespace Gigamonkey::Bitcoin::P2P
         std::copy(ip.begin(),  ip.end(),_ip.begin());
     }
 
-    uint64_t Address::getServices() const {
+    data::uint64_little Address::getServices() const {
         return _services;
     }
 
-    void Address::setServices(uint64_t services) {
+    void Address::setServices(data::uint64_little services) {
         _services = services;
     }
 
-    int32_t Address::getTimestamp() const {
+    data::int32_little Address::getTimestamp() const {
         return _timestamp;
     }
 
-    void Address::setTimestamp(int32_t timestamp) {
+    void Address::setTimestamp(data::int32_little timestamp) {
         _timestamp = timestamp;
     }
 
-    uint16_t Address::getPort() const {
+    data::uint16_big Address::getPort() const {
         return _port;
     }
 
-    void Address::setPort(uint16_t port) {
+    void Address::setPort(data::uint16_big port) {
         _port = port;
     }
 

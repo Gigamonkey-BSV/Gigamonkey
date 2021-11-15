@@ -7,6 +7,9 @@
 
 #include <boost/array.hpp>
 #include <iostream>
+#include "data/encoding/endian/arithmetic.hpp"
+#include "gigamonkey/types.hpp"
+#include "gigamonkey/p2p/networks.hpp"
 
 namespace Gigamonkey::Bitcoin::P2P::Messages
 {
@@ -16,6 +19,8 @@ namespace Gigamonkey::Bitcoin::P2P::Messages
      */
     class MessageHeader {
     public:
+
+        MessageHeader(Networks network);
 
         /**
          * Gets the Magic bytes this header used
@@ -45,25 +50,25 @@ namespace Gigamonkey::Bitcoin::P2P::Messages
          * Gets the size of the payload of the message
          * @return Size of the payload of the message in bytes
          */
-        [[nodiscard]] uint32_t getPayloadSize() const;
+        [[nodiscard]] data::uint32_little getPayloadSize() const;
 
         /**
          * Sets the size of the payload of the message
          * @param payloadSize Size of the payload of the message in bytes
          */
-        void setPayloadSize(uint32_t payloadSize);
+        void setPayloadSize(data::uint32_little payloadSize);
 
         /**
          * Gets the Checksum of the message payload
          * @return 4 bytes containing the checksum of the message payload
          */
-        [[nodiscard]] const boost::array<unsigned char, 4> &getChecksum() const;
+        [[nodiscard]] const Gigamonkey::checksum &getChecksum() const;
 
         /**
          * Sets the Checksum of the message payload
          * @param checksum 4 byte array containing the checksum of the message payload
          */
-        void setChecksum(const boost::array<unsigned char, 4> &checksum);
+        void setChecksum(const Gigamonkey::checksum &checksum);
 
         /**
          * Input Stream Operator to decode a Message Header from stream
@@ -80,7 +85,7 @@ namespace Gigamonkey::Bitcoin::P2P::Messages
          * @param d Message Header
          * @return Output Stream
          */
-        friend std::ostream& operator<< (std::ostream& out, MessageHeader& d);
+        friend std::ostream& operator<< (std::ostream& out, const MessageHeader& d);
 
         /**
          * Converts a Message Header to a human friendly string
@@ -91,8 +96,9 @@ namespace Gigamonkey::Bitcoin::P2P::Messages
     private:
         boost::array<unsigned char, 4> _magicBytes;
         char _commandName[12];
-        uint32_t _payloadSize;
-        boost::array<unsigned char,4> _checksum;
+        data::uint32_little _payloadSize;
+        Gigamonkey::checksum _checksum;
+        Networks _network;
     };
 }
 #endif //GIGAMONKEY_MESSAGEHEADER_HPP
