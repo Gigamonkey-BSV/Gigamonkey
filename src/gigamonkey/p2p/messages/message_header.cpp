@@ -4,6 +4,7 @@
 
 #include <gigamonkey/p2p/messages/message_header.hpp>
 #include <sstream>
+#include "gigamonkey/p2p/messages/utils.hpp"
 
 namespace Gigamonkey::Bitcoin::P2P::Messages
 {
@@ -20,36 +21,45 @@ namespace Gigamonkey::Bitcoin::P2P::Messages
         return std::string(_commandName);
     }
 
-    uint32_t MessageHeader::getPayloadSize() const {
+    data::uint32_little MessageHeader::getPayloadSize() const {
         return _payloadSize;
     }
 
-    void MessageHeader::setPayloadSize(uint32_t payloadSize) {
+    void MessageHeader::setPayloadSize(data::uint32_little payloadSize) {
         _payloadSize = payloadSize;
     }
 
-    const boost::array<unsigned char, 4> &MessageHeader::getChecksum() const {
+    const Gigamonkey::checksum &MessageHeader::getChecksum() const {
         return _checksum;
     }
 
-    void MessageHeader::setChecksum(const boost::array<unsigned char, 4> &checksum) {
+    void MessageHeader::setChecksum(const Gigamonkey::checksum &checksum) {
         _checksum = checksum;
     }
 
     std::istream &operator>>(std::istream &in,MessageHeader &d) {
-        boost::array<unsigned char,4> magic{};
-        for(int i=0;i<4;i++)
-            in >> magic[i];
+        bool valid=true;
+        int cur=0;
+        boost::array<unsigned char,4> magic= getMagicNum(d._network);
+        do {
+            unsigned char tmp;
+            in >> tmp;
+            if(tmp!=magic[cur]) {
+                cur=0;
+                valid=false;
+            }
+            else {
+                cur++;
+                valid=true;
+            }
+        } while(!valid);
         char commandName[12];
         for(auto & i : commandName)
             in >> i;
-        boost::array<unsigned char,4> pay{};
-        for(int i=0;i<4;i++)
-            in >> pay[i];
-        uint32_t payloadSize = (pay[3] << 24 | pay[2] << 16 | pay[1] << 8 | pay[0]);
-        boost::array<unsigned char,4> check{};
-        for(int i=0;i<4;i++)
-            in >> check[i];
+        data::uint32_little payloadSize{};
+        decode(in,payloadSize);
+        Gigamonkey::checksum check{};
+        decode(in,check);
         d.setMagicBytes(magic);
         d.setCommandName(std::string(commandName));
         d.setPayloadSize(payloadSize);
@@ -57,7 +67,7 @@ namespace Gigamonkey::Bitcoin::P2P::Messages
         return in;
     }
 
-    std::ostream& operator<< (std::ostream& out, MessageHeader& d) {
+    std::ostream& operator<< (std::ostream& out, const MessageHeader& d) {
         for(int i=0;i<4;i++)
             out << static_cast<unsigned char>(d.getMagicBytes()[i]);
         std::string commandName=d.getCommandName();
@@ -67,15 +77,10 @@ namespace Gigamonkey::Bitcoin::P2P::Messages
             else [[unlikely]]
                 out << static_cast<unsigned char>(0);
         unsigned char* size;
-        uint32_t payload_size=d.getPayloadSize();
-        size=(unsigned char*)&payload_size;
-        for(int i=0;i<4;i++){
-            unsigned char tmp = size[i];
-
-            out << tmp;
-        }
-        for(int i=0;i<4;i++)
-            out << static_cast<unsigned char>(d.getChecksum()[i]);
+        data::uint32_little payload_size=d.getPayloadSize();
+        encode(out,payload_size);
+        Gigamonkey::checksum check=d.getChecksum();
+        encode(out,check);
         return out;
     }
 
@@ -101,4 +106,6 @@ namespace Gigamonkey::Bitcoin::P2P::Messages
             str << std::hex << (unsigned int) i << ", ";
         return str.str();
     }
+
+    MessageHeader::MessageHeader(Networks network) : _network(network) {}
 }

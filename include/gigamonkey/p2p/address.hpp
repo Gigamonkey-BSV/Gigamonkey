@@ -54,13 +54,13 @@ namespace Gigamonkey::Bitcoin::P2P
          * gets Port the address is set to use
          * @return port the address uses
          */
-        [[nodiscard]] uint16_t getPort() const;
+        [[nodiscard]] data::uint16_big getPort() const;
 
         /**
          * Sets the port the address is to use
          * @param port port the address uses
          */
-        void setPort(uint16_t port);
+        void setPort(data::uint16_big port);
 
         /**
          * Is this address in the initial message?
@@ -78,25 +78,25 @@ namespace Gigamonkey::Bitcoin::P2P
          * Gets the services field for this address
          * @return uint64 containing a bitmasked selection of the services
          */
-        [[nodiscard]] uint64_t getServices() const;
+        [[nodiscard]] data::uint64_little getServices() const;
 
         /**
          * Sets the services field for this address
          * @param services uint64 containing a bitmasked selection of the services
          */
-        void setServices(uint64_t services);
+        void setServices(data::uint64_little services);
 
         /**
          * Current timestamp for the address
          * @return timestamp in unix time format
          */
-        [[nodiscard]] int32_t getTimestamp() const;
+        [[nodiscard]] data::int32_little getTimestamp() const;
 
         /**
          * Current timestamp for the address
          * @param timestamp timestamp in unix time format
          */
-        void setTimestamp(int32_t timestamp);
+        void setTimestamp(data::int32_little timestamp);
 
         /**
          * Input Stream Operator to decode an Address from stream
@@ -122,10 +122,10 @@ namespace Gigamonkey::Bitcoin::P2P
         explicit operator std::string() const;
 
     private:
-        uint64_t _services{};
-        int32_t _timestamp{};
+        data::uint64_little _services{};
+        data::int32_little _timestamp{};
         boost::array<unsigned char,16> _ip{};
-        uint16_t _port{};
+        data::uint16_big _port{};
         bool _initial;
 
     };
