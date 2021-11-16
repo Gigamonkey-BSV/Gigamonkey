@@ -132,7 +132,7 @@ namespace Gigamonkey::Bitcoin {
         
         EXPECT_EQ(tx->size(), 7676);
         
-        EXPECT_EQ(hash256(*tx), digest256{"0x0473718d87e0bd19437d19da0454873c074d5c9698d9e6e41b0c5cae2dcbe202"});
+        EXPECT_EQ(Hash256(*tx), digest256{"0x0473718d87e0bd19437d19da0454873c074d5c9698d9e6e41b0c5cae2dcbe202"});
         
         transaction t = transaction{*tx};
         

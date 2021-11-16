@@ -123,10 +123,10 @@ add_library(gigamonkey STATIC
     src/sv/config.cpp
     src/sv/script/interpreter.cpp
     
-    src/bitcoin_sv/hash.cpp
-    
-    src/gigamonkey/secp256k1.cpp
+    src/gigamonkey/p2p/var_int.cpp
+    src/gigamonkey/p2p/checksum.cpp
     src/gigamonkey/number.cpp
+    src/gigamonkey/secp256k1.cpp
     src/gigamonkey/timestamp.cpp
     src/gigamonkey/incomplete.cpp
     src/gigamonkey/sighash.cpp

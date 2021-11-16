@@ -236,10 +236,10 @@ namespace Gigamonkey::Boost {
 
     TEST(BoostTest, TestBoost) {
         
-        const digest256 ContentsA = sha256(std::string{} + 
+        const digest256 ContentsA = SHA2_256(std::string{} + 
             "Capitalists will always be able to expend more energy that socialists.");
         
-        const digest256 ContentsB = sha256(std::string{} + 
+        const digest256 ContentsB = SHA2_256(std::string{} + 
             "It's very difficult to censor a message that has lots of proof-of-work because everyone wants to see it."); 
         
         EXPECT_NE(ContentsA, ContentsB) << "ContentA and ContentB are equal. Contents must be different for negative tests.";
@@ -260,7 +260,7 @@ namespace Gigamonkey::Boost {
         
         const uint64 InitialKey{13034};
         
-        const digest160 Tag = Bitcoin::hash160(std::string{"kangaroos"});
+        const digest160 Tag = Bitcoin::Hash160(std::string{"kangaroos"});
         
         const bytes AdditionalData = bytes::from_string("contextual information aka metadata");
         

@@ -173,9 +173,6 @@ namespace Gigamonkey::Bitcoin {
         bool operator==(op o) const;
         bool operator!=(op o) const;
         
-        template <typename writer>
-        static writer &write(writer &w, const instruction&);
-        
         static instruction op_code(op o);
         static instruction read(bytes_view b);
         static instruction push(bytes_view d);
@@ -233,25 +230,10 @@ namespace Gigamonkey::Bitcoin {
     
     inline instruction::instruction(op p) : Op{p}, Data{} {}
     
-    template <typename writer>
-    writer &instruction::write(writer &w, const instruction& i) {
-        if (is_push_data(i.Op)) {
-            if (i.Op <= OP_PUSHSIZE75) w << static_cast<byte>(i.Op);
-            else if (i.Op == OP_PUSHDATA1) w << static_cast<byte>(OP_PUSHDATA1) << static_cast<byte>(i.Data.size()); 
-            else if (i.Op == OP_PUSHDATA2) w << static_cast<byte>(OP_PUSHDATA2) << static_cast<uint16_little>(i.Data.size()); 
-            else w << static_cast<byte>(OP_PUSHDATA2) << static_cast<uint32_little>(i.Data.size());
-            return w << i.Data;
-        }
-        
-        return w << static_cast<byte>(i.Op);
-    }
+    writer &operator<<(writer &w, const instruction& i);
     
     instruction inline instruction::op_code(op o) {
         return instruction{o};
-    }
-
-    writer inline &operator<<(writer &w, const instruction i) {
-        return i.write(w, i);
     }
     
     instruction inline push_data(bytes_view b) {

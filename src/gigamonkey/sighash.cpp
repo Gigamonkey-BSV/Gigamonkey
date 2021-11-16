@@ -37,21 +37,71 @@ namespace Gigamonkey::Bitcoin::sighash {
     namespace Amaury {
         
         uint256 hash_prevouts(const incomplete::transaction &tx) {
-            lazy_hash_writer<32> w(hash256);
-            for (const incomplete::input &in : tx.Inputs) outpoint::write(w, in.Reference);
+            Hash256_writer w;
+            for (const incomplete::input &in : tx.Inputs) w << in.Reference;
             return w.finalize();
         }
         
         uint256 hash_sequence(const incomplete::transaction &tx) {
-            lazy_hash_writer<32> w(hash256);
+            Hash256_writer w;
             for (const incomplete::input &in : tx.Inputs) w << in.Sequence;
             return w.finalize();
         }
         
         uint256 hash_outputs(const incomplete::transaction &tx) {
-            lazy_hash_writer<32> w(hash256);
-            for (const output &out : tx.Outputs) output::write(w, out);
+            Hash256_writer w;
+            for (const output &out : tx.Outputs) w << out;
             return w.finalize();
+        }
+        
+        // can use cached data, but we didn't. 
+        writer &write(writer &w, const document &doc, sighash::directive d) {
+            
+            if (!sighash::has_fork_id(d)) return write_original(w, doc, d & ~sighash::fork_id);
+            
+            uint256 hashPrevouts;
+            uint256 hashSequence;
+            uint256 hashOutputs;
+            
+            if (!sighash::is_anyone_can_pay(d)) {
+                hashPrevouts = Amaury::hash_prevouts(doc.Transaction);
+            }
+            
+            if (!sighash::is_anyone_can_pay(d) &&
+                (sighash::base(d) != sighash::single) &&
+                (sighash::base(d) != sighash::none)) {
+                hashSequence = Amaury::hash_sequence(doc.Transaction);
+            }
+            
+            if ((sighash::base(d) != sighash::single) &&
+                (sighash::base(d) != sighash::none)) {
+                hashOutputs = Amaury::hash_outputs(doc.Transaction);
+            } else if ((sighash::base(d) == sighash::single) && (doc.InputIndex < doc.Transaction.Inputs.size())) {
+                hashOutputs = Hash256(bytes(doc.Transaction.Outputs[doc.InputIndex]));
+            }
+            
+            // Version
+            return write_bytes(w << doc.Transaction.Version
+            
+                // Input prevouts/nSequence (none/all, depending on flags)
+                << hashPrevouts
+                << hashSequence
+                
+                // The input being signed (replacing the scriptSig with scriptCode +
+                // amount). The prevout may already be contained in hashPrevout, and the
+                // nSequence may already be contain in hashSequence.
+                << doc.Transaction.Inputs[doc.InputIndex].Reference, 
+                doc.ScriptCode)
+                << doc.RedeemedValue
+                << doc.Transaction.Inputs[doc.InputIndex].Sequence
+            
+                // Outputs (none/one/all, depending on flags)
+                << hashOutputs
+                // Locktime
+                << doc.Transaction.Locktime
+                // Sighash type
+                << uint32_little{d};
+            
         }
         
     }

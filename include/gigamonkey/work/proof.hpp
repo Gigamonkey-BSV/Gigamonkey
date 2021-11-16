@@ -288,7 +288,7 @@ namespace Gigamonkey::work {
     }
     
     digest256 inline proof::merkle_root() const {
-        return Puzzle.Candidate.Path.derive_root(Bitcoin::hash256(meta()));
+        return Puzzle.Candidate.Path.derive_root(Bitcoin::Hash256(meta()));
     }
     
     string inline proof::string() const {

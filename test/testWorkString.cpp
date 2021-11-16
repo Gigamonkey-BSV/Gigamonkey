@@ -27,7 +27,7 @@ namespace Gigamonkey::Bitcoin {
         
         ASSERT_NE(genesis_header_hex, nullptr);
         
-        digest256 genesis_hash = hash256(*genesis_header_hex);
+        digest256 genesis_hash = Hash256(*genesis_header_hex);
         
         EXPECT_EQ(genesis_hash, digest256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
         
@@ -37,9 +37,9 @@ namespace Gigamonkey::Bitcoin {
         
         EXPECT_EQ(work_string, work::string(header));
         
-        uint<80> work_string_written = work_string.write();
+        byte_array<80> work_string_written = work_string.write();
         
-        uint<80> header_written = header.write();
+        byte_array<80> header_written = header.write();
         
         EXPECT_EQ(work_string_written, header_written);
         

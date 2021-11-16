@@ -49,7 +49,7 @@ namespace Gigamonkey::work {
         
         // puzzle format from before ASICBoost was developed. 
         auto puzzles = outer<puzzle>([category](std::string m, compact t) -> puzzle {
-            digest256 message_hash = sha256(m);
+            digest256 message_hash = SHA2_256(m);
             return puzzle(category, message_hash, t, 
                 Merkle::path{}, bytes{}, bytes::from_string(m));
         }, messages, targets);
@@ -59,7 +59,7 @@ namespace Gigamonkey::work {
         
         // puzzle format from after ASICBoost. 
         auto puzzles_with_mask = outer<puzzle>([category, mask](std::string m, compact t) -> puzzle {
-            digest256 message_hash = sha256(m);
+            digest256 message_hash = SHA2_256(m);
             return puzzle(category, message_hash, t, 
                 Merkle::path{}, bytes{}, bytes::from_string(m), mask);
         }, messages, targets);

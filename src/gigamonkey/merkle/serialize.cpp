@@ -159,13 +159,13 @@ namespace Gigamonkey::BitcoinAssociation {
         return x;
     }
     
-    bytes_reader read_transaction(bytes_reader r, bytes& b) {
+    reader &read_transaction(reader &r, bytes& b) {
         uint64 size = Bitcoin::read_var_int(r);
         b.resize(size);
         return r >> b;
     }
     
-    bytes_reader read_node(bytes_reader r, optional<digest256>& node) {
+    reader &read_node(reader &r, optional<digest256>& node) {
         byte type;
         r = r >> type;
         if (type == 1) {
@@ -177,7 +177,7 @@ namespace Gigamonkey::BitcoinAssociation {
         return r;
     }
     
-    bytes_reader read_path(bytes_reader r, digest256 leaf, Merkle::path& p) {
+    reader &read_path(reader &r, digest256 leaf, Merkle::path& p) {
         uint64 size = Bitcoin::read_var_int(r);
         Merkle::digests d;
         Merkle::leaf l{leaf, p.Index};
@@ -203,29 +203,29 @@ namespace Gigamonkey::BitcoinAssociation {
             
             if (x.transaction_included(flags)) {
                 bytes tx;
-                r = read_transaction(r, tx);
+                read_transaction(r, tx);
             } else {
                 Bitcoin::txid t;
-                r = r >> t;
+                r >> t;
                 x.Txid = t;
             }
             
             switch (target_type(flags)) {
                 case target_type_block_hash: {
                     digest256 block_hash; 
-                    r = r >> block_hash;
+                    r >> block_hash;
                     x.BlockHash = block_hash;
                     break;
                 }
                 case target_type_block_header: {
                     bytes header(80);
-                    r = r >> header;
+                    r >> header;
                     x.BlockHeader = Bitcoin::header{slice<80>(header.data())};
                     break;
                 }
                 case target_type_Merkle_root: {
                     digest256 root; 
-                    r = r >> root;
+                    r >> root;
                     x.MerkleRoot = root;
                     break;
                 }
@@ -240,15 +240,15 @@ namespace Gigamonkey::BitcoinAssociation {
         return {};
     }
     
-    bytes_writer write_duplicate(bytes_writer w) {
+    writer &write_duplicate(writer &w) {
         return w << byte(1);
     }
     
-    bytes_writer write_node(bytes_writer w, const digest256& d) {
+    writer &write_node(writer &w, const digest256& d) {
         return w << byte(0) << d;
     }
     
-    bytes_writer write_path(bytes_writer w, list<optional<digest256>> b) {
+    writer &write_path(writer &w, list<optional<digest256>> b) {
         w = Bitcoin::write_var_int(w, b.size());
         for (const optional<digest256> &z : b) {
             if (bool(z)) w = write_node(w, *z);
@@ -258,11 +258,11 @@ namespace Gigamonkey::BitcoinAssociation {
         return w;
     }
     
-    bytes_writer write_txid(bytes_writer w, const Bitcoin::txid& t) {
+    writer &write_txid(writer &w, const Bitcoin::txid& t) {
         return w << t;
     }
     
-    bytes_writer write_transaction(bytes_writer w, const bytes& t) {
+    writer &write_transaction(writer &w, const bytes& t) {
         return Bitcoin::write_var_int(w, t.size()) << t;
     }
     
@@ -286,17 +286,18 @@ namespace Gigamonkey::BitcoinAssociation {
         bytes b(size);
         
         // write flags and index. 
-        bytes_writer w = Bitcoin::write_var_int(bytes_writer{b.begin(), b.end()} << flags(), index());
+        bytes_writer w{b.begin(), b.end()}; 
+        Bitcoin::write_var_int(w << flags(), index());
         
-        if (tx_included) w = write_transaction(w, *Transaction);
-        else w = write_txid(w, *Txid);
+        if (tx_included) write_transaction(w, *Transaction);
+        else write_txid(w, *Txid);
         
-        if (tt == target_type_block_hash) w = write_txid(w, *BlockHash);
-        else if (tt == target_type_Merkle_root) w = write_txid(w, *MerkleRoot);
-        else if (target_type_block_header) w = w << BlockHeader->write();
+        if (tt == target_type_block_hash) write_txid(w, *BlockHash);
+        else if (tt == target_type_Merkle_root) write_txid(w, *MerkleRoot);
+        else if (target_type_block_header) w << BlockHeader->write();
         else return {};
         
-        w = write_path(w, path);
+        write_path(w, path);
         return b;
     }
     

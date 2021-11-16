@@ -4,240 +4,9 @@
 #ifndef GIGAMONKEY_HASH
 #define GIGAMONKEY_HASH
 
-#include "types.hpp"
-#include <data/data.hpp>
-#include <data/encoding/integer.hpp>
-#include <data/encoding/endian/words.hpp>
-#include <data/math/number/bytes/N.hpp>
-
-#include <sv/arith_uint256.h>
-
-template <unsigned int BITS>
-base_uint<BITS> &base_uint<BITS>::operator<<=(unsigned int shift) {
-    base_uint<BITS> a(*this);
-    for (int i = 0; i < WIDTH; i++)
-        pn[i] = 0;
-    int k = shift / 32;
-    shift = shift % 32;
-    for (int i = 0; i < WIDTH; i++) {
-        if (i + k + 1 < WIDTH && shift != 0)
-            pn[i + k + 1] |= (a.pn[i] >> (32 - shift));
-        if (i + k < WIDTH) pn[i + k] |= (a.pn[i] << shift);
-    }
-    return *this;
-}
-
-template <unsigned int BITS>
-base_uint<BITS> &base_uint<BITS>::operator>>=(unsigned int shift) {
-    base_uint<BITS> a(*this);
-    for (int i = 0; i < WIDTH; i++)
-        pn[i] = 0;
-    int k = shift / 32;
-    shift = shift % 32;
-    for (int i = 0; i < WIDTH; i++) {
-        if (i - k - 1 >= 0 && shift != 0)
-            pn[i - k - 1] |= (a.pn[i] << (32 - shift));
-        if (i - k >= 0) pn[i - k] |= (a.pn[i] >> shift);
-    }
-    return *this;
-}
-
-template <unsigned int BITS>
-base_uint<BITS> &base_uint<BITS>::operator*=(uint32_t b32) {
-    uint64_t carry = 0;
-    for (int i = 0; i < WIDTH; i++) {
-        uint64_t n = carry + (uint64_t)b32 * pn[i];
-        pn[i] = n & 0xffffffff;
-        carry = n >> 32;
-    }
-    return *this;
-}
-
-template <unsigned int BITS>
-base_uint<BITS> &base_uint<BITS>::operator*=(const base_uint &b) {
-    base_uint<BITS> a = *this;
-    *this = 0;
-    for (int j = 0; j < WIDTH; j++) {
-        uint64_t carry = 0;
-        for (int i = 0; i + j < WIDTH; i++) {
-            uint64_t n = carry + pn[i + j] + (uint64_t)a.pn[j] * b.pn[i];
-            pn[i + j] = n & 0xffffffff;
-            carry = n >> 32;
-        }
-    }
-    return *this;
-}
-
-template <unsigned int BITS>
-base_uint<BITS> &base_uint<BITS>::operator/=(const base_uint &b) {
-    // make a copy, so we can shift.
-    base_uint<BITS> div = b;
-    // make a copy, so we can subtract.
-    base_uint<BITS> num = *this;
-    // the quotient.
-    *this = 0;
-    int num_bits = num.bits();
-    int div_bits = div.bits();
-    if (div_bits == 0) throw uint_error("Division by zero");
-    // the result is certainly 0.
-    if (div_bits > num_bits) return *this;
-    int shift = num_bits - div_bits;
-    // shift so that div and num align.
-    div <<= shift;
-    while (shift >= 0) {
-        if (num >= div) {
-            num -= div;
-            // set a bit of the result.
-            pn[shift / 32] |= (1 << (shift & 31));
-        }
-        // shift back.
-        div >>= 1;
-        shift--;
-    }
-    // num now contains the remainder of the division.
-    return *this;
-}
-
-template <unsigned int BITS>
-int base_uint<BITS>::CompareTo(const base_uint<BITS> &b) const {
-    for (int i = WIDTH - 1; i >= 0; i--) {
-        if (pn[i] < b.pn[i]) return -1;
-        if (pn[i] > b.pn[i]) return 1;
-    }
-    return 0;
-}
-
-template <unsigned int BITS> bool base_uint<BITS>::EqualTo(uint64_t b) const {
-    for (int i = WIDTH - 1; i >= 2; i--) {
-        if (pn[i]) return false;
-    }
-    if (pn[1] != (b >> 32)) return false;
-    if (pn[0] != (b & 0xfffffffful)) return false;
-    return true;
-}
-
-template <unsigned int BITS> double base_uint<BITS>::getdouble() const {
-    double ret = 0.0;
-    double fact = 1.0;
-    for (int i = 0; i < WIDTH; i++) {
-        ret += fact * pn[i];
-        fact *= 4294967296.0;
-    }
-    return ret;
-}
-
-template <unsigned int BITS> unsigned int base_uint<BITS>::bits() const {
-    for (int pos = WIDTH - 1; pos >= 0; pos--) {
-        if (pn[pos]) {
-            for (int bits = 31; bits > 0; bits--) {
-                if (pn[pos] & 1 << bits) return 32 * pos + bits + 1;
-            }
-            return 32 * pos + 1;
-        }
-    }
-    return 0;
-}
-
-// Explicit instantiations for base_uint<256>
-template base_uint<256> &base_uint<256>::operator<<=(unsigned int);
-template base_uint<256> &base_uint<256>::operator>>=(unsigned int);
-template base_uint<256> &base_uint<256>::operator*=(uint32_t b32);
-template base_uint<256> &base_uint<256>::operator*=(const base_uint<256> &b);
-template base_uint<256> &base_uint<256>::operator/=(const base_uint<256> &b);
-template int base_uint<256>::CompareTo(const base_uint<256> &) const;
-template bool base_uint<256>::EqualTo(uint64_t) const;
-template double base_uint<256>::getdouble() const;
-template unsigned int base_uint<256>::bits() const;
+#include "number.hpp"
 
 namespace Gigamonkey {
-    
-    // a representation of uints of any size. 
-    template <size_t size, unsigned int bits = 8 * size> struct uint : public base_uint<bits> {
-        uint(base_uint<bits> &&b) : base_uint<bits>{b} {}
-        uint(const base_uint<bits> &b) : base_uint<bits>{b} {}
-        uint(uint64 u) : base_uint<bits>(u) {}
-        uint() : uint(0) {}
-        
-        uint(const slice<size>);
-        
-        // valid inputs are a hexidecimal number, which will be written 
-        // to the digest in little endian (in other words, reversed
-        // from the way it is written) or a hex string, which will be
-        // written to the digest as given, without reversing. 
-        explicit uint(string_view hex);
-        
-        explicit uint(const N& n);
-        
-        explicit uint(const ::uint256&);
-        explicit uint(const arith_uint256&);
-        
-        explicit operator N() const;
-        explicit operator double() const;
-        
-        operator bytes_view() const;
-        operator slice<size>();
-        operator const slice<size>() const;
-        
-        uint& operator=(uint64_t b);
-        uint& operator=(const base_uint<bits>& b);
-        
-        uint operator~();
-        uint operator^(const uint &);
-        uint operator|(const uint &);
-        uint operator&(const uint &);
-        
-        uint operator+(const uint &);
-        uint operator-(const uint &);
-        uint operator*(const uint &);
-        uint operator/(const uint &);
-        uint operator%(const uint &);
-        
-        uint& operator^=(const uint &);
-        uint& operator&=(const uint &);
-        uint& operator|=(const uint &);
-        
-        uint operator<<(unsigned int shift);
-        uint operator>>(unsigned int shift);
-        
-        uint& operator<<=(unsigned int shift);
-        uint& operator>>=(unsigned int shift);
-        
-        uint& operator+=(const uint &);
-        uint& operator-=(const uint &);
-        uint& operator*=(const uint &);
-        uint& operator/=(const uint &);
-        
-        uint& operator++();
-        const uint operator++(int);
-        
-        uint& operator--();
-        const uint operator--(int);
-        
-        byte* begin();
-        byte* end();
-        
-        const byte* begin() const;
-        const byte* end() const;
-        
-        byte* data();
-        const byte* data() const;
-        
-        explicit operator string() const;
-        
-        arithmetic::digits<endian::little> digits() const {
-            return {data::slice<byte>(const_cast<byte*>(data()), size)};
-        }
-        
-        arithmetic::digits<endian::big> reverse_digits() const {
-            return {data::slice<byte>(const_cast<byte*>(data()), size)};
-        }
-        
-    };
-    
-    // sizes of standard hash functions. 
-    using uint160 = uint<20>;
-    using uint256 = uint<32>;
-    using uint512 = uint<64>;
 
     // a hash digest. 
     template <size_t size> struct digest : nonzero<uint<size>> {
@@ -250,7 +19,7 @@ namespace Gigamonkey {
         
         operator bytes_view() const;
         
-        explicit operator N() const;
+        explicit operator math::number::N() const;
         
         byte* begin();
         byte* end();
@@ -266,33 +35,90 @@ namespace Gigamonkey {
         bool operator<=(const digest& d) const;
         bool operator>=(const digest& d) const;
     };
-
+    
+    using digest128 = digest<16>;
     using digest160 = digest<20>;
+    using digest224 = digest<28>;
     using digest256 = digest<32>;
+    using digest320 = digest<40>;
+    using digest384 = digest<48>;
+    using digest448 = digest<56>;
     using digest512 = digest<64>;
+
+    template <size_t size> 
+    inline std::ostream& operator<<(std::ostream &o, const digest<size> &s) {
+        return o << "digest{" << s.Value << "}";
+    }
+
+    template <size_t size> 
+    inline writer &operator<<(writer &w, const digest<size> &s) {
+        return w << bytes_view(s.Value);
+    }
+
+    template <size_t size> 
+    inline reader &operator>>(reader &r, digest<size> &s) {
+        r.read(s.Value.data(), size);
+        return r;
+    }
     
-    // standard hash functions. 
-    digest160 ripemd160(bytes_view b);
-    digest256 sha256(bytes_view b);
+    // supported hash functions.
+    digest160 SHA1(bytes_view);
+    digest160 SHA1(string_view);
     
-    digest160 ripemd160(string_view b);
-    digest256 sha256(string_view b);
+    digest224 SHA2_224(bytes_view);
+    digest224 SHA2_224(string_view);
+    digest256 SHA2_256(bytes_view);
+    digest256 SHA2_256(string_view);
+    digest384 SHA2_384(bytes_view);
+    digest384 SHA2_384(string_view);
+    digest512 SHA2_512(bytes_view);
+    digest512 SHA2_512(string_view);
+    
+    template <size_t size> digest<size> SHA3(bytes_view);
+    template <size_t size> digest<size> SHA3(string_view);
+    
+    digest224 SHA3_224(bytes_view);
+    digest224 SHA3_224(string_view);
+    digest256 SHA3_256(bytes_view);
+    digest256 SHA3_256(string_view);
+    digest384 SHA3_384(bytes_view);
+    digest384 SHA3_384(string_view);
+    digest512 SHA3_512(bytes_view);
+    digest512 SHA3_512(string_view);
+    
+    digest128 RIPEMD_128(bytes_view);
+    digest128 RIPEMD_128(string_view);
+    digest160 RIPEMD_160(bytes_view);
+    digest160 RIPEMD_160(string_view);
+    digest256 RIPEMD_256(bytes_view);
+    digest256 RIPEMD_256(string_view);
+    digest320 RIPEMD_320(bytes_view);
+    digest320 RIPEMD_320(string_view);
+    
+    digest256 inline double_SHA2_256(bytes_view b) {
+        return SHA2_256(SHA2_256(b));
+    }
     
     namespace Bitcoin {
     
         // bitcoin hash functions. 
-        digest160 hash160(bytes_view b);
-        digest256 hash256(bytes_view b);
-    
-        digest160 hash160(string_view b);
-        digest256 hash256(string_view b);
-        
-        inline digest160 address_hash(bytes_view b) {
-            return hash160(b);
+        digest160 inline Hash160(bytes_view b) {
+            return RIPEMD_160(SHA2_256(b));
         }
         
-        inline digest256 signature_hash(bytes_view b) {
-            return hash256(b);
+        digest256 inline Hash256(bytes_view b) {
+            return double_SHA2_256(b);
+        }
+        
+        digest160 Hash160(string_view b);
+        digest256 Hash256(string_view b);
+        
+        digest160 inline address_hash(bytes_view b) {
+            return Hash160(b);
+        }
+        
+        digest256 inline signature_hash(bytes_view b) {
+            return Hash256(b);
         }
     
     }
@@ -301,312 +127,261 @@ namespace Gigamonkey {
     struct lazy_hash_writer : lazy_bytes_writer {
         digest<size> (*Hash)(bytes_view);
         lazy_hash_writer(digest<size> (*h)(bytes_view)) : Hash{h} {}
-        template <typename T>
-        lazy_hash_writer &operator<<(T x) {
-            lazy_bytes_writer::operator<<(x);
-            return *this;
-        }
         digest<size> finalize() const {
             return Hash(this->operator bytes());
         } 
     };
-
-    template <size_t size, unsigned int bits> 
-    inline uint<size, bits>::operator string() const {
-        bytes r(32);
-        std::copy(begin(), end(), r.rbegin());
-        return string{"0x"} + data::encoding::hex::write(r, data::encoding::hex::lower);
-    }
-
-    template <size_t size, unsigned int bits> 
-    inline std::ostream& operator<<(std::ostream& o, const uint<size, bits>& s) {
-        return o << string(s);
-    }
-
-    template <size_t size> 
-    inline std::ostream& operator<<(std::ostream& o, const digest<size>& s) {
-        return o << "digest{" << s.Value << "}";
-    }
-
-    template <size_t size, unsigned int bits> 
-    inline bytes_writer &operator<<(bytes_writer &w, const uint<size, bits>& s) {
-        return w << data::bytes_view(s);
-    }
-
-    template <size_t size, unsigned int bits>
-    inline bytes_reader &operator>>(bytes_reader &r, uint<size, bits>& s) {
-        data::bytes b(size);
-        r >> b;
-        std::copy(b.begin(), b.end(), s.begin());
-        return r;
-    }
-
-    template <size_t size> 
-    inline bytes_writer &operator<<(bytes_writer &w, const digest<size>& s) {
-        return w << s.Value;
-    }
-
-    template <size_t size> 
-    inline bytes_reader &operator>>(bytes_reader &r, digest<size>& s) {
-        return r >> s.Value;
+    
+    digest160 inline SHA1(string_view b) {
+        return SHA1(bytes_view{(const byte*)(b.data()), b.size()});
     }
     
+    digest224 inline SHA2_224(string_view b) {
+        return SHA2_224(bytes_view{(const byte*)(b.data()), b.size()});
+    }
+    
+    digest256 inline SHA2_256(string_view b) {
+        return SHA2_256(bytes_view{(const byte*)(b.data()), b.size()});
+    }
+    
+    digest384 inline SHA2_384(string_view b) {
+        return SHA2_384(bytes_view{(const byte*)(b.data()), b.size()});
+    }
+    
+    digest512 inline SHA2_512(string_view b) {
+        return SHA2_512(bytes_view{(const byte*)(b.data()), b.size()});
+    }
+    
+    digest224 inline SHA3_224(string_view b) {
+        return SHA3_224(bytes_view{(const byte*)(b.data()), b.size()});
+    }
+    
+    digest256 inline SHA3_256(string_view b) {
+        return SHA3_256(bytes_view{(const byte*)(b.data()), b.size()});
+    }
+    
+    digest384 inline SHA3_384(string_view b) {
+        return SHA3_384(bytes_view{(const byte*)(b.data()), b.size()});
+    }
+    
+    digest512 inline SHA3_512(string_view b) {
+        return SHA3_512(bytes_view{(const byte*)(b.data()), b.size()});
+    }
+    
+    digest128 inline RIPEMD_128(string_view b) {
+        return RIPEMD_128(bytes_view{(const byte*)(b.data()), b.size()});
+    }
+    
+    digest160 inline RIPEMD_160(string_view b) {
+        return RIPEMD_160(bytes_view{(const byte*)(b.data()), b.size()});
+    }
+    
+    digest256 inline RIPEMD_256(string_view b) {
+        return RIPEMD_256(bytes_view{(const byte*)(b.data()), b.size()});
+    }
+    
+    digest320 inline RIPEMD_320(string_view b) {
+        return RIPEMD_320(bytes_view{(const byte*)(b.data()), b.size()});
+    }
+    
+    namespace Bitcoin {
+        
+        digest160 inline Hash160(string_view b) {
+            return Hash160(bytes_view{(const byte*)(b.data()), b.size()});
+        }
+        
+        digest256 inline Hash256(string_view b) {
+            return Hash256(bytes_view{(const byte*)(b.data()), b.size()});
+        }
+    
+    }
 }
 
-namespace data::encoding::hexidecimal { 
-    
-    template <size_t size, unsigned int bits> 
-    inline std::string write(const Gigamonkey::uint<size, bits>& n) {
-        return write((math::number::gmp::N)(n));
+#include "cryptopp/cryptlib.h"
+#include "cryptopp/iterhash.h"
+
+namespace Gigamonkey {
+
+    namespace bitcoind {
+        template <class hash, size_t size = hash::OUTPUT_SIZE> 
+        struct hash_writer : writer {
+            
+            hash Hash;
+            
+            hash_writer() : Hash{} {}
+            
+            digest<size> finalize() {
+                digest<size> d;
+                Hash.Finalize(d.Value.data());
+                Hash.Reset();
+                return d;
+            }
+            
+            digest<size> operator()(bytes_view b) {
+                digest<size> d;
+                Hash.Write(b.data(), b.size()).Finalize(d.Value.data());
+                return d;
+            }
+        
+            void write(const byte* b, size_t x) override {
+                Hash.Write(b, x);
+            }
+            
+        };
+        
     }
     
-    template <size_t size, unsigned int bits> 
-    inline std::ostream& write(std::ostream& o, const Gigamonkey::uint<size, bits>& n) {
-        return o << write(n);
-    }
+    namespace CryptoPP {
+        using namespace ::CryptoPP;
     
+        template <class transform, size_t size> 
+        struct hash_writer : writer {
+            
+            transform Hash;
+            
+            hash_writer() : Hash{} {}
+            
+            digest<size> finalize() {
+                digest<size> d;
+                Hash.Final(d.Value.data());
+                Hash.Restart();
+                return d;
+            }
+            
+            digest<size> operator()(bytes_view b) {
+                digest<size> d;
+                Hash.CalculateDigest(d.Value.data(), b.data(), b.size());
+                return d;
+            }
+        
+            void write(const byte* b, size_t x) override {
+                Hash.Update(b, x);
+            }
+            
+        };
+    }
 }
 
-namespace data::encoding::integer {
+#include <sv/crypto/sha1.h>
+#include <sv/crypto/ripemd160.h>
+#include <sv/crypto/sha256.h>
+#include <sv/crypto/sha512.h>
+#include "cryptopp/ripemd.h"
+#include "cryptopp/sha.h"
+#include "cryptopp/sha3.h"
+
+namespace Gigamonkey {
     
-    template <size_t size, unsigned int bits> 
-    inline std::string write(const Gigamonkey::uint<size, bits>& n) {
-        return write((N)(n));
+    using SHA1_writer = bitcoind::hash_writer<CSHA1>;
+    
+    using RIPEMD_128_writer = CryptoPP::hash_writer<CryptoPP::RIPEMD128, 16>;
+    
+    using RIPEMD_160_writer = bitcoind::hash_writer<CRIPEMD160>;
+    
+    using RIPEMD_256_writer = CryptoPP::hash_writer<CryptoPP::RIPEMD256, 32>;
+    
+    using RIPEMD_320_writer = CryptoPP::hash_writer<CryptoPP::RIPEMD320, 40>;
+    
+    using SHA2_224_writer = CryptoPP::hash_writer<CryptoPP::SHA224, 28>;
+    
+    using SHA2_256_writer = bitcoind::hash_writer<CSHA256>;
+    
+    using SHA2_384_writer = CryptoPP::hash_writer<CryptoPP::SHA384, 48>;
+    
+    using SHA2_512_writer = CryptoPP::hash_writer<CryptoPP::SHA512, 64>;
+    
+    template <size_t size> using SHA3_writer = CryptoPP::hash_writer<CryptoPP::SHA3_Final<size>, size>;
+    
+    using SHA3_224_writer = SHA3_writer<28>;
+    
+    using SHA3_256_writer = SHA3_writer<32>;
+    
+    using SHA3_384_writer = SHA3_writer<48>;
+    
+    using SHA3_512_writer = SHA3_writer<64>;
+    
+    digest160 inline SHA1(bytes_view b) {
+        return SHA1_writer{}(b);
     }
     
-    template <size_t size, unsigned int bits> 
-    inline std::ostream& write(std::ostream& o, const Gigamonkey::uint<size, bits>& n) {
-        return o << write(n);
+    digest224 inline SHA2_224(bytes_view b) {
+        return SHA2_224_writer{}(b);
+    }
+    
+    digest256 inline SHA2_256(bytes_view b) {
+        return SHA2_256_writer{}(b);
+    }
+    
+    digest384 inline SHA2_384(bytes_view b) {
+        return SHA2_384_writer{}(b);
+    }
+    
+    digest512 inline SHA2_512(bytes_view b) {
+        return SHA2_512_writer{}(b);
+    }
+    
+    digest224 inline SHA3_224(bytes_view b) {
+        return SHA3_224_writer{}(b);
+    }
+    
+    digest256 inline SHA3_256(bytes_view b) {
+        return SHA3_256_writer{}(b);
+    }
+    
+    digest384 inline SHA3_384(bytes_view b) {
+        return SHA3_384_writer{}(b);
+    }
+    
+    digest512 inline SHA3_512(bytes_view b) {
+        return SHA3_512_writer{}(b);
+    }
+    
+    digest128 inline RIPEMD_128(bytes_view b) {
+        return RIPEMD_128_writer{}(b);
+    }
+    
+    digest160 inline RIPEMD_160(bytes_view b) {
+        return RIPEMD_160_writer{}(b);
+    }
+    
+    digest256 inline RIPEMD_256(bytes_view b) {
+        return RIPEMD_256_writer{}(b);
+    }
+    
+    digest320 inline RIPEMD_320(bytes_view b) {
+        return RIPEMD_320_writer{}(b);
+    }
+    
+    namespace Bitcoin {
+        
+        struct Hash160_writer : SHA2_256_writer {
+            
+            digest160 finalize() {
+                return RIPEMD_160(SHA2_256_writer::finalize());
+            }
+            
+            digest160 operator()(bytes_view b) {
+                return RIPEMD_160(SHA2_256_writer::operator()(b));
+            }
+            
+        };
+        
+        struct Hash256_writer : SHA2_256_writer {
+            
+            digest256 finalize() {
+                return SHA2_256(SHA2_256_writer::finalize());
+            }
+            
+            digest256 operator()(bytes_view b) {
+                return SHA2_256(SHA2_256_writer::operator()(b));
+            }
+            
+        };
     }
     
 }
 
 namespace Gigamonkey {
-
-    template <size_t size, unsigned int bits>
-    inline uint<size, bits>::uint(const slice<size> x) {
-        std::copy(x.begin(), x.end(), begin());
-    }
-    
-    template <size_t size, unsigned int bits>
-    uint<size, bits>::operator N() const {
-        N n(0);
-        int width = size / 4;
-        int i;
-        for (i = width - 1; i > 0; i--) {
-            uint32 step = boost::endian::load_little_u32(data() + 4 * i);
-            n += step;
-            n <<= 32;
-        }
-        n += uint64(boost::endian::load_little_u32(data()));
-        return n;
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline uint<size, bits>::uint(string_view hex) : uint(0) {
-        if (hex.size() != size * 2 + 2) return;
-        if (!data::encoding::hexidecimal::valid(hex)) return;
-        ptr<bytes> read = encoding::hex::read(hex.substr(2));
-        std::reverse_copy(read->begin(), read->end(), begin());
-    }
-    
-    template <size_t size, unsigned int bits>
-    uint<size, bits>::uint(const N& n) : uint(0) {
-        ptr<bytes> b = encoding::hex::read(encoding::hexidecimal::write(n).substr(2));
-        std::reverse(b->begin(), b->end());
-        if (b->size() > size) std::copy(b->begin(), b->begin() + size, begin());
-        else std::copy(b->begin(), b->end(), begin());
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline uint<size, bits>::operator bytes_view() const {
-        return bytes_view{data(), size};
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline uint<size, bits>::operator slice<size>() {
-        return slice<size>(data());
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline uint<size, bits>::operator const slice<size>() const {
-        return slice<size>(const_cast<byte*>(data()));
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline uint<size, bits>::operator double() const {
-        return double(operator N());
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline uint<size, bits>& uint<size, bits>::operator=(uint64_t b) {
-        base_uint<bits>::operator=(b);
-        return *this;
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline uint<size, bits>& uint<size, bits>::operator=(const base_uint<bits>& b) {
-        base_uint<bits>::operator=(b);
-        return *this;
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline uint<size, bits>& uint<size, bits>::operator^=(const uint& b) {
-        base_uint<bits>::operator^=(b);
-        return *this;
-    }
-
-    template <size_t size, unsigned int bits>
-    inline uint<size, bits>& uint<size, bits>::operator&=(const uint& b) {
-        base_uint<bits>::operator&=(b);
-        return *this;
-    }
-
-    template <size_t size, unsigned int bits>
-    inline uint<size, bits>& uint<size, bits>::operator|=(const uint& b) {
-        base_uint<bits>::operator|=(b);
-        return *this;
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline uint<size, bits>& uint<size, bits>::operator<<=(unsigned int shift) {
-        base_uint<bits>::operator<<=(shift);
-        return *this;
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline uint<size, bits>& uint<size, bits>::operator>>=(unsigned int shift) {
-        base_uint<bits>::operator>>=(shift);
-        return *this;
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline uint<size, bits> uint<size, bits>::operator<<(unsigned int shift) {
-        return uint<size, bits>(*this) <<= shift;
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline uint<size, bits> uint<size, bits>::operator>>(unsigned int shift) {
-        return uint<size, bits>(*this) >>= shift;
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline uint<size, bits>& uint<size, bits>::operator+=(const uint& b) {
-        base_uint<bits>::operator+=(b);
-        return *this;
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline uint<size, bits>& uint<size, bits>::operator-=(const uint& b) {
-        base_uint<bits>::operator-=(b);
-        return *this;
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline uint<size, bits>& uint<size, bits>::operator*=(const uint& b) {
-        base_uint<bits>::operator*=(b);
-        return *this;
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline uint<size, bits>& uint<size, bits>::operator/=(const uint& b) {
-        base_uint<bits>::operator/=(b);
-        return *this;
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline uint<size, bits>& uint<size, bits>::operator++() {
-        base_uint<bits>::operator++();
-        return *this;
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline const uint<size, bits> uint<size, bits>::operator++(int) {
-        // postfix operator
-        const uint ret = *this;
-        ++(*this);
-        return ret;
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline uint<size, bits>& uint<size, bits>::operator--() {
-        base_uint<bits>::operator--();
-        return *this;
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline const uint<size, bits> uint<size, bits>::operator--(int) {
-        // postfix operator
-        const uint ret = *this;
-        --(*this);
-        return ret;
-    }
-    
-    template <size_t size, unsigned int bits> uint<size, bits> inline uint<size, bits>::operator~() {
-        return ~base_uint<bits>(*this);
-    }
-    
-    template <size_t size, unsigned int bits> uint<size, bits> inline uint<size, bits>::operator^(const uint<size, bits> &b) {
-        return base_uint<bits>(*this) ^= b;
-    }
-    
-    template <size_t size, unsigned int bits> uint<size, bits> inline uint<size, bits>::operator&(const uint<size, bits> &b) {
-        return base_uint<bits>(*this) &= b;
-    }
-    
-    template <size_t size, unsigned int bits> uint<size, bits> inline uint<size, bits>::operator|(const uint<size, bits> &b) {
-        return base_uint<bits>(*this) |= b;
-    }
-    
-    template <size_t size, unsigned int bits> uint<size, bits> inline uint<size, bits>::operator+(const uint<size, bits> &b) {
-        return base_uint<bits>(*this) += b;
-    }
-    
-    template <size_t size, unsigned int bits> uint<size, bits> inline uint<size, bits>::operator-(const uint<size, bits> &b) {
-        return base_uint<bits>(*this) -= b;
-    }
-    
-    template <size_t size, unsigned int bits> uint<size, bits> inline uint<size, bits>::operator/(const uint<size, bits> &b) {
-        return base_uint<bits>(*this) /= b;
-    }
-    
-    template <size_t size, unsigned int bits> uint<size, bits> inline uint<size, bits>::operator%(const uint<size, bits> &b) {
-        return base_uint<bits>(*this) %= b;
-    }
-    
-    template <size_t size, unsigned int bits> inline uint<size, bits> uint<size, bits>::operator*(const uint &b) {
-        return base_uint<bits>(*this) *= b;
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline byte* uint<size, bits>::begin() {
-        return (byte*)base_uint<bits>::pn;
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline byte* uint<size, bits>::end() {
-        return begin() + size;
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline const byte* uint<size, bits>::begin() const {
-        return (byte*)this->pn;
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline const byte* uint<size, bits>::end() const {
-        return begin() + size;
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline byte* uint<size, bits>::data() {  
-        return begin();
-    }
-    
-    template <size_t size, unsigned int bits>
-    inline const byte* uint<size, bits>::data() const {
-        return begin();
-    }
     
     template <size_t size>
     digest<size>::digest(string_view s) {

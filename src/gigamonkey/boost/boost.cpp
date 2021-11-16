@@ -311,11 +311,11 @@ namespace Gigamonkey::Boost {
         if (t == Boost::invalid || !x.valid() || (!category_mask && x.Share.Bits)) return in;
         
         in = t == Boost::bounty ? 
-            input_script::bounty(signature, pubkey, x.Share.Nonce, x.Share.Timestamp, x.Share.ExtraNonce2, x.ExtraNonce1, hash160(pubkey)) : 
+            input_script::bounty(signature, pubkey, x.Share.Nonce, x.Share.Timestamp, x.Share.ExtraNonce2, x.ExtraNonce1, Bitcoin::Hash160(pubkey)) : 
             input_script::contract(signature, pubkey, x.Share.Nonce, x.Share.Timestamp, x.Share.ExtraNonce2, x.ExtraNonce1);
         
         if (category_mask) in.GeneralPurposeBits = x.Share.Bits ? *x.Share.Bits : int32_little{0};
-            
+        
         return in;
     }
     

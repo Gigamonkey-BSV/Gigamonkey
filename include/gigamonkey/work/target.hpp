@@ -116,14 +116,14 @@ namespace Gigamonkey::work {
         
     };
     
-    inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::difficulty& h) {
+    std::ostream inline &operator<<(std::ostream &o, const Gigamonkey::work::difficulty &h) {
         return o << h.Value << " difficulty ";
     }
 
-}
+    std::ostream inline &operator<<(std::ostream &o, const Gigamonkey::work::hashpower &h) {
+        return o << "(" << h.Value << " difficulty / second)";
+    }
 
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::hashpower& h) {
-    return o << "(" << h.Value << " difficulty / second)";
 }
 
 namespace Gigamonkey::Bitcoin {
@@ -276,7 +276,7 @@ namespace Gigamonkey::work {
     inline work::difficulty compact::difficulty() const {
         return work::difficulty{
             double(work::difficulty::unit()) / 
-            double(N(expand()))};
+            double(math::number::N(expand()))};
     };
     
     inline compact::operator work::difficulty() const {
@@ -289,7 +289,8 @@ namespace Gigamonkey::work {
 
     inline compact compact::encode(byte e, uint24_little v) {
         compact t;
-        data::writer<uint24_little::iterator>(t.begin(), t.end()) << v << e;
+        data::iterator_writer<compact::iterator, byte> w(t.begin(), t.end());
+        w << v << e;
         return t;
     }
 }

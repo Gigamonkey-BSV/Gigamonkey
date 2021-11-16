@@ -23,17 +23,6 @@ namespace Gigamonkey::Bitcoin {
         satoshi operator-(satoshi x) const;
         satoshi operator-() const;
     };
-
-    inline bytes_writer &operator<<(bytes_writer &w, const satoshi& s) {
-        return w << (data::int64_little)(s);
-    }
-
-    inline bytes_reader &operator>>(bytes_reader &r, satoshi& s) {
-        uint64_little x;
-        r >> x;
-        s = satoshi(x);
-        return r;
-    }
     
     inline satoshi::satoshi(uint64_little x) {
         std::copy(x.begin(), x.end(), int64_little::begin());

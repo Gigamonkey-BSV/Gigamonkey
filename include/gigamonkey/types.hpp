@@ -17,7 +17,8 @@
 #include <data/stream.hpp>
 #include <data/tools.hpp>
 #include <data/math/nonnegative.hpp>
-#include <data/math/number/gmp/N.hpp>
+#include <data/fold.hpp>
+#include <data/for_each.hpp>
 #include <data/encoding/hex.hpp>
 
 inline bool implies(bool a, bool b) {
@@ -48,19 +49,19 @@ namespace Gigamonkey {
     template <size_t size>
     using slice = data::slice<byte, size>;
     
-    using bytes_writer = data::writer<bytes::iterator>;
-    using bytes_reader = data::reader<const byte*>;
+    using writer = data::writer<byte>;
+    using reader = data::reader<byte>;
     
-    using string_writer = data::writer<string::iterator>;
-    using string_reader = data::reader<const char*>;
+    using bytes_writer = data::iterator_writer<bytes::iterator, byte>;
+    using bytes_reader = data::iterator_reader<const byte*, byte>;
     
     template <typename X> 
-    bytes_writer inline &write(bytes_writer &b, X x) {
+    writer inline &write(writer &b, X x) {
         return b << x;
     }
     
     template <typename X, typename ... P> 
-    bytes_writer inline &write(bytes_writer &b, X x, P... p) {
+    writer inline &write(writer &b, X x, P... p) {
         return write(write(b, x), p...);
     }
     
@@ -72,7 +73,7 @@ namespace Gigamonkey {
     }
     
     template <typename X>  
-    bytes_writer inline &write(bytes_writer &b, list<X> ls) {
+    writer inline &write(writer &b, list<X> ls) {
         while(!ls.empty()) {
             b << ls.first();
             ls = ls.rest();
@@ -82,22 +83,11 @@ namespace Gigamonkey {
     
     // lazy bytes writer can be used without knowing the size
     // of the data to be written beforehand. 
-    struct lazy_bytes_writer {
+    struct lazy_bytes_writer : data::writer<byte> {
         list<bytes> Bytes;
         
-        lazy_bytes_writer &operator<<(const bytes_view b) {
-            Bytes = Bytes << b;
-            return *this;
-        }
-        
-        lazy_bytes_writer &operator<<(const byte b) {
-            Bytes = Bytes << bytes({b});
-            return *this;
-        }
-    
-        template <boost::endian::order Order, bool is_signed, std::size_t bytes>
-        lazy_bytes_writer &operator<<(const endian::arithmetic<Order, is_signed, bytes> &x) {
-            return operator<<(bytes_view(x));
+        void write(const byte* b, size_t size) override {
+            Bytes = Bytes << bytes(bytes_view{b, size});
         }
         
         operator bytes() const {
@@ -109,13 +99,6 @@ namespace Gigamonkey {
             return z;
         }
     };
-    
-}
-
-namespace Gigamonkey::Bitcoin {
-    
-    using writer = bytes_writer;
-    using reader = bytes_reader;
     
 }
 

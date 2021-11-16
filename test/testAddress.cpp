@@ -95,7 +95,7 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_FALSE(evaluate(redeem_p2pk_uncompressed, script_p2pkh_compressed, doc));
         
     }
-    /*
+    
     TEST(AddressTest, TestRecoverBase58) {
         
         ptr<crypto::entropy> entropy = std::static_pointer_cast<crypto::entropy>(std::make_shared<crypto::fixed_entropy>(
@@ -157,7 +157,7 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_EQ(address_check, base58::check::recover(inserted));
         EXPECT_EQ(address_check, base58::check::recover(deleted));
         
-    }*/
+    }
 
 }
 

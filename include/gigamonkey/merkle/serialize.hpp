@@ -311,7 +311,7 @@ namespace Gigamonkey::BitcoinAssociation {
         
     digest256 inline proofs_serialization_standard::txid() const {
         if (bool(Txid)) return *Txid;
-        return Bitcoin::hash256(*Transaction);
+        return Bitcoin::Hash256(*Transaction);
     }
     
     digest256 inline proofs_serialization_standard::txid(bytes_view b) {

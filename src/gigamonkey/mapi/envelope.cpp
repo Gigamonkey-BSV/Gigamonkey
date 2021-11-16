@@ -13,10 +13,10 @@ namespace Gigamonkey {
             case base64 : {
                 ptr<bytes> decoded = data::encoding::base64::read(payload);
                 if (decoded == nullptr) return false;
-                return publicKey.verify(Gigamonkey::sha256(*decoded), signature);
+                return publicKey.verify(Gigamonkey::SHA2_256(*decoded), signature);
             }
             case UTF_8 : 
-                return publicKey.verify(Gigamonkey::sha256(data::encoding::unicode::utf8_encode(payload)), signature);
+                return publicKey.verify(Gigamonkey::SHA2_256(data::encoding::unicode::utf8_encode(payload)), signature);
         }
     }
     

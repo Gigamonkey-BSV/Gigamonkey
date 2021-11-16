@@ -36,8 +36,6 @@ namespace Gigamonkey::Bitcoin {
         explicit operator uint32() const;
         explicit operator string() const;
         
-        bytes_writer write(bytes_writer w) const;
-        
         bool operator==(const timestamp& d) const;
         bool operator!=(const timestamp& d) const;
         
@@ -50,13 +48,13 @@ namespace Gigamonkey::Bitcoin {
         
     };
 
-    std::ostream& operator<<(std::ostream& o, const timestamp& s);
+    std::ostream &operator<<(std::ostream &o, const timestamp &s);
 
-    inline writer operator<<(writer w, const timestamp& s) {
+    inline writer &operator<<(writer &w, const timestamp &s) {
         return w << s.Value;
     }
 
-    inline reader operator>>(reader r, timestamp& s) {
+    inline reader &operator>>(reader &r, timestamp &s) {
         return r >> s.Value;
     }
 
@@ -103,10 +101,6 @@ namespace Gigamonkey::Bitcoin {
     
     inline timestamp::operator bytes_view() const {
         return bytes_view{data(), 4};
-    }
-    
-    inline bytes_writer timestamp::write(bytes_writer w) const {
-        return w << nonzero<uint32_little>::Value;
     }
         
     inline bool timestamp::operator==(const timestamp& d) const {

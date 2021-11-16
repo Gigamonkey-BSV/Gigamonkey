@@ -16,7 +16,9 @@ namespace Gigamonkey::Bitcoin {
         } else if (b58.size() == 34) {
             w.Compressed = true;
         } else return {};
-        bytes_reader r = (bytes_reader(b58.data(), b58.data() + b58.size()) >> (byte&)(w.Prefix) >> w.Secret); 
+        bytes_reader r(b58.data(), b58.data() + b58.size());
+        r >> (byte&)(w.Prefix);
+        r.read(w.Secret.Value.data(), secp256k1::secret::Size);
         
         if (w.Compressed) {
             byte suffix;
@@ -29,7 +31,8 @@ namespace Gigamonkey::Bitcoin {
     
     string secret::write(byte prefix, const secp256k1::secret& s, bool compressed) {
         bytes data(compressed ? CompressedSize - 1: UncompressedSize - 1);
-        bytes_writer w = bytes_writer(data.begin(), data.end()) << s.Value; 
+        bytes_writer w(data.begin(), data.end());
+        w << bytes_view(s.Value); 
         if (compressed) w << CompressedSuffix;
         return base58::check{prefix, data}.encode();
     }

@@ -584,7 +584,7 @@ namespace Gigamonkey {
         }
         
         digest256 inline output_script::hash() const {
-            return valid() ? Bitcoin::hash256(write()) : digest256{};
+            return valid() ? Bitcoin::Hash256(write()) : digest256{};
         }
         
         inline output_script::output_script(bytes b) : output_script{read(b)} {}
