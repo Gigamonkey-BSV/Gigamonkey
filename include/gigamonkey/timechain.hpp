@@ -380,35 +380,35 @@ namespace Gigamonkey::Bitcoin {
     }
     
     reader inline &operator>>(reader &r, input &in) {
-        return read_bytes(r >> in.Reference, in.Script) >> in.Sequence;
+        return r >> in.Reference >> var_string{in.Script} >> in.Sequence;
     }
     
     writer inline &operator<<(writer &w, const input &in) {
-        return write_bytes(w << in.Reference, in.Script) << in.Sequence;
+        return w << in.Reference << var_string{in.Script} << in.Sequence;
     }
     
     reader inline &operator>>(reader &r, output &out) {
-        return read_bytes(r >> out.Value, out.Script);
+        return r >> out.Value >> var_string{out.Script};
     }
     
     writer inline &operator<<(writer &w, const output &out) {
-        return write_bytes(w << out.Value, out.Script);
+        return w << out.Value << var_string{out.Script};
     }
     
     reader inline &operator>>(reader &r, transaction &t) {
-        return read_sequence(read_sequence(r >> t.Version, t.Inputs), t.Outputs) >> t.Locktime;
+        return r >> t.Version >> var_sequence<input>{t.Inputs} >> var_sequence<output>{t.Outputs} >> t.Locktime;
     }
 
     writer inline &operator<<(writer &w, const transaction &t) {
-        return write_sequence(write_sequence(w << t.Version, t.Inputs), t.Outputs) << t.Locktime;
+        return w << t.Version << var_sequence<input>{t.Inputs} << var_sequence<output>{t.Outputs} << t.Locktime;
     }
 
     reader inline &operator>>(reader &r, block &b) {
-        return read_sequence(r >> b.Header, b.Transactions);
+        return r >> b.Header >> var_sequence<transaction>{b.Transactions};
     }
     
     writer inline &operator<<(writer &w, const block &b) {
-        return write_sequence(w << b.Header, b.Transactions);
+        return w << b.Header << var_sequence<transaction>{b.Transactions};
     }
    
     digest256 inline header::previous(const slice<80> x) {

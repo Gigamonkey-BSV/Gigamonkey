@@ -172,7 +172,7 @@ namespace Gigamonkey::secp256k1 {
     reader &operator>>(reader& r, point& p);
     
     writer inline &operator<<(writer &w, const point& p) {
-        return Bitcoin::write_var_int(w << byte(0x30), p.R.serialized_size() + p.S.serialized_size() + 4) << p.R << p.S;
+        return w << byte(0x30) << Bitcoin::var_int{p.R.serialized_size() + p.S.serialized_size() + 4} << p.R << p.S;
     }
     
     std::ostream inline &operator<<(std::ostream &o, const secret &s) {

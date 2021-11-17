@@ -783,6 +783,47 @@ namespace Gigamonkey::Bitcoin::interpreter {
 
                 Stack.push_back(fValue ? script_true() : script_false());
             } break;
+            //
+            // Crypto
+            //
+            case OP_RIPEMD160:
+            case OP_SHA1:
+            case OP_SHA256:
+            case OP_HASH160:
+            case OP_HASH256: {
+                // (in -- hash)
+                if (Stack.size() < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+
+                LimitedVector<element> &vch = Stack.stacktop(-1);
+                valtype vchHash((Op == OP_RIPEMD160 ||
+                                    Op == OP_SHA1 ||
+                                    Op == OP_HASH160)
+                                    ? 20
+                                    : 32);
+                if (Op == OP_RIPEMD160) {
+                    CRIPEMD160()
+                        .Write(vch.GetElement().data(), vch.size())
+                        .Finalize(vchHash.data());
+                } else if (Op == OP_SHA1) {
+                    CSHA1()
+                        .Write(vch.GetElement().data(), vch.size())
+                        .Finalize(vchHash.data());
+                } else if (Op == OP_SHA256) {
+                    CSHA256()
+                        .Write(vch.GetElement().data(), vch.size())
+                        .Finalize(vchHash.data());
+                } else if (Op == OP_HASH160) {
+                    CHash160()
+                        .Write(vch.GetElement().data(), vch.size())
+                        .Finalize(vchHash.data());
+                } else if (Op == OP_HASH256) {
+                    CHash256()
+                        .Write(vch.GetElement().data(), vch.size())
+                        .Finalize(vchHash.data());
+                }
+                Stack.pop_back();
+                Stack.push_back(vchHash);
+            } break;
             
             // we take care of this elsewhere. 
             case OP_CODESEPARATOR: break;

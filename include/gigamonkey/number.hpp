@@ -729,7 +729,7 @@ namespace Gigamonkey {
     }
     
     template <size_t size> writer inline &operator<<(writer &w, const uint<size> &u) {
-        return Bitcoin::write_bytes(w << byte(0x02), natural<endian::big>(u));
+        return w << byte(0x02) << Bitcoin::var_string{natural<endian::big>(u)};
     }
     
     template <size_t size> reader &operator>>(reader &re, uint<size> &u) {

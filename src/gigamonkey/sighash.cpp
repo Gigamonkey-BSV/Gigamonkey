@@ -81,7 +81,7 @@ namespace Gigamonkey::Bitcoin::sighash {
             }
             
             // Version
-            return write_bytes(w << doc.Transaction.Version
+            return w << doc.Transaction.Version
             
                 // Input prevouts/nSequence (none/all, depending on flags)
                 << hashPrevouts
@@ -90,8 +90,8 @@ namespace Gigamonkey::Bitcoin::sighash {
                 // The input being signed (replacing the scriptSig with scriptCode +
                 // amount). The prevout may already be contained in hashPrevout, and the
                 // nSequence may already be contain in hashSequence.
-                << doc.Transaction.Inputs[doc.InputIndex].Reference, 
-                doc.ScriptCode)
+                << doc.Transaction.Inputs[doc.InputIndex].Reference 
+                << var_string{doc.ScriptCode}
                 << doc.RedeemedValue
                 << doc.Transaction.Inputs[doc.InputIndex].Sequence
             
