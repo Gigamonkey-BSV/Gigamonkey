@@ -118,7 +118,6 @@ add_library(gigamonkey STATIC
     src/sv/script/opcodes.cpp
     src/sv/script/script_error.cpp
     src/sv/script/script_num.cpp
-    src/sv/arith_uint256.cpp
     src/sv/script/script.cpp
     src/sv/config.cpp
     src/sv/script/interpreter.cpp
