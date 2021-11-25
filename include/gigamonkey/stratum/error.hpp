@@ -32,6 +32,10 @@ namespace Gigamonkey::Stratum {
         }
     };
     
+    std::ostream inline &operator<<(std::ostream &o, const error &e) {
+        return o << "Stratum error " << e.Code << ": " << e.Message;
+    }
+    
 }
 
 #endif 

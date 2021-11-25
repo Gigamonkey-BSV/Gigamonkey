@@ -134,6 +134,7 @@ add_library(gigamonkey STATIC
     src/gigamonkey/script/script.cpp
     src/gigamonkey/script/counter.cpp
     src/gigamonkey/script/pattern.cpp
+    src/gigamonkey/script/machine.cpp
     src/gigamonkey/address.cpp
     src/gigamonkey/wif.cpp
     src/gigamonkey/merkle.cpp
@@ -154,11 +155,10 @@ add_library(gigamonkey STATIC
     src/gigamonkey/stratum/mining_authorize.cpp
     src/gigamonkey/stratum/mining.cpp
     src/gigamonkey/stratum/extensions.cpp
+    src/gigamonkey/stratum/mining_configure.cpp
     src/gigamonkey/boost/boost.cpp
     src/gigamonkey/mapi/mapi.cpp
     src/gigamonkey/mapi/envelope.cpp
-    src/gigamonkey/script/counter.cpp
-    src/gigamonkey/script/machine.cpp
     
 )
 

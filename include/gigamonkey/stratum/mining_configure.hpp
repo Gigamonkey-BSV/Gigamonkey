@@ -26,6 +26,13 @@ namespace Gigamonkey::Stratum::mining {
             
             template <extensions::extension x>
             optional<extensions::configuration_request<x>> get() const;
+            
+            parameters() {}
+            
+            template <extensions::extension x, typename... P>
+            parameters(extensions::configuration_request<x> r, P... p) : parameters{p...} {
+                *this = this->add(r);
+            }
         };
         
         static Stratum::parameters serialize(const parameters&);
@@ -36,10 +43,7 @@ namespace Gigamonkey::Stratum::mining {
         }
         
         template <typename... P>
-        static parameters encode(P...);
-        
-        template <typename... P>
-        configure_request(request_id id, P... conf) : request{id, mining_configure, encode(conf...)} {}
+        configure_request(request_id id, P... conf) : request{id, mining_configure, parameters{conf...}} {}
         
         bool valid() const;
         
@@ -57,17 +61,21 @@ namespace Gigamonkey::Stratum::mining {
             
             template <extensions::extension x>
             optional<extensions::configuration_result<x>> get() const;
+            
+            parameters() {}
+            
+            template <extensions::extension x, typename... P>
+            parameters(extensions::configuration_result<x> r, P... p) : parameters{p...} {
+                *this = this->add(r);
+            }
         };
-        
-        template <typename... P>
-        static parameters encode(P...);
         
         parameters result() const {
             return response::result();
         }
         
         template <typename... P>
-        configure_response(request_id id, P... conf) : response{id, encode(conf...)} {}
+        configure_response(request_id id, P... conf) : response{id, parameters(conf...)} {}
         
         bool valid() const;
         
@@ -86,115 +94,53 @@ namespace Gigamonkey::Stratum::mining {
         return response::valid(j) && j["result"].is_object();
     }
     
-}
-
-namespace Gigamonkey::Stratum::extensions {
+    template <> configure_request::parameters 
+    configure_request::parameters::add(extensions::configuration_request<extensions::version_rolling>) const;
     
-    mining::configure_request::parameters add(mining::configure_request::parameters& p, const configuration_request<version_rolling>&);
+    template <> optional<extensions::configuration_request<extensions::version_rolling>> 
+    configure_request::parameters::get() const;
     
-    mining::configure_request::parameters add(mining::configure_request::parameters& p, const configuration_request<minimum_difficulty>&);
+    template <> configure_request::parameters 
+    configure_request::parameters::add(extensions::configuration_request<extensions::minimum_difficulty>) const;
     
-    mining::configure_request::parameters add(mining::configure_request::parameters& p, const configuration_request<subscribe_extranonce>&);
+    template <> optional<extensions::configuration_request<extensions::minimum_difficulty>> 
+    configure_request::parameters::get() const;
     
-    mining::configure_request::parameters add(mining::configure_request::parameters& p, const configuration_request<info>&);
+    template <> configure_request::parameters 
+    configure_request::parameters::add(extensions::configuration_request<extensions::subscribe_extranonce>) const;
     
-    mining::configure_response::parameters add(mining::configure_response::parameters& p, const configuration_result<version_rolling>&);
+    template <> optional<extensions::configuration_request<extensions::subscribe_extranonce>> 
+    configure_request::parameters::get() const;
     
-    mining::configure_response::parameters add(mining::configure_response::parameters& p, const configuration_result<minimum_difficulty>&);
+    template <> configure_request::parameters 
+    configure_request::parameters::add(extensions::configuration_request<extensions::info>) const;
     
-    mining::configure_response::parameters add(mining::configure_response::parameters& p, const configuration_result<subscribe_extranonce>&);
+    template <> optional<extensions::configuration_request<extensions::info>> 
+    configure_request::parameters::get() const;
     
-    mining::configure_response::parameters add(mining::configure_response::parameters& p, const configuration_result<info>&);
+    template <> configure_response::parameters 
+    configure_response::parameters::add(extensions::configuration_result<extensions::version_rolling>) const;
     
-    template <extension e> struct get;
-        
-    template <> struct get<version_rolling> {
-        optional<configuration_request<version_rolling>> request(const mining::configure_request::parameters&);
-        
-        optional<configuration_result<version_rolling>> result(const mining::configure_response::parameters&);
-    }; 
+    template <> optional<extensions::configuration_result<extensions::version_rolling>> 
+    configure_response::parameters::get() const;
     
-    template <> struct get<minimum_difficulty> {
-        optional<configuration_request<minimum_difficulty>> request(const mining::configure_request::parameters&);
-        
-        optional<configuration_result<minimum_difficulty>> result(const mining::configure_response::parameters&);
-    }; 
+    template <> configure_response::parameters 
+    configure_response::parameters::add(extensions::configuration_result<extensions::minimum_difficulty>) const;
     
-    template <> struct get<subscribe_extranonce> {
-        optional<configuration_request<subscribe_extranonce>> request(const mining::configure_request::parameters&);
-        
-        optional<configuration_result<subscribe_extranonce>> result(const mining::configure_response::parameters&);
-    }; 
+    template <> optional<extensions::configuration_result<extensions::minimum_difficulty>> 
+    configure_response::parameters::get() const;
     
-    template <> struct get<info> {
-        optional<configuration_request<info>> request(const mining::configure_request::parameters&);
-        
-        optional<configuration_result<info>> result(const mining::configure_response::parameters&);
-    };
+    template <> configure_response::parameters 
+    configure_response::parameters::add(extensions::configuration_result<extensions::subscribe_extranonce>) const;
     
-    mining::configure_request::parameters inline add_request(mining::configure_request::parameters& p) {
-        return p;
-    }
+    template <> optional<extensions::configuration_result<extensions::subscribe_extranonce>> 
+    configure_response::parameters::get() const;
     
-    template <typename X>
-    mining::configure_request::parameters inline add_request(mining::configure_request::parameters& p, const X&) {
-        return mining::configure_request::parameters{};
-    }
+    template <> configure_response::parameters 
+    configure_response::parameters::add(extensions::configuration_result<extensions::info>) const;
     
-    template <typename X, typename... P>
-    mining::configure_request::parameters add_request(mining::configure_request::parameters& p, const X& x, P... conf) {
-        return add_request(add(p, x), conf...);
-    }
-    
-    mining::configure_response::parameters inline add_result(mining::configure_response::parameters& p) {
-        return p;
-    }
-    
-    template <typename X>
-    mining::configure_response::parameters inline add_result(mining::configure_response::parameters& p, const X&) {
-        return {};
-    }
-    
-    template <typename X, typename... P>
-    mining::configure_response::parameters add_result(mining::configure_response::parameters& p, const X& x, P... conf) {
-        return add_response(add(p, x), conf...);
-    }
-    
-}
-
-namespace Gigamonkey::Stratum::mining {
-    
-    template <typename... P>
-    configure_request::parameters configure_request::encode(P... conf) {
-        return extensions::add_request(parameters{}, conf...);
-    }
-    
-    template <extensions::extension e>
-    optional<extensions::configuration_request<e>> configure_request::parameters::get() const {
-        return extensions::get<e>{}.request(*this);
-    }
-    
-    template <extensions::extension x> 
-    configure_request::parameters inline configure_request::parameters::add(extensions::configuration_request<x> r) const {
-        configure_request::parameters p = *this;
-        return extensions::add(p, r);
-    }
-    
-    template <typename... P>
-    configure_response::parameters configure_response::encode(P... conf) {
-        return extensions::add_result(configure_response::parameters{}, conf...);
-    }
-    
-    template <extensions::extension e>
-    optional<extensions::configuration_result<e>> configure_response::parameters::get() const {
-        return extensions::get<e>{}.result(*this);
-    }
-    
-    template <extensions::extension x> 
-    configure_response::parameters inline configure_response::parameters::add(extensions::configuration_result<x> r) const {
-        configure_response::parameters p = *this;
-        return extensions::add(p, r);
-    }
+    template <> optional<extensions::configuration_result<extensions::info>> 
+    configure_response::parameters::get() const;
     
 }
 
