@@ -6,6 +6,11 @@
 
 #include <gigamonkey/stratum/stratum.hpp>
 #include <gigamonkey/stratum/json_bi_stream.hpp>
+#include <gigamonkey/stratum/mining_configure.hpp>
+#include <gigamonkey/stratum/mining_authorize.hpp>
+#include <gigamonkey/stratum/mining_subscribe.hpp>
+#include <gigamonkey/stratum/mining_submit.hpp>
+#include <gigamonkey/stratum/client_get_version.hpp>
 
 namespace Gigamonkey::Stratum {
     
@@ -18,7 +23,7 @@ namespace Gigamonkey::Stratum {
         
         // Number of requests sent in this session. It is used as the 
         // message id. 
-        uint64 Requests;
+        request_id Requests;
         
         // we keep track of requests that were made of the remote peer and
         // promises to the requestor. 
@@ -55,16 +60,46 @@ namespace Gigamonkey::Stratum {
     public:
         // there are two ways to talk to a server: request and notify. 
         // request expects a response and notify does not. 
-        std::future<response> request(method m, parameters p) {
+        response request(method m, parameters p) {
             std::lock_guard<std::mutex> lock(Mutex);
             AwaitingResponse.push_back(std::pair{Stratum::request{message_id(Requests), m, p}, new std::promise<response>()});
             this->send(AwaitingResponse.back().first);
             Requests++;
-            return AwaitingResponse.back().second->get_future();
+            return AwaitingResponse.back().second->get_future().get();
         }
         
         void notify(method m, parameters p) {
             this->send(notification{m, p});
+        }
+        
+        bool submit(const share &x) {
+            response r = request(mining_submit, mining::submit_request::serialize(x));
+            if (mining::submit_response::valid(r)) return mining::submit_response{r}.result();
+            // TODO handle error 
+        }
+        
+        mining::configure_response::parameters configure(const mining::configure_request::parameters &x) {
+            response r = request(mining_configure, mining::configure_request::serialize(x));
+            if (mining::configure_response::valid(r)) return mining::configure_response{r}.result();
+            // TODO handle error 
+        }
+        
+        bool authorize(const mining::authorize_request::parameters &x) {
+            response r = request(mining_authorize, mining::authorize_request::serialize(x));
+            if (mining::authorize_response::valid(r)) return mining::authorize_response{r}.result();
+            // TODO handle error 
+        }
+        
+        mining::subscribe_response::parameters subscribe(const mining::subscribe_request::parameters &x) {
+            response r = request(mining_subscribe, mining::subscribe_request::serialize(x));
+            if (mining::subscribe_response::valid(r)) return mining::subscribe_response{r}.result();
+            // TODO handle error 
+        }
+        
+        string get_version() {
+            response r = request(client_get_version, {});
+            if (client::get_version_response::valid(r)) return client::get_version_response{r}.result();
+            // TODO handle error 
         }
         
         remote(tcp::socket &&s) : json_bi_stream{std::move(s)} {}

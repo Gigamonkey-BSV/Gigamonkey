@@ -5,9 +5,6 @@
 #define GIGAMONKEY_STRATUM_CLIENT
 
 #include <gigamonkey/stratum/remote.hpp>
-#include <gigamonkey/stratum/mining_configure.hpp>
-#include <gigamonkey/stratum/mining_authorize.hpp>
-#include <gigamonkey/stratum/mining_subscribe.hpp>
 #include <gigamonkey/stratum/mining_notify.hpp>
 #include <gigamonkey/stratum/mining_set_difficulty.hpp>
 #include <gigamonkey/stratum/mining_set_version_mask.hpp>
@@ -50,6 +47,7 @@ namespace Gigamonkey::Stratum::client {
         // by the server. 
         optional<mining::subscribe_response::parameters> Subscriptions;
         
+        bool submit(const share &x);
         mining::configure_response::parameters configure(const mining::configure_request::parameters);
         bool authorize(const mining::authorize_request::parameters);
         mining::subscribe_response::parameters subscribe(const mining::subscribe_request::parameters);
@@ -75,7 +73,7 @@ namespace Gigamonkey::Stratum::client {
         }
         
         void handle_request(const Stratum::request &r) final override {
-            if (get_version::valid(r)) this->send(response{r.id(), json::string_t{version()}});
+            if (get_version_request::valid(r)) this->send(get_version_response{r.id(), version()});
             // TODO handle unknown message. 
         }
         

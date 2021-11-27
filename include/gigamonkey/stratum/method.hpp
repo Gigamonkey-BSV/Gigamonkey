@@ -9,7 +9,7 @@
 namespace Gigamonkey::Stratum {
     using request_id = uint64;
     
-    // List of stratum methods (incomplete)
+    // List of stratum methods (not necessarily complete)
     enum method {
         unset,
         mining_authorize, 
