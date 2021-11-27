@@ -4,7 +4,7 @@
 #ifndef GIGAMONKEY_STRATUM_MINING
 #define GIGAMONKEY_STRATUM_MINING
 
-#include <gigamonkey/stratum/session_id.hpp>
+#include <gigamonkey/stratum/mining_set_extranonce.hpp>
 #include <gigamonkey/work/proof.hpp>
 
 namespace Gigamonkey::Stratum {
@@ -24,14 +24,14 @@ namespace Gigamonkey::Stratum {
     
     struct worker {
         worker_name Name;
-        session_id ExtraNonce1;
+        mining::set_extranonce::parameters ExtraNonce;
         optional<int32_little> Mask;
         constexpr static uint32 ExtraNonce2_size{8};
         
         worker();
         
-        worker(worker_name n, session_id n1);
-        worker(worker_name n, session_id n1, int32_little mask);
+        worker(worker_name n, mining::set_extranonce::parameters ex);
+        worker(worker_name n, mining::set_extranonce::parameters ex, int32_little mask);
     };
     
     // A Stratum share; also a representation of the 'submit' method.
@@ -48,18 +48,18 @@ namespace Gigamonkey::Stratum {
     };
     
     inline bool operator==(const worker& a, const worker& b) {
-        return a.Name == b.Name && a.ExtraNonce1 == b.ExtraNonce1;
+        return a.Name == b.Name && a.ExtraNonce == b.ExtraNonce && a.Mask == b.Mask;
     }
         
     inline bool operator!=(const worker& a, const worker& b) {
         return !(a == b);
     }
     
-    inline worker::worker() : Name{}, ExtraNonce1{} {}
+    inline worker::worker() : Name{}, ExtraNonce{} {}
         
-    inline worker::worker(worker_name n, session_id n1) : Name{n}, ExtraNonce1{n1}, Mask{} {}
+    inline worker::worker(worker_name n, mining::set_extranonce::parameters n1) : Name{n}, ExtraNonce{n1}, Mask{} {}
         
-    inline worker::worker(worker_name n, session_id n1, int32_little mask) : Name{n}, ExtraNonce1{n1}, Mask{mask} {}
+    inline worker::worker(worker_name n, mining::set_extranonce::parameters n1, int32_little mask) : Name{n}, ExtraNonce{n1}, Mask{mask} {}
     
     inline bool operator==(const share& a, const share& b) {
         return a.Name == b.Name && 

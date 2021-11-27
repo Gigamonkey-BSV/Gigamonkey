@@ -122,7 +122,7 @@ namespace Gigamonkey::Boost {
             
             return test_case{Puzzle, o, 
                 Stratum::job{worker, Stratum::mining::notify::parameters{jobID, work::puzzle(Puzzle), start, true}}, 
-                worker.ExtraNonce1, extra_nonce_2, s};
+                worker.ExtraNonce.ExtraNonce1, extra_nonce_2, s};
         }
         
         static test_case build(Boost::type type, 
@@ -149,7 +149,7 @@ namespace Gigamonkey::Boost {
             
             return test_case(Puzzle, o, 
                 Stratum::job{worker, Stratum::mining::notify::parameters{jobID, work::puzzle(Puzzle), start, true}}, 
-                worker.ExtraNonce1, extra_nonce_2, s);
+                worker.ExtraNonce.ExtraNonce1, extra_nonce_2, s);
         }
         
         static test_case build(Boost::type type, 
@@ -177,7 +177,7 @@ namespace Gigamonkey::Boost {
             
             return test_case(Puzzle, o, 
                 Stratum::job{worker, Stratum::mining::notify::parameters{jobID, work::puzzle(Puzzle), start, true}}, 
-                worker.ExtraNonce1, extra_nonce_2, s, bits);
+                worker.ExtraNonce.ExtraNonce1, extra_nonce_2, s, bits);
         }
         
     public:
@@ -272,7 +272,7 @@ namespace Gigamonkey::Boost {
             test_case{
                 output_script{}, 
                 JobID, Start, 
-                Stratum::worker{WorkerName, 97979}, 
+                Stratum::worker{WorkerName, {97979}}, 
                 302203233,
                 InitialKey} << 
             // We vary test cases over bounty/contract, contents, and version bits.
@@ -284,7 +284,7 @@ namespace Gigamonkey::Boost {
                 UserNonce, 
                 AdditionalData, 
                 JobID, Start, 
-                Stratum::worker{WorkerName, 97980}, 
+                Stratum::worker{WorkerName, {97980}}, 
                 302203234,
                 InitialKey + 1} << 
             test_case{ // contract v1
@@ -294,7 +294,7 @@ namespace Gigamonkey::Boost {
                 UserNonce + 1, 
                 AdditionalData, 
                 JobID, Start, 
-                Stratum::worker{WorkerName, 97981}, 
+                Stratum::worker{WorkerName, {97981}}, 
                 302203235,
                 InitialKey + 2} << 
             test_case{ // bounty v1
@@ -304,7 +304,7 @@ namespace Gigamonkey::Boost {
                 UserNonce + 2, 
                 AdditionalData,
                 JobID, Start, 
-                Stratum::worker{WorkerName, 97982}, 
+                Stratum::worker{WorkerName, {97982}}, 
                 302203236,
                 InitialKey + 3} << 
             test_case{ // contract v1
@@ -314,7 +314,7 @@ namespace Gigamonkey::Boost {
                 UserNonce + 3, 
                 AdditionalData,
                 JobID, Start, 
-                Stratum::worker{WorkerName, 97983}, 
+                Stratum::worker{WorkerName, {97983}}, 
                 302203237,
                 InitialKey + 4} << 
             test_case{ // bounty v2
@@ -326,7 +326,7 @@ namespace Gigamonkey::Boost {
                 AdditionalData, 
                 0xabcd,
                 JobID, Start, 
-                Stratum::worker{WorkerName, 97980, work::ASICBoost::Mask}, 
+                Stratum::worker{WorkerName, {97980}, work::ASICBoost::Mask}, 
                 302203234,
                 InitialKey + 5} << 
             test_case{ // contract v2
@@ -337,7 +337,7 @@ namespace Gigamonkey::Boost {
                 AdditionalData, 
                 0xabcd,
                 JobID, Start, 
-                Stratum::worker{WorkerName, 97981, work::ASICBoost::Mask}, 
+                Stratum::worker{WorkerName, {97981}, work::ASICBoost::Mask}, 
                 302203235,
                 InitialKey + 6} << 
             test_case{ // bounty v2
@@ -348,7 +348,7 @@ namespace Gigamonkey::Boost {
                 AdditionalData,
                 0xabcd,
                 JobID, Start, 
-                Stratum::worker{WorkerName, 97982, work::ASICBoost::Mask}, 
+                Stratum::worker{WorkerName, {97982}, work::ASICBoost::Mask}, 
                 302203236,
                 InitialKey + 7} << 
             test_case{ // contract v2
@@ -359,7 +359,7 @@ namespace Gigamonkey::Boost {
                 AdditionalData,
                 0xabcd,
                 JobID, Start, 
-                Stratum::worker{WorkerName, 97983, work::ASICBoost::Mask}, 
+                Stratum::worker{WorkerName, {97983}, work::ASICBoost::Mask}, 
                 302203237,
                 InitialKey + 8};
                 

@@ -70,9 +70,13 @@ namespace Gigamonkey::Stratum::mining {
         notify(
             job_id id, const work::puzzle& p, Bitcoin::timestamp t, bool b) :
             notify{parameters{id, p, t, b}} {}
+            
+        static bool valid(const notification& n) {
+            return n.valid() && n.method() == mining_notify && deserialize(n.params()).valid();
+        }
         
         bool valid() const {
-            return notification::valid() && deserialize(notification::params()).valid();
+            return valid(*this);
         }
     };
     

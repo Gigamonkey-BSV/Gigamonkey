@@ -5,10 +5,18 @@
 #define GIGAMONKEY_STRATUM_CLIENT
 
 #include <gigamonkey/stratum/remote.hpp>
+#include <gigamonkey/stratum/mining_configure.hpp>
+#include <gigamonkey/stratum/mining_authorize.hpp>
+#include <gigamonkey/stratum/mining_subscribe.hpp>
+#include <gigamonkey/stratum/mining_notify.hpp>
+#include <gigamonkey/stratum/mining_set_difficulty.hpp>
+#include <gigamonkey/stratum/mining_set_version_mask.hpp>
+#include <gigamonkey/stratum/client_get_version.hpp>
+#include <gigamonkey/stratum/client_show_message.hpp>
 
-namespace Gigamonkey::Stratum {
+namespace Gigamonkey::Stratum::client {
     
-    struct client : remote {
+    struct client : public remote {
         
         // If extensions are supported, the first message sent to the server is a configure request. 
         // if not, the first message is an authorize request. 
@@ -42,12 +50,34 @@ namespace Gigamonkey::Stratum {
         // by the server. 
         optional<mining::subscribe_response::parameters> Subscriptions;
         
-        void notify(const notification &) final override;
+        mining::configure_response::parameters configure(const mining::configure_request::parameters);
+        bool authorize(const mining::authorize_request::parameters);
+        mining::subscribe_response::parameters subscribe(const mining::subscribe_request::parameters);
         
-        void request(const Stratum::request &) final override;
+        virtual void notify(const mining::notify::parameters&) = 0;
+        virtual void set_difficulty(const difficulty&) = 0;
+        virtual void set_extranonce(const mining::set_extranonce::parameters&) = 0;
+        virtual void set_version_mask(const extensions::version_mask&) = 0;
         
-        // After a subscribe request, we expect the server to tell is what difficulty we should use.
-        optional<difficulty> Difficulty;
+        virtual void show_message(const string &m) {
+            std::cout << "Server says: " << m << std::endl;
+        }
+        
+        virtual string version() = 0;
+        
+        void handle_notification(const notification &n) final override {
+            if (mining::notify::valid(n)) return notify(mining::notify{n}.params());
+            if (mining::set_difficulty::valid(n)) return set_difficulty(mining::set_difficulty{n}.params());
+            if (mining::set_extranonce::valid(n)) return set_extranonce(mining::set_extranonce{n}.params());
+            if (mining::set_version_mask::valid(n)) return set_version_mask(mining::set_version_mask{n}.params());
+            if (Stratum::client::show_message::valid(n)) return show_message(Stratum::client::show_message{n}.params());
+            // TODO handle unknown message. 
+        }
+        
+        void handle_request(const Stratum::request &r) final override {
+            if (get_version::valid(r)) this->send(response{r.id(), json::string_t{version()}});
+            // TODO handle unknown message. 
+        }
         
         client(
             tcp::socket &&s, 

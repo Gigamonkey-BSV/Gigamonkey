@@ -3,7 +3,7 @@
 
 #include <gigamonkey/stratum/client.hpp>
 
-namespace Gigamonkey::Stratum {
+namespace Gigamonkey::Stratum::client {
     
     mining::configure_request::parameters client::requested_configuration() const {
         mining::configure_request::parameters p;
