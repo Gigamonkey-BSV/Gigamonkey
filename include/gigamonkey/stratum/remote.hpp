@@ -62,7 +62,7 @@ namespace Gigamonkey::Stratum {
             if (notification::valid(next)) handle_notification(notification{next});
             if (response::valid(next)) handle_response(response{next});
             if (Stratum::request::valid(next)) handle_request(Stratum::request{next});
-            this->error(boost::system::errc::make_error_code(boost::system::errc::protocol_error));
+            throw std::logic_error{string{"invalid Stratum message received: "} + string(next)};
         }
         
     public:
@@ -81,21 +81,33 @@ namespace Gigamonkey::Stratum {
         }
         
         bool submit(const share &x) {
-            response r = request(mining_submit, mining::submit_request::serialize(x));
-            if (mining::submit_response::valid(r)) return mining::submit_response{r}.result();
-            this->error(boost::system::errc::make_error_code(boost::system::errc::protocol_error));
+            auto serialized = mining::submit_request::serialize(x);
+            
+            std::cout << "sending submit request " << serialized << std::endl;
+            
+            response r = request(mining_submit, serialized);
+            
+            if (!mining::submit_response::valid(r)) 
+                throw std::logic_error{string{"invalid mining.submit response received: "} + string(r)};
+            
+            return mining::submit_response{r}.result();
+            
         }
         
         mining::configure_response::parameters configure(const mining::configure_request::parameters &q) {
-            response s = request(mining_configure, mining::configure_request::serialize(q));
+            auto serialized = mining::configure_request::serialize(q);
+            
+            std::cout << "sending configure request " << serialized << std::endl;
+            
+            response s = request(mining_configure, serialized);
             
             if (!mining::configure_response::valid(s)) 
-                this->error(boost::system::errc::make_error_code(boost::system::errc::protocol_error));
+                throw std::logic_error{string{"invalid configure response received: "} + string(s)};
             
             auto r = mining::configure_response{s}.result();
             
             if (!mining::configure_response::valid_result(r, q))
-                this->error(boost::system::errc::make_error_code(boost::system::errc::protocol_error));
+                throw std::logic_error{string{"invalid response to "} + string(json{serialized}) + " received: " + string(s)};
             
             if (auto configuration = q.get<extensions::version_rolling>(); bool(configuration)) 
                 std::cout << *configuration << " requested; response = " << *r.get<extensions::version_rolling>() << std::endl; 
@@ -113,21 +125,40 @@ namespace Gigamonkey::Stratum {
         }
         
         bool authorize(const mining::authorize_request::parameters &x) {
-            response r = request(mining_authorize, mining::authorize_request::serialize(x));
-            if (mining::authorize_response::valid(r)) return mining::authorize_response{r}.result();
-            this->error(boost::system::errc::make_error_code(boost::system::errc::protocol_error));
+            auto serialized = mining::authorize_request::serialize(x);
+            
+            std::cout << "sending authorize request " << serialized << std::endl;
+            
+            response r = request(mining_authorize, serialized);
+            
+            if (!mining::authorize_response::valid(r)) 
+                throw std::logic_error{string{"invalid authorization response received: "} + string(r)};
+            
+            bool result = mining::authorize_response{r}.result();
+            std::cout << (result ? "authorization successful!" : "authorization failed!") << std::endl;
+            return result;
         }
         
         mining::subscribe_response::parameters subscribe(const mining::subscribe_request::parameters &x) {
-            response r = request(mining_subscribe, mining::subscribe_request::serialize(x));
-            if (mining::subscribe_response::valid(r)) return mining::subscribe_response{r}.result();
-            this->error(boost::system::errc::make_error_code(boost::system::errc::protocol_error));
+            auto serialized = mining::subscribe_request::serialize(x);
+            
+            std::cout << "sending subscribe request " << serialized << std::endl;
+            
+            response r = request(mining_subscribe, serialized);
+            
+            if (!mining::subscribe_response::valid(r)) 
+                throw std::logic_error{string{"invalid subscribe response received: "} + string(r)};
+            
+            std::cout << "subscribe response received " << r << std::endl;
+            
+            return mining::subscribe_response{r}.result();
         }
         
         string get_version() {
             response r = request(client_get_version, {});
-            if (client::get_version_response::valid(r)) return client::get_version_response{r}.result();
-            this->error(boost::system::errc::make_error_code(boost::system::errc::protocol_error));
+            if (!client::get_version_response::valid(r)) 
+                throw std::logic_error{string{"invalid get_version response received: "} + string(r)}; 
+            return client::get_version_response{r}.result();
         }
         
         remote(tcp::socket &s) : json_bi_stream{s} {}

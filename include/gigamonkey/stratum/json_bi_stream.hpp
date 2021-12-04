@@ -43,7 +43,6 @@ namespace Gigamonkey::Stratum {
                 });
         }
         
-    protected:
         virtual void error(const io_error&) = 0;
         
     public:

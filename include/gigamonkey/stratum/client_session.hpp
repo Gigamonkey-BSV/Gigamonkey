@@ -32,12 +32,12 @@ namespace Gigamonkey::Stratum {
             if (mining::set_extranonce::valid(n)) return set_extranonce(mining::set_extranonce{n}.params());
             if (mining::set_version_mask::valid(n)) return set_version_mask(mining::set_version_mask{n}.params());
             if (client::show_message::valid(n)) return show_message(client::show_message{n}.params());
-            this->error(boost::system::errc::make_error_code(boost::system::errc::protocol_error));
+            throw std::logic_error{string{"unknown notification received: "} + string(n)};
         }
         
         void handle_request(const Stratum::request &r) final override {
             if (client::get_version_request::valid(r)) this->send(client::get_version_response{r.id(), version()});
-            this->error(boost::system::errc::make_error_code(boost::system::errc::protocol_error));
+            throw std::logic_error{string{"unknown request received: "} + string(r)};
         }
         
         void setup_extensions(const mining::configure_response::parameters &r) {
@@ -45,17 +45,20 @@ namespace Gigamonkey::Stratum {
         }
         
     protected:
-        void initialize(
+        bool initialize(
             const optional<mining::configure_request::parameters> c, 
             const mining::authorize_request::parameters& ap, 
             const mining::subscribe_request::parameters& sp) {
             
             if (c) setup_extensions(this->configure(*c));
             
-            if (!this->authorize(ap)) 
-                this->error(boost::system::errc::make_error_code(boost::system::errc::protocol_error));
+            if (!this->authorize(ap)) {
+                std::cout << "failed to authorize" << std::endl;
+                return false;
+            }
             
             auto subs = subscribe(sp);
+            return true;
         }
         
         
@@ -63,7 +66,7 @@ namespace Gigamonkey::Stratum {
         
         client_session(tcp::socket &s) : remote{s} {}
         
-        virtual ~client_session();
+        virtual ~client_session() {}
         
     };
     

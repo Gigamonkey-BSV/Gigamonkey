@@ -6,6 +6,17 @@
 
 namespace Gigamonkey::Stratum::mining {
         
+    bool configure_request::parameters::valid(const Stratum::parameters& p) {
+        if (p.size() != 2 || !p[0].is_array() || !p[1].is_object()) return false;
+        
+        for (auto i = p[0].begin(); i != p[0].end(); i++) {
+            if (!i->is_string()) return false;
+            for(auto j = p[0].begin(); j != i; j++) if (*j == *i) return false;
+        }
+        
+        return true;
+    }
+        
     Stratum::parameters configure_request::serialize(const parameters& p) {
         Stratum::parameters z(2);
         z[1] = p.Parameters;

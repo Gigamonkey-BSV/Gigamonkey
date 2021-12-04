@@ -59,7 +59,9 @@ namespace Gigamonkey::Stratum {
         static json result(const json&);
         static optional<Stratum::error> error(const json&);
         
-        bool valid() const;
+        bool valid() const {
+            return valid(*this);
+        }
         
         message_id id() const;
         json result() const;
