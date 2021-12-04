@@ -159,7 +159,6 @@ add_library(gigamonkey STATIC
     src/gigamonkey/boost/boost.cpp
     src/gigamonkey/mapi/mapi.cpp
     src/gigamonkey/mapi/envelope.cpp
-    src/gigamonkey/stratum/client.cpp
     
 )
 

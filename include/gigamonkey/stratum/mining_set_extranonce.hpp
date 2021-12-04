@@ -51,7 +51,13 @@ namespace Gigamonkey::Stratum::mining {
         parameters params() const {
             return *deserialize(notification::params());
         }
+        
+        friend std::ostream& operator<<(std::ostream&, const parameters &);
     };
+    
+    std::ostream inline &operator<<(std::ostream &o, const set_extranonce::parameters &p) {
+        return o << "{ExtraNonce1: " << p.ExtraNonce1 << ", ExtraNonce2Size: " << p.ExtraNonce2Size << "}";
+    }
 }
 
 #endif

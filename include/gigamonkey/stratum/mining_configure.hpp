@@ -53,7 +53,7 @@ namespace Gigamonkey::Stratum::mining {
     struct configure_response : response {
         using response::response;
         
-        struct parameters : json::object_t {
+        struct parameters : public json::object_t {
             using json::object_t::object_t;
             
             template <extensions::extension x> 
@@ -80,6 +80,13 @@ namespace Gigamonkey::Stratum::mining {
         bool valid() const;
         
         static bool valid(const json& j);
+        
+        // this checks that the result contains a response to every extension that was queried. 
+        static bool valid_result(const parameters& r, const configure_request::parameters& q) {
+            json j{r};
+            for (const string& extension : q.Supported) if (!(j.contains(extension) && j[extension].is_boolean())) return false;
+            return true;
+        }
     };
     
     bool inline configure_request::valid() const {

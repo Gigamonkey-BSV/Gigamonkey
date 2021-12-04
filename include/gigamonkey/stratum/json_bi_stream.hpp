@@ -11,8 +11,6 @@
 
 namespace Gigamonkey::Stratum {
     namespace io = boost::asio;
-    using mutex = std::mutex;
-    using lock_guard = std::lock_guard<mutex>;
     using io_error = boost::system::error_code;
     using tcp = io::ip::tcp;
     
@@ -23,11 +21,10 @@ namespace Gigamonkey::Stratum {
     // handlers is called from async_read_until or async_write. 
     class json_bi_stream : public std::enable_shared_from_this<json_bi_stream> {
         
-        tcp::socket Socket;
+        tcp::socket &Socket;
         io::streambuf Buffer;
         
         virtual void receive(const json&) = 0;
-        virtual void error(const io_error&) = 0;
         
         void wait_for_message() {
             boost::asio::async_read_until(Socket, Buffer, "\n",  
@@ -37,10 +34,17 @@ namespace Gigamonkey::Stratum {
                     std::stringstream ss;
                     ss << std::istream(&self->Buffer).rdbuf();
                     self->Buffer.consume(bytes_transferred);
-                    self->receive(json{ss.str()});
-                    self->wait_for_message();
+                    try {
+                        self->receive(json{ss.str()});
+                        self->wait_for_message();
+                    } catch (...) {
+                        self->Socket.close();
+                    }
                 });
         }
+        
+    protected:
+        virtual void error(const io_error&) = 0;
         
     public:
         
@@ -53,11 +57,14 @@ namespace Gigamonkey::Stratum {
                 });
         }
         
-        json_bi_stream(tcp::socket &&x) : Socket{std::move(x)}, Buffer{65536} {
+        // we start waiting for a new message as soon as the object is created. 
+        json_bi_stream(tcp::socket &x) : Socket{x}, Buffer{65536} {
             wait_for_message();
         }
         
-        virtual ~json_bi_stream();
+        virtual ~json_bi_stream() {
+            Socket.close();
+        }
     
     };
     

@@ -9,9 +9,6 @@
 namespace Gigamonkey::Stratum {
     struct session_id;
     
-    void to_json(json& j, const session_id& p);
-    bool from_json(const json& j, session_id& p);
-    
     struct session_id : uint32_big {
         session_id();
         
@@ -22,20 +19,20 @@ namespace Gigamonkey::Stratum {
         
         explicit operator encoding::hex::fixed<4>() const;
         
+        static json serialize(const session_id& p) {
+            return json::string_t{encoding::hex::fixed<4>(p)};
+        }
+        
+        static optional<session_id> deserialize(const json& j) {
+            session_id p = {};
+            if (!j.is_string()) return {};
+            auto m = encoding::hex::fixed<4>(string(j));
+            if (!m.valid()) return {};
+            p = session_id{m};
+            return p;
+        }
+        
     };
-    
-    inline void to_json(json& j, const session_id& p) {
-        j = encoding::hex::fixed<4>(p);
-    } 
-    
-    inline bool from_json(const json& j, session_id& p) {
-        p = {};
-        if (!j.is_string()) return false;
-        auto m = encoding::hex::fixed<4>(string(j));
-        if (!m.valid()) return false;
-        p = session_id{m};
-        return true;
-    }
     
     inline std::ostream& operator<<(std::ostream& o, const session_id id) {
         return o << data::encoding::hex::fixed<4>(id);
