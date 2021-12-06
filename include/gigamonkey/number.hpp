@@ -18,6 +18,7 @@
 #include <data/math/number/integer.hpp>
 
 #include <gigamonkey/types.hpp>
+#include <data/float.hpp>
 
 namespace Gigamonkey {
     
@@ -63,6 +64,27 @@ namespace Gigamonkey {
     template <endian::order r> bool operator>=(int, const natural<r>&);
     template <endian::order r> bool operator<(int, const natural<r>&);
     template <endian::order r> bool operator>(int, const natural<r>&);
+    /*
+    template <size_t size_a, size_t size_b> bool operator==(const uint<size_a>&, uint<size_b>&);
+    template <size_t size_a, size_t size_b> bool operator!=(const uint<size_a>&, uint<size_b>&);
+    template <size_t size_a, size_t size_b> bool operator<=(const uint<size_a>&, uint<size_b>&);
+    template <size_t size_a, size_t size_b> bool operator>=(const uint<size_a>&, uint<size_b>&);
+    template <size_t size_a, size_t size_b> bool operator<(const uint<size_a>&, uint<size_b>&);
+    template <size_t size_a, size_t size_b> bool operator>(const uint<size_a>&, uint<size_b>&);
+    
+    template <size_t size> bool operator==(const uint<size>&, int);
+    template <size_t size> bool operator!=(const uint<size>&, int);
+    template <size_t size> bool operator<=(const uint<size>&, int);
+    template <size_t size> bool operator>=(const uint<size>&, int);
+    template <size_t size> bool operator<(const uint<size>&, int);
+    template <size_t size> bool operator>(const uint<size>&, int);
+    
+    template <size_t size> bool operator==(int, const uint<size>&);
+    template <size_t size> bool operator!=(int, const uint<size>&);
+    template <size_t size> bool operator<=(int, const uint<size>&);
+    template <size_t size> bool operator>=(int, const uint<size>&);
+    template <size_t size> bool operator<(int, const uint<size>&);
+    template <size_t size> bool operator>(int, const uint<size>&);*/
     
     // a representation of uints of any size. 
     template <size_t size> struct uint : public base_uint<8 * size> {
@@ -83,10 +105,9 @@ namespace Gigamonkey {
         explicit uint(const data::math::number::N& n);
         
         explicit uint(const ::uint256&);
-        explicit uint(const arith_uint256&);
         
         explicit operator data::math::number::N() const;
-        explicit operator double() const;
+        explicit operator float64() const;
         
         operator bytes_view() const;
         operator slice<size>();
@@ -154,6 +175,10 @@ namespace Gigamonkey {
         }
         
         size_t serialized_size() const;
+        
+        const data::arithmetic::digits<endian::little> digits() const {
+            return data::arithmetic::digits<endian::little>{data::slice<byte>(*this)};
+        }
         
     };
     
@@ -406,8 +431,42 @@ namespace Gigamonkey {
     }
     
     template <size_t size>
-    inline uint<size>::operator double() const {
-        return double(operator math::number::N());
+    inline uint<size>::operator float64() const {
+        if ((*this) == 0) return 0;
+        
+        // first we have to find the mantissa bis. 
+        uint64_big mantissa = 0;
+        auto mi = mantissa.begin();
+        bool copy = false;
+        int from_left;
+        for (auto i = digits().rbegin(); i != digits().rend(); i++) {
+            if (*i != 0 && !copy) {
+                copy = true;
+                from_left = (i - digits().rbegin()) * 8;
+            }
+            if (copy) {
+                if (mi == mantissa.end()) break;
+                *mi = *i;
+                mi++;
+            }
+        }
+        
+        while (!(mantissa & 0x8000000000000000)) {
+            mantissa <<= 1;
+            from_left ++;
+        }
+        
+        mantissa >>= (64 - standard_binary_interchange_format_mantissa_bits<64>());
+        
+        // next we need to convert a mantissa into a significand. 
+        float64 significand = 0;
+        while (mantissa != 0) {
+            if (mantissa & 0x0000000000000001) significand += 1;
+            significand /=2;
+            mantissa >>= 1;
+        }
+        
+        return ldexp(significand, size * 8 - from_left);    
     }
     
     template <size_t size>

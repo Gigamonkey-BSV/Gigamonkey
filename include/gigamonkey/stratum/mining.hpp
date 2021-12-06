@@ -11,7 +11,7 @@ namespace Gigamonkey::Stratum {
     
     using job_id = uint32;
     
-    using worker_name = std::string;
+    using worker_name = string;
     
     struct worker;
     struct share;
