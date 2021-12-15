@@ -87,7 +87,7 @@ namespace Gigamonkey::Stratum {
                 Notify.GenerationTx1,
                 Notify.GenerationTx2, 
             Worker.Mask ? *Worker.Mask : int32_little{-1}}, 
-            Worker.ExtraNonce1};
+            Worker.ExtraNonce.ExtraNonce1};
     }
     
     inline Bitcoin::timestamp job::timestamp() const {

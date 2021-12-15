@@ -55,6 +55,31 @@ namespace Gigamonkey::Stratum::extensions {
         return encoding::hex::write(x, encoding::hex::lower);
     }
     
+    std::ostream inline &operator<<(std::ostream &o, extension &x) {
+        return o << extension_to_string(x);
+    }
+    
+    template <extension x>
+    std::ostream inline &operator<<(std::ostream &o, const configuration_result<x> &r) {
+        return o << "configuration_result<" << x << ">{" << (r.Accepted ? "true" : "false") << "}";
+    }
+    
+    std::ostream inline &operator<<(std::ostream &o, const configuration_request<version_rolling> &r) {
+        return o << "configuration_request<version_rolling>{mask: " << r.Mask << ", min-bit-count:" << r.MinBitCount << "}";
+    }
+    
+    std::ostream &operator<<(std::ostream &o, const configuration_result<version_rolling> &r);
+    
+    std::ostream inline &operator<<(std::ostream &o, const configuration_request<minimum_difficulty> &r) {
+        return o << "configuration_request<minimum_difficulty>{" << static_cast<const difficulty&>(r) << "}";
+    }
+    
+    std::ostream inline &operator<<(std::ostream &o, const configuration_request<subscribe_extranonce> &r) {
+        return o << "configuration_request<minimum_difficulty>{}";
+    }
+    
+    std::ostream &operator<<(std::ostream &o, const configuration_request<info> &r);
+    
 }
 
 #endif

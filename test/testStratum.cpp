@@ -20,18 +20,16 @@ namespace Gigamonkey::Stratum {
         EXPECT_NE(hex_a, hex_b);
         EXPECT_EQ(id_a, session_id{hex_a});
         EXPECT_EQ(id_b, session_id{hex_b});
-        json j_a;
-        json j_b;
-        session_id j_id_a;
-        session_id j_id_b;
-        to_json(j_a, id_a);
-        to_json(j_b, id_b);
+        json j_a = session_id::serialize(id_a);
+        json j_b = session_id::serialize(id_b);
         EXPECT_NE(j_a, j_b);
-        EXPECT_TRUE(from_json(j_a, j_id_a));
-        EXPECT_TRUE(from_json(j_b, j_id_b));
-        EXPECT_NE(j_id_a, j_id_b);
-        EXPECT_EQ(id_a, j_id_a);
-        EXPECT_EQ(id_b, j_id_b);
+        optional<session_id> j_id_a = session_id::deserialize(j_a);
+        optional<session_id> j_id_b = session_id::deserialize(j_b);
+        EXPECT_TRUE(j_id_a);
+        EXPECT_TRUE(j_id_b);
+        EXPECT_NE(*j_id_a, *j_id_b);
+        EXPECT_EQ(id_a, *j_id_a);
+        EXPECT_EQ(id_b, *j_id_b);
     }
     
 }

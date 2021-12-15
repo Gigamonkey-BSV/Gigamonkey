@@ -6,6 +6,18 @@
 
 namespace Gigamonkey::Bitcoin {
     
+    writer &operator<<(writer &w, const instruction& i) {
+        if (is_push_data(i.Op)) {
+            if (i.Op <= OP_PUSHSIZE75) w << static_cast<byte>(i.Op);
+            else if (i.Op == OP_PUSHDATA1) w << static_cast<byte>(OP_PUSHDATA1) << static_cast<byte>(i.Data.size()); 
+            else if (i.Op == OP_PUSHDATA2) w << static_cast<byte>(OP_PUSHDATA2) << static_cast<uint16_little>(i.Data.size()); 
+            else w << static_cast<byte>(OP_PUSHDATA2) << static_cast<uint32_little>(i.Data.size());
+            return w << i.Data;
+        }
+        
+        return w << static_cast<byte>(i.Op);
+    }
+    
     namespace {
     
         ScriptError verify_instruction(const instruction &i) {
@@ -36,12 +48,13 @@ namespace Gigamonkey::Bitcoin {
         
         struct script_writer {
             bytes_writer &Writer;
-            script_writer operator<<(instruction o) {
-                return script_writer{instruction::write(Writer, o)};
+            script_writer &operator<<(instruction o) {
+                Writer << o;
+                return *this;
             }
             
-            script_writer operator<<(program p) {
-                return p.size() == 0 ? script_writer{Writer} : (script_writer{Writer} << p.first() << p.rest());
+            script_writer &operator<<(program p) {
+                return p.size() == 0 ? *this : (*this << p.first() << p.rest());
             }
             
             script_writer(bytes_writer &w) : Writer{w} {}
@@ -68,7 +81,7 @@ namespace Gigamonkey::Bitcoin {
                 size = x;
             }
             
-            if ((r.Reader.End - r.Reader.Begin) < size) {
+            if ((r.End - r.Begin) < size) {
                 rest = {};
                 return read;
             }
@@ -81,16 +94,16 @@ namespace Gigamonkey::Bitcoin {
         struct script_reader {
             bytes_reader Reader;
             script_reader operator>>(instruction& i) {
-                if ((Reader.Reader.End - Reader.Reader.Begin) == 0) {
+                if ((Reader.End - Reader.Begin) == 0) {
                     i = {};
                     return *this;
                 }
                 
                 byte next;
-                bytes_reader r = Reader >> next;
+                Reader >> next;
                 i.Op = static_cast<op>(next);
-                if (is_push_data(i.Op)) return read_push(r, i);
-                return r;
+                if (is_push_data(i.Op)) return read_push(Reader, i);
+                return Reader;
             }
             
             bool empty() const {
@@ -98,9 +111,9 @@ namespace Gigamonkey::Bitcoin {
             }
             
             bytes read_all() {
-                bytes b(Reader.Reader.End - Reader.Reader.Begin);
-                std::copy(Reader.Reader.Begin, Reader.Reader.End, b.begin());
-                Reader.Reader.Begin = Reader.Reader.End;
+                bytes b(Reader.End - Reader.Begin);
+                std::copy(Reader.Begin, Reader.End, b.begin());
+                Reader.Begin = Reader.End;
                 return b;
             }
             

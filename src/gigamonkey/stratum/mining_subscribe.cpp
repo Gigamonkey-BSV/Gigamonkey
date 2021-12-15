@@ -6,7 +6,10 @@
 namespace Gigamonkey::Stratum::mining {
     
     subscription::subscription(const json& j) : subscription{} {
-        if (!(j.is_array() && j.size() == 2 && j[0].is_string() && from_json(j[1], ID))) return;
+        if (!(j.is_array() && j.size() == 2 && j[0].is_string())) return;
+        auto id = session_id::deserialize(j[1]);
+        if (!id) return;
+        ID = *id;
         Method = method_from_string(j[0]);
     }
     
@@ -14,7 +17,7 @@ namespace Gigamonkey::Stratum::mining {
         parameters p;
         p.resize(2);
         p[0] = method_to_string(Method);
-        to_json(p[1], ID);
+        p[1] = session_id::serialize(ID);
         return p;
     }
     
@@ -35,9 +38,9 @@ namespace Gigamonkey::Stratum::mining {
         parameters x;
         x.UserAgent = p[0];
         if (p.size() == 2) {
-            session_id n1;
-            from_json(p[1], n1);
-            x.ExtraNonce1 = n1;
+            auto n1 = session_id::deserialize(p[1]);
+            if (!n1) return {};
+            x.ExtraNonce1 = *n1;
         }
         return x;
     }
@@ -55,7 +58,7 @@ namespace Gigamonkey::Stratum::mining {
         
         Stratum::parameters x(3);
         x[0] = s;
-        to_json(x[1], p.ExtraNonce1);
+        x[1] = session_id::serialize(p.ExtraNonce1);
         x[2] = p.ExtraNonce2Size;
         
         return x;
@@ -63,7 +66,10 @@ namespace Gigamonkey::Stratum::mining {
     
     subscribe_response::parameters subscribe_response::deserialize(const Stratum::parameters& p) {
         parameters x;
-        if (p.size() != 3 || !p[0].is_array() || !p[2].is_number_unsigned() || !from_json(p[1], x.ExtraNonce1)) return {};
+        if (p.size() != 3 || !p[0].is_array() || !p[2].is_number_unsigned()) return {};
+        auto id = session_id::deserialize(p[1]);
+        if (!id) return {};
+        x.ExtraNonce1 = *id; 
         
         for (const json& j : p[0]) {
             subscription z{j};

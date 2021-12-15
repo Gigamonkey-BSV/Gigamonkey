@@ -18,10 +18,10 @@ namespace Gigamonkey::Merkle {
         list<string> transactions("a", "b", "c", "d", "e", "f", "g", "h");
         
         list<digest256> leaves = take(for_each([](const string x) -> digest256 {
-            return Bitcoin::hash256(x);
+            return Bitcoin::Hash256(x);
         }, transactions), 8);
         
-        digest256 fail = Bitcoin::hash256("Z");
+        digest256 fail = Bitcoin::Hash256("Z");
         
         for (int i = 1; i <= leaves.size(); i++) {
             leaf_digests l = take(leaves, i);

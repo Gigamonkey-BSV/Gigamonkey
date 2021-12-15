@@ -70,10 +70,16 @@ namespace Gigamonkey::Stratum::mining {
         notify(
             job_id id, const work::puzzle& p, Bitcoin::timestamp t, bool b) :
             notify{parameters{id, p, t, b}} {}
+            
+        static bool valid(const notification& n) {
+            return n.valid() && n.method() == mining_notify && deserialize(n.params()).valid();
+        }
         
         bool valid() const {
-            return notification::valid() && deserialize(notification::params()).valid();
+            return valid(*this);
         }
+        
+        friend std::ostream& operator<<(std::ostream&, const parameters &);
     };
     
     inline notify::parameters::parameters() : 
@@ -93,6 +99,12 @@ namespace Gigamonkey::Stratum::mining {
     
     bool inline notify::parameters::operator!=(const parameters& b) const {
         return !(*this == b);
+    }
+    
+    std::ostream inline &operator<<(std::ostream &o, const notify::parameters &p) {
+        return o << "{ID: " << p.ID << ", Digest: " << p.Digest << ", GenerationTx1 " << p.GenerationTx1 
+            << ", GenerationTx2: " << p.GenerationTx2 << ", Path: " << p.Path << ", Version: " << p.Version 
+            << ", Difficulty: " << work::difficulty(p.Target) << ", Now: " << p.Now << ", Clean: " << (p.Clean ? "true" : "false") << "}";
     }
     
 }

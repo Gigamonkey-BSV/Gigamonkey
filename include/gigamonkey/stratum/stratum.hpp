@@ -8,6 +8,9 @@
 #include <gigamonkey/stratum/method.hpp>
 #include <gigamonkey/stratum/message_id.hpp>
 
+// Description of Stratum: 
+// https://docs.google.com/document/d/1ocEC8OdFYrvglyXbag1yi8WoskaZoYuR5HGhwf0hWAY
+
 namespace Gigamonkey::Stratum {
     
     using parameters = json::array_t;
@@ -56,7 +59,9 @@ namespace Gigamonkey::Stratum {
         static json result(const json&);
         static optional<Stratum::error> error(const json&);
         
-        bool valid() const;
+        bool valid() const {
+            return valid(*this);
+        }
         
         message_id id() const;
         json result() const;

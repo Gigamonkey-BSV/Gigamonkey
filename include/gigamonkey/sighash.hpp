@@ -88,7 +88,7 @@ namespace Gigamonkey::Bitcoin {
         
         bytes write(const document&, sighash::directive);
         
-        template <typename writer> writer &write(writer &w, const document &doc, sighash::directive d);
+        writer &write(writer &w, const document &doc, sighash::directive d);
         
         bytes inline write(const document &doc, sighash::directive d) {
             lazy_bytes_writer w;
@@ -100,8 +100,8 @@ namespace Gigamonkey::Bitcoin {
         bytes write_original(const document&, sighash::directive);
         bytes write_Bitcoin_Cash(const document&, sighash::directive);
         
-        template <typename writer> writer &write_original(writer&, const document&, sighash::directive);
-        template <typename writer> writer &write_Bitcoin_Cash(writer&, const document&, sighash::directive);
+        writer &write_original(writer&, const document&, sighash::directive);
+        writer &write_Bitcoin_Cash(writer&, const document&, sighash::directive);
         
         bytes inline write_original(const document &doc, sighash::directive d) {
             lazy_bytes_writer w;
@@ -115,26 +115,26 @@ namespace Gigamonkey::Bitcoin {
             return w;
         }
         
-        template <typename writer> writer inline &write(writer &w, const document &doc, sighash::directive d) {
+        writer inline &write(writer &w, const document &doc, sighash::directive d) {
             return write_Bitcoin_Cash(w, doc, d);
         }
         
         // a fake transaction constructed from an incomplete transaction that is used in the original sighash algorithm. 
         transaction reconstruct(const document &doc, sighash::directive d);
         
-        template <typename writer> writer inline &write_original(writer &w, const document &doc, sighash::directive d) {
-            return transaction::write(w, reconstruct(doc, d)) << uint32_little{d};
+        writer inline &write_original(writer &w, const document &doc, sighash::directive d) {
+            return w << reconstruct(doc, d) << uint32_little{d};
         }
         
         namespace Amaury {
             bytes write(const document&, sighash::directive);
-            template <typename writer> writer &write(writer &w, const document &doc, sighash::directive d);
+            writer &write(writer &w, const document &doc, sighash::directive d);
             uint256 hash_prevouts(const incomplete::transaction &);
             uint256 hash_sequence(const incomplete::transaction &);
             uint256 hash_outputs(const incomplete::transaction &);
         }
         
-        template <typename writer> writer inline &write_Bitcoin_Cash(writer &w, const document &doc, sighash::directive d) {
+        writer inline &write_Bitcoin_Cash(writer &w, const document &doc, sighash::directive d) {
             return sighash::has_fork_id(d) ? Amaury::write(w, doc, d) : write_original(w, doc, d & ~sighash::fork_id);
         }
         
@@ -146,55 +146,7 @@ namespace Gigamonkey::Bitcoin {
                 return w;
             }
             
-            // can use cached data, but we didn't. 
-            template <typename writer> writer &write(writer &w, const document &doc, sighash::directive d) {
-                
-                if (!sighash::has_fork_id(d)) return write_original(w, doc, d & ~sighash::fork_id);
-                
-                uint256 hashPrevouts;
-                uint256 hashSequence;
-                uint256 hashOutputs;
-                
-                if (!sighash::is_anyone_can_pay(d)) {
-                    hashPrevouts = Amaury::hash_prevouts(doc.Transaction);
-                }
-                
-                if (!sighash::is_anyone_can_pay(d) &&
-                    (sighash::base(d) != sighash::single) &&
-                    (sighash::base(d) != sighash::none)) {
-                    hashSequence = Amaury::hash_sequence(doc.Transaction);
-                }
-                
-                if ((sighash::base(d) != sighash::single) &&
-                    (sighash::base(d) != sighash::none)) {
-                    hashOutputs = Amaury::hash_outputs(doc.Transaction);
-                } else if ((sighash::base(d) == sighash::single) && (doc.InputIndex < doc.Transaction.Inputs.size())) {
-                    hashOutputs = hash256(bytes(doc.Transaction.Outputs[doc.InputIndex]));
-                }
-
-                // Version
-                return write_bytes(outpoint::write(w << doc.Transaction.Version
-                
-                    // Input prevouts/nSequence (none/all, depending on flags)
-                    << hashPrevouts
-                    << hashSequence, 
-                    
-                    // The input being signed (replacing the scriptSig with scriptCode +
-                    // amount). The prevout may already be contained in hashPrevout, and the
-                    // nSequence may already be contain in hashSequence.
-                    doc.Transaction.Inputs[doc.InputIndex].Reference), 
-                    doc.ScriptCode)
-                    << doc.RedeemedValue
-                    << doc.Transaction.Inputs[doc.InputIndex].Sequence
-                
-                    // Outputs (none/one/all, depending on flags)
-                    << hashOutputs
-                    // Locktime
-                    << doc.Transaction.Locktime
-                    // Sighash type
-                    << uint32_little{d};
-                
-            }
+            writer &write(writer &w, const document &doc, sighash::directive d);
         }
         
     }

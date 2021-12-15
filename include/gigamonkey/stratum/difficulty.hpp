@@ -10,6 +10,7 @@ namespace Gigamonkey::Stratum {
     
     // Stratum difficulty can be a json integer or a json floating point. 
     struct difficulty : json {
+        using json::json;
         
         difficulty() : json{} {}
         explicit difficulty(const uint64& d) : json{json::number_unsigned_t{d}} {}

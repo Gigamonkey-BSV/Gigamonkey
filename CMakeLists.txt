@@ -118,15 +118,14 @@ add_library(gigamonkey STATIC
     src/sv/script/opcodes.cpp
     src/sv/script/script_error.cpp
     src/sv/script/script_num.cpp
-    src/sv/arith_uint256.cpp
     src/sv/script/script.cpp
     src/sv/config.cpp
     src/sv/script/interpreter.cpp
     
-    src/bitcoin_sv/hash.cpp
-    
-    src/gigamonkey/secp256k1.cpp
+    src/gigamonkey/p2p/var_int.cpp
+    src/gigamonkey/p2p/checksum.cpp
     src/gigamonkey/number.cpp
+    src/gigamonkey/secp256k1.cpp
     src/gigamonkey/timestamp.cpp
     src/gigamonkey/incomplete.cpp
     src/gigamonkey/sighash.cpp
@@ -135,6 +134,7 @@ add_library(gigamonkey STATIC
     src/gigamonkey/script/script.cpp
     src/gigamonkey/script/counter.cpp
     src/gigamonkey/script/pattern.cpp
+    src/gigamonkey/script/machine.cpp
     src/gigamonkey/address.cpp
     src/gigamonkey/wif.cpp
     src/gigamonkey/merkle.cpp
@@ -155,6 +155,7 @@ add_library(gigamonkey STATIC
     src/gigamonkey/stratum/mining_authorize.cpp
     src/gigamonkey/stratum/mining.cpp
     src/gigamonkey/stratum/extensions.cpp
+    src/gigamonkey/stratum/mining_configure.cpp
     src/gigamonkey/boost/boost.cpp
     src/gigamonkey/mapi/mapi.cpp
     src/gigamonkey/mapi/envelope.cpp
@@ -168,7 +169,6 @@ add_library(gigamonkey STATIC
 		src/gigamonkey/p2p/messages/message.cpp
 		src/gigamonkey/p2p/messages/message_header.cpp
 		src/gigamonkey/p2p/messages/message_payload.cpp
-
 
 )
 

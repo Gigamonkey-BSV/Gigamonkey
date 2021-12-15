@@ -12,7 +12,7 @@ namespace Gigamonkey::Merkle {
     
     // the function that is used to compute successive nodes in the Merkle tree. 
     inline digest hash_concatinated(const digest& a, const digest& b) {
-        return Bitcoin::hash256(write(64, a, b));
+        return Bitcoin::Hash256(write(64, a, b));
     }
     
     // all hashes for the leaves of a given tree in order starting from zero.

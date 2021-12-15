@@ -10,6 +10,21 @@
 
 namespace Gigamonkey::secp256k1 {
     
+    reader &operator>>(reader& r, point& p) {
+        byte size;
+        byte v;
+        r >> v;
+        if (v != 0x30) throw std::logic_error{"invalid signature format"};
+        r >> size;
+        if (size < 4) throw std::logic_error{"invalid signature format"};
+        bytes rest(size);
+        r >> rest;
+        bytes_reader rr{rest.data(), rest.data() + size};
+        rr >> p.R;
+        rr >> p.S;
+        return r;
+    }
+    
     bool signature::valid(bytes_view x) {
         size_t size = x.size();
         if (size < 6 || x[0] != 0x30 || x[1] != size - 2 || x[2] != 0x02) return false;

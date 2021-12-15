@@ -159,13 +159,11 @@ namespace Gigamonkey::BitcoinAssociation {
         return x;
     }
     
-    bytes_reader read_transaction(bytes_reader r, bytes& b) {
-        uint64 size = Bitcoin::read_var_int(r);
-        b.resize(size);
-        return r >> b;
+    reader &read_transaction(reader &r, bytes& b) {
+        return r >> Bitcoin::var_string{b};
     }
     
-    bytes_reader read_node(bytes_reader r, optional<digest256>& node) {
+    reader &read_node(reader &r, optional<digest256>& node) {
         byte type;
         r = r >> type;
         if (type == 1) {
@@ -177,8 +175,9 @@ namespace Gigamonkey::BitcoinAssociation {
         return r;
     }
     
-    bytes_reader read_path(bytes_reader r, digest256 leaf, Merkle::path& p) {
-        uint64 size = Bitcoin::read_var_int(r);
+    reader &read_path(reader &r, digest256 leaf, Merkle::path& p) {
+        Bitcoin::var_int size; 
+        r >> size;
         Merkle::digests d;
         Merkle::leaf l{leaf, p.Index};
         for (int i = 0; i < size; i++) {
@@ -198,34 +197,35 @@ namespace Gigamonkey::BitcoinAssociation {
             
             byte flags;
             bytes_reader r{b.data(), b.data() + b.size()};
-            uint64 index = Bitcoin::read_var_int(r >> flags);
+            Bitcoin::var_int index; 
+            r >> flags >> index;
             x.Path.Index = index;
             
             if (x.transaction_included(flags)) {
                 bytes tx;
-                r = read_transaction(r, tx);
+                read_transaction(r, tx);
             } else {
                 Bitcoin::txid t;
-                r = r >> t;
+                r >> t;
                 x.Txid = t;
             }
             
             switch (target_type(flags)) {
                 case target_type_block_hash: {
                     digest256 block_hash; 
-                    r = r >> block_hash;
+                    r >> block_hash;
                     x.BlockHash = block_hash;
                     break;
                 }
                 case target_type_block_header: {
                     bytes header(80);
-                    r = r >> header;
+                    r >> header;
                     x.BlockHeader = Bitcoin::header{slice<80>(header.data())};
                     break;
                 }
                 case target_type_Merkle_root: {
                     digest256 root; 
-                    r = r >> root;
+                    r >> root;
                     x.MerkleRoot = root;
                     break;
                 }
@@ -240,16 +240,16 @@ namespace Gigamonkey::BitcoinAssociation {
         return {};
     }
     
-    bytes_writer write_duplicate(bytes_writer w) {
+    writer &write_duplicate(writer &w) {
         return w << byte(1);
     }
     
-    bytes_writer write_node(bytes_writer w, const digest256& d) {
+    writer &write_node(writer &w, const digest256& d) {
         return w << byte(0) << d;
     }
     
-    bytes_writer write_path(bytes_writer w, list<optional<digest256>> b) {
-        w = Bitcoin::write_var_int(w, b.size());
+    writer &write_path(writer &w, list<optional<digest256>> b) {
+        w << Bitcoin::var_int{b.size()};
         for (const optional<digest256> &z : b) {
             if (bool(z)) w = write_node(w, *z);
             else w = write_duplicate(w);
@@ -258,12 +258,12 @@ namespace Gigamonkey::BitcoinAssociation {
         return w;
     }
     
-    bytes_writer write_txid(bytes_writer w, const Bitcoin::txid& t) {
+    writer &write_txid(writer &w, const Bitcoin::txid& t) {
         return w << t;
     }
     
-    bytes_writer write_transaction(bytes_writer w, const bytes& t) {
-        return Bitcoin::write_var_int(w, t.size()) << t;
+    writer &write_transaction(writer &w, const bytes& t) {
+        return w << Bitcoin::var_int{t.size()} << t;
     }
     
     proofs_serialization_standard::operator bytes() const {
@@ -275,9 +275,9 @@ namespace Gigamonkey::BitcoinAssociation {
         
         // figure out the serialized size. 
         size_t size = 1 + 
-            Bitcoin::var_int_size(Path.Index) + 
-            Bitcoin::var_int_size(Path.Digests.size()) + 
-            (tx_included ? Bitcoin::var_int_size(Transaction->size()) + Transaction->size() : 32);
+            Bitcoin::var_int::size(Path.Index) + 
+            Bitcoin::var_int::size(Path.Digests.size()) + 
+            (tx_included ? Bitcoin::var_int::size(Transaction->size()) + Transaction->size() : 32);
         for (const optional<digest256>& d : path) size += (bool(d) ? 33 : 1);
         if (tt == target_type_block_hash || tt == target_type_Merkle_root) size += 32;
         else if (tt == target_type_block_header) size += 80;
@@ -286,17 +286,18 @@ namespace Gigamonkey::BitcoinAssociation {
         bytes b(size);
         
         // write flags and index. 
-        bytes_writer w = Bitcoin::write_var_int(bytes_writer{b.begin(), b.end()} << flags(), index());
+        bytes_writer w{b.begin(), b.end()}; 
+        w << flags() << Bitcoin::var_int{index()};
         
-        if (tx_included) w = write_transaction(w, *Transaction);
-        else w = write_txid(w, *Txid);
+        if (tx_included) write_transaction(w, *Transaction);
+        else write_txid(w, *Txid);
         
-        if (tt == target_type_block_hash) w = write_txid(w, *BlockHash);
-        else if (tt == target_type_Merkle_root) w = write_txid(w, *MerkleRoot);
-        else if (target_type_block_header) w = w << BlockHeader->write();
+        if (tt == target_type_block_hash) write_txid(w, *BlockHash);
+        else if (tt == target_type_Merkle_root) write_txid(w, *MerkleRoot);
+        else if (target_type_block_header) w << BlockHeader->write();
         else return {};
         
-        w = write_path(w, path);
+        write_path(w, path);
         return b;
     }
     

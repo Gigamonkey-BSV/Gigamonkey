@@ -56,14 +56,14 @@ namespace Gigamonkey::work {
     
     // units of difficulty per second. 
     struct hashpower {
-        double Value;
+        float64 Value;
         
         hashpower operator+(const hashpower& x) const;
         hashpower& operator+=(const hashpower& x);
         hashpower operator-(const hashpower& x) const;
         hashpower& operator-=(const hashpower& x);
         
-        hashpower operator*(double x) const;
+        hashpower operator*(float64 x) const;
         
         bool operator==(const hashpower& x) const;
         bool operator!=(const hashpower& x) const;
@@ -73,19 +73,20 @@ namespace Gigamonkey::work {
         bool operator>(const hashpower& x) const;
         bool operator<(const hashpower& x) const;
         
-        explicit operator double() const;
+        explicit operator float64() const;
     };
+    
     
     // proportional to hash operations per second. 
     struct difficulty {
-        double Value;
+        float64 Value;
         
         bool valid() const;
         
-        operator double() const;
+        operator float64() const;
         
         difficulty();
-        explicit difficulty(double x);
+        explicit difficulty(float64 x);
         
         explicit operator uint256() const;
         
@@ -96,7 +97,7 @@ namespace Gigamonkey::work {
         difficulty operator-(const difficulty& x) const;
         difficulty operator-=(const difficulty& x);
         
-        difficulty operator*(double x) const;
+        difficulty operator*(float64 x) const;
         
         bool operator==(const difficulty& x) const;
         bool operator!=(const difficulty& x) const;
@@ -106,8 +107,8 @@ namespace Gigamonkey::work {
         bool operator>(const difficulty& x) const;
         bool operator<(const difficulty& x) const;
         
-        double operator/(const hashpower& x) const;
-        double operator/(const difficulty& x) const;
+        float64 operator/(const hashpower& x) const;
+        float64 operator/(const difficulty& x) const;
         
         static uint256& unit() {
             static uint256 Unit{"0x00000000FFFF0000000000000000000000000000000000000000000000000000"};
@@ -116,14 +117,14 @@ namespace Gigamonkey::work {
         
     };
     
-    inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::difficulty& h) {
+    std::ostream inline &operator<<(std::ostream &o, const Gigamonkey::work::difficulty &h) {
         return o << h.Value << " difficulty ";
     }
 
-}
+    std::ostream inline &operator<<(std::ostream &o, const Gigamonkey::work::hashpower &h) {
+        return o << "(" << h.Value << " difficulty / second)";
+    }
 
-inline std::ostream& operator<<(std::ostream& o, const Gigamonkey::work::hashpower& h) {
-    return o << "(" << h.Value << " difficulty / second)";
 }
 
 namespace Gigamonkey::Bitcoin {
@@ -150,7 +151,7 @@ namespace Gigamonkey::work {
         return *this;
     }
     
-    inline hashpower hashpower::operator*(double x) const {
+    inline hashpower hashpower::operator*(float64 x) const {
         return hashpower{Value * x};
     }
     
@@ -194,7 +195,7 @@ namespace Gigamonkey::work {
     inline difficulty::difficulty(double x) : Value{x} {}
     
     inline difficulty difficulty::minimum() {
-        return difficulty(1);
+        return difficulty(0);
     }
     
     inline difficulty difficulty::operator+(const difficulty& x) const {
@@ -276,7 +277,7 @@ namespace Gigamonkey::work {
     inline work::difficulty compact::difficulty() const {
         return work::difficulty{
             double(work::difficulty::unit()) / 
-            double(N(expand()))};
+            double(math::number::N(expand()))};
     };
     
     inline compact::operator work::difficulty() const {
@@ -289,7 +290,8 @@ namespace Gigamonkey::work {
 
     inline compact compact::encode(byte e, uint24_little v) {
         compact t;
-        data::writer<uint24_little::iterator>(t.begin(), t.end()) << v << e;
+        data::iterator_writer<compact::iterator, byte> w(t.begin(), t.end());
+        w << v << e;
         return t;
     }
 }

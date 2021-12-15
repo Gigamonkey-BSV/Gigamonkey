@@ -24,8 +24,12 @@ namespace Gigamonkey::Stratum::mining {
         using notification::notification;
         set_difficulty(difficulty d) : notification{mining_set_difficulty, serialize(d)} {} 
         
+        static bool valid(const notification &n) {
+            return n.valid() && n.method() == mining_set_difficulty && deserialize(n.params()).valid();
+        }
+        
         bool valid() const {
-            return notification::valid() && deserialize(notification::params()).valid();
+            return valid(*this);
         }
         
         difficulty params() const {

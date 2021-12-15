@@ -11,7 +11,7 @@
 
 namespace Gigamonkey::secp256k1 {
     
-    using coordinate = integer<endian::big>;
+    using coordinate = uint256;
     
     struct point {
         coordinate R;
@@ -19,6 +19,9 @@ namespace Gigamonkey::secp256k1 {
         
         point(const coordinate &r, const coordinate &s) : R{r}, S{s} {}
     };
+    
+    writer &operator<<(writer &, const point &);
+    writer &operator>>(writer &, point &);
     
     bool operator==(const point &, const point &);
     bool operator!=(const point &, const point &);
@@ -49,9 +52,6 @@ namespace Gigamonkey::secp256k1 {
         explicit operator point() const;
         explicit signature(const point&);
         signature normalize() const;
-        
-        template <typename reader> static reader &read(reader& r, point& p);
-        template <typename writer> static writer &write(writer& w, const point& p);
         
         static size_t serialized_size(const point& p) {
             return p.S.size() + p.R.size() + 6;
@@ -169,36 +169,10 @@ namespace Gigamonkey::secp256k1 {
         return !(a == b);
     }
     
-    template <typename reader> reader &signature::read(reader& r, point& p) {
-        byte size;
-        byte r_size;
-        byte s_size;
-        byte v;
-        r >> v;
-        if (v != 0x30) throw std::logic_error{"invalid signature format"};
-        r >> size;
-        if (size < 4) throw std::logic_error{"invalid signature format"};
-        r >> v;
-        if (v != 0x02) throw std::logic_error{"invalid signature format"};
-        r >> r_size;
-        if (size < r_size + 4) throw std::logic_error{"invalid signature format"};
-        p.R.resize(r_size);
-        r >> p.R;
-        r >> v;
-        if (v != 0x02) throw std::logic_error{"invalid signature format"};
-        r >> s_size;
-        if (size < r_size + s_size + 4) throw std::logic_error{"invalid signature format"};
-        p.S.resize(s_size);
-        r >> p.S;
-        if (size > r_size + s_size + 4) r.skip(size - r_size - s_size - 4);
-        return r;
-    }
+    reader &operator>>(reader& r, point& p);
     
-    template <typename writer> writer &signature::write(writer& w, const point& p) {
-        size_t r_size = p.R.size();
-        size_t s_size = p.S.size();
-        return w << byte(0x30) << byte(r_size + s_size + 4) << byte(0x02) << 
-            byte(r_size) << p.R << byte(0x02) << byte(s_size) << p.S;
+    writer inline &operator<<(writer &w, const point& p) {
+        return w << byte(0x30) << Bitcoin::var_int{p.R.serialized_size() + p.S.serialized_size() + 4} << p.R << p.S;
     }
     
     std::ostream inline &operator<<(std::ostream &o, const secret &s) {
@@ -211,14 +185,6 @@ namespace Gigamonkey::secp256k1 {
 
     std::ostream inline &operator<<(std::ostream &o, const signature &x) {
         return o << "signature{" << data::encoding::hex::write(bytes(x)) << "}";
-    }
-
-    Gigamonkey::bytes_writer inline operator<<(bytes_writer w, const secret& x) {
-        return w << x.Value;
-    }
-
-    Gigamonkey::bytes_reader inline operator>>(bytes_reader r, secret& x) {
-        return r >> x.Value;
     }
     
     bool inline valid(const secret& s) {

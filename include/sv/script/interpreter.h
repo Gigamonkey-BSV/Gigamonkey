@@ -11,7 +11,6 @@
 #include <gigamonkey/script/flags.h>
 #include <gigamonkey/script/error.h>
 #include <sv/hash.h>
-//#include "sighashtype.h"
 #include "limitedstack.h"
 #include <data/cross.hpp>
 

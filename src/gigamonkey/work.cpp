@@ -14,10 +14,6 @@ namespace Gigamonkey::work {
         uint256 target = p.Candidate.Target.expand();
         if (target == 0) return {};
         
-        // This is for test purposes only. Therefore we do not
-        // accept difficulties that are above the ordinary minimum. 
-        if (p.Candidate.Target.difficulty() > difficulty::minimum()) return {}; 
-        
         if (initial.Share.ExtraNonce2.size() != 8) {
             std::stringstream ss;
             ss << "Extra nonce 2 must have size 8; its size is " << initial.Share.ExtraNonce2.size();
@@ -55,7 +51,10 @@ namespace Gigamonkey::work {
         }
         
         // negative 
-        if (nWord != 0 && (compact & 0x00800000) != 0) return 0;
+        if (nWord != 0 && (compact & 0x00800000) != 0) {
+            std::cout << "    negative number!!!!!" << std::endl;
+            return 0;
+        }
         
         // overflow
         if (nWord != 0 && ((nSize > 34) || (nWord > 0xff && nSize > 33) ||
@@ -65,7 +64,7 @@ namespace Gigamonkey::work {
     }
     
     compact::compact(const uint256 &n) {
-        
+        std::cout << "getting compact from uint256 " << n << std::endl;
         byte exponent;
         uint24_little digits = 0;
         const byte* data = n.data();
@@ -73,21 +72,24 @@ namespace Gigamonkey::work {
         byte first_digit_to_copy = 29;
         byte digits_to_copy = 3;
         
-        auto begin_copy = digits.begin();
+        auto begin_copy = digits.end() - 1;
         
-        for(byte digit_index = 0; digit_index < 29; digit_index) if (data[digit_index]) {
+        for(byte digit_index = 31; digit_index > 2; digit_index--) if (data[digit_index]) {
             first_digit_to_copy = digit_index;
-            exponent = 32 - first_digit_to_copy;
+            exponent = first_digit_to_copy + 1;
             break;
         }
         
-        if (static_cast<char>(data[first_digit_to_copy] < 0)) {
+        if (data[first_digit_to_copy] & 0x80) {
             exponent ++;
             digits_to_copy = 2;
-            begin_copy++;
+            begin_copy--;
         } 
         
-        std::copy(data + first_digit_to_copy, data + first_digit_to_copy + digits_to_copy, begin_copy);
+        for (int i = 0; i < digits_to_copy; i++) {
+            *begin_copy = data[first_digit_to_copy - i];
+            begin_copy--;
+        }
         
         *this = compact{exponent, digits};
         
@@ -96,7 +98,7 @@ namespace Gigamonkey::work {
     compact::compact(work::difficulty d) {
         
         // this is the value we need to be less than to satisfy the given difficulty. 
-        double absolute = double(work::difficulty::unit()) / double(d);
+        float64 absolute = float64(work::difficulty::unit()) / float64(d);
         
         int exponent = 0;
         
@@ -120,7 +122,7 @@ namespace Gigamonkey::work {
         auto digit_index = std::make_reverse_iterator(digits.end());
         
         absolute *= 256;
-        double whole;
+        float64 whole;
         absolute = modf(absolute, &whole);
         int digit = int(whole);
         
@@ -146,5 +148,20 @@ namespace Gigamonkey::work {
         *this = compact(static_cast<byte>(exponent), digits);
         
     }
+    
+    difficulty::operator uint256() const {
+        if (!valid()) return 0;
+        
+        float64 val = float64(unit()) / Value;
+        int exp;
+        float64 mantissa = frexp(val, &exp);
+        uint64 mantissa_bits;
+        
+        std::copy((byte*)(&mantissa), (byte*)(&mantissa) + 8, (byte*)(&mantissa_bits));
+        mantissa_bits = (mantissa_bits & 0x000fffffffffffff) + 0x0010000000000000;
+        
+        return uint256(mantissa_bits) << (exp - standard_binary_interchange_format_mantissa_bits<64>() - 1);
+    }
+        
 }
 

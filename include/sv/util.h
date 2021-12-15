@@ -18,7 +18,6 @@
 #include <sv/fs.h>
 //#include "logging.h"
 #include "sync.h"
-#include "tinyformat.h"
 #include "utiltime.h"
 
 #include <atomic>
@@ -41,11 +40,6 @@ extern const char *const BITCOIN_PID_FILENAME;
 
 void SetupEnvironment();
 bool SetupNetworking();
-
-template <typename... Args> bool error(const char *fmt, const Args &... args) {
-    LogPrintf("ERROR: " + tfm::format(fmt, args...) + "\n");
-    return false;
-}
 
 void PrintExceptionContinue(const std::exception *pex, const char *pszThread);
 void FileCommit(FILE *file);

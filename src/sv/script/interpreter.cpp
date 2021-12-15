@@ -7,9 +7,6 @@
 #include <gigamonkey/script/flags.h>
 #include <gigamonkey/signature.hpp>
 #include <gigamonkey/script/config.hpp>
-#include <sv/crypto/ripemd160.h>
-#include <sv/crypto/sha1.h>
-#include <sv/crypto/sha256.h>
 #include <sv/script/script.h>
 #include <sv/script/script_num.h>
 #include <sv/uint256.h>
@@ -390,7 +387,7 @@ std::optional<bool> EvalScript(
                     case OP_GREATERTHANOREQUAL:
                     case OP_MIN:
                     case OP_MAX: 
-                    case OP_WITHIN: throw std::logic_error{"should not evaluate here"};
+                    case OP_WITHIN: 
 
                     //
                     // Crypto
@@ -399,44 +396,7 @@ std::optional<bool> EvalScript(
                     case OP_SHA1:
                     case OP_SHA256:
                     case OP_HASH160:
-                    case OP_HASH256: {
-                        // (in -- hash)
-                        if (stack.size() < 1) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
-
-                        LimitedVector &vch = stack.stacktop(-1);
-                        valtype vchHash((opcode == OP_RIPEMD160 ||
-                                         opcode == OP_SHA1 ||
-                                         opcode == OP_HASH160)
-                                            ? 20
-                                            : 32);
-                        if (opcode == OP_RIPEMD160) {
-                            CRIPEMD160()
-                                .Write(vch.GetElement().data(), vch.size())
-                                .Finalize(vchHash.data());
-                        } else if (opcode == OP_SHA1) {
-                            CSHA1()
-                                .Write(vch.GetElement().data(), vch.size())
-                                .Finalize(vchHash.data());
-                        } else if (opcode == OP_SHA256) {
-                            CSHA256()
-                                .Write(vch.GetElement().data(), vch.size())
-                                .Finalize(vchHash.data());
-                        } else if (opcode == OP_HASH160) {
-                            CHash160()
-                                .Write(vch.GetElement().data(), vch.size())
-                                .Finalize(vchHash.data());
-                        } else if (opcode == OP_HASH256) {
-                            CHash256()
-                                .Write(vch.GetElement().data(), vch.size())
-                                .Finalize(vchHash.data());
-                        }
-                        stack.pop_back();
-                        stack.push_back(vchHash);
-                    } break;
-
+                    case OP_HASH256: 
                     case OP_CODESEPARATOR:
                     case OP_CHECKSIG:
                     case OP_CHECKSIGVERIFY: 
@@ -599,102 +559,4 @@ std::optional<bool> EvalScript(
     long ipc{0};
     std::vector<bool> vfExec, vfElse;
     return EvalScript(config, consensus, stack, script, flags, altstack, ipc, vfExec, vfElse, serror);
-}
-
-std::optional<bool> VerifyScript(
-    const CScriptConfig& config,
-    bool consensus,
-    const CScript& scriptSig,
-    const CScript& scriptPubKey,
-    uint32_t flags,
-    ScriptError* serror)
-{
-    set_error(serror, SCRIPT_ERR_UNKNOWN_ERROR);
-
-    // If FORKID is enabled, we also ensure strict encoding.
-    if (flags & SCRIPT_ENABLE_SIGHASH_FORKID) {
-        flags |= SCRIPT_VERIFY_STRICTENC;
-    }
-
-    if ((flags & SCRIPT_VERIFY_SIGPUSHONLY) != 0 && !scriptSig.IsPushOnly()) {
-        return set_error(serror, SCRIPT_ERR_SIG_PUSHONLY);
-    }
-
-    LimitedStack stack(config.GetMaxStackMemoryUsage(flags & SCRIPT_UTXO_AFTER_GENESIS, consensus));
-    LimitedStack stackCopy(config.GetMaxStackMemoryUsage(flags & SCRIPT_UTXO_AFTER_GENESIS, consensus));
-    
-    if (auto res = EvalScript(config, consensus, stack, scriptSig, flags, serror);
-        !res.has_value() || !res.value())
-    {
-        return res;
-    }
-    
-    if ((flags & SCRIPT_VERIFY_P2SH)  && !(flags & SCRIPT_UTXO_AFTER_GENESIS)) {
-        stackCopy = stack.makeRootStackCopy();
-    }
-    
-    if (auto res = EvalScript(config, consensus, stack, scriptPubKey, flags, serror);
-        !res.has_value() || !res.value())
-    {
-        return res;
-    }
-    if (stack.empty()) {
-        return set_error(serror, SCRIPT_ERR_EVAL_FALSE);
-    }
-
-    if (CastToBool(stack.back().GetElement()) == false) {
-        return set_error(serror, SCRIPT_ERR_EVAL_FALSE);
-    }
-
-    // Additional validation for spend-to-script-hash transactions:
-    // But only if if the utxo is before genesis
-    if(  (flags & SCRIPT_VERIFY_P2SH) &&
-        !(flags & SCRIPT_UTXO_AFTER_GENESIS) &&
-        IsP2SH(scriptPubKey))
-    {
-        // scriptSig must be literals-only or validation fails
-        if (!scriptSig.IsPushOnly()) {
-            return set_error(serror, SCRIPT_ERR_SIG_PUSHONLY);
-        }
-
-        // Restore stack.
-        stack = std::move(stackCopy);
-
-        // stack cannot be empty here, because if it was the P2SH  HASH <> EQUAL
-        // scriptPubKey would be evaluated with an empty stack and the
-        // EvalScript above would return false.
-        assert(!stack.empty());
-
-        const valtype& pubKeySerialized = stack.back().GetElement();
-        CScript pubKey2(pubKeySerialized.begin(), pubKeySerialized.end());
-        stack.pop_back();
-
-        if (auto res = EvalScript(config, consensus, stack, pubKey2, flags, serror);
-            !res.has_value() || !res.value())
-        {
-            return res;
-        }
-        if (stack.empty()) {
-            return set_error(serror, SCRIPT_ERR_EVAL_FALSE);
-        }
-        if (!CastToBool(stack.back().GetElement())) {
-            return set_error(serror, SCRIPT_ERR_EVAL_FALSE);
-        }
-    }
-
-    // The CLEANSTACK check is only performed after potential P2SH evaluation,
-    // as the non-P2SH evaluation of a P2SH script will obviously not result in
-    // a clean stack (the P2SH inputs remain). The same holds for witness
-    // evaluation.
-    if ((flags & SCRIPT_VERIFY_CLEANSTACK) != 0) {
-        // Disallow CLEANSTACK without P2SH, as otherwise a switch
-        // CLEANSTACK->P2SH+CLEANSTACK would be possible, which is not a
-        // softfork (and P2SH should be one).
-        assert((flags & SCRIPT_VERIFY_P2SH) != 0);
-        if (stack.size() != 1) {
-            return set_error(serror, SCRIPT_ERR_CLEANSTACK);
-        }
-    }
-
-    return set_success(serror);
 }

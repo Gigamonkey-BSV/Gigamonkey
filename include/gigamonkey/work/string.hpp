@@ -35,16 +35,16 @@ namespace Gigamonkey::work {
         
         explicit string(const slice<80>& x) : string(read(x)) {}
         
-        uint<80> write() const {
+        byte_array<80> write() const {
             return operator Bitcoin::header().write();
         }
         
         uint256 hash() const {
-            return Bitcoin::hash256(write());
+            return Bitcoin::Hash256(write());
         }
         
         static bool valid(const slice<80> x) {
-            return Bitcoin::hash256(x).Value < Bitcoin::header::target(x).expand();
+            return Bitcoin::Hash256(x).Value < Bitcoin::header::target(x).expand();
         }
         
         bool valid() const;

@@ -33,7 +33,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         
         secret derived;
         derived.Depth = sec.Depth + 1;
-        derived.Parent = fp(hash160(pub));
+        derived.Parent = fp(Hash160(pub));
         derived.Sequence = child;
         derived.Net = sec.Net;
         
@@ -102,7 +102,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
     pubkey derive(const pubkey &pub, uint32 child) {
         pubkey derived;
         derived.Depth = pub.Depth + 1;
-        derived.Parent = fp(hash160(pub.Pubkey));
+        derived.Parent = fp(Hash160(pub.Pubkey));
         derived.Sequence = child;
         derived.Net = pub.Net;
 
@@ -169,13 +169,13 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         bytes_reader reader(view.begin() + 3, view.end());
 
         data::endian::arithmetic<boost::endian::order::big, false, 1> depth;
-        reader = reader >> depth;
+        reader >> depth;
         secret1.Depth = depth;
         data::endian::arithmetic<boost::endian::order::big, false, 4> parent;
-        reader = reader >> parent;
+        reader >> parent;
         secret1.Parent = parent;
         data::endian::arithmetic<boost::endian::order::big, false, 4> sequence;
-        reader = reader >> sequence;
+        reader >> sequence;
         secret1.Sequence = sequence;
         bytes_view chain_code = view.substr(12, 32);
         bytes_view key = view.substr(12 + 32 + 1);
@@ -329,13 +329,13 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         bytes_reader reader(view.begin() + 3, view.end());
 
         data::endian::arithmetic<boost::endian::order::big, false, 1> depth;
-        reader = reader >> depth;
+        reader >> depth;
         pubkey1.Depth = depth;
         data::endian::arithmetic<boost::endian::order::big, false, 4> parent;
-        reader = reader >> parent;
+        reader >> parent;
         pubkey1.Parent = parent;
         data::endian::arithmetic<boost::endian::order::big, false, 4> sequence;
-        reader = reader >> sequence;
+        reader >> sequence;
         pubkey1.Sequence = sequence;
         //sequence |= view[12] & 0xff;
         bytes_view chain_code = view.substr(12, 32);

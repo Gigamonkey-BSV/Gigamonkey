@@ -43,6 +43,8 @@
 #endif
 
 #include <openssl/rand.h>
+    
+#include <iostream>
 
 [[noreturn]] static void RandFailure() {
     std::cout << "Failed to read randomness, aborting" << std::endl;
