@@ -1,6 +1,6 @@
 # Generated from CLion C/C++ Code Style settings
 BasedOnStyle: LLVM
-AccessModifierOffset: -3
+AccessModifierOffset: -2
 AlignAfterOpenBracket: Align
 AlignConsecutiveAssignments: None
 AlignOperands: DontAlign
@@ -37,11 +37,11 @@ ColumnLimit: 0
 CompactNamespaces: false
 ContinuationIndentWidth: 4
 IndentCaseLabels: true
-IndentPPDirectives: None
+IndentPPDirectives: BeforeHash
 IndentWidth: 4
 KeepEmptyLinesAtTheStartOfBlocks: true
 MaxEmptyLinesToKeep: 1
-NamespaceIndentation: None
+NamespaceIndentation: All
 ObjCSpaceAfterProperty: false
 ObjCSpaceBeforeProtocolList: false
 PointerAlignment: Right
