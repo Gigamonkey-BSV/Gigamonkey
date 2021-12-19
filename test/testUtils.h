@@ -5,8 +5,8 @@
 #ifndef GIGAMONKEY_TESTUTILS_H
 #define GIGAMONKEY_TESTUTILS_H
 #include <string>
+#include "data/cross.hpp"
 
-
-std::vector<unsigned char> strToTestVector(std::string input);
+data::bytes strToTestVector(std::string input);
 
 #endif //GIGAMONKEY_TESTUTILS_H

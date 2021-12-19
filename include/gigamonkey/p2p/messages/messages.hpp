@@ -2,20 +2,38 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef GIGAMONKEY_MESSAGES_HPP
-#define GIGAMONKEY_MESSAGES_HPP
-#include "version_message.hpp"
-#include "reject_message.hpp"
-#include "unknown_message.hpp"
+#ifndef GIGAMONKEY_P2P_MESSAGES_MESSAGES_HPP_
+#define GIGAMONKEY_P2P_MESSAGES_MESSAGES_HPP_
 #include <boost/shared_ptr.hpp>
+#include "messagePayload.hpp"
+#include "versionPayload.hpp"
+#include "unknownPayload.hpp"
 namespace Gigamonkey::Bitcoin::P2P::Messages {
+struct Deleter
+{
+ public:
+  void operator()(MessagePayload* ptr)
+  {
+	std::cout << "deleting Message << '\n'";
+  }
+};
+boost::shared_ptr<MessagePayload> makePayload(const std::string &payloadName, data::bytes input, Networks network) {
+  if (payloadName == "version") {
+	return boost::shared_ptr<VersionPayload>(new VersionPayload(input, network));
+  }
+  else {
+	return boost::shared_ptr<UnknownPayload>(new UnknownPayload(input,network));
+  }
 
-    boost::shared_ptr<MessagePayload> makePayload(const std::string& payloadName) {
-        if(payloadName == "version")
-            return boost::shared_ptr<Messages::VersionMessage>(new Messages::VersionMessage());
-        if(payloadName == "reject")
-            return boost::shared_ptr<Messages::RejectMessage>(new Messages::RejectMessage());
-        return boost::shared_ptr<Messages::UnknownMessage>(new Messages::UnknownMessage());
-    }
 }
-#endif //GIGAMONKEY_MESSAGES_HPP
+
+boost::shared_ptr<MessagePayload> makePayload(const std::string &payloadName, Networks network) {
+  if (payloadName == "version") {
+	return boost::shared_ptr<VersionPayload>(new VersionPayload(network),Deleter());
+  }
+  else {
+	return boost::shared_ptr<UnknownPayload>(new UnknownPayload(network));
+  }
+}
+}
+#endif //GIGAMONKEY_P2P2_MESSAGES_MESSAGES_HPP_

@@ -3,9 +3,10 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #include "gtest/gtest.h"
 #include "testUtils.h"
+#include "data/cross.hpp"
 
-std::vector<unsigned char> strToTestVector(std::string input) {
-    std::vector<unsigned char> ret;
+data::bytes strToTestVector(std::string input) {
+    data::bytes ret;
     if (input.size() % 2 != 0) {
         return ret;
     }
