@@ -13,9 +13,9 @@ namespace Gigamonkey::Bitcoin::P2P::Messages {
  */
 class MessagePayload {
  public:
-  MessagePayload(data::bytes input,Networks network){};
-  MessagePayload(Networks network){};
-  virtual explicit operator data::bytes()=0;
+  MessagePayload(data::bytes input, Networks network) {};
+  MessagePayload(Networks network) {};
+  virtual explicit operator data::bytes() = 0;
 };
 }
 #endif //GIGAMONKEY_P2P2_MESSAGES_MESSAGEPAYLOAD_HPP_

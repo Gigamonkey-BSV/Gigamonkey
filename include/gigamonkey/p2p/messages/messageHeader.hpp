@@ -19,7 +19,7 @@ class MessageHeader {
    * @param input Input bytes
    * @param network Network message is on
    */
-  MessageHeader(data::bytes input,Networks network);
+  MessageHeader(data::bytes input, Networks network);
 
   explicit MessageHeader(Networks network);
 

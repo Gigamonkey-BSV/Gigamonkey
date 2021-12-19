@@ -47,10 +47,10 @@ namespace Gigamonkey::Bitcoin {
 Gigamonkey::checksum checksum(bytes_view b);
 
 inline bytes append_checksum(bytes_view b) {
-  bytes checked(b.size() + 4);
-  bytes_writer w(checked.begin(), checked.end());
-  w << b << checksum(b);
-  return checked;
+	bytes checked(b.size() + 4);
+	bytes_writer w(checked.begin(), checked.end());
+	w << b << checksum(b);
+	return checked;
 }
 
 bytes_view remove_checksum(bytes_view b);
@@ -60,17 +60,17 @@ bytes_view remove_checksum(bytes_view b);
 namespace Gigamonkey::base58 {
 
 inline bool check::valid() const {
-  return size() > 0;
+	return size() > 0;
 }
 
 inline byte check::version() const {
-  if (!valid()) return 0;
-  return operator[](0);
+	if (!valid()) return 0;
+	return operator[](0);
 }
 
 inline bytes_view check::payload() const {
-  if (!valid()) return {};
-  return bytes_view(*this).substr(1);
+	if (!valid()) return {};
+	return bytes_view(*this).substr(1);
 }
 
 inline check::check(byte version, bytes data) : bytes{write(data.size() + 1, version, data)} {}

@@ -20,35 +20,35 @@ class VersionPayload : public MessagePayload {
    * @param network network to use
    */
   VersionPayload(data::bytes input, Networks network) : MessagePayload(input, network) {
-		auto cur=input.begin();
-		std::copy(cur,cur+_version.size(),_version.begin());
-		cur+=_version.size();
-		std::copy(cur,cur+_services.size(),_services.begin());
-		cur+=_services.size();
-		std::copy(cur,cur+_timestamp.size(),_timestamp.begin());
-		cur+=_timestamp.size();
-		data::bytes addr_to(26);
-		std::copy(cur,cur+26,addr_to.begin());
-		cur+=26;
-		_addr_to= Address(addr_to, true);
-		if(_version>=106) {
+	  auto cur = input.begin();
+	  std::copy(cur, cur + _version.size(), _version.begin());
+	  cur += _version.size();
+	  std::copy(cur, cur + _services.size(), _services.begin());
+	  cur += _services.size();
+	  std::copy(cur, cur + _timestamp.size(), _timestamp.begin());
+	  cur += _timestamp.size();
+	  data::bytes addr_to(26);
+	  std::copy(cur, cur + 26, addr_to.begin());
+	  cur += 26;
+	  _addr_to = Address(addr_to, true);
+	  if (_version >= 106) {
 		  data::bytes addr_from(26);
-		  std::copy(cur,cur+26,addr_from.begin());
-		  cur+=26;
-		  _addr_from= Address(addr_from, true);
-		  std::copy(cur,cur+_nonce.size(),_nonce.begin());
-		  cur+=_nonce.size();
+		  std::copy(cur, cur + 26, addr_from.begin());
+		  cur += 26;
+		  _addr_from = Address(addr_from, true);
+		  std::copy(cur, cur + _nonce.size(), _nonce.begin());
+		  cur += _nonce.size();
 		  uint64_little user_agent_size = readVarInt(cur);
 		  data::bytes user_agent(user_agent_size);
-		  for(int i=0;i<user_agent_size;i++) {
-			user_agent[i]=*cur++;
+		  for (int i = 0; i < user_agent_size; i++) {
+			  user_agent[i] = *cur++;
 		  }
-		  _user_agent=std::string(reinterpret_cast<char const*>(user_agent.data()));
-		  std::copy(cur,cur+_start_height.size(),_start_height.begin());
-		  cur+=_start_height.size();
-		  if(_version>=70001)
-		  	_relay = *cur++ == 1;
-		}
+		  _user_agent = std::string(reinterpret_cast<char const *>(user_agent.data()));
+		  std::copy(cur, cur + _start_height.size(), _start_height.begin());
+		  cur += _start_height.size();
+		  if (_version >= 70001)
+			  _relay = *cur++ == 1;
+	  }
   }
 
   /**
@@ -56,8 +56,8 @@ class VersionPayload : public MessagePayload {
    * @param network network to use
    */
   explicit VersionPayload(Networks network) : MessagePayload(network) {
-	_addr_from= Address(true);
-	_addr_to=Address(true);
+	  _addr_from = Address(true);
+	  _addr_to = Address(true);
   }
 
   /**
@@ -65,43 +65,41 @@ class VersionPayload : public MessagePayload {
    * @return bytes of the payload
    */
   explicit operator data::bytes() override {
-	int size=4+8+8+26;
-	if(_version>=106)
-	  size+=26+8+4+var_int::size(_user_agent.size())+_user_agent.size();
-	if(_version>=70001)
-	  size+=1;
-	data::bytes output(size);
-	auto cur=output.begin();
-	std::copy(_version.begin(), _version.end(),cur);
-	cur+=_version.size();
-	std::copy(_services.begin(),_services.end(),cur);
-	cur+=_services.size();
-	std::copy(_timestamp.begin(), _timestamp.end(),cur);
-	cur+=_timestamp.size();
-	data::bytes addr_to= static_cast<bytes>(_addr_to);
-	std::copy(addr_to.begin(), addr_to.end(),cur);
-	cur+=addr_to.size();
-	if(_version>=106)
-	{
-	  data::bytes addr_from= static_cast<bytes>(_addr_from);
-	  std::copy(addr_from.begin(), addr_from.end(),cur);
-	  cur+=addr_from.size();
-	  std::copy(_nonce.begin(), _nonce.end(),cur);
-	  cur+=_nonce.size();
-	  data::bytes user_agent_size=writeVarInt(_user_agent.size());
-	  std::copy(user_agent_size.begin(), user_agent_size.end(),cur);
-	  cur+=user_agent_size.size();
-	  std::copy(_user_agent.begin(), _user_agent.end(),cur);
-	  cur+=_user_agent.size();
-	  std::copy(_start_height.begin(), _start_height.end(),cur);
-	  cur+=_start_height.size();
-	  if(_version>=70001)
-	  {
-		*cur=_relay?1:0;
-		cur++;
+	  int size = 4 + 8 + 8 + 26;
+	  if (_version >= 106)
+		  size += 26 + 8 + 4 + var_int::size(_user_agent.size()) + _user_agent.size();
+	  if (_version >= 70001)
+		  size += 1;
+	  data::bytes output(size);
+	  auto cur = output.begin();
+	  std::copy(_version.begin(), _version.end(), cur);
+	  cur += _version.size();
+	  std::copy(_services.begin(), _services.end(), cur);
+	  cur += _services.size();
+	  std::copy(_timestamp.begin(), _timestamp.end(), cur);
+	  cur += _timestamp.size();
+	  data::bytes addr_to = static_cast<bytes>(_addr_to);
+	  std::copy(addr_to.begin(), addr_to.end(), cur);
+	  cur += addr_to.size();
+	  if (_version >= 106) {
+		  data::bytes addr_from = static_cast<bytes>(_addr_from);
+		  std::copy(addr_from.begin(), addr_from.end(), cur);
+		  cur += addr_from.size();
+		  std::copy(_nonce.begin(), _nonce.end(), cur);
+		  cur += _nonce.size();
+		  data::bytes user_agent_size = writeVarInt(_user_agent.size());
+		  std::copy(user_agent_size.begin(), user_agent_size.end(), cur);
+		  cur += user_agent_size.size();
+		  std::copy(_user_agent.begin(), _user_agent.end(), cur);
+		  cur += _user_agent.size();
+		  std::copy(_start_height.begin(), _start_height.end(), cur);
+		  cur += _start_height.size();
+		  if (_version >= 70001) {
+			  *cur = _relay ? 1 : 0;
+			  cur++;
+		  }
 	  }
-	}
-	return output;
+	  return output;
   }
 
   /**
@@ -109,7 +107,7 @@ class VersionPayload : public MessagePayload {
          * @return true if initial
          */
   [[nodiscard]] bool isInitial() const {
-	return _initial;
+	  return _initial;
   }
 
   /**
@@ -117,7 +115,7 @@ class VersionPayload : public MessagePayload {
    * @param initial true if initial
    */
   void setInitial(bool initial) {
-	_initial = initial;
+	  _initial = initial;
   }
 
   /**
@@ -125,7 +123,7 @@ class VersionPayload : public MessagePayload {
    * @return version number
    */
   [[nodiscard]] const int32_little &getVersion() const {
-	return _version;
+	  return _version;
   }
 
   /**
@@ -133,7 +131,7 @@ class VersionPayload : public MessagePayload {
    * @param version version number
    */
   void setVersion(const int32_little &version) {
-	_version = version;
+	  _version = version;
   }
 
   /**
@@ -141,7 +139,7 @@ class VersionPayload : public MessagePayload {
    * @return Servies bit field
    */
   [[nodiscard]] const uint64_little &getServices() const {
-	return _services;
+	  return _services;
   }
 
   /**
@@ -149,7 +147,7 @@ class VersionPayload : public MessagePayload {
    * @param services Services bit field
    */
   void setServices(const uint64_little &services) {
-	_services = services;
+	  _services = services;
   }
 
   /**
@@ -157,7 +155,7 @@ class VersionPayload : public MessagePayload {
    * @return timestamp of the payload sent
    */
   [[nodiscard]] const int64_little &getTimestamp() const {
-	return _timestamp;
+	  return _timestamp;
   }
 
   /**
@@ -165,7 +163,7 @@ class VersionPayload : public MessagePayload {
    * @param timestamp timestamp payload sent
    */
   void setTimestamp(const int64_little &timestamp) {
-	_timestamp = timestamp;
+	  _timestamp = timestamp;
   }
 
   /**
@@ -173,7 +171,7 @@ class VersionPayload : public MessagePayload {
    * @return Address to
    */
   [[nodiscard]] Address &getAddressTo() {
-	return _addr_to;
+	  return _addr_to;
   }
 
   /**
@@ -181,7 +179,7 @@ class VersionPayload : public MessagePayload {
    * @param addrTo Address to
    */
   void setAddressTo(const Address &addrTo) {
-	_addr_to = addrTo;
+	  _addr_to = addrTo;
   }
 
   /**
@@ -190,7 +188,7 @@ class VersionPayload : public MessagePayload {
    * @return Address from
    */
   [[nodiscard]] Address &getAddressFrom() {
-	return _addr_from;
+	  return _addr_from;
   }
 
   /**
@@ -199,7 +197,7 @@ class VersionPayload : public MessagePayload {
    * @param addrFrom address from
    */
   void setAddressFrom(const Address &addrFrom) {
-	_addr_from = addrFrom;
+	  _addr_from = addrFrom;
   }
 
   /**
@@ -209,7 +207,7 @@ class VersionPayload : public MessagePayload {
    * @return nonce this node uses
    */
   [[nodiscard]] const uint64_little &getNonce() const {
-	return _nonce;
+	  return _nonce;
   }
 
   /**
@@ -219,7 +217,7 @@ class VersionPayload : public MessagePayload {
    * @param nonce Nonce the node uses
    */
   void setNonce(const uint64_little &nonce) {
-	_nonce = nonce;
+	  _nonce = nonce;
   }
 
   /**
@@ -227,7 +225,7 @@ class VersionPayload : public MessagePayload {
    * @return User agent of the node
    */
   [[nodiscard]] const string &getUserAgent() const {
-	return _user_agent;
+	  return _user_agent;
   }
 
   /**
@@ -235,7 +233,7 @@ class VersionPayload : public MessagePayload {
    * @param userAgent User agent of the node
    */
   void setUserAgent(const string &userAgent) {
-	_user_agent = userAgent;
+	  _user_agent = userAgent;
   }
 
   /**
@@ -243,7 +241,7 @@ class VersionPayload : public MessagePayload {
    * @return Last block height
    */
   [[nodiscard]] const int32_little &getStartHeight() const {
-	return _start_height;
+	  return _start_height;
   }
 
   /**
@@ -251,7 +249,7 @@ class VersionPayload : public MessagePayload {
    * @param startHeight last block height
    */
   void setStartHeight(const int32_little &startHeight) {
-	_start_height = startHeight;
+	  _start_height = startHeight;
   }
 
   /**
@@ -259,7 +257,7 @@ class VersionPayload : public MessagePayload {
    * @return true if node announces
    */
   [[nodiscard]] bool isRelay() const {
-	return _relay;
+	  return _relay;
   }
 
   /**
@@ -267,15 +265,15 @@ class VersionPayload : public MessagePayload {
    * @param relay true if announces relayed transactions
    */
   void setRelay(bool relay) {
-	_relay = relay;
+	  _relay = relay;
   }
 
   friend ostream &operator<<(ostream &os, const VersionPayload &payload) {
-	os  << " version: " << payload._version << " services: "
+	  os << " version: " << payload._version << " services: "
 		 << payload._services << " timestamp: " << payload._timestamp << " addr_to: " << payload._addr_to
 		 << " addr_from: " << payload._addr_from << " nonce: " << payload._nonce << " user_agent: "
 		 << payload._user_agent << " start_height: " << payload._start_height << " relay: " << payload._relay;
-	return os;
+	  return os;
   }
 
  private:

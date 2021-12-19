@@ -20,7 +20,7 @@ class Message {
   Networks _network;
  public:
   [[nodiscard]] MessageHeader getHeader() {
-	return _header;
+	  return _header;
   }
 
   /**
@@ -28,7 +28,7 @@ class Message {
    * @return
    */
   boost::shared_ptr<MessagePayload> getPayload() {
-	return _payload;
+	  return _payload;
   }
 
   /**
@@ -39,17 +39,17 @@ class Message {
   void setupBlankPayload();
 
   Networks getNetwork() {
-	return _network;
+	  return _network;
   }
 
   void setNetwork(Networks network) {
-	_network=network;
+	  _network = network;
   }
   bool isValid();
 
-  static Message create(const std::string& commandName,Networks network);
-  static Message createFrom(MessageHeader header,data::bytes input,Networks network);
-  Message(Messages::MessageHeader header,Networks network);
+  static Message create(const std::string &commandName, Networks network);
+  static Message createFrom(MessageHeader header, data::bytes input, Networks network);
+  Message(Messages::MessageHeader header, Networks network);
   explicit Message(Networks network);
   explicit operator data::bytes();
   friend ostream &operator<<(ostream &os, const Message &message);

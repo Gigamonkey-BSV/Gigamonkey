@@ -32,13 +32,13 @@ class Address {
    * @param input input to construct from
    * @param initial is this part of the initial version
    */
-  Address(data::bytes input,bool initial);
+  Address(data::bytes input, bool initial);
 
   /**
    * Constructs an address from input
    * @param input
    */
-  explicit Address(data::bytes input): Address(input, false){};
+  explicit Address(data::bytes input) : Address(input, false) {};
 
   /**
    * Address in bytes
@@ -53,19 +53,19 @@ class Address {
          * @param c Third Byte
          * @param d Fourth Byte
          */
-  void setIP(int a,int b,int c,int d);
+  void setIP(int a, int b, int c, int d);
 
   /**
    * Sets an IPv6 address into the address
    * @param ip IPv6 address to use
    */
-  void setIP(boost::array<unsigned char,16> ip);
+  void setIP(boost::array<unsigned char, 16> ip);
 
   /**
    * Gets the IP array
    * @return Array of IP in IPV6 format
    */
-  [[nodiscard]] boost::array<unsigned char,16> getIP();
+  [[nodiscard]] boost::array<unsigned char, 16> getIP();
 
   /**
    * gets Port the address is set to use
@@ -119,7 +119,7 @@ class Address {
  private:
   data::uint64_little _services{};
   data::int32_little _timestamp{};
-  boost::array<unsigned char,16> _ip{};
+  boost::array<unsigned char, 16> _ip{};
   data::uint16_big _port{};
   bool _initial;
 };
