@@ -13,46 +13,46 @@ namespace Gigamonkey::Bitcoin::P2P::Messages {
 /**
  * P2P Message
  */
-class Message {
- private:
-  Messages::MessageHeader _header;
-  boost::shared_ptr<Messages::MessagePayload> _payload;
-  Networks _network;
- public:
-  [[nodiscard]] MessageHeader getHeader() {
-	  return _header;
-  }
+	class Message {
+	  private:
+		Messages::MessageHeader _header;
+		boost::shared_ptr<Messages::MessagePayload> _payload;
+		Networks _network;
+	  public:
+		[[nodiscard]] MessageHeader getHeader() {
+			return _header;
+		}
 
-  /**
-   * Gets payload
-   * @return
-   */
-  boost::shared_ptr<MessagePayload> getPayload() {
-	  return _payload;
-  }
+		/**
+		 * Gets payload
+		 * @return
+		 */
+		boost::shared_ptr<MessagePayload> getPayload() {
+			return _payload;
+		}
 
-  /**
-   * Sets the header up
-   */
-  void setupHeader();
+		/**
+		 * Sets the header up
+		 */
+		void setupHeader();
 
-  void setupBlankPayload();
+		void setupBlankPayload();
 
-  Networks getNetwork() {
-	  return _network;
-  }
+		Networks getNetwork() {
+			return _network;
+		}
 
-  void setNetwork(Networks network) {
-	  _network = network;
-  }
-  bool isValid();
+		void setNetwork(Networks network) {
+			_network = network;
+		}
+		bool isValid();
 
-  static Message create(const std::string &commandName, Networks network);
-  static Message createFrom(MessageHeader header, data::bytes input, Networks network);
-  Message(Messages::MessageHeader header, Networks network);
-  explicit Message(Networks network);
-  explicit operator data::bytes();
-  friend ostream &operator<<(ostream &os, const Message &message);
-};
+		static Message create(const std::string &commandName, Networks network);
+		static Message createFrom(MessageHeader header, data::bytes input, Networks network);
+		Message(Messages::MessageHeader header, Networks network);
+		explicit Message(Networks network);
+		explicit operator data::bytes();
+		friend ostream &operator<<(ostream &os, const Message &message);
+	};
 }
 #endif //GIGAMONKEY_P2P2_MESSAGES_MESSAGE_HPP_
