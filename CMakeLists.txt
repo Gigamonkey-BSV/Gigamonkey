@@ -121,8 +121,8 @@ add_library(gigamonkey STATIC
     src/sv/script/script.cpp
     src/sv/config.cpp
     src/sv/script/interpreter.cpp
-    
-    src/gigamonkey/p2p/var_int.cpp
+
+        src/gigamonkey/p2p/var_util.cpp
     src/gigamonkey/p2p/checksum.cpp
     src/gigamonkey/number.cpp
     src/gigamonkey/secp256k1.cpp
@@ -162,17 +162,19 @@ add_library(gigamonkey STATIC
 
     src/gigamonkey/script/counter.cpp
     src/gigamonkey/script/machine.cpp
-	src/gigamonkey/p2p/node.cpp
-	src/gigamonkey/p2p/node_manager.cpp
+
+		src/gigamonkey/p2p/messages/messageHeader.cpp
 		src/gigamonkey/p2p/networks.cpp
-		src/gigamonkey/p2p/messages/utils.cpp
 		src/gigamonkey/p2p/address.cpp
+
+        src/gigamonkey/p2p/var_util.cpp
 		src/gigamonkey/p2p/messages/message.cpp
 		src/gigamonkey/p2p/messages/message_header.cpp
 		src/gigamonkey/p2p/messages/message_payload.cpp
 
 
 )
+		src/gigamonkey/p2p/node.cpp)
 
 target_link_libraries(gigamonkey PUBLIC data util ${OPENSSL_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} nlohmann_json::nlohmann_json )
 

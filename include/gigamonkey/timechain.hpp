@@ -5,7 +5,7 @@
 #define GIGAMONKEY_TIMECHAIN
 
 #include <gigamonkey/hash.hpp>
-#include <gigamonkey/p2p/var_int.hpp>
+#include <gigamonkey/p2p/var_util.hpp>
 #include <gigamonkey/satoshi.hpp>
 #include <gigamonkey/merkle/proof.hpp>
 #include <gigamonkey/work/target.hpp>
