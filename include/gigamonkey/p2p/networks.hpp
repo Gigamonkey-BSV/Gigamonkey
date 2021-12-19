@@ -8,13 +8,13 @@
 #include <boost/array.hpp>
 
 namespace Gigamonkey::Bitcoin::P2P {
-    enum class Networks {
-        MainNet,
-        TestNet,
-        RegTest,
-        ScaleTest,
-    };
+enum class Networks {
+  MainNet,
+  TestNet,
+  RegTest,
+  ScaleTest,
+};
 
-    boost::array<unsigned char, 4> getMagicNum(Networks network);
+boost::array<unsigned char, 4> getMagicNum(Networks network);
 }
 #endif //GIGAMONKEY_NETWORKS_HPP

@@ -19,7 +19,7 @@ class UnknownPayload : public MessagePayload {
 															  _network(network) {}
   data::bytes getData() { return _data; }
   explicit operator data::bytes() override {
-	return this->_data;
+	  return this->_data;
   }
 
 };
