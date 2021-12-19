@@ -15,55 +15,57 @@ namespace Gigamonkey::Bitcoin::P2P {
 /**
  * Node connecting to the p2p
  */
-class Node : public boost::enable_shared_from_this<Node> {
- private:
-  std::queue<Messages::Message> _incoming;
-  std::queue<Messages::Message> _outgoing;
-  boost::asio::io_context &_context;
-  bool _server{};
-  boost::asio::ip::tcp::socket _socket;
-  Networks _network;
-  data::bytes _content{24};
-  bool _connected = false;
-  bool _connecting = false;
-  std::string _error{};
-  int32_t _version;
- public:
+	class Node : public boost::enable_shared_from_this<Node> {
+	  private:
+		std::queue<Messages::Message> _incoming;
+		std::queue<Messages::Message> _outgoing;
+		boost::asio::io_context &_context;
+		bool _server{};
+		boost::asio::ip::tcp::socket _socket;
+		Networks _network;
+		data::bytes _content{24};
+		bool _connected = false;
+		bool _connecting = false;
+		std::string _error{};
+		int32_t _version;
+	  public:
 
-  boost::asio::ip::tcp::socket &getSocket() {
-	  return _socket;
-  }
+		boost::asio::ip::tcp::socket &getSocket() {
+			return _socket;
+		}
 
-  /**
-   * Constructs a node
-   * @param context IO context for the server
-   * @param network network node is meant for
-   */
-  Node(boost::asio::io_context &context, bool server, Networks network)
-	  : _server(server), _context(context), _socket(_context), _network(network) {}
+		/**
+		 * Constructs a node
+		 * @param context IO context for the server
+		 * @param network network node is meant for
+		 */
+		Node(boost::asio::io_context &context, bool server, Networks network)
+			: _server(server), _context(context), _socket(_context), _network(network) {}
 
-  /**
-   * Gets the last incoming message.
-   * @warning Pops the message off the queue
-   * @return message
-   */
-  inline Messages::Message getLastIncoming() {
-	  auto front = _incoming.front();
-	  _incoming.pop();
-	  return front;
-  }
+		/**
+		 * Gets the last incoming message.
+		 * @warning Pops the message off the queue
+		 * @return message
+		 */
+		inline Messages::Message getLastIncoming() {
+			auto front = _incoming.front();
+			_incoming.pop();
+			return front;
+		}
 
-  Messages::Message generateVersion(bool initial);
+		Messages::Message generateVersion(bool initial);
 
-  void connect(std::string address, std::string port);
+		void connect(std::string address, std::string port);
 
-  void connected(const boost::system::error_code &ec);
+		void connected(const boost::system::error_code &ec);
 
-  void readHeader(const boost::system::error_code &ec, std::size_t bytes_transferred);
-  void readPayload(const boost::system::error_code &ec, std::size_t bytes_transferred, Messages::MessageHeader header);
-  void processMessages();
-  static boost::shared_ptr<Node> create(boost::asio::io_context &context, bool b, Networks networks);
+		void readHeader(const boost::system::error_code &ec, std::size_t bytes_transferred);
+		void readPayload(const boost::system::error_code &ec,
+						 std::size_t bytes_transferred,
+						 Messages::MessageHeader header);
+		void processMessages();
+		static boost::shared_ptr<Node> create(boost::asio::io_context &context, bool b, Networks networks);
 
-};
+	};
 }
 #endif //GIGAMONKEY_NODE_HPP

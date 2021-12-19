@@ -11,11 +11,11 @@ namespace Gigamonkey::Bitcoin::P2P::Messages {
 /**
  * Payload abstract class
  */
-class MessagePayload {
- public:
-  MessagePayload(data::bytes input, Networks network) {};
-  MessagePayload(Networks network) {};
-  virtual explicit operator data::bytes() = 0;
-};
+	class MessagePayload {
+	  public:
+		MessagePayload(data::bytes input, Networks network) {};
+		MessagePayload(Networks network) {};
+		virtual explicit operator data::bytes() = 0;
+	};
 }
 #endif //GIGAMONKEY_P2P2_MESSAGES_MESSAGEPAYLOAD_HPP_

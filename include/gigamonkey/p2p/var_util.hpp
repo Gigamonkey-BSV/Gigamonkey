@@ -9,7 +9,7 @@
 #include "data/cross.hpp"
 #include "data/encoding/endian/arithmetic.hpp"
 namespace Gigamonkey::Bitcoin::P2P {
-data::uint64_little readVarInt(data::bytes::iterator &input);
-data::bytes writeVarInt(data::uint64_little input);
+	data::uint64_little readVarInt(data::bytes::iterator &input);
+	data::bytes writeVarInt(data::uint64_little input);
 }
 #endif //GIGAMONKEY_P2P2_VAR_INT_HPP_
