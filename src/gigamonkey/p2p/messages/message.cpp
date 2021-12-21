@@ -48,7 +48,7 @@ namespace Gigamonkey::Bitcoin::P2P::Messages {
 		return payloadBytes.size() == _header.getPayloadSize() && check == _header.getChecksum();
 	}
 	ostream &operator<<(ostream &os, const Message &message) {
-		os << "_header: " << message._header << " _payload: " << message._payload;
+		os << "_header: " << message._header << " _payload: " << (message._payload.get());
 		return os;
 	}
 	Message::Message(Networks network) : _header(network) {

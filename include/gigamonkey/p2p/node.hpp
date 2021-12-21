@@ -9,7 +9,10 @@
 #include <queue>
 #include "gigamonkey/p2p/messages/message.hpp"
 #include "gigamonkey/p2p/networks.hpp"
+#include "constants.hpp"
+#include "gigamonkey/p2p/messages/versionPayload.hpp"
 #include <boost/asio.hpp>
+#include <boost/function.hpp>
 
 namespace Gigamonkey::Bitcoin::P2P {
 /**
@@ -28,6 +31,8 @@ namespace Gigamonkey::Bitcoin::P2P {
 		bool _connecting = false;
 		std::string _error{};
 		int32_t _version;
+		boost::shared_ptr<Messages::VersionPayload> _versionPacket;
+		uint32_little _nonce;
 	  public:
 
 		boost::asio::ip::tcp::socket &getSocket() {
@@ -40,7 +45,7 @@ namespace Gigamonkey::Bitcoin::P2P {
 		 * @param network network node is meant for
 		 */
 		Node(boost::asio::io_context &context, bool server, Networks network)
-			: _server(server), _context(context), _socket(_context), _network(network) {}
+			: _server(server), _context(context), _socket(_context), _network(network), _version(GIGAMONKEY_P2P_VERSION) {}
 
 		/**
 		 * Gets the last incoming message.
@@ -63,9 +68,13 @@ namespace Gigamonkey::Bitcoin::P2P {
 		void readPayload(const boost::system::error_code &ec,
 						 std::size_t bytes_transferred,
 						 Messages::MessageHeader header);
+
+		void sendMessage(Messages::Message msg,std::function<void (const boost::system::error_code &ec,
+																	 std::size_t bytes_transferred)> handler);
 		void processMessages();
 		static boost::shared_ptr<Node> create(boost::asio::io_context &context, bool b, Networks networks);
 
+		void startHeader();
 	};
 }
 #endif //GIGAMONKEY_NODE_HPP

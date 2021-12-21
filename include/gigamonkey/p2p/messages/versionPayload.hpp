@@ -6,10 +6,12 @@
 #ifndef GIGAMONKEY_P2P_MESSAGES_VERSIONPAYLOAD_HPP_
 #define GIGAMONKEY_P2P_MESSAGES_VERSIONPAYLOAD_HPP_
 #include <ostream>
+#include <boost/make_shared.hpp>
 #include "messagePayload.hpp"
 #include "gigamonkey/p2p/address.hpp"
 #include "gigamonkey/p2p/var_util.hpp"
 #include "gigamonkey/p2p/var_int.hpp"
+#include "gigamonkey/p2p/association_id.hpp"
 namespace Gigamonkey::Bitcoin::P2P::Messages {
 	class VersionPayload : public MessagePayload {
 	  public:
@@ -49,6 +51,16 @@ namespace Gigamonkey::Bitcoin::P2P::Messages {
 				if (_version >= 70001)
 					_relay = *cur++ == 1;
 			}
+			int assocSize = readVarInt(cur);
+			cur++;
+			if(assocSize!=0) {
+				auto temp=data::bytes(assocSize);
+				std::copy(cur,cur+assocSize,temp.begin());
+				_assocId = AssociationID::create(temp);
+			}
+			else {
+				_assocId=boost::make_shared<UUIDAssociationId>();
+			}
 		}
 
 		/**
@@ -58,6 +70,7 @@ namespace Gigamonkey::Bitcoin::P2P::Messages {
 		explicit VersionPayload(Networks network) : MessagePayload(network) {
 			_addr_from = Address(true);
 			_addr_to = Address(true);
+			_assocId=boost::make_shared<UUIDAssociationId>();
 		}
 
 		/**
@@ -98,6 +111,18 @@ namespace Gigamonkey::Bitcoin::P2P::Messages {
 					*cur = _relay ? 1 : 0;
 					cur++;
 				}
+				if(_assocId) {
+					data::bytes temp = static_cast<bytes>(*_assocId);
+					data::bytes siz=writeVarInt(temp.size());
+					output.resize(output.size()+var_int::size(temp.size())+temp.size());
+					std::copy(siz.begin(), siz.end(),cur);
+					cur+=siz.size();
+					if(temp.size()>0) {
+						std::copy(temp.begin(), temp.end(),cur);
+						cur+=temp.size();
+					}
+				}
+
 			}
 			return output;
 		}
@@ -272,7 +297,8 @@ namespace Gigamonkey::Bitcoin::P2P::Messages {
 			os << " version: " << payload._version << " services: "
 			   << payload._services << " timestamp: " << payload._timestamp << " addr_to: " << payload._addr_to
 			   << " addr_from: " << payload._addr_from << " nonce: " << payload._nonce << " user_agent: "
-			   << payload._user_agent << " start_height: " << payload._start_height << " relay: " << payload._relay;
+			   << payload._user_agent << " start_height: " << payload._start_height << " relay: " << payload._relay
+			   << "association ID: " << payload._assocId.get();
 			return os;
 		}
 
@@ -287,6 +313,7 @@ namespace Gigamonkey::Bitcoin::P2P::Messages {
 		std::string _user_agent;
 		data::int32_little _start_height{};
 		bool _relay{};
+		boost::shared_ptr<AssociationID> _assocId;
 	};
 }
 #endif //GIGAMONKEY_P2P2_MESSAGES_VERSIONPAYLOAD_HPP_

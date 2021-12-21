@@ -6,6 +6,8 @@
 #include "gigamonkey/p2p/node.hpp"
 #include "gigamonkey/p2p/messages/versionPayload.hpp"
 #include "gigamonkey/p2p/constants.hpp"
+#include "gigamonkey/timechain.hpp"
+#include "gigamonkey/p2p/messages/pingPayload.hpp"
 namespace Gigamonkey::Bitcoin::P2P {
 
 	Messages::Message Node::generateVersion(bool initial) {
@@ -55,12 +57,7 @@ namespace Gigamonkey::Bitcoin::P2P {
 			return;
 		}
 		Messages::Message msg = generateVersion(true);
-		data::bytes temp = static_cast<bytes>(msg);
-		std::string res;
-		boost::algorithm::hex(temp.begin(), temp.end(), back_inserter(res));
-		std::cout << "msg:" << res << std::endl;
-		boost::asio::const_buffer buffer(temp.data(), temp.size());
-		_socket.async_send(buffer, [this](const boost::system::error_code &ec,
+		this->sendMessage(msg, [this](const boost::system::error_code &ec,
 										  std::size_t bytes_transferred) {
 			std::cout << "sent " << bytes_transferred << std::endl;
 
@@ -90,6 +87,13 @@ namespace Gigamonkey::Bitcoin::P2P {
 			return;
 		}
 		Messages::MessageHeader header(this->_content, _network);
+		if(header.getPayloadSize()==0) {
+			Messages::Message msg = Messages::Message::createFrom(header,data::bytes(),_network);
+			_incoming.push(msg);
+			startHeader();
+			processMessages();
+			return;
+		}
 		_content.resize(header.getPayloadSize());
 		boost::asio::mutable_buffer response_(_content.data(), _content.size());
 		boost::asio::async_read(_socket,
@@ -121,17 +125,20 @@ namespace Gigamonkey::Bitcoin::P2P {
 		}
 		Messages::Message msg = Messages::Message::createFrom(header, _content, _network);
 		_incoming.push(msg);
+		startHeader();
+		processMessages();
+	}
+	void Node::startHeader() {
 		_content.resize(24);
 		boost::asio::mutable_buffer response_(_content.data(), _content.size());
 		boost::asio::async_read(_socket,
 								response_,
 								boost::asio::transfer_exactly(24),
-								[this, header](const boost::system::error_code &ec,
+								[this](const boost::system::error_code &ec,
 											   std::size_t bytes_transferred) {
-									this->readHeader(ec,
-													 bytes_transferred);
+									readHeader(ec,
+											   bytes_transferred);
 								});
-		processMessages();
 	}
 	void Node::processMessages() {
 		if (!_error.empty()) {
@@ -139,9 +146,54 @@ namespace Gigamonkey::Bitcoin::P2P {
 		}
 		while (!_incoming.empty()) {
 			auto msg = _incoming.front();
+			if(!msg.isValid()){
+				std::cout << "Recieved invalid message:" << msg << std::endl;
+				std::cout.flush();
+				_incoming.pop();
+				return;
+			}
 			std::cout << "Recieved " << msg << std::endl;
 			std::cout.flush();
+			if(msg.getHeader().getCommandName()=="version") {
+				boost::shared_ptr<Messages::VersionPayload> version = boost::dynamic_pointer_cast<Messages::VersionPayload>(msg.getPayload());
+				this->_version = std::min((int)_version,(int)version->getVersion());
+				this->_versionPacket=version;
+				Messages::Message verack = Messages::Message::create("verack",_network);
+				verack.setupBlankPayload();
+				verack.setupHeader();
+				sendMessage(verack,[this](const boost::system::error_code &ec,
+										  std::size_t bytes_transferred) {
+						std::cout << "Sent verack" << std::endl;
+				});
+
+			}
+			else if(msg.getHeader().getCommandName()=="ping") {
+				boost::shared_ptr<Messages::PingPayload> pingPayload = boost::dynamic_pointer_cast<Messages::PingPayload>(msg.getPayload());
+
+				Messages::Message pong = Messages::Message::create("pong",_network);
+				pong.setupBlankPayload();
+				boost::shared_ptr<Messages::PingPayload> pongPayload = boost::dynamic_pointer_cast<Messages::PingPayload>(pong.getPayload());
+				pongPayload->SetNonce(pingPayload->GetNonce());
+				pong.setupHeader();
+				sendMessage(pong,[this](const boost::system::error_code &ec,
+										  std::size_t bytes_transferred) {
+					std::cout << "Sent pong" << std::endl;
+				});
+			}
 			_incoming.pop();
 		}
 	}
+	void Node::sendMessage(Messages::Message msg, std::function<void (const boost::system::error_code &ec,
+																		std::size_t bytes_transferred)> handler) {
+		data::bytes temp = static_cast<bytes>(msg);
+		std::string res;
+		boost::algorithm::hex(temp.begin(), temp.end(), back_inserter(res));
+		std::cout << "msg:" << res << std::endl;
+		boost::asio::const_buffer buffer(temp.data(), temp.size());
+		_socket.async_send(buffer, [handler](const boost::system::error_code &ec,
+										  std::size_t bytes_transferred) {
+							handler(ec,bytes_transferred);
+		});
+	}
+
 }
