@@ -175,6 +175,8 @@ add_library(gigamonkey STATIC
 
 )
 		src/gigamonkey/p2p/node.cpp)
+		src/gigamonkey/p2p/node.cpp
+		src/gigamonkey/p2p/association_id.cpp)
 
 target_link_libraries(gigamonkey PUBLIC data util ${OPENSSL_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} nlohmann_json::nlohmann_json )
 

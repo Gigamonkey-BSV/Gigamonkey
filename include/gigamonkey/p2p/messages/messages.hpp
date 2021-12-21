@@ -8,6 +8,8 @@
 #include "messagePayload.hpp"
 #include "versionPayload.hpp"
 #include "unknownPayload.hpp"
+#include "blankPayload.hpp"
+#include "pingPayload.hpp"
 namespace Gigamonkey::Bitcoin::P2P::Messages {
 	struct Deleter {
 	  public:
@@ -18,7 +20,13 @@ namespace Gigamonkey::Bitcoin::P2P::Messages {
 	boost::shared_ptr<MessagePayload> makePayload(const std::string &payloadName, data::bytes input, Networks network) {
 		if (payloadName == "version") {
 			return boost::shared_ptr<VersionPayload>(new VersionPayload(input, network));
-		} else {
+		} else if(payloadName == "verack") {
+			return boost::shared_ptr<BlankPayload>(new BlankPayload(input,network));
+		}
+		else if(payloadName == "ping" || payloadName=="pong") {
+			return boost::shared_ptr<PingPayload>(new PingPayload(input, network));
+		}
+		else {
 			return boost::shared_ptr<UnknownPayload>(new UnknownPayload(input, network));
 		}
 
@@ -27,6 +35,10 @@ namespace Gigamonkey::Bitcoin::P2P::Messages {
 	boost::shared_ptr<MessagePayload> makePayload(const std::string &payloadName, Networks network) {
 		if (payloadName == "version") {
 			return boost::shared_ptr<VersionPayload>(new VersionPayload(network), Deleter());
+		} else if (payloadName == "verack") {
+			return boost::shared_ptr<BlankPayload>(new BlankPayload(network));
+		} else if(payloadName == "ping" || payloadName=="pong") {
+			return boost::shared_ptr<PingPayload>(new PingPayload( network));
 		} else {
 			return boost::shared_ptr<UnknownPayload>(new UnknownPayload(network));
 		}
