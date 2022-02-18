@@ -65,7 +65,7 @@ namespace Gigamonkey::Bitcoin::hd {
             uint32_t Sequence;
             
             bool valid() const {
-                return Pubkey.valid() && (Net == main || Net == test);
+                return Pubkey.valid() && Pubkey.size() == secp256k1::pubkey::CompressedSize && (Net == main || Net == test);
             }
             
             pubkey(const secp256k1::pubkey& p, const chain_code& cc) : Pubkey{p}, ChainCode{cc} {}
@@ -129,7 +129,7 @@ namespace Gigamonkey::Bitcoin::hd {
             secret derive(string_view l) const;
             
             explicit operator Bitcoin::secret() const {
-                return Bitcoin::secret{to_wif(Net), Secret};
+                return Bitcoin::secret{to_wif(Net), Secret, true};
             }
             
             explicit operator string() const {
