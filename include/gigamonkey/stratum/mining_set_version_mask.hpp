@@ -29,13 +29,13 @@ namespace Gigamonkey::Stratum::mining {
         }
     };
     
-    Stratum::parameters set_version_mask::serialize(const extensions::version_mask& d) {
+    Stratum::parameters inline set_version_mask::serialize(const extensions::version_mask& d) {
         Stratum::parameters p;
         p.push_back(extensions::write_version_mask(d));
         return p;
     }
         
-    optional<extensions::version_mask> set_version_mask::deserialize(const Stratum::parameters& p) {
+    optional<extensions::version_mask> inline set_version_mask::deserialize(const Stratum::parameters& p) {
         if (p.size() != 1 || !p[0].is_string()) return {};
         return extensions::read_version_mask(string(p[0]));
     }
