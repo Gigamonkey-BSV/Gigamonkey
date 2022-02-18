@@ -2,16 +2,16 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "gigamonkey/p2p2/messages/messageHeader.hpp"
-#include "gigamonkey/p2p2/messages/versionPayload.hpp"
-#include "gigamonkey/p2p2/networks.hpp"
+#include "gigamonkey/p2p/messages/messageHeader.hpp"
+#include "gigamonkey/p2p/messages/versionPayload.hpp"
+#include "gigamonkey/p2p/networks.hpp"
 #include "gtest/gtest.h"
 #include "data/cross.hpp"
 #include "../testUtils.h"
-#include "gigamonkey/p2p2/messages/message.hpp"
+#include "gigamonkey/p2p/messages/message.hpp"
 #include <iostream>
 
-namespace Gigamonkey::Bitcoin::P2P2 {
+namespace Gigamonkey::Bitcoin::P2P {
     class MessageTest : public ::testing::Test {
 
     protected:

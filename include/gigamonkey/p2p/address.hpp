@@ -116,6 +116,7 @@ namespace Gigamonkey::Bitcoin::P2P {
 		void setTimestamp(data::int32_little timestamp);
 
 		friend std::ostream &operator<<(std::ostream &os, const Address &address);
+		friend data::reader<data::bytes> &operator>>(data::reader<data::bytes> &stream, const Address &address);
 	  private:
 		data::uint64_little _services{};
 		data::int32_little _timestamp{};
