@@ -87,5 +87,8 @@ namespace Gigamonkey::Bitcoin::P2P {
 		return os;
 
 	}
+	data::reader<data::bytes> &operator>>(data::reader<data::bytes> &stream, const Address &address) {
+		return stream;
+	}
 
 }

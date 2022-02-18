@@ -4,6 +4,7 @@
 
 #include "gigamonkey/p2p/var_util.hpp"
 #include "data/encoding/endian/arithmetic.hpp"
+#include "gigamonkey/types.hpp"
 namespace Gigamonkey::Bitcoin::P2P {
 
 	data::uint64_little readVarInt(data::bytes::iterator &input) {
