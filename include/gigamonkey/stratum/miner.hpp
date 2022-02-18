@@ -176,7 +176,7 @@ namespace Gigamonkey::Stratum {
             return Version;
         }
         
-        void error(const io_error&) final override {
+        void handle_error(const io_error&) final override {
             shutdown();
             throw std::logic_error{""};
         }

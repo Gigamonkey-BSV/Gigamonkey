@@ -29,7 +29,7 @@ namespace Gigamonkey::Stratum {
         void wait_for_message() {
             boost::asio::async_read_until(Socket, Buffer, "\n",  
                 [self = shared_from_this()](const io_error& error, size_t bytes_transferred) -> void {
-                    if (error) return self->error(error);
+                    if (error) return self->handle_error(error);
                     
                     std::stringstream ss;
                     ss << std::istream(&self->Buffer).rdbuf();
@@ -43,7 +43,7 @@ namespace Gigamonkey::Stratum {
                 });
         }
         
-        virtual void error(const io_error&) = 0;
+        virtual void handle_error(const io_error&) = 0;
         
     public:
         
@@ -52,7 +52,7 @@ namespace Gigamonkey::Stratum {
         void send(const json &j) {
             boost::asio::async_write(Socket, io::buffer(string(j) + "\n"), io::transfer_all(), 
                 [self = shared_from_this()](const io_error& error, size_t) -> void {
-                    if (error) self->error(error);
+                    if (error) self->handle_error(error);
                 });
         }
         

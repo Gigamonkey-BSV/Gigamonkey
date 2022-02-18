@@ -74,6 +74,8 @@ namespace Gigamonkey::Stratum::mining {
             return response::result();
         }
         
+        configure_response(request_id id, const parameters &p) : response{id, p} {}
+        
         template <typename... P>
         configure_response(request_id id, P... conf) : response{id, parameters(conf...)} {}
         
