@@ -40,6 +40,8 @@ namespace Gigamonkey::Stratum::mining {
             bool operator==(const parameters& p) const;
             bool operator!=(const parameters& p) const;
             
+            operator Stratum::parameters() const;
+            
         private:
             parameters() : UserAgent{}, ExtraNonce1{} {}
             
@@ -56,6 +58,14 @@ namespace Gigamonkey::Stratum::mining {
         bool valid() const;
         string user_agent() const;
         optional<session_id> extra_nonce_1() const;
+        
+        static parameters params(const request &r) {
+            return deserialize(r.params());
+        }
+        
+        parameters params() const {
+            return params(*this);
+        }
         
         using request::request;
         subscribe_request(message_id id, const string& u) : request{id, mining_subscribe, {u}} {}
@@ -77,6 +87,8 @@ namespace Gigamonkey::Stratum::mining {
             bool operator==(const parameters& p) const;
             bool operator!=(const parameters& p) const;
             
+            operator json() const;
+            
         private:
             parameters() : Subscriptions{}, ExtraNonce1{}, ExtraNonce2Size{} {}
             friend struct subscribe_response;
@@ -85,8 +97,12 @@ namespace Gigamonkey::Stratum::mining {
         static Stratum::parameters serialize(const parameters&);
         static parameters deserialize(const Stratum::parameters&);
         
+        static parameters result(const response &r) {
+            return deserialize(r.result());
+        }
+        
         parameters result() const {
-            return deserialize(response::result());
+            return result(*this);
         }
         
         static bool valid(const json& j);
@@ -101,7 +117,7 @@ namespace Gigamonkey::Stratum::mining {
         
         using response::response;
         subscribe_response(message_id id, list<subscription> sub, session_id i, uint32 x) : 
-            response{id, serialize(parameters{sub, i, x})} {}
+            subscribe_response{id, serialize(parameters{sub, i, x})} {}
         
     };
     
@@ -201,6 +217,14 @@ namespace Gigamonkey::Stratum::mining {
     
     uint32 inline subscribe_response::extra_nonce_2_size() const {
         return extra_nonce_2_size(*this);
+    }
+    
+    inline subscribe_request::parameters::operator Stratum::parameters() const {
+        return serialize(*this);
+    }
+    
+    inline subscribe_response::parameters::operator json() const {
+        return serialize(*this);
     }
     
 }

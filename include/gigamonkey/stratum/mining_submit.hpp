@@ -20,6 +20,7 @@ namespace Gigamonkey::Stratum::mining {
         static bool valid(const request&);
         bool valid() const;
         
+        static share params(const request&);
         share params() const;
         
         using request::request;
@@ -36,9 +37,13 @@ namespace Gigamonkey::Stratum::mining {
     bool inline submit_request::valid() const {
         return valid(*this);
     }
-        
+    
+    share inline submit_request::params(const request &r) {
+        return deserialize(r.params());
+    }
+    
     share inline submit_request::params() const {
-        return deserialize(request::params());
+        return params(*this);
     }
     
 }

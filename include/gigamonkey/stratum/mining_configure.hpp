@@ -38,12 +38,13 @@ namespace Gigamonkey::Stratum::mining {
         static Stratum::parameters serialize(const parameters&);
         static parameters deserialize(const Stratum::parameters&);
         
-        parameters params() const {
-            return deserialize(request::params());
-        }
+        static parameters params(const request &r) {
+            return deserialize(r.params());
+        } 
         
-        template <typename... P>
-        configure_request(request_id id, P... conf) : request{id, mining_configure, parameters{conf...}} {}
+        parameters params() const {
+            return params(*this);
+        }
         
         bool valid() const;
         
@@ -70,14 +71,13 @@ namespace Gigamonkey::Stratum::mining {
             }
         };
         
-        parameters result() const {
-            return response::result();
+        static parameters result(const response &r) {
+            return r.result();
         }
         
-        configure_response(request_id id, const parameters &p) : response{id, p} {}
-        
-        template <typename... P>
-        configure_response(request_id id, P... conf) : response{id, parameters(conf...)} {}
+        parameters result() const {
+            return result(*this);
+        }
         
         bool valid() const;
         
