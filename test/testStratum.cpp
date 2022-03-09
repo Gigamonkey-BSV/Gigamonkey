@@ -5,6 +5,8 @@
 #include <gigamonkey/stratum/mining_authorize.hpp>
 #include <gigamonkey/stratum/mining_subscribe.hpp>
 #include <gigamonkey/stratum/job.hpp>
+#include <gigamonkey/stratum/server_session.hpp>
+#include <gigamonkey/stratum/miner.hpp>
 #include "gtest/gtest.h"
 
 namespace Gigamonkey::Stratum {
@@ -114,15 +116,15 @@ namespace Gigamonkey::Stratum::mining {
             subscribe_response::parameters Result;
             
             operator subscribe_response() const {
-                return subscribe_response{ID, Result.Subscriptions, Result.ExtraNonce1, Result.ExtraNonce2Size};
+                return subscribe_response{ID, Result.Subscriptions, Result.ExtraNonce};
             }
         };
         
         std::vector<request_test_case> request_test_cases{{23, {"dk", 2}}, {45, {"dk"}}};
         
         std::vector<response_test_case> response_test_cases {
-            {23, {{subscription{mining_set_difficulty, 1}, subscription{mining_notify, 2}}, 7, 8}}, 
-            {45, {{subscription{mining_notify, 3}}, 30, 8}}};
+            {23, {{subscription{mining_set_difficulty, 1}, subscription{mining_notify, 2}}, {7, 8}}}, 
+            {45, {{subscription{mining_notify, 3}}, {30, 8}}}};
         
         for (const auto& i : request_test_cases) for (const auto& j : request_test_cases) {
             auto request_i = subscribe_request(i);

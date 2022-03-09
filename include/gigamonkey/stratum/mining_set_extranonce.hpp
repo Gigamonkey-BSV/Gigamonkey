@@ -5,25 +5,12 @@
 #define GIGAMONKEY_STRATUM_MINING_SET_EXTRANONCE
 
 #include <gigamonkey/stratum/stratum.hpp>
+#include <gigamonkey/stratum/mining.hpp>
 #include <gigamonkey/stratum/session_id.hpp>
 
 namespace Gigamonkey::Stratum::mining {
     struct set_extranonce : notification {
-        struct parameters {
-            session_id ExtraNonce1;
-            size_t ExtraNonce2Size;
-            
-            parameters() : ExtraNonce1{0}, ExtraNonce2Size{0} {}
-            parameters(session_id id, size_t size = 8) : ExtraNonce1{id}, ExtraNonce2Size{size} {}
-            
-            bool operator==(const parameters& p) const {
-                return ExtraNonce1 == p.ExtraNonce1 && ExtraNonce2Size == p.ExtraNonce2Size;
-            }
-            
-            bool operator!=(const parameters& p) const {
-                return !(operator==(p));
-            }
-        };
+        using parameters = extranonce;
         
         static Stratum::parameters serialize(const parameters& p) {
             Stratum::parameters j;
@@ -54,10 +41,6 @@ namespace Gigamonkey::Stratum::mining {
         
         friend std::ostream& operator<<(std::ostream&, const parameters &);
     };
-    
-    std::ostream inline &operator<<(std::ostream &o, const set_extranonce::parameters &p) {
-        return o << "{ExtraNonce1: " << p.ExtraNonce1 << ", ExtraNonce2Size: " << p.ExtraNonce2Size << "}";
-    }
 }
 
 #endif

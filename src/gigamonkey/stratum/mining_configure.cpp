@@ -121,6 +121,13 @@ namespace Gigamonkey::Stratum::mining {
         return p;
     }
     
+    template <> configure_response::parameters 
+    configure_response::parameters::add(configuration_result<unsupported> r) const {
+        auto p = *this;
+        p[r.Name] = false;
+        return p;
+    }
+    
     template <> optional<configuration_request<version_rolling>> 
     configure_request::parameters::get() const {
         if (!data::contains(Supported, "version_rolling")) return {};

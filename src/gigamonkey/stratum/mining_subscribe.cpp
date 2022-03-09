@@ -58,8 +58,8 @@ namespace Gigamonkey::Stratum::mining {
         
         Stratum::parameters x(3);
         x[0] = s;
-        x[1] = session_id::serialize(p.ExtraNonce1);
-        x[2] = p.ExtraNonce2Size;
+        x[1] = session_id::serialize(p.ExtraNonce.ExtraNonce1);
+        x[2] = p.ExtraNonce.ExtraNonce2Size;
         
         return x;
     }
@@ -69,7 +69,7 @@ namespace Gigamonkey::Stratum::mining {
         if (p.size() != 3 || !p[0].is_array() || !p[2].is_number_unsigned()) return {};
         auto id = session_id::deserialize(p[1]);
         if (!id) return {};
-        x.ExtraNonce1 = *id; 
+        x.ExtraNonce.ExtraNonce1 = *id; 
         
         for (const json& j : p[0]) {
             subscription z{j};
@@ -77,7 +77,7 @@ namespace Gigamonkey::Stratum::mining {
             x.Subscriptions = x.Subscriptions << z;
         }
         
-        x.ExtraNonce2Size = uint32(p[2]);
+        x.ExtraNonce.ExtraNonce2Size = uint32(p[2]);
         
         return x;
         

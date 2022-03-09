@@ -76,13 +76,11 @@ namespace Gigamonkey::Stratum::mining {
     struct subscribe_response : response {
         struct parameters {
             list<subscription> Subscriptions;
-            session_id ExtraNonce1;
-            uint32 ExtraNonce2Size;
+            extranonce ExtraNonce;
             
             bool valid() const;
             
-            parameters(list<subscription> s, session_id n1, uint32 n2x);
-            parameters(list<subscription> s, session_id n1);
+            parameters(list<subscription> s, extranonce n1);
             
             bool operator==(const parameters& p) const;
             bool operator!=(const parameters& p) const;
@@ -90,7 +88,7 @@ namespace Gigamonkey::Stratum::mining {
             operator json() const;
             
         private:
-            parameters() : Subscriptions{}, ExtraNonce1{}, ExtraNonce2Size{} {}
+            parameters() : Subscriptions{}, ExtraNonce{} {}
             friend struct subscribe_response;
         };
         
@@ -116,8 +114,10 @@ namespace Gigamonkey::Stratum::mining {
         uint32 extra_nonce_2_size() const;
         
         using response::response;
-        subscribe_response(message_id id, list<subscription> sub, session_id i, uint32 x) : 
-            subscribe_response{id, serialize(parameters{sub, i, x})} {}
+        subscribe_response(message_id id, list<subscription> sub, extranonce en) : 
+            subscribe_response{id, serialize(parameters{sub, en})} {}
+        subscribe_response(message_id id, const parameters &p) : 
+            response{id, serialize(p)} {}
         
     };
     
@@ -142,21 +142,18 @@ namespace Gigamonkey::Stratum::mining {
     }
     
     bool inline subscribe_response::parameters::valid() const {
-        return ExtraNonce2Size != 0;
+        return ExtraNonce.valid();
     }
     
     inline std::ostream& operator<<(std::ostream& o, const subscription& s) {
         return o << json(s);
     }
     
-    inline subscribe_response::parameters::parameters(list<subscription> s, session_id n1, uint32 n2x) : 
-        Subscriptions{s}, ExtraNonce1{n1}, ExtraNonce2Size{n2x} {}
-    
-    inline subscribe_response::parameters::parameters(list<subscription> s, session_id n1) : 
-        Subscriptions{s}, ExtraNonce1{n1}, ExtraNonce2Size{worker::ExtraNonce2_size} {}
+    inline subscribe_response::parameters::parameters(list<subscription> s, extranonce n1) : 
+        Subscriptions{s}, ExtraNonce{n1} {}
     
     bool inline subscribe_response::parameters::operator==(const parameters& p) const {
-        return Subscriptions == p.Subscriptions && ExtraNonce1 == p.ExtraNonce1 && ExtraNonce2Size == p.ExtraNonce2Size;
+        return Subscriptions == p.Subscriptions && ExtraNonce == p.ExtraNonce;
     }
     
     bool inline subscribe_response::parameters::operator!=(const parameters& p) const {
@@ -196,11 +193,11 @@ namespace Gigamonkey::Stratum::mining {
     }
     
     session_id inline subscribe_response::extra_nonce_1(const json& j) {
-        return deserialize(j["result"]).ExtraNonce1;
+        return deserialize(j["result"]).ExtraNonce.ExtraNonce1;
     }
     
     uint32 inline subscribe_response::extra_nonce_2_size(const json& j) {
-        return deserialize(j["result"]).ExtraNonce2Size;
+        return deserialize(j["result"]).ExtraNonce.ExtraNonce2Size;
     }
     
     bool inline subscribe_response::valid() const {

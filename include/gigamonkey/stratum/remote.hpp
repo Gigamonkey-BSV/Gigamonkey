@@ -14,13 +14,11 @@
 #include <boost/system/error_code.hpp>
 
 namespace Gigamonkey::Stratum {
-    using mutex = std::mutex;
     template <typename X> using promise = std::promise<X>;
     template <typename X> using future = std::future<X>;
     
     // can be used for a remote server or a remote client. 
     class remote : public json_bi_stream {
-        using guard = std::lock_guard<mutex>;
         
         virtual void handle_notification(const notification &) = 0;
         
@@ -33,7 +31,12 @@ namespace Gigamonkey::Stratum {
         // we keep track of requests that were made of the remote peer and
         // promises to the requestor. 
         std::list<std::pair<Stratum::request, promise<response>*>> AwaitingResponse;
-        
+
+    public:
+        using mutex = std::mutex;
+        using guard = std::lock_guard<mutex>;
+
+    private:
         mutex Mutex;
         
         void shutdown() {
@@ -76,7 +79,7 @@ namespace Gigamonkey::Stratum {
             return AwaitingResponse.back().second->get_future().get();
         }
         
-        void notify(method m, parameters p) {
+        void send_notification(method m, parameters p) {
             this->send(notification{m, p});
         }
         

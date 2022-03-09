@@ -81,6 +81,23 @@ namespace Gigamonkey::Stratum::mining {
         
         friend std::ostream& operator<<(std::ostream&, const parameters &);
     };
+}
+
+namespace Gigamonkey::Stratum {
+    
+    struct proof {
+        worker Worker;
+        mining::notify::parameters Notify;
+        share Share;
+        
+        operator work::proof() const;
+        
+        bool valid() const;
+        bool valid(const difficulty &) const;
+    };
+}
+
+namespace Gigamonkey::Stratum::mining {
     
     inline notify::parameters::parameters() : 
         ID{}, Digest{}, GenerationTx1{}, GenerationTx2{}, Path{}, Version{}, Target{}, Now{}, Clean{} {}

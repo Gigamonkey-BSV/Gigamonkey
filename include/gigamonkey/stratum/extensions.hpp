@@ -12,6 +12,7 @@
 namespace Gigamonkey::Stratum::extensions {
     
     enum extension : uint32 {
+        unsupported, 
         version_rolling, 
         minimum_difficulty, 
         subscribe_extranonce, 
@@ -26,6 +27,19 @@ namespace Gigamonkey::Stratum::extensions {
     
     template <extension> struct configuration_result {
         bool Accepted;
+    };
+    
+    template <> struct configuration_request<unsupported> {
+        string Name;
+        json::object_t Parameters;
+    };
+    
+    template <> struct configuration_result<unsupported> {
+        string Name;
+        bool Accepted;
+        json::object_t Parameters;
+        
+        explicit configuration_result(string name) : Name{name}, Accepted{false}, Parameters{} {}
     };
     
     using version_mask = int32_little;

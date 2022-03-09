@@ -69,6 +69,8 @@ namespace Gigamonkey::Stratum::mining {
             parameters(extensions::configuration_result<x> r, P... p) : parameters{p...} {
                 *this = this->add(r);
             }
+            
+            bool valid() const;
         };
         
         static parameters result(const response &r) {
@@ -150,6 +152,9 @@ namespace Gigamonkey::Stratum::mining {
     
     template <> optional<extensions::configuration_result<extensions::info>> 
     configure_response::parameters::get() const;
+    
+    template <> configure_response::parameters 
+    configure_response::parameters::add(extensions::configuration_result<extensions::unsupported>) const;
     
 }
 
