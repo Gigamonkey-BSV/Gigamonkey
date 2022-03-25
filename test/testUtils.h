@@ -7,6 +7,6 @@
 #include <string>
 #include "data/cross.hpp"
 
-data::bytes strToTestVector(std::string input);
+data::bytes strToTestVector(const std::string& input);
 
 #endif //GIGAMONKEY_TESTUTILS_H

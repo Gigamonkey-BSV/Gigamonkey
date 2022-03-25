@@ -29,7 +29,8 @@ namespace Gigamonkey::Bitcoin {
 
 	struct var_int {
 		uint64 Value;
-
+		var_int() = default;
+		explicit var_int(uint64 val) {Value=val;}
 		static size_t size(uint64 x) {
 			return x <= 0xfc ? 1 : x <= 0xffff ? 3 : x <= 0xffffffff ? 5 : 9;
 		}

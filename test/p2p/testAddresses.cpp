@@ -12,7 +12,14 @@
 
 namespace Gigamonkey::Bitcoin::P2P {
 
-	TEST(TESTADDRESSES,TestOne) {
+	auto testPacket=strToTestVector("000000000000000000000000000000000000ffff5c183534a2da");
 
+	TEST(TestPeerAddress,TestOne) {
+		Address temp(true);
+		auto temp2 = bytes_reader(testPacket.data(), testPacket.data()+testPacket.size());
+		temp2 >> temp;
+		EXPECT_EQ(temp.getPort(),41690) << "Port read incorrectly";
+		EXPECT_EQ(temp.getServices(),0) << "Services read incorrectly";
+		EXPECT_EQ(temp.getTimestamp(),0) << "Timestamp read incorrectly";
 	}
 }

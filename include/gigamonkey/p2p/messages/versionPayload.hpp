@@ -21,7 +21,7 @@ namespace Gigamonkey::Bitcoin::P2P::Messages {
 		 * @param input input data
 		 * @param network network to use
 		 */
-		VersionPayload(data::bytes input, Networks network) : MessagePayload(input, network) {
+		VersionPayload(data::bytes input, int size,Networks network) : MessagePayload(input, size, network) {
 			auto cur = input.begin();
 			std::copy(cur, cur + _version.size(), _version.begin());
 			cur += _version.size();
@@ -67,12 +67,11 @@ namespace Gigamonkey::Bitcoin::P2P::Messages {
 		 * Constructs a blank Version Payload
 		 * @param network network to use
 		 */
-		explicit VersionPayload(Networks network) : MessagePayload(network) {
+		explicit VersionPayload(int size,Networks network) : MessagePayload(size,network) {
 			_addr_from = Address(true);
 			_addr_to = Address(true);
 			_assocId=boost::make_shared<UUIDAssociationId>();
 		}
-
 		/**
 		 * Gets the bytes of the payload
 		 * @return bytes of the payload
@@ -293,6 +292,22 @@ namespace Gigamonkey::Bitcoin::P2P::Messages {
 			_relay = relay;
 		}
 
+		/**
+		 * Gets the association ID
+		 * @return associationID
+		 */
+		[[nodiscard]] const boost::shared_ptr<AssociationID> &getAssocId() {
+			return _assocId;
+		}
+
+		/**
+		 * Sets the associationID
+		 * @param assoc_id associationID
+		 */
+		void setAssocId(const boost::shared_ptr<AssociationID> &assoc_id) {
+			_assocId = assoc_id;
+		}
+
 		friend ostream &operator<<(ostream &os, const VersionPayload &payload) {
 			os << " version: " << payload._version << " services: "
 			   << payload._services << " timestamp: " << payload._timestamp << " addr_to: " << payload._addr_to
@@ -301,7 +316,67 @@ namespace Gigamonkey::Bitcoin::P2P::Messages {
 			   << "association ID: " << payload._assocId.get();
 			return os;
 		}
+		reader &read(reader &stream) override {
+			std::cout << "Reading version" << std::endl;
+			stream >> _version;
+			stream >> _services;
+			stream >> _timestamp;
+			_addr_to= Address(_initial);
+			stream >> _addr_to;
+			if(_version >= 106) {
+				stream >> _addr_from;
+				stream >> _nonce;
+				data::bytes agent;
+				stream >> var_string(agent);
+				_user_agent.resize(agent.size());
+				std::copy(agent.begin(), agent.end(),_user_agent.begin());
+				stream >> _start_height;
+				if(_version >= 70001) {
+					unsigned char relay;
+					stream >> relay;
+					_relay = (relay == 1);
+				}
+				int size = 4 + 8 + 8 + 26;
+				if (_version >= 106)
+					size += 26 + 8 + 4 + var_int::size(_user_agent.size()) + _user_agent.size();
+				if (_version >= 70001)
+					size += 1;
+				if(getSize() > size) {
+					_assocId = AssociationID::create(stream);
+				}
+			}
+			return stream;
+		}
 
+		writer &write(writer &stream) const override {
+			std::cout << "Writing version" << std::endl;
+
+			stream << _version;
+			stream << _services;
+			stream << _timestamp;
+			stream << _addr_to;
+			if(_version >= 106) {
+				stream << _addr_from;
+				stream << _nonce;
+				data::bytes agent;
+				agent.resize(_user_agent.size());
+				std::copy(_user_agent.begin(), _user_agent.end(),agent.begin());
+				stream << var_string(agent);
+				stream << _start_height;
+				if(_version >= 70001) {
+					stream << (_relay? 1:0);
+
+				}
+				if(_assocId) {
+					lazy_bytes_writer assoc;
+					assoc << *_assocId;
+					stream << var_int(((data::bytes)assoc).size());
+					stream << *_assocId;
+				}
+			}
+			return stream;
+		}
+		~VersionPayload() override = default;
 	  private:
 		bool _initial;
 		data::int32_little _version{};

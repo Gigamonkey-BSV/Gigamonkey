@@ -13,14 +13,27 @@ namespace Gigamonkey::Bitcoin::P2P::Messages {
 		Networks _network;
 		data::bytes _data;
 	  public:
-		explicit UnknownPayload(Networks network) : MessagePayload(network), _network(network) {};
-		UnknownPayload(const data::bytes &data, Networks network) : MessagePayload(data, network),
+		explicit UnknownPayload(int size,Networks network) : MessagePayload(size,network), _network(network) {};
+		UnknownPayload(const data::bytes &data, int size,Networks network) : MessagePayload(data,size, network),
 																	_data(data),
 																	_network(network) {}
 		data::bytes getData() { return _data; }
 		explicit operator data::bytes() override {
 			return this->_data;
 		}
+
+		reader &read(reader &stream) override {
+			_data.resize(getSize());
+			stream >> _data;
+
+			return stream;
+		}
+		writer &write(writer &stream) const override {
+			stream << _data;
+			return stream;
+		}
+
+		~UnknownPayload() override = default;
 
 	};
 }

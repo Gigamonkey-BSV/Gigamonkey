@@ -12,4 +12,5 @@ package_add_test(testP2P testP2p.cpp)
 package_add_test(testVersionPayload testVersionPayload.cpp)
 package_add_test(testMessage testMessage.cpp)
 package_add_test(testNode testNode.cpp)
+package_add_test(testAddresses testAddresses.cpp)
 

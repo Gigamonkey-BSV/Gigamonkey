@@ -16,11 +16,11 @@ namespace Gigamonkey::Bitcoin::P2P::Messages {
 		void SetNonce(const uint64_little &nonce) {
 			_nonce = nonce;
 		}
-		PingPayload(const data::bytes &input, Networks network)
-			: MessagePayload(input, network) {
+		PingPayload(const data::bytes &input,int size, Networks network)
+			: MessagePayload(input, size,network) {
 			std::copy(input.begin(),input.begin()+_nonce.size(),_nonce.begin());
 		}
-		explicit PingPayload(Networks network): MessagePayload(network) {}
+		explicit PingPayload(int size,Networks network): MessagePayload(size,network) {}
 
 		explicit operator data::bytes() override {
 			data::bytes out(_nonce.size());
@@ -28,6 +28,17 @@ namespace Gigamonkey::Bitcoin::P2P::Messages {
 
 			return out;
 		}
+		reader &read(reader &stream) override {
+			std::cout << "Reading ping" << std::endl;
+			// TODO: Finish this function
+			return stream;
+		}
+		writer &write(writer &stream) const override {
+			std::cout << "Writing ping" << std::endl;
+			// TODO: Finish this function
+			return stream;
+		}
+		~PingPayload() override = default;
 	};
 }
 #endif //GIGAMONKEY_P2P_MESSAGES_PINGPAYLOAD_HPP_

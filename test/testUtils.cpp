@@ -5,7 +5,7 @@
 #include "testUtils.h"
 #include "data/cross.hpp"
 
-data::bytes strToTestVector(std::string input) {
+data::bytes strToTestVector(const std::string& input) {
     data::bytes ret;
     if (input.size() % 2 != 0) {
         return ret;

@@ -6,8 +6,10 @@
 #define GIGAMONKEY_P2P_ADDRESS_HPP_
 #include <boost/array.hpp>
 #include <ostream>
+#include <utility>
 #include "data/encoding/endian/arithmetic.hpp"
 #include "data/cross.hpp"
+#include "gigamonkey/types.hpp"
 namespace Gigamonkey::Bitcoin::P2P {
 
 /**
@@ -31,6 +33,7 @@ namespace Gigamonkey::Bitcoin::P2P {
 		 * Constructs an address from input
 		 * @param input input to construct from
 		 * @param initial is this part of the initial version
+		 * @deprecated
 		 */
 		Address(data::bytes input, bool initial);
 
@@ -38,11 +41,12 @@ namespace Gigamonkey::Bitcoin::P2P {
 		 * Constructs an address from input
 		 * @param input
 		 */
-		explicit Address(data::bytes input) : Address(input, false) {};
+		explicit Address(data::bytes input) : Address(std::move(input), false) {};
 
 		/**
 		 * Address in bytes
 		 * @return byte array of address
+		 * @deprecated
 		 */
 		explicit operator data::bytes();
 
@@ -65,7 +69,7 @@ namespace Gigamonkey::Bitcoin::P2P {
 		 * Gets the IP array
 		 * @return Array of IP in IPV6 format
 		 */
-		[[nodiscard]] boost::array<unsigned char, 16> getIP();
+		[[nodiscard]] boost::array<unsigned char, 16> getIP() const;
 
 		/**
 		 * gets Port the address is set to use
@@ -115,8 +119,29 @@ namespace Gigamonkey::Bitcoin::P2P {
 		 */
 		void setTimestamp(data::int32_little timestamp);
 
+		/**
+		 * Outputs to stream as a string
+		 * @param os String to output to
+		 * @param address Address to output
+		 * @return Stream
+		 */
 		friend std::ostream &operator<<(std::ostream &os, const Address &address);
-		friend data::reader<data::bytes> &operator>>(data::reader<data::bytes> &stream, const Address &address);
+
+		/**
+		 * Reads an address from a stream
+		 * @param stream Stream to read from
+		 * @param address Address to read into
+		 * @return stream
+		 */
+		friend reader &operator>>(reader &stream, Address &address);
+
+		/**
+		 * Writes an address to stream
+		 * @param stream Stream to write to
+		 * @param address Address to write
+		 * @return Stream
+		 */
+		friend writer &operator<<(writer &stream, const Address &address);
 	  private:
 		data::uint64_little _services{};
 		data::int32_little _timestamp{};
@@ -125,4 +150,4 @@ namespace Gigamonkey::Bitcoin::P2P {
 		bool _initial;
 	};
 }
-#endif //GIGAMONKEY_P2P2_ADDRESS_HPP_
+#endif //GIGAMONKEY_P2P_ADDRESS_HPP_

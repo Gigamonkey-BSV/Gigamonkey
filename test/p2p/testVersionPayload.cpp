@@ -2,10 +2,11 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "gigamonkey/p2p2/messages/versionPayload.hpp"
+#include "gigamonkey/p2p/messages/versionPayload.hpp"
 #include "gtest/gtest.h"
 #include "data/cross.hpp"
 #include "../testUtils.h"
+#include "gigamonkey/p2p/messages/blankPayload.hpp"
 #include <iostream>
 #include <boost/type_index.hpp>
 #include <boost/iostreams/device/array.hpp>
@@ -14,7 +15,7 @@
 #include <fstream>
 
 
-namespace Gigamonkey::Bitcoin::P2P2 {
+namespace Gigamonkey::Bitcoin::P2P {
 
 class VersionPayloadTest : public ::testing::Test {
 
@@ -39,5 +40,21 @@ protected:
   Messages::VersionPayload vp(testPacket,Networks::MainNet);
   data::bytes temp= static_cast<bytes>(vp);
   EXPECT_THAT(temp,::testing::ElementsAreArray(testPacket.data(),testPacket.size()));
+	}
+
+	TEST_F(VersionPayloadTest,TestReaders) {
+		Messages::MessagePayload *temp = new Messages::VersionPayload(Networks::MainNet);
+		lazy_bytes_writer temp2;
+		auto ver=static_cast<Messages::VersionPayload*>(temp);
+		ver->setVersion(99999);
+		ver->setUserAgent("/Gigamonkey:1.1/");
+		(*boost::dynamic_pointer_cast<UUIDAssociationId>(ver->getAssocId())).generateRandom();
+		temp2 << *temp;
+		delete(temp);
+		temp=new Messages::BlankPayload(Networks::MainNet);
+		temp2 << *temp;
+
+		auto out=(data::bytes)temp2;
+		std::cout << out;
 	}
 }

@@ -5,6 +5,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include "gigamonkey/p2p/address.hpp"
+#include <type_traits>
 namespace Gigamonkey::Bitcoin::P2P {
 
 	Address::Address(bool initial) {
@@ -51,7 +52,7 @@ namespace Gigamonkey::Bitcoin::P2P {
 	void Address::setIP(boost::array<unsigned char, 16> ip) {
 		std::copy(ip.begin(), ip.end(), _ip.begin());
 	}
-	boost::array<unsigned char, 16> Address::getIP() {
+	boost::array<unsigned char, 16> Address::getIP() const{
 		return _ip;
 	}
 	data::uint16_big Address::getPort() const {
@@ -87,7 +88,35 @@ namespace Gigamonkey::Bitcoin::P2P {
 		return os;
 
 	}
-	data::reader<data::bytes> &operator>>(data::reader<data::bytes> &stream, const Address &address) {
+
+	reader &operator>>(reader &stream, Address &address) {
+		if(!address.isInitial()) {
+			data::int32_little timestamp;
+			stream >> timestamp;
+			address.setTimestamp(timestamp);
+		}
+
+		data::uint64_little services;
+		stream >> services;
+		address.setServices(services);
+		boost::array<unsigned char, 16> ip{};
+		for(int i=0;i<16;i++)
+			stream >> ip[i];
+		address.setIP(ip);
+		data::uint16_big  port;
+		stream >> port;
+		address.setPort(port);
+		return stream;
+	}
+	writer &operator<<(writer &stream, const Address &address) {
+		if (!address.isInitial()) {
+			stream <<  address.getTimestamp();
+		}
+
+		stream << address.getServices();
+		for(int i=0;i<boost::array<unsigned char, 16>::size();i++)
+			stream << address.getIP()[i];
+		stream << address.getPort();
 		return stream;
 	}
 
