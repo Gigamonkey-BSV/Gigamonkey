@@ -933,6 +933,16 @@ namespace Gigamonkey::Boost {
         bool script_valid_contract_v2 = Bitcoin::evaluate(in_contract_v2, out_contract_v2).verify();
         EXPECT_TRUE(script_valid_contract_v2);
         
+        auto proof_contract_v1 = proof{locking_script_contract_v1, unlocking_script_contract_v1};
+        auto proof_bounty_v1 = proof{locking_script_bounty_v1, unlocking_script_bounty_v1};
+        auto proof_contract_v2 = proof{locking_script_contract_v2, unlocking_script_contract_v2};
+        auto proof_bounty_v2 = proof{locking_script_bounty_v2, unlocking_script_bounty_v2};
+        
+        EXPECT_TRUE(proof_contract_v1.valid());
+        EXPECT_TRUE(proof_bounty_v1.valid());
+        EXPECT_TRUE(proof_contract_v2.valid());
+        EXPECT_TRUE(proof_bounty_v2.valid());
+        
     }
 
 }

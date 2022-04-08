@@ -132,23 +132,7 @@ namespace Gigamonkey::Bitcoin {
     template <boost::endian::order o, bool is_signed, std::size_t size>
     instruction push_data(const data::endian::arithmetic<o, is_signed, size>& x);
     
-    using program = list<instruction>;
-    
-    ScriptError verify(program, uint32 flags = 0);
-    
-    bool inline valid(program p) {
-        return verify(p) == SCRIPT_ERR_OK;
-    };
-    
-    bytes compile(program p); 
-    
-    bytes compile(instruction i); 
-    
-    program decompile(bytes_view); 
-    
-    size_t serialized_size(program p);
-
-    bool is_push(program);
+    bool is_minimal(const instruction&);
     
     // Representation of a Bitcoin script instruction, which is either an op code
     // by itself or an op code for pushing data to the stack along with data. 
@@ -192,7 +176,23 @@ namespace Gigamonkey::Bitcoin {
         instruction(op p, bytes d);
     };
     
-    bool is_minimal(const instruction&);
+    using program = list<instruction>;
+    
+    ScriptError verify(program, uint32 flags = 0);
+    
+    bool inline valid(program p) {
+        return verify(p) == SCRIPT_ERR_OK;
+    };
+    
+    bytes compile(program p); 
+    
+    bytes compile(instruction i); 
+    
+    program decompile(bytes_view); 
+    
+    size_t serialized_size(program p);
+
+    bool is_push(program);
     
     size_t inline serialized_size(const instruction &o) {
         return o.serialized_size();

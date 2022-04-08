@@ -5,7 +5,7 @@
 
 namespace Gigamonkey::Stratum::extensions {
 
-    optional<version_mask> read_version_mask(const string& str) {
+    optional<version_mask> read_version_mask(const string &str) {
         if (str.size() != 8) return {};
         ptr<bytes> b = encoding::hex::read(str);
         if (b != nullptr) return {};
@@ -14,37 +14,39 @@ namespace Gigamonkey::Stratum::extensions {
         return {int32_little(n)};
     }
     
-    std::ostream &operator<<(std::ostream &o, const configuration_result<version_rolling> &r) {
-        o << "configuration_request<version_rolling>{";
-        if (bool(r)) o << "mask: " << *r;
-        else o << "false";
-        return o << "}";
+    optional<configuration<version_rolling>> configuration<version_rolling>::read(const request &p) {
+        auto m = p.contains("mask");
+        auto mbc = p.contains("min-bit-count");
+        if (!bool(m) || !bool(mbc) || !mbc->is_number_unsigned()) return {};
+        auto mask = read_version_mask(*m);
+        if (!mask) return {};
+        return {{*mask, byte(*mbc)}};
     }
     
-    std::ostream &operator<<(std::ostream &o, const configuration_request<info> &r) {
-        o << "configuration_request<info>";
-        list<string> info;
-        if (r.ConnectionURL) {
-            std::stringstream ss; 
-            ss << "connection-url: \"" << *r.ConnectionURL << "\"";
-            info = info << ss.str();
-        }
-        if (r.HWVersion) {
-            std::stringstream ss; 
-            ss << "hw-version: \"" << *r.HWVersion << "\"";
-            info = info << ss.str();
-        }
-        if (r.SWVersion) {
-            std::stringstream ss; 
-            ss << "sw-version: \"" << *r.SWVersion << "\"";
-            info = info << ss.str();
-        }
-        if (r.HWID) {
-            std::stringstream ss; 
-            ss << "hw-id: \"" << *r.HWID << "\"";
-            info = info << ss.str();
-        }
-        return o << info;
+    optional<configured<version_rolling>> configured<version_rolling>::read(const result_params &p) {
+        auto x = p.contains("mask");
+        if (!x) return {};
+        auto mask = read_version_mask(*x);
+        if (!mask) return {};
+        return {configured{*mask}};
+    }
+    
+    optional<configuration<minimum_difficulty>> configuration<minimum_difficulty>::read(const result_params &p) {
+        auto x = p.contains("value");
+        if (!x) return {};
+        return {configuration{*x}};
+    }
+    
+    optional<configuration<info>> configuration<info>::read(const request &p) {
+        auto a = p.contains("connection-url");
+        auto b = p.contains("hw-version");
+        auto c = p.contains("sw-version");
+        auto d = p.contains("sw-id");
+        
+        if (!bool(a) || !bool(b) || !bool(c) || !bool(d)) return {};
+        
+        return {configuration{*a, *b, *c, *d}};
+        
     }
     
 }

@@ -3,6 +3,7 @@
 
 #include <gigamonkey/stratum/extensions.hpp>
 #include <gigamonkey/stratum/mining_configure.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace Gigamonkey::Stratum::mining {
         
@@ -51,159 +52,72 @@ namespace Gigamonkey::Stratum::mining {
         return parameters::valid(params);
     }
     
-    using namespace extensions;
-    
-    template <> configure_request::parameters 
-    configure_request::parameters::add(configuration_request<version_rolling> r) const {
-        auto p = *this;
-        if (data::contains(p.Supported, "version_rolling")) return {};
-        p.Supported = p.Supported << "version_rolling";
-        p.Parameters["version-rolling.mask"] = write_version_mask(r.Mask);
-        p.Parameters["version-rolling.min-bit-count"] = r.MinBitCount;
-        return p;
+    configure_request::parameters::parameters(extensions::requests r) {
+        for (const data::entry<string, extensions::request> &e : r) {
+            Supported = Supported << e.Key;
+            for (const data::entry<string, json> &j : e.Value) 
+                Parameters[e.Key + string{"."} + j.Key] = j.Value;
+        }
     }
     
-    template <> configure_request::parameters 
-    configure_request::parameters::add(configuration_request<minimum_difficulty> r) const {
-        auto p = *this;
-        if (data::contains(p.Supported, "minimum_difficulty")) return {};
-        p.Supported = p.Supported << "minimum_difficulty";
-        p.Parameters["minimum_difficulty.value"] = r;
-        return p;
-    }
-    
-    template <> configure_request::parameters 
-    configure_request::parameters::add(configuration_request<subscribe_extranonce> r) const {
-        auto p = *this;
-        if (data::contains(p.Supported, "subscribe_extranonce")) return {};
-        p.Supported = p.Supported << "subscribe_extranonce";
-        return p;
-    }
-    
-    template <> configure_request::parameters 
-    configure_request::parameters::add(configuration_request<info> r) const {
-        auto p = *this;
-        if (data::contains(p.Supported, "info")) return {};
-        p.Supported = p.Supported << "info";
-        if (r.ConnectionURL) p.Parameters["info.connection-url"] = *r.ConnectionURL;
-        if (r.HWVersion) p.Parameters["info.hw-version"] = *r.HWVersion;
-        if (r.SWVersion) p.Parameters["info.sw-version"] = *r.SWVersion;
-        if (r.HWID) p.Parameters["info.hw-id"] = *r.HWID;
-        return p;
-    }
-    
-    template <> configure_response::parameters 
-    configure_response::parameters::add(configuration_result<version_rolling> r) const {
-        auto p = *this;
-        p["version_rolling"] = bool(r);
-        if (bool(r)) p["version_rolling.mask"] = write_version_mask(*r);
-        return p;
-    }
-    
-    template <> configure_response::parameters 
-    configure_response::parameters::add(configuration_result<minimum_difficulty> r) const {
-        auto p = *this;
-        p["minimum_difficulty"] = r.Accepted;
-        return p;
-    }
-    
-    template <> configure_response::parameters 
-    configure_response::parameters::add(configuration_result<subscribe_extranonce> r) const {
-        auto p = *this;
-        p["subscribe_extranonce"] = r.Accepted;
-        return p;
-    }
-    
-    template <> configure_response::parameters 
-    configure_response::parameters::add(configuration_result<info> r) const {
-        auto p = *this;
-        p["info"] = r.Accepted;
-        return p;
-    }
-    
-    template <> configure_response::parameters 
-    configure_response::parameters::add(configuration_result<unsupported> r) const {
-        auto p = *this;
-        p[r.Name] = false;
-        return p;
-    }
-    
-    template <> optional<configuration_request<version_rolling>> 
-    configure_request::parameters::get() const {
-        if (!data::contains(Supported, "version_rolling")) return {};
+    configure_request::parameters::operator extensions::requests() const {
+        data::map<string, extensions::request> m;
         
-        json j(Parameters);
-        if (!(j.contains("version-rolling.mask") && j["version-rolling.mask"].is_string()) 
-            || !(j.contains("version-rolling.min-bit-count") && j["version-rolling.min-bit-count"].is_number_unsigned())) return {};
+        for (const string &supported : Supported) m = m.insert(supported, extensions::request{});
         
-        auto mask = read_version_mask(j["version-rolling.mask"]);
-        if (!mask) return {};
+        for (const std::pair<string, json> &j : Parameters) {
+            std::vector<std::string> z;
+            boost::split(z, j.first, boost::is_any_of("."));
+            if (z.size() != 2) throw "invalid format";
+            
+            auto x = m.contains(z[0]);
+            if (!x) throw "invalid format";
+            *x = x->insert(z[1], j.second);
+        }
         
-        return configuration_request<version_rolling>{*mask, byte(j["version-rolling.min-bit-count"])};
+        return {m};
     }
     
-    template <> optional<configuration_request<minimum_difficulty>> 
-    configure_request::parameters::get() const {
-        if (!data::contains(Supported, "minimum_difficulty")) return {};
+    configure_response::parameters::parameters(extensions::results r) {
+        for (const data::entry<string, extensions::result> &e : r) {
+            (*this)[e.Key] = json(e.Value.Accepted);
+            if (!e.Value.Accepted) continue;
+            for (const data::entry<string, json> &x : *e.Value.Parameters) {
+                (*this)[e.Key + string{"."} + x.Key] = x.Value;
+            } 
+        }
+    }
+    /*
+    configure_response::parameters::operator extensions::results() const {
+        map<string, extensions::accepted> accepted;
+        map<string, extensions::result_params> params;
         
-        json j(Parameters);
-        if (j.contains("minimum-difficulty.value")) return configuration_request<minimum_difficulty>{j["minimum-difficulty.value"]};
+        for (const std::pair<string, json> &j : *this) {
+            std::vector<std::string> z;
+            boost::split(z, j.first, boost::is_any_of("."));
+            if (z.size() > 2 || z.size() == 0) throw "invalid format";
+            
+            if (z.size() == 1) {
+                accepted = accepted.insert(z[0], j.second);
+                continue;
+            }
+            
+            auto x = params.contains(z[0]);
+            if (!x) params = params.insert(z[0], extensions::result_params{{z[1], j.second}});
+            else *x = x->insert(z[1], j.second);
+        } 
         
-        return {};
-    }
-    
-    template <> optional<configuration_request<subscribe_extranonce>> 
-    configure_request::parameters::get() const {
-        if (!data::contains(Supported, "subscribe_extranonce")) return {};
+        for (const data::entry<string, extensions::result_params> &d : params) 
+            if (!accepted.contains(d.first)) throw "invalid format";
         
-        json j(Parameters);
-        return configuration_request<subscribe_extranonce>{};
-    }
-    
-    template <> optional<configuration_request<info>> 
-    configure_request::parameters::get() const {
-        if (!data::contains(Supported, "info")) return {};
+        map<string, extensions::result> results;
         
-        json j(Parameters);
-        configuration_request<info> i;
-        if (j.contains("info.connection-url")) i.ConnectionURL = j["info.connection-url"];
-        if (j.contains("info.hw-version")) i.HWVersion = j["info.hw-version"];
-        if (j.contains("info.sw-version")) i.SWVersion = j["info.sw-version"];
-        if (j.contains("info.hw-id")) i.HWID = j["info.hw-id"];
-        return i;
-    }
-    
-    template <> optional<configuration_result<version_rolling>> 
-    configure_response::parameters::get() const {
-        json j(*this);
+        for (const data::entry<string, extensions::accepted> &d : accepted) {
+            auto x = params.contains(d.first);
+            results = x ? results.insert(d.first, result{d.second, *x}) : results.insert(d.first, d.second);
+        }
         
-        if (!j.contains("version-rolling") || !j["version-rolling"].is_boolean()) return {};
-        if (!bool(j["version_rolling"])) return configuration_result<version_rolling>{};
-        if (!j.contains("version-rolling.mask")) return {};
-        return configuration_result<version_rolling>{read_version_mask(j["version-rolling.mask"])};
-    }
-    
-    template <> optional<configuration_result<minimum_difficulty>> 
-    configure_response::parameters::get() const {
-        json j(*this);
-        if (j.contains("minimum-difficulty") && j["minimum-difficulty"].is_boolean()) 
-            return configuration_result<minimum_difficulty>{bool(j["minimum-difficulty"])};
-        return {};
-    }
-    
-    template <> optional<configuration_result<subscribe_extranonce>> 
-    configure_response::parameters::get() const {
-        json j(*this);
-        if (j.contains("subscribe-extranonce") && j["subscribe-extranonce"].is_boolean()) 
-            return configuration_result<subscribe_extranonce>{bool(j["subscribe-extranonce"])};
-        return {};
-    }
-    
-    template <> optional<configuration_result<info>> 
-    configure_response::parameters::get() const {
-        json j(*this);
-        if (j.contains("info") && j["info"].is_boolean()) return configuration_result<info>{bool(j["info"])};
-        return {};
-    }
+        return {results};
+    }*/
     
 }

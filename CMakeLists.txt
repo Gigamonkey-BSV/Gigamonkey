@@ -130,11 +130,13 @@ add_library(gigamonkey STATIC
     src/gigamonkey/incomplete.cpp
     src/gigamonkey/sighash.cpp
     src/gigamonkey/signature.cpp
+    
     src/gigamonkey/script/instruction.cpp
     src/gigamonkey/script/script.cpp
     src/gigamonkey/script/counter.cpp
     src/gigamonkey/script/pattern.cpp
     src/gigamonkey/script/machine.cpp
+    
     src/gigamonkey/address.cpp
     src/gigamonkey/wif.cpp
     src/gigamonkey/merkle.cpp
@@ -146,17 +148,26 @@ add_library(gigamonkey STATIC
     src/gigamonkey/wallet.cpp
     src/gigamonkey/spv.cpp
     src/gigamonkey/accounts.cpp
+    
     src/gigamonkey/merkle/dual.cpp
     src/gigamonkey/merkle/serialize.cpp
+    
     src/gigamonkey/stratum/method.cpp
     src/gigamonkey/stratum/error.cpp
     src/gigamonkey/stratum/stratum.cpp
+    src/gigamonkey/stratum/extensions.cpp
     src/gigamonkey/stratum/mining_subscribe.cpp
     src/gigamonkey/stratum/mining_authorize.cpp
     src/gigamonkey/stratum/mining.cpp
-    src/gigamonkey/stratum/extensions.cpp
     src/gigamonkey/stratum/mining_configure.cpp
+    src/gigamonkey/stratum/json_bi_stream.cpp
+    src/gigamonkey/stratum/remote.cpp
+    src/gigamonkey/stratum/client_session.cpp
+    src/gigamonkey/stratum/miner.cpp
+    src/gigamonkey/stratum/server_session.cpp
+    
     src/gigamonkey/boost/boost.cpp
+    
     src/gigamonkey/mapi/mapi.cpp
     src/gigamonkey/mapi/envelope.cpp
     

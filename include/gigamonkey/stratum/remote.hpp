@@ -39,71 +39,33 @@ namespace Gigamonkey::Stratum {
     private:
         mutex Mutex;
         
-        void shutdown() {
-            guard lock(Mutex);
-            for (const std::pair<Stratum::request, promise<response>*>& p : AwaitingResponse) delete p.second;
-        }
+        void shutdown();
         
-        void handle_response(const response &p) {
-            guard lock(Mutex);
-            
-            // find the message that is beind responded to. 
-            auto it = std::find_if(AwaitingResponse.begin(), AwaitingResponse.end(), 
-                [&p](const std::pair<Stratum::request, promise<response>*> r) -> bool {
-                    return p.id() == r.first.id();
-                });
-            
-            if (it == AwaitingResponse.end()) throw 0; // should not happen. 
-            
-            it->second->set_value(p);
-            delete it->second;
-            AwaitingResponse.erase(it); 
-            
-        }
+        void handle_response(const response &p);
         
-        void receive(const json &next) final override {
-            if (notification::valid(next)) handle_notification(notification{next});
-            if (response::valid(next)) handle_response(response{next});
-            if (Stratum::request::valid(next)) handle_request(Stratum::request{next});
-            throw std::logic_error{string{"invalid Stratum message received: "} + string(next)};
-        }
+        void receive(const json &next) final override;
         
     public:
         // there are two ways to talk to a server: request and notify. 
         // request expects a response and notify does not. 
-        response request(method m, parameters p) {
-            guard lock(Mutex);
-            AwaitingResponse.push_back(std::pair{Stratum::request{message_id(Requests), m, p}, new promise<response>()});
-            this->send(AwaitingResponse.back().first);
-            Requests++;
-            return AwaitingResponse.back().second->get_future().get();
-        }
+        response request(method m, parameters p);
         
-        void send_notification(method m, parameters p) {
-            this->send(notification{m, p});
-        }
+        void send_notification(method m, parameters p);
         
-        bool submit(const share &x) {
-            auto serialized = mining::submit_request::serialize(x);
-            
-            std::cout << "sending submit request " << serialized << std::endl;
-            
-            response r = request(mining_submit, serialized);
-            
-            if (!mining::submit_response::valid(r)) 
-                throw std::logic_error{string{"invalid mining.submit response received: "} + string(r)};
-            
-            return mining::submit_response{r}.result();
-            
-        }
-        
-        remote(tcp::socket &s) : json_bi_stream{s} {}
-        
-        virtual ~remote() {
-            shutdown();
-        }
+        remote(tcp::socket &s);
+        virtual ~remote();
         
     };
+    
+    void inline remote::send_notification(method m, parameters p) {
+        this->send(notification{m, p});
+    }
+    
+    inline remote::remote(tcp::socket &s) : json_bi_stream{s} {}
+    
+    inline remote::~remote() {
+        shutdown();
+    }
     
 }
 

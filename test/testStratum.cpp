@@ -7,6 +7,7 @@
 #include <gigamonkey/stratum/job.hpp>
 #include <gigamonkey/stratum/server_session.hpp>
 #include <gigamonkey/stratum/miner.hpp>
+#include <gigamonkey/work/ASICBoost.hpp>
 #include "gtest/gtest.h"
 
 namespace Gigamonkey::Stratum {
@@ -226,6 +227,82 @@ namespace Gigamonkey::Stratum::mining {
                 EXPECT_NE(i.Params, submit_request::deserialize(static_cast<request>(request_j).params()));
             }
         }
+    }
+    
+    TEST(StratumTest, TestStratumDifficulty) {
+        difficulty d1{work::difficulty{.0001}};
+        difficulty d2{555};
+        EXPECT_TRUE(d1.valid());
+        EXPECT_TRUE(d2.valid());
+        work::compact t1{work::difficulty(d1)};
+        work::compact t2{work::difficulty(d2)};
+        EXPECT_EQ(t1, work::compact{work::difficulty(difficulty{t1})});
+        EXPECT_EQ(t2, work::compact{work::difficulty(difficulty{t2})});
+    }
+    
+    TEST(StratumTest, TestStratumProof) {
+        job_id jid = 2333;
+        extranonce en{1, 8};
+        int32_little version = 2;
+        Bitcoin::timestamp timestamp{3};
+        
+        work::compact d{work::difficulty(.0001)};
+        digest256 prevHash{"0x0000000000000000000000000000000000000000000000000000000000000001"};
+        bytes gentx1 = bytes::from_hex("abcdef");
+        bytes gentx2 = bytes::from_hex("010203");
+        
+        bytes extra_nonce_2 = bytes::from_hex("abcdef0123456789");
+        
+        int32_little gpr = 0xffffffff;
+        int32_little version_mask = work::ASICBoost::Mask;
+        
+        string name{"Daniel"};
+        
+        mining::notify::parameters notify{jid, prevHash, gentx1, gentx2, {}, version, d, timestamp, true};
+        
+        auto worker_v1 = worker{name, en};
+        auto worker_v2 = worker{name, en, version_mask};
+        
+        EXPECT_FALSE(worker_v1.Mask);
+        EXPECT_TRUE(worker_v2.Mask);
+        
+        auto puzzle_v1 = work::puzzle{version, prevHash, d, {}, gentx1, gentx2};
+        auto puzzle_v2 = work::puzzle{version, prevHash, d, {}, gentx1, gentx2, version_mask};
+        
+        auto initial_share_v1 = work::share{timestamp, 65067, extra_nonce_2};
+        auto initial_share_v2 = work::share{timestamp, 449600, extra_nonce_2, gpr};
+        
+        EXPECT_FALSE(initial_share_v1.Bits);
+        EXPECT_TRUE(initial_share_v2.Bits);
+        
+        auto work_proof_v1 = work::proof{puzzle_v1, {initial_share_v1, en.ExtraNonce1}};
+        auto work_proof_v2 = work::proof{puzzle_v2, {initial_share_v2, en.ExtraNonce1}};
+        
+        EXPECT_TRUE(work_proof_v1.valid());
+        EXPECT_TRUE(work_proof_v2.valid());
+        
+        auto share_v1 = share{name, jid, work_proof_v1.Solution.Share};
+        auto share_v2 = share{name, jid, work_proof_v2.Solution.Share};
+        
+        auto nonce_v1 = share_v1.Share.Nonce;
+        auto nonce_v2 = share_v2.Share.Nonce;
+        
+        auto proof_v1 = proof{worker_v1, notify, share_v1};
+        auto proof_v2 = proof{worker_v2, notify, share_v2};
+        
+        EXPECT_EQ(work_proof_v1, work::proof(proof_v1));
+        EXPECT_EQ(work_proof_v2, work::proof(proof_v2));
+        
+        EXPECT_NE(work_proof_v1, work::proof(proof_v2));
+        EXPECT_NE(work_proof_v2, work::proof(proof_v1));
+        
+        EXPECT_TRUE(proof_v1.valid());
+        EXPECT_TRUE(proof_v2.valid());
+        
+    }
+    
+    TEST(StratumTest, TestMiningConfigure) {
+        //extensions::requests{ };
     }
 
 }

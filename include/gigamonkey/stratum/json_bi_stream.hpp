@@ -26,22 +26,7 @@ namespace Gigamonkey::Stratum {
         
         virtual void receive(const json&) = 0;
         
-        void wait_for_message() {
-            boost::asio::async_read_until(Socket, Buffer, "\n",  
-                [self = shared_from_this()](const io_error& error, size_t bytes_transferred) -> void {
-                    if (error) return self->handle_error(error);
-                    
-                    std::stringstream ss;
-                    ss << std::istream(&self->Buffer).rdbuf();
-                    self->Buffer.consume(bytes_transferred);
-                    try {
-                        self->receive(json{ss.str()});
-                        self->wait_for_message();
-                    } catch (...) {
-                        self->Socket.close();
-                    }
-                });
-        }
+        void wait_for_message();
         
         virtual void handle_error(const io_error&) = 0;
         
@@ -49,12 +34,7 @@ namespace Gigamonkey::Stratum {
         
         // note: message cannot be longer than 65536 bytes or this function 
         // is not thread-safe. 
-        void send(const json &j) {
-            boost::asio::async_write(Socket, io::buffer(string(j) + "\n"), io::transfer_all(), 
-                [self = shared_from_this()](const io_error& error, size_t) -> void {
-                    if (error) self->handle_error(error);
-                });
-        }
+        void send(const json &j);
         
         // we start waiting for a new message as soon as the object is created. 
         json_bi_stream(tcp::socket &x) : Socket{x}, Buffer{65536} {

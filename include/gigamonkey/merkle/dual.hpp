@@ -37,12 +37,14 @@ namespace Gigamonkey::Merkle {
         
         bool valid() const;
         
-        bool contains(const digest&) const;
+        bool contains(const digest& b) const {
+            return Paths.contains(b);
+        }
         
         proof operator[](const digest& b) const {
-            auto e = Paths[b];
-            if (!e.valid()) return proof{};
-            return proof{branch{b, e}, Root};
+            auto e = Paths.contains(b);
+            if (!e) return proof{};
+            return proof{branch{b, *e}, Root};
         }
         
         list<leaf> leaves() const {

@@ -51,7 +51,6 @@ namespace Gigamonkey::Merkle {
             }
             
             explicit inverted_from(const dual& d) : Digests{}, Nodes{}, Branches{}, Index{0} {
-                
                 insert_or_find(d.Root);
                 
                 uint32 n = Nodes.size();
@@ -117,8 +116,8 @@ namespace Gigamonkey::Merkle {
             }
             
             uint32 insert_or_find(const digest& x) {
-                index find = Digests[x];
-                if (find >= 0) return find;
+                auto find = Digests.contains(x);
+                if (find) return *find;
                 Digests = Digests.insert(x, Index);
                 return Index++;
             }

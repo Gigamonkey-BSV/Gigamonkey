@@ -151,7 +151,7 @@ namespace Gigamonkey::Stratum::mining {
     }
     
     parameters notify::serialize(const parameters& p) {
-        return Stratum::parameters{write_job_id(p.ID), write(p.Digest), write(p.GenerationTx1), write(p.GenerationTx2), 
+        return Stratum::parameters{write_job_id(p.JobID), write(p.Digest), write(p.GenerationTx1), write(p.GenerationTx2), 
                 write(p.Path), write(p.Version), write(p.Target), write(p.Now), p.Clean};
     }
     
@@ -159,7 +159,7 @@ namespace Gigamonkey::Stratum::mining {
         parameters p;
         
         if (n.size() != 9 || !n[8].is_boolean() ||
-            !read_job_id(n[0], p.ID) || 
+            !read_job_id(n[0], p.JobID) || 
             !read(n[1], p.Digest) || 
             !read(n[2], p.GenerationTx1) || 
             !read(n[3], p.GenerationTx2) || 

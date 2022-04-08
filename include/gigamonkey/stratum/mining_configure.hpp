@@ -21,18 +21,10 @@ namespace Gigamonkey::Stratum::mining {
         
             static bool valid(const Stratum::parameters&);
             
-            template <extensions::extension x> 
-            parameters add(extensions::configuration_request<x>) const;
-            
-            template <extensions::extension x>
-            optional<extensions::configuration_request<x>> get() const;
-            
             parameters() {}
             
-            template <extensions::extension x, typename... P>
-            parameters(extensions::configuration_request<x> r, P... p) : parameters{p...} {
-                *this = this->add(r);
-            }
+            parameters(extensions::requests r);
+            explicit operator extensions::requests() const;
         };
         
         static Stratum::parameters serialize(const parameters&);
@@ -57,18 +49,10 @@ namespace Gigamonkey::Stratum::mining {
         struct parameters : public json::object_t {
             using json::object_t::object_t;
             
-            template <extensions::extension x> 
-            parameters add(extensions::configuration_result<x>) const;
-            
-            template <extensions::extension x>
-            optional<extensions::configuration_result<x>> get() const;
-            
             parameters() {}
             
-            template <extensions::extension x, typename... P>
-            parameters(extensions::configuration_result<x> r, P... p) : parameters{p...} {
-                *this = this->add(r);
-            }
+            parameters(extensions::results r);
+            explicit operator extensions::results() const;
             
             bool valid() const;
         };
@@ -104,57 +88,6 @@ namespace Gigamonkey::Stratum::mining {
     bool inline configure_response::valid(const json& j) {
         return response::valid(j) && j["result"].is_object();
     }
-    
-    template <> configure_request::parameters 
-    configure_request::parameters::add(extensions::configuration_request<extensions::version_rolling>) const;
-    
-    template <> optional<extensions::configuration_request<extensions::version_rolling>> 
-    configure_request::parameters::get() const;
-    
-    template <> configure_request::parameters 
-    configure_request::parameters::add(extensions::configuration_request<extensions::minimum_difficulty>) const;
-    
-    template <> optional<extensions::configuration_request<extensions::minimum_difficulty>> 
-    configure_request::parameters::get() const;
-    
-    template <> configure_request::parameters 
-    configure_request::parameters::add(extensions::configuration_request<extensions::subscribe_extranonce>) const;
-    
-    template <> optional<extensions::configuration_request<extensions::subscribe_extranonce>> 
-    configure_request::parameters::get() const;
-    
-    template <> configure_request::parameters 
-    configure_request::parameters::add(extensions::configuration_request<extensions::info>) const;
-    
-    template <> optional<extensions::configuration_request<extensions::info>> 
-    configure_request::parameters::get() const;
-    
-    template <> configure_response::parameters 
-    configure_response::parameters::add(extensions::configuration_result<extensions::version_rolling>) const;
-    
-    template <> optional<extensions::configuration_result<extensions::version_rolling>> 
-    configure_response::parameters::get() const;
-    
-    template <> configure_response::parameters 
-    configure_response::parameters::add(extensions::configuration_result<extensions::minimum_difficulty>) const;
-    
-    template <> optional<extensions::configuration_result<extensions::minimum_difficulty>> 
-    configure_response::parameters::get() const;
-    
-    template <> configure_response::parameters 
-    configure_response::parameters::add(extensions::configuration_result<extensions::subscribe_extranonce>) const;
-    
-    template <> optional<extensions::configuration_result<extensions::subscribe_extranonce>> 
-    configure_response::parameters::get() const;
-    
-    template <> configure_response::parameters 
-    configure_response::parameters::add(extensions::configuration_result<extensions::info>) const;
-    
-    template <> optional<extensions::configuration_result<extensions::info>> 
-    configure_response::parameters::get() const;
-    
-    template <> configure_response::parameters 
-    configure_response::parameters::add(extensions::configuration_result<extensions::unsupported>) const;
     
 }
 

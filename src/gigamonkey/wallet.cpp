@@ -107,7 +107,7 @@ namespace Gigamonkey::Bitcoin {
                 case random: {
                     remainder = Funds.Entries;
                     do {
-                        remainder = data::functional::list::rotate_left(remainder, 
+                        remainder = rotate_left(remainder, 
                             std::uniform_int_distribution<int>(0, remainder.size() - 1)(data::get_random_engine()));
                         spendable x = remainder.first();
                         remainder = remainder.rest();
@@ -138,7 +138,7 @@ namespace Gigamonkey::Bitcoin {
             
             // We shuffle the outputs and remember which one belongs
             // to us by finding those which have a redeemer. 
-            list<spendable> incomplete_outputs = data::functional::list::shuffle<list<spendable>>(for_each([](const output& o) -> spendable {
+            list<spendable> incomplete_outputs = shuffle<list<spendable>>(for_each([](const output& o) -> spendable {
                 // we don't know our own txid yet, so can't fill in the outpoint. 
                 return spendable{ledger::prevout{outpoint{}, o}, nullptr};
             }, payments) << spendable{ledger::prevout{outpoint{}, change_output}, change_scripts.first().Redeemer});
