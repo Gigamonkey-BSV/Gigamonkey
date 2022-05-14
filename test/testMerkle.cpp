@@ -40,9 +40,9 @@ namespace Gigamonkey::Merkle {
             // construct the dual tree from the tree. 
             dual Dual{Tree};
             
-            EXPECT_EQ(Dual.proofs(), tree_proofs);
-            
             EXPECT_TRUE(Dual.valid());
+            
+            EXPECT_EQ(Dual.proofs(), tree_proofs);
             
             server Server{l};
             

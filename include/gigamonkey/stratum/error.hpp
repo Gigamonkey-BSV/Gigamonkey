@@ -19,7 +19,7 @@ namespace Gigamonkey::Stratum {
         NOT_SUBSCRIBED = 25,
 
         ILLEGAL_METHOD = 26,
-        ILLEGAL_PARARMS = 27,
+        ILLEGAL_PARAMS = 27,
         IP_BANNED = 28,
         INVALID_USERNAME = 29,
         INTERNAL_ERROR = 30,

@@ -16,7 +16,7 @@ namespace Gigamonkey::Stratum {
             case NOT_SUBSCRIBED : return "not subscribed";
 
             case ILLEGAL_METHOD : return "illegal method";
-            case ILLEGAL_PARARMS : return "illegal params";
+            case ILLEGAL_PARAMS : return "illegal params";
             case IP_BANNED : return "ip banned";
             case INVALID_USERNAME : return "invalid username";
             case INTERNAL_ERROR: return "internal error";

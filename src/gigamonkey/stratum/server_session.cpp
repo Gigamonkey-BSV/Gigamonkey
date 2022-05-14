@@ -101,7 +101,7 @@ namespace Gigamonkey::Stratum {
     // this the optional first method of the protocol. 
     mining::configure_response server_session::configure(const mining::configure_request &r) {
         std::unique_lock lock(Mutex);
-        if (!r.valid()) return response{r.id(), nullptr, error{ILLEGAL_PARARMS}};
+        if (!r.valid()) return response{r.id(), nullptr, error{ILLEGAL_PARAMS}};
         if (State.Phase != state::initial) return response{r.id(), nullptr, error{ILLEGAL_METHOD}};
         auto config = State.configure(extensions::requests(r.params()));
         if (config) return response{r.id(), nullptr, error{ILLEGAL_METHOD}};
@@ -113,7 +113,7 @@ namespace Gigamonkey::Stratum {
     // this is the original first method of the protocol. 
     mining::authorize_response server_session::authorize(const mining::authorize_request &r) {
         std::unique_lock lock(Mutex);
-        if (!r.valid()) return response{r.id(), nullptr, error{ILLEGAL_PARARMS}};
+        if (!r.valid()) return response{r.id(), nullptr, error{ILLEGAL_PARAMS}};
         if (State.Phase > state::configured) return response{r.id(), false, error{ILLEGAL_METHOD}};
         State.Name = r.params().Username;
         auto authorization = authorize(r.params());
@@ -125,7 +125,7 @@ namespace Gigamonkey::Stratum {
     // session id, which is also known as extra nonce 1. 
     mining::subscribe_response server_session::subscribe(const mining::subscribe_request &r) {
         std::unique_lock lock(Mutex);
-        if (!r.valid()) return response{r.id(), nullptr, error{ILLEGAL_PARARMS}};
+        if (!r.valid()) return response{r.id(), nullptr, error{ILLEGAL_PARAMS}};
         if (State.Phase != state::authorized) {
             error_code e = State.Phase < state::authorized || State.Phase == state::configured ? UNAUTHORIZED : ILLEGAL_METHOD;
             return response{r.id(), nullptr, error{UNAUTHORIZED}};
@@ -161,7 +161,7 @@ namespace Gigamonkey::Stratum {
     response server_session::respond(const Stratum::request &r) {
         switch (r.method()) {
             case mining_submit: {
-                if (!mining::submit_request::valid(r)) return response{r.id(), nullptr, error{ILLEGAL_PARARMS}};
+                if (!mining::submit_request::valid(r)) return response{r.id(), nullptr, error{ILLEGAL_PARAMS}};
                 if (State.Phase != state::working) {
                     error_code e = State.Phase == state::initial || State.Phase == state::configured ? UNAUTHORIZED : NOT_SUBSCRIBED;
                     return response{r.id(), nullptr, error{UNAUTHORIZED}};
