@@ -4,19 +4,15 @@ cmake_minimum_required(VERSION 3.1...3.14)
 if(${CMAKE_VERSION} VERSION_LESS 3.12)
     cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
 endif()
-
+set(CMAKE_C_COMPILER "gcc-10")
+set(CMAKE_CXX_COMPILER "g++-10")
 project(gigamonkey 	VERSION 1.0
 		DESCRIPTION "open-source Bitcoin library in c++"
 		LANGUAGES CXX)
 
 # Set cmake as import path for Find*.cmake files
-set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
-
-### Require out-of-source builds
-file(TO_CMAKE_PATH "${PROJECT_BINARY_DIR}/CMakeLists.txt" LOC_PATH)
-if(EXISTS "${LOC_PATH}")
-    message(FATAL_ERROR "You cannot build in a source directory (or any directory with a CMakeLists.txt file). Please make a build subdirectory. Feel free to remove CMakeCache.txt and CMakeFiles.")
-endif()
+include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+conan_basic_setup(TARGETS)
 
 ## Check if GTests is installed. If not, install it
 
@@ -50,49 +46,6 @@ include(GoogleTest)
 endif()
 
 
-# Include libraries
-
-# Boost settings
-set(Boost_LIB_PREFIX            "lib"       CACHE STRING "")
-set(Boost_USE_MULTITHREADED     ON          CACHE BOOL "") # '-mt' flag
-set(Boost_USE_STATIC_LIBS       ON          CACHE BOOL "")
-set(Boost_USE_STATIC_RUNTIME    OFF         CACHE BOOL "") # '-s' tag
-set(Boost_USE_DEBUG_RUNTIME     OFF         CACHE BOOL "") # '-g' tag
-set(Boost_COMPILER              "-mgw49"    CACHE STRING "")
-
-# Include Boost
-find_package(Boost 1.72.0 COMPONENTS system locale  REQUIRED)
-
-if(Boost_FOUND)
-
-    message(STATUS "Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
-    message(STATUS "Boost_LIBRARIES: ${Boost_LIBRARIES}")
-    message(STATUS "Boost_VERSION: ${Boost_VERSION}")
-
-    include_directories(${Boost_INCLUDE_DIRS})
-    add_definitions("-DHAS_BOOST")
-
-endif()
-
-#find_package(ICU 60.2 COMPONENTS uc i18n REQUIRED)
-find_package(OpenSSL REQUIRED)
-message("OpenSSL include dir: ${OPENSSL_INCLUDE_DIR}")
-        message("OpenSSL libraries: ${OPENSSL_LIBRARIES}")
-
-        include_directories(${OPENSSL_INCLUDE_DIR})
-
-# Find Crypto++
-find_package(CryptoPP REQUIRED)
-if(CRYPTOPP_INCLUDE_DIRS)
-
-	message(STATUS "Crypto++ INCLUIDE DIRS: ${CRYPTOPP_INCLUDE_DIRS}")
-	include_directories(${CRYPTOPP_INCLUDE_DIRS})
-endif()
-
-# Check data library
-if(NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/data/CMakeLists.txt")
-    message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
-endif()
 
 ## Enable testing
 include(CTest)
@@ -101,18 +54,10 @@ if(PACKAGE_TESTS)
 	enable_testing()
 	add_subdirectory(test)
 endif()
-find_package(nlohmann_json 3.2.0 REQUIRED)
-if(nlohmann_json_FOUND)
 
-	message(STATUS "nlohmann_json_INCLUDE_DIRS: ${nlohmann_json_INCLUDE_DIRS}")
-	message(STATUS "nlohmann_json_LIBRARIES: ${nlohmann_json_LIBRARIES}")
 
-endif()
 
-add_subdirectory("${PROJECT_SOURCE_DIR}/extern/data/")
-
-add_library(gigamonkey STATIC 
-    
+add_library(gigamonkey STATIC
     src/sv/random.cpp
     src/sv/big_int.cpp
     src/sv/script/opcodes.cpp
@@ -173,10 +118,12 @@ add_library(gigamonkey STATIC
     
 )
 
-target_link_libraries(gigamonkey PUBLIC data util ${OPENSSL_LIBRARIES} ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} nlohmann_json::nlohmann_json )
+target_link_libraries(gigamonkey PUBLIC CONAN_PKG::data util CONAN_PKG::boost CONAN_PKG::openssl CONAN_PKG::cryptopp CONAN_PKG::nlohmann_json CONAN_PKG::gmp )
 
 target_include_directories(gigamonkey PUBLIC include)
 
 # Set C++ version
-target_compile_features(gigamonkey PUBLIC cxx_std_17)
-set_target_properties(gigamonkey PROPERTIES CXX_EXTENSIONS OFF)
+target_compile_features(gigamonkey PUBLIC cxx_std_20)
+set_target_properties(gigamonkey PROPERTIES CXX_EXTENSIONS ON)
+target_compile_options(gigamonkey PUBLIC "-fconcepts")
+
