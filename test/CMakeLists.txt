@@ -12,7 +12,7 @@ macro(package_add_test TESTNAME)
     # link the Google test infrastructure, mocking library, and a default main fuction to
     # the test executable.  Remove g_test_main if writing your own main function.
     target_include_directories(${TESTNAME} PUBLIC .)
-    target_link_libraries(${TESTNAME} gmock_main gigamonkey data gtest_main)
+    target_link_libraries(${TESTNAME} gmock_main gigamonkey CONAN_PKG::boost CONAN_PKG::openssl CONAN_PKG::cryptopp CONAN_PKG::nlohmann_json CONAN_PKG::gmp CONAN_PKG::data gtest_main)
     # gtest_discover_tests replaces gtest_add_tests,
     # see https://cmake.org/cmake/help/v3.10/module/GoogleTest.html for more options to pass to it
     
