@@ -66,8 +66,8 @@ add_library(gigamonkey STATIC
     src/sv/script/script.cpp
     src/sv/config.cpp
     src/sv/script/interpreter.cpp
-    
-    src/gigamonkey/p2p/var_int.cpp
+
+        src/gigamonkey/p2p/var_util.cpp
     src/gigamonkey/p2p/checksum.cpp
     src/gigamonkey/number.cpp
     src/gigamonkey/secp256k1.cpp
@@ -115,8 +115,19 @@ add_library(gigamonkey STATIC
     
     src/gigamonkey/mapi/mapi.cpp
     src/gigamonkey/mapi/envelope.cpp
-    
-)
+
+    src/gigamonkey/script/counter.cpp
+    src/gigamonkey/script/machine.cpp
+
+		src/gigamonkey/p2p/messages/messageHeader.cpp
+		src/gigamonkey/p2p/networks.cpp
+		src/gigamonkey/p2p/address.cpp
+
+        src/gigamonkey/p2p/var_util.cpp
+		src/gigamonkey/p2p/var_int.cpp
+		src/gigamonkey/p2p/messages/message.cpp
+		src/gigamonkey/p2p/node.cpp
+		src/gigamonkey/p2p/association_id.cpp)
 
 target_link_libraries(gigamonkey PUBLIC CONAN_PKG::data util CONAN_PKG::boost CONAN_PKG::openssl CONAN_PKG::cryptopp CONAN_PKG::nlohmann_json CONAN_PKG::gmp )
 
