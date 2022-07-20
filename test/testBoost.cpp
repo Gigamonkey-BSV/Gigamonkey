@@ -944,5 +944,135 @@ namespace Gigamonkey::Boost {
         EXPECT_TRUE(proof_bounty_v2.valid());
         
     }
+    
+    // this is used to test against the boostpow-js library. 
+    TEST(BoostTest, TestAgainstBoostPoWJSRedeem) {
+        
+        Bitcoin::secret from_key{Bitcoin::secret::main,
+            secp256k1::secret{uint256{"0x0000000000000000000000000000000000000000000000000000000000000003"}}};
+        
+        bytes content_string = bytes::from_string("hello animal");
+        bytes tag_string = bytes::from_string("this is a tag");
+        bytes data_string = bytes::from_string("this is more additionalData");
+        
+        digest256 content{};
+        std::copy(content_string.begin(), content_string.end(), content.begin());
+        
+        // the inputs for the boost output (locking) script.  
+        encoding::hex::string given_category{"d2040000"};
+        encoding::hex::string given_user_nonce{"c8010000"};
+        encoding::hex::string given_tag = encoding::hex::write(tag_string);
+        encoding::hex::string given_additional_data = encoding::hex::write(data_string);
+        work::difficulty given_diff{0.0001};
+        
+        // the inputs for the boost input (unlocking) script. 
+        encoding::hex::string given_nonce_v1{"f8fc1600"};
+        encoding::hex::string given_nonce_v2{"04670400"};
+        encoding::hex::string given_extra_nonce_1{"02000000"};
+        encoding::hex::string given_extra_nonce_2_v1{"0000000300000003"};
+        encoding::hex::string given_extra_nonce_2_v2{"0000000000000000000000000000000000000000000000000000000300000003"};
+        
+        Bitcoin::pubkey miner_pubkey = from_key.to_public();
+        Bitcoin::address miner_address = miner_pubkey.address(Bitcoin::address::main);
+        
+        // for version 2, we use general purpose bits. 
+        encoding::hex::string general_purpose_bits{"ffffffff"};
+        
+        // expected values that are returned from the scripts. 
+        
+        // getCategoryNumber() => 1234
+        int32_little expected_category_number_v1;
+        int32_little general_purpose_bits_number;
+        int32_little expected_category_number_v2;
+        
+        boost::algorithm::unhex(given_category.begin(), given_category.end(), expected_category_number_v1.begin());
+        boost::algorithm::unhex(general_purpose_bits.begin(), general_purpose_bits.end(), general_purpose_bits_number.begin());
+        expected_category_number_v2 = (work::ASICBoost::Mask & expected_category_number_v1) | 
+            (work::ASICBoost::Bits & general_purpose_bits_number);
+        
+        // should be 0x1e270fd8 in little endian, ie d80f271e
+        //  1e is the exponent, 
+        //  0x270fd8 are the digits. 
+        work::compact compact(given_diff);
+        
+        // getUserNonceNumber() => 456
+        uint32_little expected_user_nonce_number;
+        boost::algorithm::unhex(given_user_nonce.begin(), given_user_nonce.end(), expected_user_nonce_number.begin());
+        
+        // getTimeNumber() => 151007250
+        uint32_little expected_time_number{151007250};
+        
+        // getExtraNonce1Number() => 33554432
+        Stratum::session_id expected_extra_nonce_1_number;
+        boost::algorithm::unhex(given_extra_nonce_1.begin(), given_extra_nonce_1.end(), expected_extra_nonce_1_number.begin());
+        
+        bytes expected_extra_nonce_2_v1(8);
+        bytes expected_extra_nonce_2_v2(32);
+        boost::algorithm::unhex(given_extra_nonce_2_v1.begin(), given_extra_nonce_2_v1.end(), expected_extra_nonce_2_v1.begin());
+        boost::algorithm::unhex(given_extra_nonce_2_v2.begin(), given_extra_nonce_2_v2.end(), expected_extra_nonce_2_v2.begin());
+        
+        puzzle puzzle_bounty_v1{output_script::bounty(
+            expected_category_number_v1, 
+            content, 
+            compact, 
+            bytes(given_tag), 
+            expected_user_nonce_number, 
+            bytes(given_additional_data), false), from_key};
+        
+        puzzle puzzle_bounty_v2{output_script::bounty(
+            expected_category_number_v1, 
+            content, 
+            compact, 
+            bytes(given_tag), 
+            expected_user_nonce_number, 
+            bytes(given_additional_data), true), from_key};
+        
+        puzzle puzzle_contract_v1{output_script::contract(
+            expected_category_number_v1, 
+            content, 
+            compact, 
+            bytes(given_tag), 
+            expected_user_nonce_number, 
+            bytes(given_additional_data), 
+            miner_address.Digest, false), from_key};
+        
+        puzzle puzzle_contract_v2{output_script::contract(
+            expected_category_number_v1, 
+            content, 
+            compact, 
+            bytes(given_tag), 
+            expected_user_nonce_number, 
+            bytes(given_additional_data), 
+            miner_address.Digest, true), from_key};
+        
+        Stratum::session_id extra_nonce_1{expected_extra_nonce_1_number};
+        Bitcoin::timestamp timestamp{expected_time_number};
+        
+        uint32_little nonceV1{151906};
+        uint32_little nonceV2{2768683};
+            
+        work::solution initial_v1{
+            work::share{timestamp, nonceV1, expected_extra_nonce_2_v1}, 
+            expected_extra_nonce_1_number};
+            
+        work::solution initial_v2{
+            work::share{timestamp, nonceV2, expected_extra_nonce_2_v2, general_purpose_bits_number}, 
+            expected_extra_nonce_1_number};
+        
+        work::proof final_v1 = work::cpu_solve(work::puzzle(puzzle_bounty_v1), initial_v1);
+        
+        work::proof final_v2 = work::cpu_solve(work::puzzle(puzzle_bounty_v2), initial_v2);
+        
+        work::proof proof_bounty_v1{work::puzzle(puzzle_bounty_v1), final_v1.Solution};
+        work::proof proof_contract_v1{work::puzzle(puzzle_contract_v1), final_v1.Solution};
+        work::proof proof_bounty_v2{work::puzzle(puzzle_bounty_v2), final_v2.Solution};
+        work::proof proof_contract_v2{work::puzzle(puzzle_contract_v2), final_v2.Solution};
+        
+        EXPECT_TRUE(proof_bounty_v1.valid());
+        EXPECT_TRUE(proof_contract_v1.valid());
+        EXPECT_TRUE(proof_bounty_v2.valid());
+        EXPECT_TRUE(proof_contract_v2.valid());
+        
+    }
 
 }

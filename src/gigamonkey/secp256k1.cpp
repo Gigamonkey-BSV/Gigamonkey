@@ -320,7 +320,7 @@ namespace Gigamonkey::secp256k1 {
     
     uint256 secret::negate(const uint256& sk) {
         uint256 out{sk};
-        return secp256k1_ec_privkey_negate(Verification(), out.data()) == 1 ? out : 0;
+        return secp256k1_ec_seckey_negate(Verification(), out.data()) == 1 ? out : 0;
     }
     
     bytes pubkey::negate(bytes_view pk) {
@@ -335,15 +335,13 @@ namespace Gigamonkey::secp256k1 {
     uint256 secret::plus(const uint256& sk_a, const uint256& sk_b) {
         const auto context = Verification();
         coordinate out{sk_a};
-        return secp256k1_ec_privkey_tweak_add(context, out.data(),
-            sk_b.data()) == 1;
+        return secp256k1_ec_seckey_tweak_add(context, out.data(), sk_b.data()) == 1;
     }
     
     uint256 secret::times(const uint256& sk_a, const uint256& sk_b) {
         const auto context = Verification();
         coordinate out{sk_a};
-        return secp256k1_ec_privkey_tweak_mul(context, out.data(),
-            sk_b.data()) == 1;
+        return secp256k1_ec_seckey_tweak_mul(context, out.data(), sk_b.data()) == 1;
     }
     
     bytes pubkey::plus_pubkey(const bytes_view pk_a, bytes_view pk_b) {

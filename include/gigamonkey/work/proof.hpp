@@ -283,7 +283,7 @@ namespace Gigamonkey::work {
     }
     
     bytes inline proof::meta() const {
-        return write(Puzzle.Header.size() + 12 + Puzzle.Body.size(), 
+        return write(Puzzle.Header.size() + 4 + Solution.Share.ExtraNonce2.size() + Puzzle.Body.size(), 
             Puzzle.Header, Solution.ExtraNonce1, Solution.Share.ExtraNonce2, Puzzle.Body);
     }
     
