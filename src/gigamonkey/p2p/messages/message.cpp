@@ -14,7 +14,6 @@ namespace Gigamonkey::Bitcoin::P2P::Messages {
 		msg._header.setCommandName(commandName);
 		msg.setupBlankPayload();
 		bool test = (bool)msg._payload;
-		std::cout << test << std::endl;
 		return msg;
 	}
 
