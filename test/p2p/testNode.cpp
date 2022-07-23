@@ -32,7 +32,7 @@ namespace Gigamonkey::Bitcoin::P2P {
 		// 		00000000
 		// 		00
 		std::cout << payload.size() << std::endl;
-		Messages::VersionPayload payloadObj(payload,Networks::RegTest);
+		Messages::VersionPayload payloadObj(payload,payload.size(),Networks::RegTest);
 		Messages::MessageHeader headerObj(head,Networks::RegTest);
 		std::cout << "Head: " << headerObj << " body: "<< payloadObj << std::endl;
       boost::shared_ptr<Node> node=Node::create(ctx,false,P2P::Networks::RegTest);
