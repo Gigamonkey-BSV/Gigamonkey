@@ -115,6 +115,15 @@ add_library(gigamonkey STATIC
     
     src/gigamonkey/mapi/mapi.cpp
     src/gigamonkey/mapi/envelope.cpp
+    src/gigamonkey/p2p/messages/messageHeader.cpp
+		src/gigamonkey/p2p/networks.cpp
+		src/gigamonkey/p2p/address.cpp
+
+        src/gigamonkey/p2p/var_util.cpp
+		src/gigamonkey/p2p/var_int.cpp
+		src/gigamonkey/p2p/messages/message.cpp
+		src/gigamonkey/p2p/node.cpp
+		src/gigamonkey/p2p/association_id.cpp
     
 )
 
