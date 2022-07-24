@@ -5,7 +5,7 @@
 
 namespace Gigamonkey::Stratum::extensions {
 
-    optional<version_mask> read_version_mask(const string &str) {
+    std::optional<version_mask> read_version_mask(const string &str) {
         if (str.size() != 8) return {};
         ptr<bytes> b = encoding::hex::read(str);
         if (b != nullptr) return {};
@@ -14,7 +14,7 @@ namespace Gigamonkey::Stratum::extensions {
         return {int32_little(n)};
     }
     
-    optional<configuration<version_rolling>> configuration<version_rolling>::read(const request &p) {
+    std::optional<configuration<version_rolling>> configuration<version_rolling>::read(const request &p) {
         auto m = p.contains("mask");
         auto mbc = p.contains("min-bit-count");
         if (!bool(m) || !bool(mbc) || !mbc->is_number_unsigned()) return {};
@@ -23,7 +23,7 @@ namespace Gigamonkey::Stratum::extensions {
         return {{*mask, byte(*mbc)}};
     }
     
-    optional<configured<version_rolling>> configured<version_rolling>::read(const result_params &p) {
+    std::optional<configured<version_rolling>> configured<version_rolling>::read(const result_params &p) {
         auto x = p.contains("mask");
         if (!x) return {};
         auto mask = read_version_mask(*x);
@@ -31,13 +31,13 @@ namespace Gigamonkey::Stratum::extensions {
         return {configured{*mask}};
     }
     
-    optional<configuration<minimum_difficulty>> configuration<minimum_difficulty>::read(const result_params &p) {
+    std::optional<configuration<minimum_difficulty>> configuration<minimum_difficulty>::read(const result_params &p) {
         auto x = p.contains("value");
         if (!x) return {};
         return {configuration{*x}};
     }
     
-    optional<configuration<info>> configuration<info>::read(const request &p) {
+    std::optional<configuration<info>> configuration<info>::read(const request &p) {
         auto a = p.contains("connection-url");
         auto b = p.contains("hw-version");
         auto c = p.contains("sw-version");

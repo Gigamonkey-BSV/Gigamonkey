@@ -6,21 +6,21 @@
 
 #include <gigamonkey/wif.hpp>
 
-namespace Gigamonkey::Bitcoin {
+namespace Gigamonkey {
     
     struct keysource {
-        virtual secret first() const = 0;
+        virtual Bitcoin::secret first() const = 0;
         virtual ptr<keysource> rest() const = 0;
         virtual ~keysource() {}
     };
     
     // a key source containing a single key. 
     struct single_key final : keysource {
-        secret Key;
+        Bitcoin::secret Key;
         
-        explicit single_key(const secret& k) : Key{k} {}
+        explicit single_key(const Bitcoin::secret& k) : Key{k} {}
         
-        secret first() const {
+        Bitcoin::secret first() const {
             return Key;
         }
         
@@ -31,11 +31,11 @@ namespace Gigamonkey::Bitcoin {
     
     // a key source that increments the key. 
     struct increment_key final : keysource {
-        secret Key;
+        Bitcoin::secret Key;
         
-        explicit increment_key(const secret& k) : Key{k} {}
+        explicit increment_key(const Bitcoin::secret& k) : Key{k} {}
         
-        secret first() const override {
+        Bitcoin::secret first() const override {
             return Key;
         }
         

@@ -5,6 +5,7 @@
 #include<gigamonkey/mapi/mapi.hpp>
 
 namespace Gigamonkey::MAPI {
+    using namespace Bitcoin;
     
     satoshi_per_byte spb_from_json(const json& j) {
         
@@ -12,7 +13,7 @@ namespace Gigamonkey::MAPI {
             j.contains("satoshis") && j["satoshis"].is_number_unsigned() && 
             j.contains("bytes") && j["bytes"].is_number_unsigned())) return{};
         
-        return satoshi_per_byte{Bitcoin::satoshi{int64(j["satoshis"])}, uint64(j["bytes"])};
+        return satoshi_per_byte{satoshi{int64(j["satoshis"])}, uint64(j["bytes"])};
         
     }
     
@@ -85,26 +86,26 @@ namespace Gigamonkey::MAPI {
         apiVersion = j["apiVersion"];
         timestamp = j["timestamp"];
         expiryTime = j["expiryTime"];
-        minerId = Bitcoin::pubkey{string(j["minerId"])};
+        minerId = pubkey{string(j["minerId"])};
         currentHighestBlockHash = digest256{string{"0x"} + string(j["currentHighestBlockHash"])};
         currentHighestBlockHeight = j["currentHighestBlockHeight"];
         fees = f;
         
     }
-    
-    Bitcoin::fee get_fee_quote_response::to(service z) const {
+    /*
+    fee get_fee_quote_response::to(service z) const {
         data::map<string, fee> fz;
         for (const fee& f : fees) {
             fz = fz.insert(f.feeType, f);
         }
         
-        Bitcoin::fee x{};
+        fee x{};
         if (!fz.contains("standard")) return x;
         x.Standard = fz["standard"].get(z);
         if (!fz.contains("data")) x.Data = x.Standard;
         else x.Data = fz["data"].get(z);
         return x;
-    }
+    }*/
     
     conflicted_with::conflicted_with(const json& j) : conflicted_with{} {
         
@@ -165,7 +166,7 @@ namespace Gigamonkey::MAPI {
         
         apiVersion = j["apiVersion"];
         timestamp = j["timestamp"];
-        minerId = Bitcoin::pubkey{string(j["minerId"])};
+        minerId = pubkey{string(j["minerId"])};
         currentHighestBlockHash = digest256{string{"0x"} + string(j["currentHighestBlockHash"])};
         currentHighestBlockHeight = j["currentHighestBlockHeight"];
         txSecondMempoolExpiry = uint32(j["txSecondMempoolExpiry"]);
@@ -201,7 +202,7 @@ namespace Gigamonkey::MAPI {
         resultDescription = j["resultDescription"];
         blockHash = digest256{string(j["blockHash"])};
         blockHeight = j["blockHeight"];
-        minerId = Bitcoin::pubkey{string(j["minerId"])};
+        minerId = pubkey{string(j["minerId"])};
         txSecondMempoolExpiry = uint32(j["txSecondMempoolExpiry"]);
         
         if (j.contains("confirmations")) confirmations = uint64(j["confirmations"]);
@@ -231,7 +232,7 @@ namespace Gigamonkey::MAPI {
         
         apiVersion = j["apiVersion"];
         timestamp = j["timestamp"];
-        minerId = Bitcoin::pubkey{string(j["minerId"])};
+        minerId = pubkey{string(j["minerId"])};
         currentHighestBlockHash = digest256{string(j["currentHighestBlockHash"])};
         currentHighestBlockHeight = j["currentHighestBlockHeight"];
         txSecondMempoolExpiry = uint32(j["txSecondMempoolExpiry"]);

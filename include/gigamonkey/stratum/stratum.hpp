@@ -15,6 +15,8 @@ namespace Gigamonkey::Stratum {
     
     using parameters = json::array_t;
     
+    template <typename X> using optional = std::optional<X>;
+    
     struct notification : json {
         
         static bool valid(const json&);

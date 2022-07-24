@@ -95,17 +95,17 @@ namespace Gigamonkey::BitcoinAssociation {
         static map<digest256, Merkle::path> paths(const json&);
         
         // various kinds of targets that might be included.  
-        optional<digest256> block_hash() const;
-        optional<digest256> Merkle_root() const;
-        optional<Bitcoin::header> block_header() const;
+        std::optional<digest256> block_hash() const;
+        std::optional<digest256> Merkle_root() const;
+        std::optional<Bitcoin::header> block_header() const;
         
-        static optional<digest256> block_hash(const json&);
-        static optional<digest256> Merkle_root(const json&);
-        static optional<Bitcoin::header> block_header(const json&);
+        static std::optional<digest256> block_hash(const json&);
+        static std::optional<digest256> Merkle_root(const json&);
+        static std::optional<Bitcoin::header> block_header(const json&);
         
-        static optional<digest256> block_hash(bytes_view);
-        static optional<digest256> Merkle_root(bytes_view);
-        static optional<Bitcoin::header> block_header(bytes_view);
+        static std::optional<digest256> block_hash(bytes_view);
+        static std::optional<digest256> Merkle_root(bytes_view);
+        static std::optional<Bitcoin::header> block_header(bytes_view);
         
         // We can always calculate a root from the given information
         // but not necessarily check the whole proof. 
@@ -149,16 +149,16 @@ namespace Gigamonkey::BitcoinAssociation {
         static Merkle::branch branch(const json&);
         
         // one of these must be included. 
-        optional<bytes> Transaction;
-        optional<Bitcoin::txid> Txid;
+        std::optional<bytes> Transaction;
+        std::optional<Bitcoin::txid> Txid;
         
         // there is always at least one path. 
         Merkle::path Path;
         
         // one of these must be included. 
-        optional<digest256> BlockHash;
-        optional<digest256> MerkleRoot;
-        optional<Bitcoin::header> BlockHeader;
+        std::optional<digest256> BlockHash;
+        std::optional<digest256> MerkleRoot;
+        std::optional<Bitcoin::header> BlockHeader;
         
     };
     
@@ -263,38 +263,38 @@ namespace Gigamonkey::BitcoinAssociation {
         const Bitcoin::transaction& t, const Merkle::path& p, const Bitcoin::header& h) 
         : Transaction{bytes(t)}, Path{p}, BlockHeader{h} {}
     
-    optional<digest256> inline proofs_serialization_standard::block_hash() const {
+    std::optional<digest256> inline proofs_serialization_standard::block_hash() const {
         return BlockHash;
     }
     
-    optional<Bitcoin::header> inline proofs_serialization_standard::block_header() const {
+    std::optional<Bitcoin::header> inline proofs_serialization_standard::block_header() const {
         return BlockHeader;
     }
     
-    optional<digest256> inline proofs_serialization_standard::Merkle_root() const {
+    std::optional<digest256> inline proofs_serialization_standard::Merkle_root() const {
         if (bool(MerkleRoot)) return MerkleRoot;
         if (bool(BlockHeader)) return BlockHeader->MerkleRoot;
         return {};
     }
     
-    optional<digest256> inline proofs_serialization_standard::block_hash(const json& j) {
+    std::optional<digest256> inline proofs_serialization_standard::block_hash(const json& j) {
         if (j.contains("targetType") && j["targetType"] == "hash") return {digest256{string{"0x"} + string(j["target"])}};
         return {};
     }
         
-    optional<digest256> inline proofs_serialization_standard::block_hash(bytes_view b) {
+    std::optional<digest256> inline proofs_serialization_standard::block_hash(bytes_view b) {
         auto x = read_binary(b);
         if (x.valid()) return x.block_hash();
         return {};
     }
     
-    optional<Bitcoin::header> inline proofs_serialization_standard::block_header(bytes_view b) {
+    std::optional<Bitcoin::header> inline proofs_serialization_standard::block_header(bytes_view b) {
         auto x = read_binary(b);
         if (x.valid()) return x.block_header();
         return {};
     }
     
-    optional<digest256> inline proofs_serialization_standard::Merkle_root(bytes_view b) {
+    std::optional<digest256> inline proofs_serialization_standard::Merkle_root(bytes_view b) {
         auto x = read_binary(b);
         if (x.valid()) return x.Merkle_root();
         return {};

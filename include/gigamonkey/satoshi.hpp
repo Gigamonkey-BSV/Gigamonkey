@@ -49,6 +49,12 @@ namespace data::math {
             return {0};
         }
     };
+    
+    template <> struct inverse<plus<Gigamonkey::Bitcoin::satoshi>, Gigamonkey::Bitcoin::satoshi> {
+        Gigamonkey::Bitcoin::satoshi operator()(const Gigamonkey::Bitcoin::satoshi &a, const Gigamonkey::Bitcoin::satoshi &b) {
+            return b - a;
+        }
+    };
 }
 
 #endif

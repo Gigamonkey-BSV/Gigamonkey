@@ -56,7 +56,7 @@ namespace Gigamonkey::Merkle {
                 uint32 n = Nodes.size();
                 Nodes[n] = tree_node{0};
                 
-                for (const data::entry<digest, path>& x : d.Paths.values()) {
+                for (const data::entry<digest, path>& x : d.Paths) {
                     uint32 i = insert_or_find(x.Key);
                     
                     if (i == 0) return;

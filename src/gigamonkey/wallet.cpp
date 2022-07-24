@@ -4,44 +4,10 @@
 #include <gigamonkey/wallet.hpp>
 #include <math.h>
 
-namespace Gigamonkey::Bitcoin {
+namespace Gigamonkey {
     
-    satoshi operator*(satoshi_per_byte v, uint64 size) {
-        if (v.Bytes == 0) throw data::math::division_by_zero{};
-        
-        return ceil(double(v.Satoshis) * double(size) / double(v.Bytes));
-    }
-    
-    // We use a model whereby data scripts can have a different cost
-    // from other types of data. In principle, transactions could be
-    // priced in a more granular way, requring a more complex model here. 
-    struct transaction_data_type {
-        uint64 Data;
-        uint64 Standard;
-        
-        void count_output_script(const script& x) {
-            // op_return output scripts are cheap. 
-            (op_return_data::match(x) ? Data : Standard) += x.size();
-            // counting the rest of the output, which includes the size
-            // of the script and the satoshi value. 
-            Standard += var_int::size(x.size()) + 4;
-        }
-        
-        void count_input_script(const uint64 script_size) {
-            Standard += script_size + var_int::size(script_size) + 40;
-        }
-        
-        transaction_data_type operator+(transaction_data_type t) const {
-            return {Data + t.Data, Standard + t.Standard};
-        }
-    };
-    
-    satoshi operator*(fee v, transaction_data_type d) {
-        return v.Data * d.Data + v.Standard * d.Standard;
-    }
-    
-    wallet::spent wallet::spend(list<output> payments) const {
-        
+    wallet::spent wallet::spend(satoshi_per_byte fee_rate, list<Bitcoin::output> payments) const {
+        using namespace Bitcoin;
         if (!valid()) return {};
         
         satoshi to_spend = 0;
@@ -90,7 +56,7 @@ namespace Gigamonkey::Bitcoin {
                         entries = entries.rest();
                     }
                     in_progress_tx_size_count.Standard += var_int::size(entries.size());
-                    tx_fee = Fee * in_progress_tx_size_count;
+                    tx_fee = fee_rate * in_progress_tx_size_count;
                     break;
                 }
                 case fifo: {
@@ -100,7 +66,7 @@ namespace Gigamonkey::Bitcoin {
                         remainder = remainder.rest();
                         in_progress_tx_size_count.count_input_script(x.Redeemer->expected_size());
                         to_redeem = to_redeem.insert(x);
-                        tx_fee = Fee * (in_progress_tx_size_count + transaction_data_type{0, var_int::size(to_redeem.Entries.size())});
+                        tx_fee = fee_rate * (in_progress_tx_size_count + transaction_data_type{0, var_int::size(to_redeem.Entries.size())});
                     } while (to_redeem.Value < to_spend + tx_fee + Dust);
                     break;
                 }
@@ -113,7 +79,7 @@ namespace Gigamonkey::Bitcoin {
                         remainder = remainder.rest();
                         in_progress_tx_size_count.count_input_script(x.Redeemer->expected_size());
                         to_redeem = to_redeem.insert(x);
-                        tx_fee = Fee * (in_progress_tx_size_count + transaction_data_type{0, var_int::size(to_redeem.Entries.size())});
+                        tx_fee = fee_rate * (in_progress_tx_size_count + transaction_data_type{0, var_int::size(to_redeem.Entries.size())});
                     } while (to_redeem.Value < to_spend + tx_fee + Dust);
                     break;
                 }

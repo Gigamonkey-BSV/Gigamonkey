@@ -175,7 +175,7 @@ namespace Gigamonkey {
             Bitcoin::timestamp Timestamp;
             bytes ExtraNonce2;
             Stratum::session_id ExtraNonce1;
-            optional<int32_little> GeneralPurposeBits;
+            std::optional<int32_little> GeneralPurposeBits;
             digest160 MinerAddress;
             
         private:
@@ -448,7 +448,7 @@ namespace Gigamonkey {
         
         using prevout = data::entry<Bitcoin::outpoint, output>;
         
-        struct redeemer final : Bitcoin::spendable::redeemer {
+        struct redeemer final : spendable::redeemer {
             Bitcoin::secret Secret;
             Bitcoin::pubkey Pubkey;
             work::solution Solution;
@@ -475,7 +475,7 @@ namespace Gigamonkey {
             }
         };
         
-        inline bool operator==(const output_script& a, const output_script& b) {
+        bool inline operator==(const output_script& a, const output_script& b) {
             return a.Type == b.Type && 
                 a.Category == b.Category && 
                 a.UseGeneralPurposeBits == b.UseGeneralPurposeBits && 
@@ -486,12 +486,8 @@ namespace Gigamonkey {
                 a.AdditionalData == b.AdditionalData && 
                 a.MinerAddress == b.MinerAddress;
         }
-            
-        inline bool operator!=(const output_script& a, const output_script& b) {
-            return !(a == b);
-        }
         
-        inline bool operator==(const input_script& a, const input_script& b) {
+        bool inline operator==(const input_script& a, const input_script& b) {
             return a.Type == b.Type && 
                 a.Signature == b.Signature && 
                 a.Pubkey == b.Pubkey && 
@@ -503,11 +499,7 @@ namespace Gigamonkey {
                 a.MinerAddress == b.MinerAddress;
         }
         
-        inline bool operator!=(const input_script& a, const input_script& b) {
-            return !(a == b);
-        }
-        
-        inline bool operator==(const puzzle& a, const puzzle& b) {
+        bool inline operator==(const puzzle& a, const puzzle& b) {
             return a.Type == b.Type && 
                 a.Category == b.Category && a.UseGeneralPurposeBits == b.UseGeneralPurposeBits && 
                 a.Content == b.Content && a.Target == b.Target && 
@@ -515,25 +507,13 @@ namespace Gigamonkey {
                 a.AdditionalData == b.AdditionalData && a.MinerKey == b.MinerKey;
         }
         
-        inline bool operator!=(const puzzle& a, const puzzle& b) {
-            return !(a == b);
-        }
-        
-        inline bool operator==(const job& a, const job& b) {
+        bool inline operator==(const job& a, const job& b) {
             return a.Type == b.Type && 
                 work::operator==(static_cast<const work::job&>(a), static_cast<const work::job&>(b));
         }
         
-        inline bool operator!=(const job& a, const job& b) {
-            return !(a == b);
-        }
-        
-        inline bool operator==(const proof& a, const proof& b) {
+        bool inline operator==(const proof& a, const proof& b) {
             return a.Type == b.Type && work::operator==(static_cast<const work::proof&>(a), static_cast<const work::proof&>(b));
-        }
-        
-        inline bool operator!=(const proof& a, const proof& b) {
-            return !(a == b);
         }
         
         inline output_script::output_script() : Type{Boost::invalid}, 
@@ -952,10 +932,6 @@ namespace Gigamonkey {
         
         bool inline operator==(const output &a, const output &b) {
             return a.Script == b.Script && a.Value == b.Value && a.ID == b.ID;
-        }
-        
-        bool inline operator!=(const output &a, const output &b) {
-            return !(a == b);
         }
         
         std::ostream inline &operator<<(std::ostream& o, const output s) {

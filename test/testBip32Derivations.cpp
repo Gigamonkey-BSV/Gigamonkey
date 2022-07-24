@@ -40,7 +40,7 @@ bip32TestData tests[]={bip32TestData("000102030405060708090a0b0c0d0e0f","xpub661
 
 class Bip32Tests :public ::testing::TestWithParam<bip32TestData> {
 protected:
-    Gigamonkey::Bitcoin::hd::bip32::secret seedkey;
+    Gigamonkey::hd::bip32::secret seedkey;
     std::vector<char> HexToBytes(const std::string& hex) {
         std::vector<char> bytes;
 
@@ -56,7 +56,7 @@ protected:
         std::vector<char> input=HexToBytes(GetParam().seed);
         Gigamonkey::bytes seed(input.size());
         std::copy(input.begin(),input.end(),seed.begin());
-        seedkey=Gigamonkey::Bitcoin::hd::bip32::secret::from_seed(seed,Gigamonkey::Bitcoin::hd::bip32::main);
+        seedkey=Gigamonkey::hd::bip32::secret::from_seed(seed,Gigamonkey::hd::bip32::main);
     }
 };
 
@@ -65,19 +65,19 @@ TEST_P(Bip32Tests, FromSeed) {
 }
 
 TEST_P(Bip32Tests, DerivePrivate) {
-    Gigamonkey::Bitcoin::hd::bip32::secret current=seedkey;
+    Gigamonkey::hd::bip32::secret current=seedkey;
     for(auto curData:GetParam().chain) {
-        current=Gigamonkey::Bitcoin::hd::bip32::derive(current,std::get<0>(curData));
-        ASSERT_EQ(current,Gigamonkey::Bitcoin::hd::bip32::secret::read(std::get<2>(curData)));
+        current=Gigamonkey::hd::bip32::derive(current,std::get<0>(curData));
+        ASSERT_EQ(current,Gigamonkey::hd::bip32::secret::read(std::get<2>(curData)));
     }
 }
 
 
 TEST_P(Bip32Tests, DerivePublicWithPrivate) {
-    Gigamonkey::Bitcoin::hd::bip32::secret current=seedkey;
+    Gigamonkey::hd::bip32::secret current=seedkey;
     for(auto curData:GetParam().chain) {
-        current=Gigamonkey::Bitcoin::hd::bip32::derive(current,std::get<0>(curData));
-        ASSERT_EQ(current.to_public(),Gigamonkey::Bitcoin::hd::bip32::pubkey::read(std::get<1>(curData)));
+        current=Gigamonkey::hd::bip32::derive(current,std::get<0>(curData));
+        ASSERT_EQ(current.to_public(),Gigamonkey::hd::bip32::pubkey::read(std::get<1>(curData)));
     }
 }
 

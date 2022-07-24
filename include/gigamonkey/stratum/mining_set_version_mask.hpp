@@ -11,7 +11,7 @@ namespace Gigamonkey::Stratum::mining {
         
         static Stratum::parameters serialize(const extensions::version_mask& d);
         
-        static optional<extensions::version_mask> deserialize(const Stratum::parameters& p);
+        static std::optional<extensions::version_mask> deserialize(const Stratum::parameters& p);
         
         using notification::notification;
         set_version_mask(extensions::version_mask d) : notification{mining_set_version_mask, serialize(d)} {} 
@@ -35,7 +35,7 @@ namespace Gigamonkey::Stratum::mining {
         return p;
     }
         
-    optional<extensions::version_mask> inline set_version_mask::deserialize(const Stratum::parameters& p) {
+    std::optional<extensions::version_mask> inline set_version_mask::deserialize(const Stratum::parameters& p) {
         if (p.size() != 1 || !p[0].is_string()) return {};
         return extensions::read_version_mask(string(p[0]));
     }

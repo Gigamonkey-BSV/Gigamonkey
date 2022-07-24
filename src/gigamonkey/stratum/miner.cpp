@@ -132,7 +132,7 @@ namespace Gigamonkey::Stratum {
     }
     
     void miner::run(
-        const optional<extensions::requests> cp, 
+        const std::optional<extensions::requests> cp, 
         const mining::authorize_request::parameters& ap, 
         const mining::subscribe_request::parameters& sp) {
         try {

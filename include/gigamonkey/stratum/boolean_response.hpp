@@ -25,7 +25,7 @@ namespace Gigamonkey::Stratum {
         
         using response::response;
         boolean_response(message_id id, bool r) : response{id, json(r)} {}
-        boolean_response(message_id id, optional<Stratum::error> e) : response{e.has_value() ? response{id, false, *e} : response{id, true}} {}
+        boolean_response(message_id id, std::optional<Stratum::error> e) : response{e.has_value() ? response{id, false, *e} : response{id, true}} {}
     };
 
 }

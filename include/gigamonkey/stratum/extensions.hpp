@@ -47,7 +47,7 @@ namespace Gigamonkey::Stratum::extensions {
             return {};
         }
         
-        static optional<configuration> read(const request &p) {
+        static std::optional<configuration> read(const request &p) {
             return {{}};
         }
     };
@@ -57,7 +57,7 @@ namespace Gigamonkey::Stratum::extensions {
             return {};
         }
         
-        static optional<configured> read(const result_params &p) {
+        static std::optional<configured> read(const result_params &p) {
             return {{}};
         }
     };
@@ -65,28 +65,28 @@ namespace Gigamonkey::Stratum::extensions {
     using version_mask = int32_little;
     
     encoding::hex::fixed<4> write_version_mask(const version_mask &x);
-    optional<version_mask> read_version_mask(const string&);
+    std::optional<version_mask> read_version_mask(const string&);
     
     template <> struct configuration<version_rolling> {
         version_mask Mask;
         byte MinBitCount;
         
         operator request() const;
-        static optional<configuration> read(const request &p);
+        static std::optional<configuration> read(const request &p);
     };
     
     template <> struct configured<version_rolling> {
         version_mask Mask;
         
         operator result_params() const;
-        static optional<configured> read(const result_params &p);
+        static std::optional<configured> read(const result_params &p);
     };
     
     template <> struct configuration<minimum_difficulty> {
         difficulty Value;
         
         operator request() const;
-        static optional<configuration> read(const request &p);
+        static std::optional<configuration> read(const request &p);
     };
     
     template <> struct configuration<info> {
@@ -96,7 +96,7 @@ namespace Gigamonkey::Stratum::extensions {
         string HWID;
         
         operator request() const;
-        static optional<configuration> read(const request &p);
+        static std::optional<configuration> read(const request &p);
     };
     
     struct requests : public data::map<string, request> {
@@ -107,12 +107,12 @@ namespace Gigamonkey::Stratum::extensions {
         requests insert(const configuration<x> &n) const;
         
         template <extension x>
-        optional<configuration<x>> get() const;
+        std::optional<configuration<x>> get() const;
     };
     
     struct result {
         accepted Accepted;
-        optional<result_params> Parameters;
+        std::optional<result_params> Parameters;
         
         result(const result_params &p);
         result();
@@ -144,7 +144,7 @@ namespace Gigamonkey::Stratum::extensions {
         results insert(const string &err) const;
         
         template <extension x>
-        optional<configured<x>> get() const;
+        std::optional<configured<x>> get() const;
     };
     
     inline encoding::hex::fixed<4> write_version_mask(const version_mask& x) {
@@ -200,7 +200,7 @@ namespace Gigamonkey::Stratum::extensions {
     }
     
     template <extension x>
-    optional<configuration<x>> requests::get() const {
+    std::optional<configuration<x>> requests::get() const {
         string ext = extension_to_string(x);
         auto z = this->contains(ext);
         if (z) return configuration<x>::read(*z);
@@ -233,7 +233,7 @@ namespace Gigamonkey::Stratum::extensions {
     }
     
     template <extension x>
-    optional<configured<x>> results::get() const {
+    std::optional<configured<x>> results::get() const {
         string ext = extension_to_string(x);
         auto r = this->contains(ext);
         if (r) return {};
