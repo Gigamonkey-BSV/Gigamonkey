@@ -19,7 +19,7 @@ namespace Gigamonkey::Stratum::mining {
             return j;
         } 
         
-        static optional<parameters> deserialize(const Stratum::parameters& p) {
+        static std::optional<parameters> deserialize(const Stratum::parameters& p) {
             if (p.size() != 2 || !p[0].is_string() || !p[1].is_number_unsigned()) return {};
             return parameters{session_id(encoding::hex::fixed<4>(p[0])), size_t(p[1])};
         }

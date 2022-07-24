@@ -15,10 +15,17 @@ namespace Gigamonkey::Bitcoin {
     bool operator==(const secret&, const secret&);
     bool operator!=(const secret&, const secret&);
     
-    ostream& operator<<(ostream&, const secret&);
+    std::ostream& operator<<(std::ostream&, const secret&);
     
+    // Bitcoin secret keys are more than just secp256k1 private keys. 
+    // They also include information on network (main or test) and
+    // on whether the corresponding public key is given in compressed 
+    // format. This is important because the format of the public key 
+    // changes the address. 
     struct secret {
         
+        // The serialized form of the key has a different prefix 
+        // depending on whether it is for testnet or mainnet. 
         enum type : byte {
             main = 0x80, 
             test = 0xef
@@ -26,6 +33,8 @@ namespace Gigamonkey::Bitcoin {
         
         type Prefix;
         secp256k1::secret Secret;
+        
+        // whether the corresponding public key is compressed. 
         bool Compressed;
         
         constexpr static byte CompressedSuffix = 0x01;
@@ -75,21 +84,21 @@ namespace Gigamonkey::Bitcoin {
         return !(a == b);
     }
     
-    inline ostream& operator<<(ostream& o, const secret& s) {
+    std::ostream inline &operator<<(std::ostream& o, const secret& s) {
         return o << s.write();
     }
         
-    inline size_t secret::size() const {
+    size_t inline secret::size() const {
         return 33 + (Compressed ? 1 : 0); 
     }
     
-    inline bool secret::valid() const {
+    bool inline secret::valid() const {
         return Secret.valid() && (Prefix == main || Prefix == test);
     }
     
     inline secret::secret() : Prefix{0}, Secret{}, Compressed{false} {}
     
-    inline Bitcoin::address::type secret::to_address_type(secret::type t) {
+    Bitcoin::address::type inline secret::to_address_type(secret::type t) {
         return t == main ? Bitcoin::address::main : Bitcoin::address::test;
     }
     
@@ -97,31 +106,31 @@ namespace Gigamonkey::Bitcoin {
     
     inline secret::secret(string_view s) : secret{read(s)} {}
         
-    inline string secret::write() const {
+    string inline secret::write() const {
         return write(Prefix, Secret, Compressed);
     }
     
-    inline pubkey secret::to_public() const {
+    pubkey inline secret::to_public() const {
         return pubkey{Compressed ? Secret.to_public().compress() : Secret.to_public().decompress()};
     }
     
-    inline Bitcoin::address secret::address() const {
+    Bitcoin::address inline secret::address() const {
         return {to_address_type(Prefix), to_public()};
     }
     
-    inline secp256k1::signature secret::sign(const digest256& d) const {
+    secp256k1::signature inline secret::sign(const digest256& d) const {
         return Secret.sign(d);
     }
     
-    inline signature secret::sign(const sighash::document& document, sighash::directive d) const {
+    signature inline secret::sign(const sighash::document& document, sighash::directive d) const {
         return signature::sign(Secret, d, document);
     }
         
-    inline bytes secret::encrypt(const bytes& message) const {
+    bytes inline secret::encrypt(const bytes& message) const {
         return ECIES::electrum::encrypt(message, to_public());
     }
     
-    inline bytes secret::decrypt(const bytes& message) const {
+    bytes inline secret::decrypt(const bytes& message) const {
         return ECIES::electrum::decrypt(message, Secret);
     }
     

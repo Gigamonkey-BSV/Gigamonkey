@@ -16,7 +16,7 @@ namespace Gigamonkey::Stratum::mining {
     struct authorize_request : request {
         struct parameters {
             string Username;
-            optional<string> Password;
+            std::optional<string> Password;
         
             bool valid() const;
             bool operator==(const parameters& x) const;
@@ -36,7 +36,7 @@ namespace Gigamonkey::Stratum::mining {
         static bool valid(const json&);
         
         static string username(const json&);
-        static optional<string> password(const json&);
+        static std::optional<string> password(const json&);
         
         using request::request;
         authorize_request(message_id id, string u);
@@ -44,7 +44,7 @@ namespace Gigamonkey::Stratum::mining {
         
         string username() const;
         
-        optional<string> password() const;
+        std::optional<string> password() const;
         
         bool valid() const;
     };
@@ -75,7 +75,7 @@ namespace Gigamonkey::Stratum::mining {
         return username(*this);
     }
     
-    optional<string> inline authorize_request::password() const {
+    std::optional<string> inline authorize_request::password() const {
         return password(*this);
     }
     

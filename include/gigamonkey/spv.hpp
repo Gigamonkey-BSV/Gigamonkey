@@ -7,9 +7,9 @@
 #include <gigamonkey/timechain.hpp>
 #include <gigamonkey/merkle/dual.hpp>
 
-namespace Gigamonkey::Bitcoin {
+namespace Gigamonkey {
     
-    block genesis();
+    Bitcoin::block genesis();
     
     // interface for the headers and merkle paths database. 
     struct headers {
@@ -43,7 +43,7 @@ namespace Gigamonkey::Bitcoin {
         
         virtual Merkle::dual dual_tree(const digest256&) const = 0;
         
-        virtual Merkle::proof proof(const txid&) const = 0;
+        virtual Merkle::proof proof(const Bitcoin::txid&) const = 0;
         
         virtual bool insert(const header&) = 0;
         

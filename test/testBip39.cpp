@@ -21,7 +21,7 @@ std::vector<char> HexToBytes(const std::string& hex) {
 
 
 
-class Bip39Tests : public ::testing::TestWithParam<std::tuple<Gigamonkey::Bitcoin::hd::bip39::language,std::string,std::string,std::string,std::string,std::string>>
+class Bip39Tests : public ::testing::TestWithParam<std::tuple<Gigamonkey::hd::bip39::language,std::string,std::string,std::string,std::string,std::string>>
 {
 
 };
@@ -29,9 +29,9 @@ class Bip39Tests : public ::testing::TestWithParam<std::tuple<Gigamonkey::Bitcoi
 TEST_P(Bip39Tests,EntropyToWords)
 {
     std::vector<char> example=HexToBytes(std::get<1>(GetParam()));
-    Gigamonkey::Bitcoin::hd::entropy ent(example.size());
+    Gigamonkey::hd::entropy ent(example.size());
     std::copy(example.begin(),example.end(),ent.begin());
-    std::string output=Gigamonkey::Bitcoin::hd::bip39::generate(ent,std::get<0>(GetParam()));
+    std::string output=Gigamonkey::hd::bip39::generate(ent,std::get<0>(GetParam()));
     ASSERT_EQ(output,std::get<2>(GetParam())) << "Given Entropy doesn't match the expected word list";
 }
 std::string hexStr(Gigamonkey::byte *data, int len)
@@ -47,77 +47,77 @@ std::string hexStr(Gigamonkey::byte *data, int len)
 
 TEST_P(Bip39Tests,WordsToSeed) {
     const std::string& words=std::get<2>(GetParam());
-    Gigamonkey::Bitcoin::hd::seed seed=Gigamonkey::Bitcoin::hd::bip39::read(words,std::get<3>(GetParam()),std::get<0>(GetParam()));
+    Gigamonkey::hd::seed seed=Gigamonkey::hd::bip39::read(words,std::get<3>(GetParam()),std::get<0>(GetParam()));
     ASSERT_EQ(hexStr(seed.data(),seed.size()),std::get<4>(GetParam())) <<  "output seed not matching";
 
 }
 
 TEST_P(Bip39Tests,WordsToKey) {
     const std::string& words=std::get<2>(GetParam());
-    Gigamonkey::Bitcoin::hd::seed seed=Gigamonkey::Bitcoin::hd::bip39::read(words,std::get<3>(GetParam()),std::get<0>(GetParam()));
+    Gigamonkey::hd::seed seed=Gigamonkey::hd::bip39::read(words,std::get<3>(GetParam()),std::get<0>(GetParam()));
 
-    Gigamonkey::Bitcoin::hd::bip32::secret secret=Gigamonkey::Bitcoin::hd::bip32::secret::from_seed(seed,Gigamonkey::Bitcoin::hd::bip32::main);
+    Gigamonkey::hd::bip32::secret secret=Gigamonkey::hd::bip32::secret::from_seed(seed,Gigamonkey::hd::bip32::main);
     ASSERT_EQ(secret.write(),std::get<5>(GetParam())) << "Words do not become the right key";
 }
 TEST_P(Bip39Tests,EntropyToKey) {
 
     std::vector<char> example=HexToBytes(std::get<1>(GetParam()));
-    Gigamonkey::Bitcoin::hd::entropy ent(example.size());
+    Gigamonkey::hd::entropy ent(example.size());
     std::copy(example.begin(),example.end(),ent.begin());
-    std::string output=Gigamonkey::Bitcoin::hd::bip39::generate(ent);
-    Gigamonkey::Bitcoin::hd::seed seed=Gigamonkey::Bitcoin::hd::bip39::read(output,std::get<3>(GetParam()),std::get<0>(GetParam()));
+    std::string output=Gigamonkey::hd::bip39::generate(ent);
+    Gigamonkey::hd::seed seed=Gigamonkey::hd::bip39::read(output,std::get<3>(GetParam()),std::get<0>(GetParam()));
 
-    Gigamonkey::Bitcoin::hd::bip32::secret secret=Gigamonkey::Bitcoin::hd::bip32::secret::from_seed(seed,Gigamonkey::Bitcoin::hd::bip32::main);
+    Gigamonkey::hd::bip32::secret secret=Gigamonkey::hd::bip32::secret::from_seed(seed,Gigamonkey::hd::bip32::main);
     ASSERT_EQ(secret.write(),std::get<5>(GetParam())) << "Entropy does not become the right key";
 
 }
 TEST_P(Bip39Tests,WrongPassphraseFails) {
     const std::string& words=std::get<2>(GetParam());
-    Gigamonkey::Bitcoin::hd::seed seed=Gigamonkey::Bitcoin::hd::bip39::read(words,"IFailToPassOrCode",std::get<0>(GetParam()));
+    Gigamonkey::hd::seed seed=Gigamonkey::hd::bip39::read(words,"IFailToPassOrCode",std::get<0>(GetParam()));
 
-    Gigamonkey::Bitcoin::hd::bip32::secret secret=Gigamonkey::Bitcoin::hd::bip32::secret::from_seed(seed,Gigamonkey::Bitcoin::hd::bip32::main);
+    Gigamonkey::hd::bip32::secret secret=Gigamonkey::hd::bip32::secret::from_seed(seed,Gigamonkey::hd::bip32::main);
     ASSERT_NE(secret.write(),std::get<5>(GetParam())) << "Words become right key without correct passphrase";
 }
 
 TEST_P(Bip39Tests,CheckChecksum) {
     std::string& words= const_cast<std::string &>(std::get<2>(GetParam()));
-    ASSERT_TRUE(Gigamonkey::Bitcoin::hd::bip39::valid(words,std::get<0>(GetParam()))) << "Checksum should be valid";
+    ASSERT_TRUE(Gigamonkey::hd::bip39::valid(words,std::get<0>(GetParam()))) << "Checksum should be valid";
     std::replace(words.begin(),words.end(),'a','e');
     std::replace(words.begin(),words.end(),'o','i');
-    ASSERT_FALSE(Gigamonkey::Bitcoin::hd::bip39::valid(words,std::get<0>(GetParam()))) << "Checksum should not valid on altered string";
+    ASSERT_FALSE(Gigamonkey::hd::bip39::valid(words,std::get<0>(GetParam()))) << "Checksum should not valid on altered string";
 }
 
 INSTANTIATE_TEST_SUITE_P(Bip39,Bip39Tests,::testing::Values(
         /*std::make_tuple(
-                Gigamonkey::Bitcoin::hd::bip39::language::japanese,
+                Gigamonkey::hd::bip39::language::japanese,
                 "7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f",
                 "そつう　れきだい　ほんやく　わかす　りくつ　ばいか　ろせん　やちん　そつう　れきだい　ほんやく　わかめ",
                 "TREZOR",
                 "9d269b22155b3c915b09abfefd4e1104573c528f6977cde89c6a68152c3c714dc6c7e0e62f221c322f3f76e4d0bcca66c06e3d2f6a8d70d612c87dd6dee63976",
                 "xprv9s21ZrQH143K3kavBMu7K49k18vjQHhNL1ciMgn7S9kDMKdyK1vEpF46UWyoXCvdBLEp8U2bhissPkC6iwXjMgRXyQ6SHbyYYGcnFqNXTW1"),
         std::make_tuple(
-                Gigamonkey::Bitcoin::hd::bip39::language::japanese,
+                Gigamonkey::hd::bip39::language::japanese,
                 "00000000000000000000000000000000",
                 "あいこくしん　あいこくしん　あいこくしん　あいこくしん　あいこくしん　あいこくしん　あいこくしん　あいこくしん　あいこくしん　あいこくしん　あいこくしん　あおぞら",
                 "TREZOR",
                 "5a6c23b5abdd5c3e1f7d77ad25ecd715647bdafb44dab324c730a76a45d7421daccee1a4ff0739715a2c56a8a9f1e527a5e3496224d91293bfcd9b5393bfff83",
                 "xprv9s21ZrQH143K2TDo8AAss7eUkUqLFzBnypFpqjQUMVUrSMvrrgLiRxQPrYnhfoS9NPp3rex725rcuN8pkDL6pwqWfdPtiqa9ib1B37vZwfy"),*/
     std::make_tuple(
-            Gigamonkey::Bitcoin::hd::bip39::language::english,
+            Gigamonkey::hd::bip39::language::english,
         "3d842f35702e353e9871e6c450e81cca",
         "diesel cannon snap theory today palm gift devote session mansion already night",
         "",
         "a3cfb4e09b8297c8a4da01d57979a105e43b98a2f3b32f8161bd092636cb07444b60c979b1a1f9469a3cc11c416f2879b9f87b72a49f9dc7e5d2530ed648d55d",
         "xprv9s21ZrQH143K4PEL4MhLUSJAF2inysJ1tKwxbe3bZHr6Q1aNUkaLgb4RUt1Z4ZbNwAtQMGFnvcKtBDaWoY5BT2FpWFpgGeTHG7P64JKS2iy"),
     std::make_tuple(
-            Gigamonkey::Bitcoin::hd::bip39::language::english,
+            Gigamonkey::hd::bip39::language::english,
         "00000000000000000000000000000000",
         "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
         "TREZOR",
         "c55257c360c07c72029aebc1b53c05ed0362ada38ead3e3e9efa3708e53495531f09a6987599d18264c1e1c92f2cf141630c7a3c4ab7c81b2f001698e7463b04",
         "xprv9s21ZrQH143K3h3fDYiay8mocZ3afhfULfb5GX8kCBdno77K4HiA15Tg23wpbeF1pLfs1c5SPmYHrEpTuuRhxMwvKDwqdKiGJS9XFKzUsAF"),
     std::make_tuple(
-            Gigamonkey::Bitcoin::hd::bip39::language::english,
+            Gigamonkey::hd::bip39::language::english,
         "7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f",
         "legal winner thank year wave sausage worth useful legal winner thank yellow",
         "TREZOR",
@@ -125,7 +125,7 @@ INSTANTIATE_TEST_SUITE_P(Bip39,Bip39Tests,::testing::Values(
         "xprv9s21ZrQH143K2gA81bYFHqU68xz1cX2APaSq5tt6MFSLeXnCKV1RVUJt9FWNTbrrryem4ZckN8k4Ls1H6nwdvDTvnV7zEXs2HgPezuVccsq"
     ),
     std::make_tuple(
-            Gigamonkey::Bitcoin::hd::bip39::language::english,
+            Gigamonkey::hd::bip39::language::english,
         "80808080808080808080808080808080",
                 "letter advice cage absurd amount doctor acoustic avoid letter advice cage above",
         "TREZOR",
@@ -133,7 +133,7 @@ INSTANTIATE_TEST_SUITE_P(Bip39,Bip39Tests,::testing::Values(
                 "xprv9s21ZrQH143K2shfP28KM3nr5Ap1SXjz8gc2rAqqMEynmjt6o1qboCDpxckqXavCwdnYds6yBHZGKHv7ef2eTXy461PXUjBFQg6PrwY4Gzq"
 ),
 std::make_tuple(
-        Gigamonkey::Bitcoin::hd::bip39::language::english,
+        Gigamonkey::hd::bip39::language::english,
         "ffffffffffffffffffffffffffffffff",
         "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong",
         "TREZOR",
@@ -141,7 +141,7 @@ std::make_tuple(
         "xprv9s21ZrQH143K2V4oox4M8Zmhi2Fjx5XK4Lf7GKRvPSgydU3mjZuKGCTg7UPiBUD7ydVPvSLtg9hjp7MQTYsW67rZHAXeccqYqrsx8LcXnyd"
 ),
 std::make_tuple(
-        Gigamonkey::Bitcoin::hd::bip39::language::english,
+        Gigamonkey::hd::bip39::language::english,
         "000000000000000000000000000000000000000000000000",
         "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon agent",
         "TREZOR",
@@ -149,7 +149,7 @@ std::make_tuple(
         "xprv9s21ZrQH143K3mEDrypcZ2usWqFgzKB6jBBx9B6GfC7fu26X6hPRzVjzkqkPvDqp6g5eypdk6cyhGnBngbjeHTe4LsuLG1cCmKJka5SMkmU"
 ),
 std::make_tuple(
-        Gigamonkey::Bitcoin::hd::bip39::language::english,
+        Gigamonkey::hd::bip39::language::english,
         "7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f",
         "legal winner thank year wave sausage worth useful legal winner thank year wave sausage worth useful legal will",
         "TREZOR",
@@ -157,7 +157,7 @@ std::make_tuple(
         "xprv9s21ZrQH143K3Lv9MZLj16np5GzLe7tDKQfVusBni7toqJGcnKRtHSxUwbKUyUWiwpK55g1DUSsw76TF1T93VT4gz4wt5RM23pkaQLnvBh7"
 ),
 std::make_tuple(
-        Gigamonkey::Bitcoin::hd::bip39::language::english,
+        Gigamonkey::hd::bip39::language::english,
         "808080808080808080808080808080808080808080808080",
         "letter advice cage absurd amount doctor acoustic avoid letter advice cage absurd amount doctor acoustic avoid letter always",
         "TREZOR",
@@ -165,7 +165,7 @@ std::make_tuple(
         "xprv9s21ZrQH143K3VPCbxbUtpkh9pRG371UCLDz3BjceqP1jz7XZsQ5EnNkYAEkfeZp62cDNj13ZTEVG1TEro9sZ9grfRmcYWLBhCocViKEJae"
 ),
 std::make_tuple(
-        Gigamonkey::Bitcoin::hd::bip39::language::english,
+        Gigamonkey::hd::bip39::language::english,
         "ffffffffffffffffffffffffffffffffffffffffffffffff",
         "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo when",
         "TREZOR",
@@ -173,7 +173,7 @@ std::make_tuple(
         "xprv9s21ZrQH143K36Ao5jHRVhFGDbLP6FCx8BEEmpru77ef3bmA928BxsqvVM27WnvvyfWywiFN8K6yToqMaGYfzS6Db1EHAXT5TuyCLBXUfdm"
 ),
 std::make_tuple(
-        Gigamonkey::Bitcoin::hd::bip39::language::english,
+        Gigamonkey::hd::bip39::language::english,
         "0000000000000000000000000000000000000000000000000000000000000000",
         "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art",
         "TREZOR",
@@ -181,7 +181,7 @@ std::make_tuple(
         "xprv9s21ZrQH143K32qBagUJAMU2LsHg3ka7jqMcV98Y7gVeVyNStwYS3U7yVVoDZ4btbRNf4h6ibWpY22iRmXq35qgLs79f312g2kj5539ebPM"
 ),
 std::make_tuple(
-        Gigamonkey::Bitcoin::hd::bip39::language::english,
+        Gigamonkey::hd::bip39::language::english,
         "7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f",
         "legal winner thank year wave sausage worth useful legal winner thank year wave sausage worth useful legal winner thank year wave sausage worth title",
         "TREZOR",
@@ -189,7 +189,7 @@ std::make_tuple(
         "xprv9s21ZrQH143K3Y1sd2XVu9wtqxJRvybCfAetjUrMMco6r3v9qZTBeXiBZkS8JxWbcGJZyio8TrZtm6pkbzG8SYt1sxwNLh3Wx7to5pgiVFU"
 ),
 std::make_tuple(
-        Gigamonkey::Bitcoin::hd::bip39::language::english,
+        Gigamonkey::hd::bip39::language::english,
         "8080808080808080808080808080808080808080808080808080808080808080",
         "letter advice cage absurd amount doctor acoustic avoid letter advice cage absurd amount doctor acoustic avoid letter advice cage absurd amount doctor acoustic bless",
         "TREZOR",
@@ -197,7 +197,7 @@ std::make_tuple(
         "xprv9s21ZrQH143K3CSnQNYC3MqAAqHwxeTLhDbhF43A4ss4ciWNmCY9zQGvAKUSqVUf2vPHBTSE1rB2pg4avopqSiLVzXEU8KziNnVPauTqLRo"
 ),
 std::make_tuple(
-        Gigamonkey::Bitcoin::hd::bip39::language::english,
+        Gigamonkey::hd::bip39::language::english,
         "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo vote",
         "TREZOR",
@@ -205,7 +205,7 @@ std::make_tuple(
         "xprv9s21ZrQH143K2WFF16X85T2QCpndrGwx6GueB72Zf3AHwHJaknRXNF37ZmDrtHrrLSHvbuRejXcnYxoZKvRquTPyp2JiNG3XcjQyzSEgqCB"
 ),
 std::make_tuple(
-        Gigamonkey::Bitcoin::hd::bip39::language::english,
+        Gigamonkey::hd::bip39::language::english,
         "9e885d952ad362caeb4efe34a8e91bd2",
         "ozone drill grab fiber curtain grace pudding thank cruise elder eight picnic",
         "TREZOR",
@@ -213,7 +213,7 @@ std::make_tuple(
         "xprv9s21ZrQH143K2oZ9stBYpoaZ2ktHj7jLz7iMqpgg1En8kKFTXJHsjxry1JbKH19YrDTicVwKPehFKTbmaxgVEc5TpHdS1aYhB2s9aFJBeJH"
 ),
 std::make_tuple(
-        Gigamonkey::Bitcoin::hd::bip39::language::english,
+        Gigamonkey::hd::bip39::language::english,
         "6610b25967cdcca9d59875f5cb50b0ea75433311869e930b",
         "gravity machine north sort system female filter attitude volume fold club stay feature office ecology stable narrow fog",
         "TREZOR",
@@ -221,7 +221,7 @@ std::make_tuple(
         "xprv9s21ZrQH143K3uT8eQowUjsxrmsA9YUuQQK1RLqFufzybxD6DH6gPY7NjJ5G3EPHjsWDrs9iivSbmvjc9DQJbJGatfa9pv4MZ3wjr8qWPAK"
 ),
 std::make_tuple(
-        Gigamonkey::Bitcoin::hd::bip39::language::english,
+        Gigamonkey::hd::bip39::language::english,
         "68a79eaca2324873eacc50cb9c6eca8cc68ea5d936f98787c60c7ebc74e6ce7c",
         "hamster diagram private dutch cause delay private meat slide toddler razor book happy fancy gospel tennis maple dilemma loan word shrug inflict delay length",
         "TREZOR",
@@ -229,7 +229,7 @@ std::make_tuple(
         "xprv9s21ZrQH143K2XTAhys3pMNcGn261Fi5Ta2Pw8PwaVPhg3D8DWkzWQwjTJfskj8ofb81i9NP2cUNKxwjueJHHMQAnxtivTA75uUFqPFeWzk"
 ),
 std::make_tuple(
-        Gigamonkey::Bitcoin::hd::bip39::language::english,
+        Gigamonkey::hd::bip39::language::english,
         "c0ba5a8e914111210f2bd131f3d5e08d",
         "scheme spot photo card baby mountain device kick cradle pact join borrow",
         "TREZOR",
@@ -237,7 +237,7 @@ std::make_tuple(
         "xprv9s21ZrQH143K3FperxDp8vFsFycKCRcJGAFmcV7umQmcnMZaLtZRt13QJDsoS5F6oYT6BB4sS6zmTmyQAEkJKxJ7yByDNtRe5asP2jFGhT6"
 ),
 std::make_tuple(
-        Gigamonkey::Bitcoin::hd::bip39::language::english,
+        Gigamonkey::hd::bip39::language::english,
         "6d9be1ee6ebd27a258115aad99b7317b9c8d28b6d76431c3",
         "horn tenant knee talent sponsor spell gate clip pulse soap slush warm silver nephew swap uncle crack brave",
         "TREZOR",
@@ -245,7 +245,7 @@ std::make_tuple(
         "xprv9s21ZrQH143K3R1SfVZZLtVbXEB9ryVxmVtVMsMwmEyEvgXN6Q84LKkLRmf4ST6QrLeBm3jQsb9gx1uo23TS7vo3vAkZGZz71uuLCcywUkt"
 ),
 std::make_tuple(
-        Gigamonkey::Bitcoin::hd::bip39::language::english,
+        Gigamonkey::hd::bip39::language::english,
         "9f6a2878b2520799a44ef18bc7df394e7061a224d2c33cd015b157d746869863",
         "panda eyebrow bullet gorilla call smoke muffin taste mesh discover soft ostrich alcohol speed nation flash devote level hobby quick inner drive ghost inside",
         "TREZOR",
@@ -253,7 +253,7 @@ std::make_tuple(
         "xprv9s21ZrQH143K2WNnKmssvZYM96VAr47iHUQUTUyUXH3sAGNjhJANddnhw3i3y3pBbRAVk5M5qUGFr4rHbEWwXgX4qrvrceifCYQJbbFDems"
 ),
 std::make_tuple(
-        Gigamonkey::Bitcoin::hd::bip39::language::english,
+        Gigamonkey::hd::bip39::language::english,
         "23db8160a31d3e0dca3688ed941adbf3",
         "cat swing flag economy stadium alone churn speed unique patch report train",
         "TREZOR",
@@ -261,7 +261,7 @@ std::make_tuple(
         "xprv9s21ZrQH143K4G28omGMogEoYgDQuigBo8AFHAGDaJdqQ99QKMQ5J6fYTMfANTJy6xBmhvsNZ1CJzRZ64PWbnTFUn6CDV2FxoMDLXdk95DQ"
 ),
 std::make_tuple(
-        Gigamonkey::Bitcoin::hd::bip39::language::english,
+        Gigamonkey::hd::bip39::language::english,
         "8197a4a47f0425faeaa69deebc05ca29c0a5b5cc76ceacc0",
         "light rule cinnamon wrap drastic word pride squirrel upgrade then income fatal apart sustain crack supply proud access",
         "TREZOR",
@@ -269,7 +269,7 @@ std::make_tuple(
         "xprv9s21ZrQH143K3wtsvY8L2aZyxkiWULZH4vyQE5XkHTXkmx8gHo6RUEfH3Jyr6NwkJhvano7Xb2o6UqFKWHVo5scE31SGDCAUsgVhiUuUDyh"
 ),
 std::make_tuple(
-        Gigamonkey::Bitcoin::hd::bip39::language::english,
+        Gigamonkey::hd::bip39::language::english,
         "066dca1a2bb7e8a1db2832148ce9933eea0f3ac9548d793112d9a95c9407efad",
         "all hour make first leader extend hole alien behind guard gospel lava path output census museum junior mass reopen famous sing advance salt reform",
         "TREZOR",
@@ -277,7 +277,7 @@ std::make_tuple(
         "xprv9s21ZrQH143K3rEfqSM4QZRVmiMuSWY9wugscmaCjYja3SbUD3KPEB1a7QXJoajyR2T1SiXU7rFVRXMV9XdYVSZe7JoUXdP4SRHTxsT1nzm"
 ),
 std::make_tuple(
-        Gigamonkey::Bitcoin::hd::bip39::language::english,
+        Gigamonkey::hd::bip39::language::english,
         "f30f8c1da665478f49b001d94c5fc452",
         "vessel ladder alter error federal sibling chat ability sun glass valve picture",
         "TREZOR",
@@ -285,7 +285,7 @@ std::make_tuple(
         "xprv9s21ZrQH143K2QWV9Wn8Vvs6jbqfF1YbTCdURQW9dLFKDovpKaKrqS3SEWsXCu6ZNky9PSAENg6c9AQYHcg4PjopRGGKmdD313ZHszymnps"
 ),
 std::make_tuple(
-        Gigamonkey::Bitcoin::hd::bip39::language::english,
+        Gigamonkey::hd::bip39::language::english,
         "c10ec20dc3cd9f652c7fac2f1230f7a3c828389a14392f05",
         "scissors invite lock maple supreme raw rapid void congress muscle digital elegant little brisk hair mango congress clump",
         "TREZOR",
@@ -293,7 +293,7 @@ std::make_tuple(
         "xprv9s21ZrQH143K4aERa2bq7559eMCCEs2QmmqVjUuzfy5eAeDX4mqZffkYwpzGQRE2YEEeLVRoH4CSHxianrFaVnMN2RYaPUZJhJx8S5j6puX"
 ),
 std::make_tuple(
-        Gigamonkey::Bitcoin::hd::bip39::language::english,
+        Gigamonkey::hd::bip39::language::english,
         "f585c11aec520db57dd353c69554b21a89b20fb0650966fa0a9d6f74fd989d8f",
         "void come effort suffer camp survey warrior heavy shoot primary clutch crush open amazing screen patrol group space point ten exist slush involve unfold",
         "TREZOR",

@@ -172,7 +172,7 @@ namespace Gigamonkey::Bitcoin {
         input(const outpoint& o, const Gigamonkey::script& x, const uint32_little& z = Finalized) : 
             Reference{o}, Script{x}, Sequence{z} {}
         
-        size_t serialized_size() const;
+        uint64 serialized_size() const;
     };
     
     struct output {
@@ -195,7 +195,7 @@ namespace Gigamonkey::Bitcoin {
         
         bool valid() const;
         
-        size_t serialized_size() const;
+        uint64 serialized_size() const;
     };
 
     struct transaction {
@@ -233,7 +233,7 @@ namespace Gigamonkey::Bitcoin {
         
         txid id() const;
         
-        size_t serialized_size() const;
+        uint64 serialized_size() const;
         
         uint32 sigops() const;
         
@@ -286,7 +286,7 @@ namespace Gigamonkey::Bitcoin {
         
         explicit operator bytes() const;
         
-        size_t serialized_size() const;
+        uint64 serialized_size() const;
     };
     
     bool inline operator==(const header& a, const header& b) {
@@ -461,6 +461,14 @@ namespace Gigamonkey::Bitcoin {
     
     txid inline transaction::id(bytes_view b) {
         return Hash256(b);
+    }
+    
+    uint64 inline input::serialized_size() const {
+        return 40u + var_int::size(Script.size()) + Script.size();
+    }
+    
+    uint64 inline output::serialized_size() const {
+        return 8u + var_int::size(Script.size()) + Script.size();
     }
 }
 

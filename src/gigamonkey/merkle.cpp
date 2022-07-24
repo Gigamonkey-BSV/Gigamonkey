@@ -326,7 +326,7 @@ namespace Gigamonkey::Merkle {
     
     const ordered_list<proof> dual::proofs() const {
         ordered_list<proof> p{};
-        for (const auto& e : Paths.values()) p = p << proof{branch(e), Root};
+        for (const auto& e : Paths) p = p << proof{branch(e), Root};
         return p;
     }
     

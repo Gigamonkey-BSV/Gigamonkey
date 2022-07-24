@@ -42,7 +42,7 @@ namespace Gigamonkey::Bitcoin {
     
     sighash::document add_input(const sighash::document& doc) {
         sighash::document x = doc;
-        x.Transaction.Inputs.push_back(incomplete::input{outpoint{digest256{uint256{2}}, 2}});
+        x.Transaction.Inputs <<= incomplete::input{outpoint{digest256{uint256{2}}, 2}};
         return x;
     }
     
@@ -52,7 +52,12 @@ namespace Gigamonkey::Bitcoin {
     
     sighash::document mutate_output(const sighash::document& doc, index i) {
         sighash::document x = doc;
-        x.Transaction.Outputs[i] = mutate(x.Transaction.Outputs[i]);
+        cross<output> outs;
+        for (const output &out : x.Transaction.Outputs) outs.push_back(out);
+        outs[i] = mutate(outs[i]);
+        list<output> new_outs;
+        for (const output &out : outs) new_outs <<= out;
+        x.Transaction.Outputs = new_outs;
         return x;
     }
     
@@ -101,7 +106,7 @@ namespace Gigamonkey::Bitcoin {
             else EXPECT_NE(written, mutate_same_output);
             
             if (expect_can_mutate_other_output(directive)) 
-                EXPECT_EQ(written, mutate_different_output);
+                EXPECT_EQ(written, mutate_different_output) << "expect \n\t" << written << " to equal \n\t" << mutate_different_output;
             else EXPECT_NE(written, mutate_different_output);
             
             if (expect_can_change_amount(directive)) 
@@ -114,7 +119,7 @@ namespace Gigamonkey::Bitcoin {
             
             if (expect_can_add_input(directive)) 
                 EXPECT_EQ(written, added_input);
-            else EXPECT_NE(written, added_input);
+            else EXPECT_NE(written, added_input) << "expect \n\t" << written << " to not equal \n\t" << added_input;
             
             EXPECT_EQ(written, sighash::write(doc, directive));
             EXPECT_EQ(mutate_same_output, sighash::write(doc_mutate_same_output, directive));

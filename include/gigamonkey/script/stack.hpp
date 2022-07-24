@@ -168,7 +168,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
         }
     };
     
-    template <typename valtype> ostream &operator<<(ostream &o, const LimitedStack<valtype>& stack) {
+    template <typename valtype> std::ostream &operator<<(std::ostream &o, const LimitedStack<valtype>& stack) {
         o << "{";
         if (stack.size() > 0) {
             auto i = stack.begin();

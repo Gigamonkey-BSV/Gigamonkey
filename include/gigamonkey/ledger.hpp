@@ -8,15 +8,34 @@
 #include <gigamonkey/script/script.hpp>
 
 namespace Gigamonkey::Bitcoin {
+        
+    struct prevout : data::entry<Bitcoin::outpoint, Bitcoin::output> {
+        using data::entry<Bitcoin::outpoint, Bitcoin::output>::entry;
+        
+        Bitcoin::outpoint outpoint() const {
+            return this->Key;
+        }
+        
+        Bitcoin::satoshi value() const {
+            return this->Value.Value;
+        }
+        
+        bytes script() const {
+            return this->Value.Script;
+        }
+    };
+}
+
+namespace Gigamonkey {
     
     struct ledger {
-        using block_header = Bitcoin::headers::header;
+        using block_header = Gigamonkey::headers::header;
         
         virtual list<block_header> headers(uint64 since_height) = 0;
         
         struct double_entry : ptr<bytes> {
             Merkle::proof Proof;
-            header Header;
+            Bitcoin::header Header;
             
             bool valid() const {
                 return *this != nullptr;
@@ -29,7 +48,7 @@ namespace Gigamonkey::Bitcoin {
             double_entry() : ptr<bytes>{nullptr}, Proof{}, Header{} {}
             
             // for a confirmed transaction. 
-            double_entry(ptr<bytes> t, Merkle::proof p, const header& h) : ptr<bytes>{t}, Proof{p}, Header{h} {}
+            double_entry(ptr<bytes> t, Merkle::proof p, const Bitcoin::header& h) : ptr<bytes>{t}, Proof{p}, Header{h} {}
             
             // for an unconfirmed transaction. 
             double_entry(ptr<bytes> t) : ptr<bytes>{t}, Proof{}, Header{} {}
@@ -52,15 +71,15 @@ namespace Gigamonkey::Bitcoin {
                 return operator Bitcoin::transaction().Inputs;
             }
             
-            txid id() const {
+            Bitcoin::txid id() const {
                 return Bitcoin::transaction::id(this->operator*());
             }
             
-            satoshi sent() const {
+            Bitcoin::satoshi sent() const {
                 return Bitcoin::transaction(*this).sent();
             }
             
-            timestamp time() const {
+            Bitcoin::timestamp time() const {
                 return Header.Timestamp;
             }
             
@@ -70,7 +89,7 @@ namespace Gigamonkey::Bitcoin {
             
         };
         
-        virtual data::entry<txid, double_entry> transaction(const txid&) const = 0;
+        virtual data::entry<Bitcoin::txid, double_entry> transaction(const Bitcoin::txid&) const = 0;
         
         // get header by header hash and merkle root.
         virtual block_header header(const digest256&) const = 0; 
@@ -78,31 +97,29 @@ namespace Gigamonkey::Bitcoin {
         // get block by header hash and merkle root. 
         virtual bytes block(const digest256&) const = 0; 
         
-        using prevout = data::entry<outpoint, output>;
-        
         struct edge {
-            output Output;
-            input Input;
+            Bitcoin::output Output;
+            Bitcoin::input Input;
         
             bool valid() const {
                 return Output.valid() && Input.valid();
             } 
             
-            satoshi spent() const {
+            Bitcoin::satoshi spent() const {
                 return Output.Value;
             }
         };
         
         struct vertex : public double_entry {
-            data::map<outpoint, Bitcoin::output> Previous;
+            data::map<Bitcoin::outpoint, Bitcoin::output> Previous;
             
-            satoshi spent() const {
-                return data::fold([](satoshi x, const edge& p) -> satoshi {
+            Bitcoin::satoshi spent() const {
+                return data::fold([](Bitcoin::satoshi x, const edge& p) -> Bitcoin::satoshi {
                     return x + p.spent();
-                }, satoshi{0}, incoming_edges());
+                }, Bitcoin::satoshi{0}, incoming_edges());
             }
             
-            satoshi fee() const {
+            Bitcoin::satoshi fee() const {
                 return spent() - sent();
             }
             
@@ -119,11 +136,11 @@ namespace Gigamonkey::Bitcoin {
                 return p;
             }
             
-            vertex(const double_entry& d, data::map<outpoint, Bitcoin::output> p) : double_entry{d}, Previous{p} {}
+            vertex(const double_entry& d, data::map<Bitcoin::outpoint, Bitcoin::output> p) : double_entry{d}, Previous{p} {}
             vertex() : double_entry{}, Previous{} {}
             
             edge operator[](index i) {
-                struct input in = double_entry::input(i);
+                struct Bitcoin::input in = double_entry::input(i);
                 
                 return {Previous[in.Reference], in};
             }
@@ -132,9 +149,9 @@ namespace Gigamonkey::Bitcoin {
         };
         
         vertex make_vertex(const double_entry& d) {
-            list<input> in = d.inputs();
-            data::map<outpoint, output> p;
-            for (const input& i : in) p = p.insert(i.Reference, transaction(i.Reference.Digest).Value.output(i.Reference.Index));
+            list<Bitcoin::input> in = d.inputs();
+            data::map<Bitcoin::outpoint, Bitcoin::output> p;
+            for (const Bitcoin::input& i : in) p = p.insert(i.Reference, transaction(i.Reference.Digest).Value.output(i.Reference.Index));
             return {d, p};
         }
         

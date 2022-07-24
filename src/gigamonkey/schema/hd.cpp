@@ -18,7 +18,7 @@
 //#include <unicode/unistr.h>
 #include <bitset>
 
-namespace Gigamonkey::Bitcoin::hd::bip32 {
+namespace Gigamonkey::hd::bip32 {
 
     uint256 CURVE_ORDER = secp256k1::secret::order();
 
@@ -32,7 +32,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         
         secret derived;
         derived.Depth = sec.Depth + 1;
-        derived.Parent = fp(Hash160(pub));
+        derived.Parent = fp(Bitcoin::Hash160(pub));
         derived.Sequence = child;
         derived.Net = sec.Net;
         
@@ -77,9 +77,10 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         uint256 k = uint256{};
         std::copy(sec.Secret.Value.begin(), sec.Secret.Value.end(), k.begin());
         std::reverse(k.begin(), k.end());
-        auto keyCode = (data::N) ll;
-        keyCode += (data::N) k;
-        keyCode %= (data::N) CURVE_ORDER;
+        
+        auto keyCode = (N) ll;
+        keyCode += (N) k;
+        keyCode %= (N) CURVE_ORDER;
         
         if (keyCode == 0)
             return derive(sec, child + 1);
@@ -101,7 +102,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
     pubkey derive(const pubkey &pub, uint32 child) {
         pubkey derived;
         derived.Depth = pub.Depth + 1;
-        derived.Parent = fp(Hash160(pub.Pubkey));
+        derived.Parent = fp(Bitcoin::Hash160(pub.Pubkey));
         derived.Sequence = child;
         derived.Net = pub.Net;
 
@@ -166,14 +167,15 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         if (prv != check)
             return secret();
         bytes_reader reader(view.begin() + 3, view.end());
-
-        data::endian::arithmetic<false, boost::endian::order::big, 1> depth;
+        
+        data::endian::arithmetic<false, endian::big, 1> depth;
         reader >> depth;
         secret1.Depth = depth;
-        data::endian::arithmetic<false, boost::endian::order::big, 4> parent;
+        data::endian::arithmetic<false, endian::big, 4> parent;
         reader >> parent;
         secret1.Parent = parent;
-        data::endian::arithmetic<false, boost::endian::order::big, 4> sequence;
+        data::endian::arithmetic<false, endian::big, 4> sequence;
+        
         reader >> sequence;
         secret1.Sequence = sequence;
         bytes_view chain_code = view.substr(12, 32);
@@ -326,14 +328,15 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         if (prv != check)
             return pubkey();
         bytes_reader reader(view.begin() + 3, view.end());
-
-        data::endian::arithmetic<false, boost::endian::order::big, 1> depth;
+        
+        data::endian::arithmetic<false, endian::big, 1> depth;
         reader >> depth;
         pubkey1.Depth = depth;
-        data::endian::arithmetic<false, boost::endian::order::big, 4> parent;
+        data::endian::arithmetic<false, endian::big, 4> parent;
         reader >> parent;
         pubkey1.Parent = parent;
-        data::endian::arithmetic<false, boost::endian::order::big, 4> sequence;
+        data::endian::arithmetic<false, endian::big, 4> sequence;
+        
         reader >> sequence;
         pubkey1.Sequence = sequence;
         //sequence |= view[12] & 0xff;
@@ -399,7 +402,7 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
     }
 }
 
-namespace Gigamonkey::Bitcoin::hd::bip39 {
+namespace Gigamonkey::hd::bip39 {
     char getBit(int index,bytes bitarray) {
         return (bitarray[index/8] >> 7-(index & 0x7)) & 0x1;
     }

@@ -23,7 +23,7 @@ namespace Gigamonkey::Stratum {
             return json::string_t{encoding::hex::fixed<4>(p)};
         }
         
-        static optional<session_id> deserialize(const json& j) {
+        static std::optional<session_id> deserialize(const json& j) {
             session_id p = {};
             if (!j.is_string()) return {};
             auto m = encoding::hex::fixed<4>(string(j));

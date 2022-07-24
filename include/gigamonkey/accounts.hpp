@@ -48,13 +48,13 @@ namespace Gigamonkey::bookkeeping {
     };
 }
     
-namespace Gigamonkey::Bitcoin {
+namespace Gigamonkey {
     
     struct account {
-        using entry = bookkeeping::entry<satoshi, timestamp>;
+        using entry = bookkeeping::entry<Bitcoin::satoshi, Bitcoin::timestamp>;
         
         struct prevout : ledger::double_entry {
-            data::entry<txid, ledger::double_entry> Previous;
+            data::entry<Bitcoin::txid, ledger::double_entry> Previous;
             index InputIndex;
             
             Bitcoin::input input() const {
@@ -82,7 +82,7 @@ namespace Gigamonkey::Bitcoin {
             ordered_list<uint32> Mine;
             
             // the outpoints of all my outputs. 
-            stack<outpoint> output_outpoints() const;
+            stack<Bitcoin::outpoint> output_outpoints() const;
             
             event() : ledger::vertex{}, Mine{} {}
             event(const ledger::vertex& p, ordered_list<uint32> m) : ledger::vertex{p}, Mine{m} {}
@@ -90,13 +90,13 @@ namespace Gigamonkey::Bitcoin {
         };
         
         // the transactions that are in this account. 
-        data::set<txid> Transactions;
+        data::set<Bitcoin::txid> Transactions;
         
         // the outputs that belong to me. 
-        data::map<outpoint, event> Mine;
+        data::map<Bitcoin::outpoint, event> Mine;
         
         // the outputs belonging to me that have been cancelled. 
-        data::map<outpoint, event> Cancellations;
+        data::map<Bitcoin::outpoint, event> Cancellations;
         
         data::map<ledger::double_entry, ordered_list<index>> Debits;
         data::map<event, ordered_list<index>> Credits;
@@ -104,7 +104,7 @@ namespace Gigamonkey::Bitcoin {
         account(priority_queue<event> txs) : account{account{}.reduce(txs)} {}
         account() : Mine{}, Debits{}, Credits{} {}
         
-        bookkeeping::account<satoshi, timestamp> balance(const ledger& l) const;
+        bookkeeping::account<Bitcoin::satoshi, Bitcoin::timestamp> balance(const ledger& l) const;
         
     private:
         account reduce(const event& tx) const;

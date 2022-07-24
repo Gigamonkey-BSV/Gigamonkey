@@ -57,7 +57,7 @@ namespace Gigamonkey::Bitcoin {
     
     // a Bitcoin pubkey is the same as a secp256k1 pubkey except 
     // that we have a standard human representation, which is
-    // just a hex string. 
+    // a hex string. 
     struct pubkey : secp256k1::pubkey {
         using secp256k1::pubkey::pubkey;
         pubkey(const secp256k1::pubkey &p) : secp256k1::pubkey{p} {}
