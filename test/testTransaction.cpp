@@ -148,7 +148,7 @@ namespace Gigamonkey::Bitcoin {
         
         EXPECT_EQ(t.serialized_size(), 7676);
         
-        EXPECT_FALSE(Bitcoin::pay_to_address{t.Outputs.first().Script}.valid());
+        EXPECT_FALSE(pay_to_address{t.Outputs.first().Script}.valid());
         
         EXPECT_EQ(bytes(t), *tx);
         

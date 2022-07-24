@@ -16,7 +16,7 @@
 
 #include <data/stream.hpp>
 #include <data/tools.hpp>
-#include <data/math/nonnegative.hpp>
+#include <data/numbers.hpp>
 #include <data/fold.hpp>
 #include <data/for_each.hpp>
 #include <data/encoding/hex.hpp>
@@ -41,11 +41,8 @@ namespace Gigamonkey {
     
     using json = nlohmann::json;
     
-    template<typename x> using optional = std::optional<x>;
-    
-    using ostream = std::ostream;
-    
     template <typename X> using nonzero = data::math::nonzero<X>;
+    
     template <size_t size>
     using slice = data::slice<byte, size>;
     

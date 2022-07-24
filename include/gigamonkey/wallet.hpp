@@ -5,42 +5,13 @@
 #define GIGAMONKEY_WALLET
 
 #include "redeem.hpp"
+#include "fees.hpp"
 
-namespace Gigamonkey::Bitcoin {
-    
-    struct satoshi_per_byte {
-        satoshi Satoshis;
-        uint64 Bytes;
-        
-        bool valid() const {
-            return Bytes != 0;
-        }
-        
-        satoshi_per_byte() : Satoshis{0}, Bytes{0} {}
-        satoshi_per_byte(satoshi x, uint64 b) : Satoshis{x}, Bytes{b} {}
-        
-        explicit operator double() const {
-            return double(Satoshis) / double(Bytes);
-        }
-    };
-    
-    satoshi operator*(satoshi_per_byte fee, uint64 size);
-    
-    struct fee {
-        satoshi_per_byte Data;
-        satoshi_per_byte Standard;
-        
-        fee() : Data{}, Standard{} {}
-        fee(satoshi_per_byte d, satoshi_per_byte x) : Data{d}, Standard{x} {}
-        
-        bool valid() const {
-            return Data.valid() && Standard.valid();
-        }
-    };
+namespace Gigamonkey {
     
     struct funds {
         list<spendable> Entries;
-        satoshi Value;
+        Bitcoin::satoshi Value;
         bool Valid;
         
         funds() : Entries{}, Value{0}, Valid{true} {}
@@ -56,30 +27,22 @@ namespace Gigamonkey::Bitcoin {
         }
         
     private:
-        funds(list<spendable> e, satoshi value, bool valid) : Entries{e}, Value{value}, Valid{valid} {}
+        funds(list<spendable> e, Bitcoin::satoshi value, bool valid) : Entries{e}, Value{value}, Valid{valid} {}
     };
     
-    output inline pay(satoshi value, const bytes& script) {
-        return output{value, script};
+    // pay to script. 
+    Bitcoin::output inline pay(Bitcoin::satoshi value, const bytes& script) {
+        return {value, script};
     }
     
-    output inline pay(satoshi value, const address& addr) {
-        return output{value, pay_to_address::script(addr.Digest)};
+    // pay to address. 
+    Bitcoin::output inline pay(Bitcoin::satoshi value, const Bitcoin::address& addr) {
+        return {value, pay_to_address::script(addr.Digest)};
     }
     
-    output inline pay(
-        satoshi value, const pubkey& pub) {
-        return output{value, pay_to_pubkey::script(pub)};
-    }
-    
-    struct paymail {
-        string Name;
-        string Host;
-        explicit operator string() const;
-    };
-    
-    output inline pay(satoshi value, paymail p) {
-        throw method::unimplemented{"pay to paymail"};
+    // pay to pubkey. 
+    Bitcoin::output inline pay(Bitcoin::satoshi value, const Bitcoin::pubkey& pub) {
+        return {value, pay_to_pubkey::script(pub)};
     }
     
     struct wallet {
@@ -89,15 +52,13 @@ namespace Gigamonkey::Bitcoin {
         spend_policy Policy;
         ptr<keysource> Keys;
         
-        fee Fee;
-        
         ptr<output_pattern> Change;
         
-        satoshi Dust;
+        Bitcoin::satoshi Dust;
         
-        wallet() : Funds{}, Policy{unset}, Keys{nullptr}, Fee{}, Change{nullptr}, Dust{} {}
-        wallet(funds fun, spend_policy policy, ptr<keysource> k, fee f, ptr<output_pattern> c, satoshi d) : 
-            Funds{fun}, Policy{policy}, Keys{k}, Fee{f}, Change{c}, Dust{d} {}
+        wallet() : Funds{}, Policy{unset}, Keys{nullptr}, Change{nullptr}, Dust{} {}
+        wallet(funds fun, spend_policy policy, ptr<keysource> k, ptr<output_pattern> c, Bitcoin::satoshi d) : 
+            Funds{fun}, Policy{policy}, Keys{k}, Change{c}, Dust{d} {}
         
         bool valid() const {
             return Policy != unset && data::valid(Funds) && Change != nullptr && Keys != nullptr;
@@ -105,7 +66,7 @@ namespace Gigamonkey::Bitcoin {
         
         struct spent;
         
-        spent spend(list<output> = {}) const;
+        spent spend(satoshi_per_byte fee, list<Bitcoin::output> = {}) const;
     };
     
     struct wallet::spent {
@@ -132,10 +93,6 @@ namespace Gigamonkey::Bitcoin {
         return o << "(" << v.Satoshis << "sats / " << v.Bytes << "byte)";
     }
     
-    std::ostream inline &operator<<(std::ostream &o, fee f) {
-        return o << "fees{standard: " << f.Standard << ", " << f.Data << ")";
-    }
-    
     std::ostream inline &operator<<(std::ostream &o, funds f) {
         if (f.Valid) return o << "funds{" << f.Value << " sats, " << f.Entries << "}";
         else return o << "funds{}";
@@ -143,10 +100,6 @@ namespace Gigamonkey::Bitcoin {
     
     bool inline operator==(const satoshi_per_byte &a, const satoshi_per_byte &b) {
         return a.Satoshis == b.Satoshis && a.Bytes == b.Bytes;
-    }
-    
-    bool inline operator!=(const satoshi_per_byte &a, const satoshi_per_byte &b) {
-        return !(a == b);
     }
     
 }

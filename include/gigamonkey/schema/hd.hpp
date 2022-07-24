@@ -12,7 +12,7 @@
 // can be derived from a single master. This key format
 // will be depricated but needs to be supported for 
 // older wallets. 
-namespace Gigamonkey::Bitcoin::hd {
+namespace Gigamonkey::hd {
     
     using chain_code = data::bytes;
     using seed = data::bytes;
@@ -123,7 +123,7 @@ namespace Gigamonkey::Bitcoin::hd {
 
             bool operator!=(const secret &rhs) const;
             
-            signature sign(const digest256& d) const;
+            Bitcoin::signature sign(const digest256& d) const;
             
             secret derive(path l) const;
             secret derive(string_view l) const;
@@ -184,22 +184,22 @@ namespace Gigamonkey::Bitcoin::hd {
     
     }
     
-    struct keysource final : Bitcoin::keysource {
+    struct keysource final : Gigamonkey::keysource {
         uint32 Index;
         bip32::secret HDSecret;
-        secret Secret;
+        Bitcoin::secret Secret;
         
         keysource(uint32 i, const bip32::secret& s, bool compressed = true) : 
             Index{i}, HDSecret{s}, Secret{bip32::to_wif(s.Net), bip32::derive(HDSecret, Index).Secret, compressed} {}
         
         keysource(const bip32::secret& s, bool compressed = true) : keysource{1, s, compressed} {}
         
-        secret first() const override {
+        Bitcoin::secret first() const override {
             return Secret;
         }
         
-        ptr<Bitcoin::keysource> rest() const override {
-            return std::static_pointer_cast<Bitcoin::keysource>(std::make_shared<keysource>(Index + 1, HDSecret, Secret.Compressed));
+        ptr<Gigamonkey::keysource> rest() const override {
+            return std::static_pointer_cast<Gigamonkey::keysource>(std::make_shared<keysource>(Index + 1, HDSecret, Secret.Compressed));
         }
     };
     

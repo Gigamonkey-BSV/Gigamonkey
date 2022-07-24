@@ -50,7 +50,7 @@ namespace Gigamonkey::Stratum {
     struct worker {
         worker_name Name;
         extranonce ExtraNonce;
-        optional<extensions::version_mask> Mask;
+        std::optional<extensions::version_mask> Mask;
         
         worker();
         

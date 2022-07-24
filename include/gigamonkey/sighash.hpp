@@ -62,7 +62,7 @@ namespace Gigamonkey::Bitcoin {
         // the document containing the information that is signed. 
         struct document {
             // the amount being redeemed. This is ignored in the original hash
-            // algorithm and is only relevant for Amaury hash. 
+            // algorithm and is only relevant for Amaury hash with fork_id. 
             satoshi RedeemedValue;
         
             // the script code contains the previous output script with the 

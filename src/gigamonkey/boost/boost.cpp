@@ -3,10 +3,10 @@
 #include <data/encoding/halves.hpp>
 #include <iostream>
 
-namespace Gigamonkey::Bitcoin::interpreter {
+namespace Gigamonkey::Bitcoin {
     // The Bitcoin script pattern which takes a target in 
     // exponential format and converts it to expanded format. 
-    const program expand_target = program{
+    const program expand_target{
         OP_SIZE, push_data(4), OP_EQUALVERIFY, push_data(3), OP_SPLIT,
         OP_DUP, OP_BIN2NUM, push_data(3), push_data(33), OP_WITHIN, OP_VERIFY, OP_TOALTSTACK,
         OP_DUP, OP_BIN2NUM, OP_0, OP_GREATERTHAN, OP_VERIFY, // significant must be positive
@@ -15,20 +15,20 @@ namespace Gigamonkey::Bitcoin::interpreter {
     
     // check top stack element for positive zero (as opposed to negative zero) 
     // and replace it with true or false. 
-    const program check_positive_zero = program{OP_DUP, OP_NOTIF, OP_1, OP_RSHIFT, 
+    const program check_positive_zero{OP_DUP, OP_NOTIF, OP_1, OP_RSHIFT, 
         OP_NOTIF, OP_TRUE, OP_ELSE, OP_FALSE, OP_ENDIF, OP_ELSE, OP_DROP, OP_FALSE, OP_ENDIF};
     
-    const program check_negative_zero = program{OP_DUP, OP_NOTIF, OP_1, OP_RSHIFT, 
+    const program check_negative_zero{OP_DUP, OP_NOTIF, OP_1, OP_RSHIFT, 
         push_data(bytes{0x40}), OP_EQUAL, OP_IF, OP_TRUE, OP_ELSE, OP_FALSE, OP_ENDIF, OP_ELSE, OP_DROP, OP_FALSE, OP_ENDIF};
     
-    const program ensure_positive = program{push_data(bytes{0x00}), OP_CAT, OP_BIN2NUM};
-}
+    const program ensure_positive{push_data(bytes{0x00}), OP_CAT, OP_BIN2NUM};
+}   
 
 namespace Gigamonkey::Boost {
     
+    using namespace Bitcoin;
+    
     input_script input_script::read(bytes b) {
-        using namespace Bitcoin::interpreter;
-        using namespace Bitcoin;
         input_script x{};
         bytes MinerPubkey;
         bytes Timestamp;
@@ -44,8 +44,8 @@ namespace Gigamonkey::Boost {
             push_size{4, Timestamp}, 
             push{x.ExtraNonce2}, 
             push_size{4, ExtraNonce1}, 
-            interpreter::optional{push_size{4, GeneralPurposeBits}}, 
-            interpreter::optional{push_size{20, MinerAddress}}}.match(b)) return {};
+            optional{push_size{4, GeneralPurposeBits}}, 
+            optional{push_size{20, MinerAddress}}}.match(b)) return {};
         
         x.Type = MinerAddress.size() == 0 ? Boost::contract : Boost::bounty;
         
@@ -85,8 +85,6 @@ namespace Gigamonkey::Boost {
     }
     
     output_script output_script::read(bytes b) {
-        using namespace Bitcoin::interpreter;
-        using namespace Bitcoin;
         output_script x{};
         bytes Category{};
         bytes Content{};
@@ -96,7 +94,7 @@ namespace Gigamonkey::Boost {
         
         pattern output_script_pattern_no_asicboost = pattern{
             push{bytes{0x62, 0x6F, 0x6F, 0x73, 0x74, 0x70, 0x6F, 0x77}}, OP_DROP, 
-            interpreter::optional{push_size{20, MinerAddress}},
+            optional{push_size{20, MinerAddress}},
             push_size{4, Category},
             push_size{32, Content},
             push_size{4, Target},
@@ -129,7 +127,7 @@ namespace Gigamonkey::Boost {
             
         pattern output_script_pattern = pattern{
             push{bytes{0x62, 0x6F, 0x6F, 0x73, 0x74, 0x70, 0x6F, 0x77}}, OP_DROP, 
-            interpreter::optional{push_size{20, MinerAddress}},
+            optional{push_size{20, MinerAddress}},
             push_size{4, Category},
             push_size{32, Content},
             push_size{4, Target},
@@ -203,9 +201,7 @@ namespace Gigamonkey::Boost {
         return x;
     }
     
-    Bitcoin::program input_script::program() const {
-        using namespace Bitcoin::interpreter;
-        using namespace Bitcoin;
+    program input_script::program() const {
         if (Type == Boost::invalid) return {};
         Bitcoin::program p{
             push_data(bytes_view(Signature)), 
@@ -220,8 +216,6 @@ namespace Gigamonkey::Boost {
     }
     
     script output_script::write() const {
-        using namespace Bitcoin::interpreter;
-        using namespace Bitcoin;
         if (Type == Boost::invalid) return {};
         program boost_output_script = program{push_data(bytes{0x62, 0x6F, 0x6F, 0x73, 0x74, 0x70, 0x6F, 0x77}), OP_DROP}; // "boostpow"
         
@@ -301,8 +295,8 @@ namespace Gigamonkey::Boost {
     }
     
     input_script from_solution(
-                const Bitcoin::signature& signature, 
-                const Bitcoin::pubkey& pubkey, 
+                const signature& signature, 
+                const pubkey& pubkey, 
                 const work::solution& x, Boost::type t, 
                 bool category_mask) {
         
@@ -311,7 +305,7 @@ namespace Gigamonkey::Boost {
         if (t == Boost::invalid || !x.valid() || (!category_mask && x.Share.Bits)) return in;
         
         in = t == Boost::bounty ? 
-            input_script::bounty(signature, pubkey, x.Share.Nonce, x.Share.Timestamp, x.Share.ExtraNonce2, x.ExtraNonce1, Bitcoin::Hash160(pubkey)) : 
+            input_script::bounty(signature, pubkey, x.Share.Nonce, x.Share.Timestamp, x.Share.ExtraNonce2, x.ExtraNonce1, Hash160(pubkey)) : 
             input_script::contract(signature, pubkey, x.Share.Nonce, x.Share.Timestamp, x.Share.ExtraNonce2, x.ExtraNonce1);
         
         if (category_mask) in.GeneralPurposeBits = x.Share.Bits ? *x.Share.Bits : int32_little{0};

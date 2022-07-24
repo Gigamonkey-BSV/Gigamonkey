@@ -12,7 +12,7 @@ class Bip32Test :
 
 };
 
-namespace Gigamonkey::Bitcoin::hd {
+namespace Gigamonkey::hd {
 
 TEST(Bip32,Basic)
 {
