@@ -19,7 +19,7 @@ namespace Gigamonkey::Stratum {
     }
     
     bool client_session::initialize(
-        const optional<extensions::requests> c, 
+        const std::optional<extensions::requests> c, 
         const mining::authorize_request::parameters& ap, 
         const mining::subscribe_request::parameters& sp) {
         

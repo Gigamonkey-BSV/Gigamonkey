@@ -19,7 +19,7 @@ namespace Gigamonkey {
         
         operator bytes_view() const;
         
-        explicit operator math::number::N() const;
+        explicit operator N() const;
         
         byte* begin();
         byte* end();

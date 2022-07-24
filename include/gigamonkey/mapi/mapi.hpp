@@ -5,7 +5,7 @@
 #define GIGAMONKEY_MAPI_MAPI
 
 //#include <data/networking/http.hpp>
-#include <gigamonkey/wallet.hpp>
+#include <gigamonkey/fees.hpp>
 
 namespace Gigamonkey::MAPI {
     
@@ -22,8 +22,6 @@ namespace Gigamonkey::MAPI {
     std::ostream &operator<<(std::ostream &, const query_transaction_status_response &);
     std::ostream &operator<<(std::ostream &, const submit_multiple_transactions_request &);
     std::ostream &operator<<(std::ostream &, const submit_multiple_transactions_response &);
-    
-    using satoshi_per_byte = Bitcoin::satoshi_per_byte;
     
     enum service {
         mine, 
@@ -76,7 +74,7 @@ namespace Gigamonkey::MAPI {
         
         explicit operator json() const;
         
-        Bitcoin::fee to(service) const;
+        MAPI::fee to(service) const;
         
     };
     
@@ -87,11 +85,11 @@ namespace Gigamonkey::MAPI {
     
     struct submission_parameters {
         
-        optional<string> callbackUrl;
-        optional<string> callbackToken;
-        optional<bool> merkleProof;
-        optional<bool> dsCheck;
-        optional<string> callbackEncryption;
+        std::optional<string> callbackUrl;
+        std::optional<string> callbackToken;
+        std::optional<bool> merkleProof;
+        std::optional<bool> dsCheck;
+        std::optional<string> callbackEncryption;
         
         std::map<string, string> http_parameters() const;
         
@@ -158,7 +156,7 @@ namespace Gigamonkey::MAPI {
         Bitcoin::txid txid;
         return_result returnResult;
         string resultDescription;
-        optional<list<conflicted_with>> conflictedWith;
+        std::optional<list<conflicted_with>> conflictedWith;
         
         bool valid() const {
             return txid.valid() && (!conflictedWith.has_value() || conflictedWith->valid());
@@ -211,7 +209,7 @@ namespace Gigamonkey::MAPI {
         digest256 blockHash;
         uint64 blockHeight;
         Bitcoin::pubkey minerId;
-        optional<uint64> confirmations;
+        std::optional<uint64> confirmations;
         uint32 txSecondMempoolExpiry;
         
         bool valid() const {

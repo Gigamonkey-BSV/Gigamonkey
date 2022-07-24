@@ -29,14 +29,14 @@ namespace Gigamonkey::Bitcoin::interpreter {
         element(const std::vector<byte>& v) : element(v.begin(), v.end()) {}
         
         explicit operator bool() const;
-        explicit operator Z() const;
+        explicit operator integer() const;
         
         bool minimal_bool() const;
         bool minimal_true() const;
         bool minimal_false() const;
         
         bool minimal_number() const {
-            return Z::minimal(*this);
+            return integer::minimal(*this);
         }
         
         element(vector<byte>::const_iterator a, vector<byte>::const_iterator b) {
@@ -168,7 +168,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
         }
     };
     
-    template <typename valtype> ostream &operator<<(ostream &o, const LimitedStack<valtype>& stack) {
+    template <typename valtype> std::ostream &operator<<(std::ostream &o, const LimitedStack<valtype>& stack) {
         o << "{";
         if (stack.size() > 0) {
             auto i = stack.begin();

@@ -1,7 +1,8 @@
 #include <gigamonkey/redeem.hpp>
 #include <gigamonkey/script/script.hpp>
     
-namespace Gigamonkey::Bitcoin {
+namespace Gigamonkey {
+    using namespace Bitcoin;
     
     ledger::vertex redeem(list<spend_order> prev, list<output> out, uint32_little locktime) {
         // first check if we are trying to spend more than we can afford. 
@@ -24,7 +25,7 @@ namespace Gigamonkey::Bitcoin {
         
         uint32 ind{0};
         list<input> inputs;
-        data::map<outpoint, Bitcoin::output> prevouts;
+        data::map<outpoint, output> prevouts;
         
         for (const spend_order& s : prev) {
             input new_input = s.first(incomplete, ind, s.second.Directive);

@@ -67,7 +67,7 @@ namespace Gigamonkey::Bitcoin {
         return Value < 2100000000000000 && decompile(Script) != program{};
     }
     
-    size_t transaction::serialized_size() const {
+    uint64 transaction::serialized_size() const {
         return 8 + var_int::size(Inputs.size()) + var_int::size(Inputs.size()) + 
             data::fold([](size_t size, const Bitcoin::input& i) -> size_t {
                 return size + i.serialized_size();
@@ -77,18 +77,18 @@ namespace Gigamonkey::Bitcoin {
             }, 0, Outputs);
     }
     
-    size_t block::serialized_size() const {
+    uint64 block::serialized_size() const {
         return 80 + var_int::size(Transactions.size()) + 
         data::fold([](size_t size, transaction x)->size_t{
             return size + x.serialized_size();
         }, 0, Transactions);
     }
     
-    inline size_t input::serialized_size() const {
+    inline uint64 input::serialized_size() const {
         return 40 + var_int::size(Script.size()) + Script.size();
     }
     
-    inline size_t output::serialized_size() const {
+    inline uint64 output::serialized_size() const {
         return 8 + var_int::size(Script.size()) + Script.size();
     }
     

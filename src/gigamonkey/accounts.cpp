@@ -1,9 +1,9 @@
 #include <gigamonkey/accounts.hpp>
     
-namespace Gigamonkey::Bitcoin {
+namespace Gigamonkey {
     
     account account::reduce(const event& tx) const {
-        txid id{tx.id()};
+        Bitcoin::txid id{tx.id()};
         
         // do we know about this tx?
         if (Transactions.contains(id)) return *this;
@@ -38,7 +38,7 @@ namespace Gigamonkey::Bitcoin {
         
         for (uint32 i = 0; i < t.Outputs.size(); i++) {
             if (Mine.size() > 0 && Mine.first() == i) {
-                Account.Mine = Account.Mine.insert(outpoint{id, i}, tx);
+                Account.Mine = Account.Mine.insert(Bitcoin::outpoint{id, i}, tx);
                 Mine = Mine.rest();
             } else credits = credits.insert(i);
         }

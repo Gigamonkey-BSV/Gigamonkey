@@ -8,17 +8,7 @@
 
 #include <sv/arith_uint256.h>
 
-#include <data/encoding/integer.hpp>
-#include <data/encoding/endian/words.hpp>
-#include <data/encoding/halves.hpp>
-
-#include <data/math/number/bytes/N.hpp>
-#include <data/math/number/rational.hpp>
-#include <data/math/octonian.hpp>
-#include <data/math/number/integer.hpp>
-
 #include <gigamonkey/types.hpp>
-#include <data/float.hpp>
 
 namespace Gigamonkey {
     
@@ -102,11 +92,11 @@ namespace Gigamonkey {
         // written to the digest as given, without reversing. 
         explicit uint(string_view hex);
         
-        explicit uint(const data::math::number::N& n);
+        explicit uint(const N& n);
         
         explicit uint(const ::uint256&);
         
-        explicit operator data::math::number::N() const;
+        explicit operator N() const;
         explicit operator float64() const;
         
         operator bytes_view() const;
@@ -174,10 +164,12 @@ namespace Gigamonkey {
             return data()[i];
         }
         
-        size_t serialized_size() const;
+        size_t serialized_size() const; 
         
-        const data::arithmetic::digits<endian::little> digits() const {
-            return data::arithmetic::digits<endian::little>{data::slice<byte>(*this)};
+        using words_type = data::encoding::words<endian::little, byte>;
+        
+        const words_type words() const {
+            return words_type{data::slice<byte>(*this)};
         }
         
     };
@@ -246,6 +238,14 @@ namespace Gigamonkey {
         integer &operator-=(const integer&);
         integer &operator*=(const integer&);
         
+        integer operator^(const integer&) const;
+        integer operator|(const integer&) const;
+        integer operator&(const integer&) const;
+        
+        integer &operator^=(const integer&);
+        integer &operator|=(const integer&);
+        integer &operator&=(const integer&);
+        
         static bytes shift(bytes_view a, int);
         
         integer operator<<(int) const;
@@ -266,8 +266,10 @@ namespace Gigamonkey {
         explicit integer(string_view x);
         explicit integer(const integer<endian::opposite(r)>&);
         
-        data::arithmetic::digits<r> digits() {
-            return data::arithmetic::digits<r>{data::slice<byte>(*this)};
+        using words_type = data::encoding::words<endian::little, byte>;
+        
+        const words_type words() const {
+            return words_type{data::slice<byte>(*const_cast<integer*>(this))};
         }
         
     protected:
@@ -286,6 +288,12 @@ namespace Gigamonkey {
         natural &operator+=(const natural&);
         natural &operator-=(const natural&);
         natural &operator*=(const natural&);
+        
+        natural operator|(const natural&) const;
+        natural operator&(const natural&) const;
+        
+        natural &operator|=(const natural&);
+        natural &operator&=(const natural&);
         
         math::division<natural> divide(const natural&) const;
         
@@ -318,19 +326,8 @@ namespace Gigamonkey {
 
 namespace Gigamonkey::Bitcoin {
     
-    using N = natural<endian::little>;
-    using Z = integer<endian::little>;
-    
-    using Q = data::math::fraction<Z, N>;
-    
-    // Gaussian numbers (complex rationals)
-    using G = data::math::complex<Q>;
-        
-    // rational quaternions
-    using H = data::math::quaternion<Q>;
-        
-    // rational octonions
-    using O = data::math::octonion<Q>;
+    using natural = Gigamonkey::natural<endian::little>;
+    using integer = Gigamonkey::integer<endian::little>;
     
 }
 
@@ -353,26 +350,26 @@ namespace Gigamonkey {
 namespace data::encoding::hexidecimal { 
     
     template <size_t size> 
-    inline std::string write(const Gigamonkey::uint<size>& n) {
-        return write((math::number::N)(n));
+    std::string inline write(const Gigamonkey::uint<size>& n) {
+        return write((data::N)(n));
     }
     
     template <size_t size> 
-    inline std::ostream& write(std::ostream& o, const Gigamonkey::uint<size>& n) {
-        return o << write(n);
+    std::ostream inline &write(std::ostream& o, const Gigamonkey::uint<size>& n) {
+        return write(o, data::N(n));
     }
     
 }
 
-namespace data::encoding::integer {
+namespace data::encoding::decimal {
     
     template <size_t size, unsigned int bits> 
-    inline std::string write(const Gigamonkey::uint<size>& n) {
-        return write((math::number::N)(n));
+    std::string inline write(const Gigamonkey::uint<size>& n) {
+        return write((data::N)(n));
     }
     
     template <size_t size, unsigned int bits> 
-    inline std::ostream& write(std::ostream& o, const Gigamonkey::uint<size>& n) {
+    std::ostream inline &write(std::ostream& o, const Gigamonkey::uint<size>& n) {
         return o << write(n);
     }
     
@@ -386,8 +383,8 @@ namespace Gigamonkey {
     }
     
     template <size_t size>
-    uint<size>::operator math::number::N() const {
-        math::number::N n(0);
+    uint<size>::operator N() const {
+        N n(0);
         int width = size / 4;
         int i;
         for (i = width - 1; i > 0; i--) {
@@ -408,7 +405,7 @@ namespace Gigamonkey {
     }
     
     template <size_t size>
-    uint<size>::uint(const math::number::N& n) : uint(0) {
+    uint<size>::uint(const N& n) : uint(0) {
         ptr<bytes> b = encoding::hex::read(encoding::hexidecimal::write(n).substr(2));
         std::reverse(b->begin(), b->end());
         if (b->size() > size) std::copy(b->begin(), b->begin() + size, begin());
@@ -439,10 +436,10 @@ namespace Gigamonkey {
         auto mi = mantissa.begin();
         bool copy = false;
         int from_left;
-        for (auto i = digits().rbegin(); i != digits().rend(); i++) {
+        for (auto i = words().rbegin(); i != words().rend(); i++) {
             if (*i != 0 && !copy) {
                 copy = true;
-                from_left = (i - digits().rbegin()) * 8;
+                from_left = (i - words().rbegin()) * 8;
             }
             if (copy) {
                 if (mi == mantissa.end()) break;
@@ -469,6 +466,26 @@ namespace Gigamonkey {
         return ldexp(significand, size * 8 - from_left);    
     }
     
+    template <endian::order r> integer<r> integer<r>::operator|(const integer &x) const {
+        throw 0;
+    }
+    
+    template <endian::order r> integer<r> integer<r>::operator&(const integer &x) const {
+        throw 0;
+    }
+    
+    template <endian::order r> integer<r> integer<r>::operator^(const integer &x) const {
+        throw 0;
+    }
+    
+    template <endian::order r> natural<r> natural<r>::operator&(const natural &x) const {
+        throw 0;
+    }
+    
+    template <endian::order r> natural<r> natural<r>::operator|(const natural &x) const {
+        throw 0;
+    }
+    
     template <size_t size>
     inline uint<size>& uint<size>::operator=(uint64_t b) {
         base_uint<bits>::operator=(b);
@@ -486,13 +503,13 @@ namespace Gigamonkey {
         base_uint<bits>::operator^=(b);
         return *this;
     }
-
+    
     template <size_t size>
     inline uint<size>& uint<size>::operator&=(const uint& b) {
         base_uint<bits>::operator&=(b);
         return *this;
     }
-
+    
     template <size_t size>
     inline uint<size>& uint<size>::operator|=(const uint& b) {
         base_uint<bits>::operator|=(b);
@@ -938,7 +955,7 @@ namespace Gigamonkey {
     
     struct numbers {
         
-        template <endian::order r> using digits = data::arithmetic::digits<r>;
+        template <endian::order r> using digits = data::encoding::words<r, byte>;
         
     private:
         template <endian::order r> friend struct integer;
@@ -1102,7 +1119,7 @@ namespace Gigamonkey {
                     data::encoding::integer::read<r>(x.substr(1)) : 
                     data::encoding::integer::read<r>(x);
                 
-                bool has_sign_bit = sign_bit(positive_number->digits());
+                bool has_sign_bit = data::math::number::is_negative(*positive_number);
                 
                 bytes b;
                 b.resize(positive_number->size() + (has_sign_bit ? 1 : 0));
@@ -1167,14 +1184,14 @@ namespace Gigamonkey {
             
             while (ai != ae) {
                 uint16 shift = (shift << 8) + (uint16(*ai) << mod);
-                *bi = data::greater_half(shift);
+                *bi = data::encoding::greater_half(shift);
                 ai++;
                 bi++;
             }
             
             while (bi != be) {
                 uint16 shift = shift << 8;
-                *bi = data::greater_half(shift);
+                *bi = data::encoding::greater_half(shift);
                 bi++;
             }
             
@@ -1299,7 +1316,7 @@ namespace Gigamonkey {
     
     template <endian::order r> template <size_t size> natural<r>::operator uint<size>() const {
         auto n = this->trim();
-        auto d = n.digits();
+        auto d = n.words();
         if (d.Data.size() > size + 1 || (d.Data.size() == size + 1 && d[-1] != 0x00))
             throw std::logic_error{"natural too big to cast to uint"};
         uint<size> u{};

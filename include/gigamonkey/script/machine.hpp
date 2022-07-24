@@ -66,8 +66,8 @@ namespace Gigamonkey::Bitcoin::interpreter {
         }
         
         program inline full(const program unlock, const program lock) {
-            if (!isP2SH(lock) || data::empty(unlock)) return unlock << OP_CODESEPARATOR << lock;
-            return unlock << OP_CODESEPARATOR << lock << OP_CODESEPARATOR << decompile(data::reverse(unlock).first().data());
+            if (!isP2SH(lock) || data::empty(unlock)) return (unlock << OP_CODESEPARATOR) + lock;
+            return (unlock << OP_CODESEPARATOR) + (lock << OP_CODESEPARATOR) + decompile(data::reverse(unlock).first().data());
         }
         
         ScriptError check_scripts(const program unlock, const program lock, uint32 flags) {

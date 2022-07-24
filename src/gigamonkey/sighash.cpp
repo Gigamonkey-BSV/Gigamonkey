@@ -18,7 +18,9 @@ namespace Gigamonkey::Bitcoin::sighash {
         list<input> in;
         list<output> out;
         
-        if (sighash::is_anyone_can_pay(d)) in <<= doc.Transaction.Inputs[doc.InputIndex].complete(remove_code_separators(doc.ScriptCode));
+        if (sighash::is_anyone_can_pay(d)) 
+            in <<= doc.Transaction.Inputs[doc.InputIndex].complete(remove_code_separators(doc.ScriptCode));
+        
         else for (int i = 0; i < doc.Transaction.Inputs.size(); i++) 
             in <<= input{doc.Transaction.Inputs[i].Reference,
                 i == doc.InputIndex ? remove_code_separators(doc.ScriptCode) : bytes{}, 

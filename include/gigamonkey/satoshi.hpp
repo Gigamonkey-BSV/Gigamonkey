@@ -44,9 +44,15 @@ namespace Gigamonkey::Bitcoin {
 
 namespace data::math {
     
-    template <> struct identity<data::plus<Gigamonkey::Bitcoin::satoshi>, Gigamonkey::Bitcoin::satoshi> {
-        static const Gigamonkey::Bitcoin::satoshi value() {
+    template <> struct identity<plus<Gigamonkey::Bitcoin::satoshi>, Gigamonkey::Bitcoin::satoshi> {
+        Gigamonkey::Bitcoin::satoshi operator()() {
             return {0};
+        }
+    };
+    
+    template <> struct inverse<plus<Gigamonkey::Bitcoin::satoshi>, Gigamonkey::Bitcoin::satoshi> {
+        Gigamonkey::Bitcoin::satoshi operator()(const Gigamonkey::Bitcoin::satoshi &a, const Gigamonkey::Bitcoin::satoshi &b) {
+            return b - a;
         }
     };
 }

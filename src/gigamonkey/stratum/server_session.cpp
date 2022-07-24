@@ -90,7 +90,7 @@ namespace Gigamonkey::Stratum {
         
         ExtensionsRequested = p;
         
-        for (const data::entry<string, extensions::request> &x : p) 
+        for (const data::entry<string, extensions::request> &x : p.values()) 
             ExtensionsParameters = extensions::results{
                 static_cast<data::map<string, extensions::result>>(ExtensionsParameters).insert(x.Key, configure_result(x.Key, x.Value))};
         

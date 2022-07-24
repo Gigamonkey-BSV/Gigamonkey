@@ -32,11 +32,11 @@ namespace Gigamonkey::BitcoinAssociation {
         return data::reverse(d);
     }
     
-    list<optional<digest256>> generate_path(Merkle::branch b) {
-        list<optional<digest256>> l;
+    list<std::optional<digest256>> generate_path(Merkle::branch b) {
+        list<std::optional<digest256>> l;
         while (b.Digests.size() > 0) {
-            if (b.Leaf.Digest == b.Digests.first()) l = l << optional<digest256>{};
-            else l = l << optional<digest256>{b.Digests.first()};
+            if (b.Leaf.Digest == b.Digests.first()) l = l << std::optional<digest256>{};
+            else l = l << std::optional<digest256>{b.Digests.first()};
             b = b.rest();
         }
         return l;
@@ -163,7 +163,7 @@ namespace Gigamonkey::BitcoinAssociation {
         return r >> Bitcoin::var_string{b};
     }
     
-    reader &read_node(reader &r, optional<digest256>& node) {
+    reader &read_node(reader &r, std::optional<digest256>& node) {
         byte type;
         r = r >> type;
         if (type == 1) {
@@ -181,7 +181,7 @@ namespace Gigamonkey::BitcoinAssociation {
         Merkle::digests d;
         Merkle::leaf l{leaf, p.Index};
         for (int i = 0; i < size; i++) {
-            optional<digest256> Next;
+            std::optional<digest256> Next;
             r = read_node(r, Next);
             digest256& next = bool(Next) ? *Next : l.Digest;
             d = d << next;
@@ -248,9 +248,9 @@ namespace Gigamonkey::BitcoinAssociation {
         return w << byte(0) << d;
     }
     
-    writer &write_path(writer &w, list<optional<digest256>> b) {
+    writer &write_path(writer &w, list<std::optional<digest256>> b) {
         w << Bitcoin::var_int{b.size()};
-        for (const optional<digest256> &z : b) {
+        for (const std::optional<digest256> &z : b) {
             if (bool(z)) w = write_node(w, *z);
             else w = write_duplicate(w);
             b = b.rest();
@@ -278,7 +278,7 @@ namespace Gigamonkey::BitcoinAssociation {
             Bitcoin::var_int::size(Path.Index) + 
             Bitcoin::var_int::size(Path.Digests.size()) + 
             (tx_included ? Bitcoin::var_int::size(Transaction->size()) + Transaction->size() : 32);
-        for (const optional<digest256>& d : path) size += (bool(d) ? 33 : 1);
+        for (const std::optional<digest256>& d : path) size += (bool(d) ? 33 : 1);
         if (tt == target_type_block_hash || tt == target_type_Merkle_root) size += 32;
         else if (tt == target_type_block_header) size += 80;
         
@@ -324,14 +324,14 @@ namespace Gigamonkey::BitcoinAssociation {
         Path = p;
     }
     
-    optional<digest256> inline proofs_serialization_standard::Merkle_root(const json& j) {
+    std::optional<digest256> inline proofs_serialization_standard::Merkle_root(const json& j) {
         target_type_value target = target_type(j);
         if (target == target_type_Merkle_root) return {read_digest(j["target"])};
         if (target == target_type_block_header) return block_header(j)->MerkleRoot;
         return {};
     }
     
-    optional<Bitcoin::header> inline proofs_serialization_standard::block_header(const json& j) {
+    std::optional<Bitcoin::header> inline proofs_serialization_standard::block_header(const json& j) {
         if (j.contains("targetType") && j["targetType"] == "header") return {read_header(j["target"])};
         return {};
     }
