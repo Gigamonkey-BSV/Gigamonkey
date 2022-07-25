@@ -1,0 +1,38 @@
+name: Conan development
+on:
+  push:
+    branches:
+      - '*'
+      - '*/*'
+      - '**'
+      - '!production'
+  pull_request:
+    branches:
+      - '*'
+      - '*/*'
+      - '**'
+      - '!production'
+env:
+  BUILD_TYPE: Debug
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Get Conan
+        uses: turtlebrowser/get-conan@v1.0
+      - name: Create default profile
+        run: conan profile new default --detect
+      - name: Update profile 11
+        run: conan profile update settings.compiler.libcxx=libstdc++11 default
+      - name: Update profile version
+        run: conan profile update settings.compiler.version=10 default
+      - name: setup conan
+        run: |
+          conan config set general.revisions_enabled=True 
+          conan remote add proofofwork https://conan.katcodes.tech/artifactory/api/conan/proof-of-work-main
+          conan user -p ${{ secrets.CONAN_USER_KEY }} -r proofofwork github
+          export CURRENT_VERSION=`git rev-parse --short HEAD`
+          conan install . -r proofofwork
+          conan create . proofofwork/unstable
+          conan upload gigamonkey/${CURRENT_VERSION}@proofofwork/unstable -r proofofwork --all
