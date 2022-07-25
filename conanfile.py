@@ -15,24 +15,32 @@ class GigamonkeyConan(ConanFile):
     default_options = {"shared": False, "fPIC": True}
     generators = "cmake"
     exports_sources = "*"
-    requires = "boost/1.76.0", "openssl/1.1.1k", "cryptopp/8.5.0", "nlohmann_json/3.10.0", "gmp/6.2.1", "SECP256K1/0.1@proofofwork/stable", "data/0.2@proofofwork/stable"
+    requires = "boost/1.76.0", "openssl/1.1.1k", "cryptopp/8.5.0", "nlohmann_json/3.10.0", "gmp/6.2.1", "SECP256K1/0.1@proofofwork/unstable", "data/86991d9@proofofwork/unstable"
 
     def set_version(self):
         if "CIRCLE_TAG" in environ:
             self.version = environ.get("CIRCLE_TAG")[1:]
+        if "CURRENT_VERSION" in environ:
+            self.version = environ['CURRENT_VERSION']
 
     def config_options(self):
         if self.settings.os == "Windows":
             del self.options.fPIC
 
-    def build(self):
+    def configure_cmake(self):
         if "CMAKE_BUILD_CORES_COUNT" in environ:
             cmake = CMake(self, parallel=False)
-            cmake.configure()
-            cmake.build(args=["--", environ.get("CMAKE_BUILD_CORES_COUNT")])
         else:
             cmake = CMake(self)
-            cmake.configure()
+        cmake.definitions["PACKAGE_TESTS"] = "Off"
+        cmake.configure()
+        return cmake
+
+    def build(self):
+        cmake = self.configure_cmake()
+        if "CMAKE_BUILD_CORES_COUNT" in environ:
+            cmake.build(args=["--", environ.get("CMAKE_BUILD_CORES_COUNT")])
+        else:
             cmake.build()
 
     def package(self):
