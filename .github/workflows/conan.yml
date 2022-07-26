@@ -34,5 +34,5 @@ jobs:
           conan user -p ${{ secrets.CONAN_USER_KEY }} -r proofofwork github
           export CURRENT_VERSION=`git rev-parse --short HEAD`
           conan install . -r proofofwork
-          conan create . proofofwork/unstable
+          conan create . proofofwork/unstable -r proofofwork
           conan upload gigamonkey/${CURRENT_VERSION}@proofofwork/unstable -r proofofwork --all
