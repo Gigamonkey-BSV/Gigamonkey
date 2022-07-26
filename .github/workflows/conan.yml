@@ -30,7 +30,7 @@ jobs:
       - name: setup conan
         run: |
           conan config set general.revisions_enabled=True 
-          conan remote add proofofwork https://conan.katcodes.tech/artifactory/api/conan/proof-of-work-main
+          conan remote add proofofwork https://conan.pow.co/artifactory/api/conan/conan
           conan user -p ${{ secrets.CONAN_USER_KEY }} -r proofofwork github
           export CURRENT_VERSION=`git rev-parse --short HEAD`
           conan install . -r proofofwork
