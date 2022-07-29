@@ -1,0 +1,57 @@
+name: Conan development
+on:
+  push:
+    branches:
+      - production
+env:
+  BUILD_TYPE: Release
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - id: release
+        uses: rymndhng/release-on-push-action@master
+        with:
+          bump_version_scheme: patch
+          use_github_release_notes: true
+      - name: Check Output Parameters
+        run: |
+          echo "Got tag name ${{ steps.release.outputs.tag_name }}"
+          echo "Got release version ${{ steps.release.outputs.version }}"
+      - uses: actions/checkout@v2
+      - name: Get Conan
+        uses: turtlebrowser/get-conan@v1.0
+      - name: Create default profile
+        run: conan profile new default --detect
+      - name: Update profile 11
+        run: conan profile update settings.compiler.libcxx=libstdc++11 default
+      - name: Update profile version
+        run: conan profile update settings.compiler.version=10 default
+      - name: setup conan
+        run: |
+          conan config set general.revisions_enabled=True 
+          conan remote add proofofwork https://conan.pow.co/artifactory/api/conan/conan
+          conan user -p ${{ secrets.CONAN_USER_KEY }} -r proofofwork github
+          export CURRENT_VERSION="${{ steps.release.outputs.tag_name }}"
+          echo "Current version: ${CURRENT_VERSION}"
+          conan install . -r proofofwork
+          conan create . proofofwork/stable -r proofofwork
+          conan upload gigamonkey/${CURRENT_VERSION}@proofofwork/stable -r proofofwork --all
+      - name: prepare release package
+        run: |
+          mkdir build
+          cd build
+          conan install .. -r=proofofwork
+          cmake .. -DPACKAGE_TESTS=Off
+          cmake --build .
+          export CURRENT_VERSION="${{ steps.release.outputs.tag_name }}"
+          cp -r ../include ./
+          tar -czvf "gigamonkey-${CURRENT_VERSION}-linux.tar.gz" lib include
+      - name: Upload release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          tag: ${{ steps.release.outputs.tag_name }}
+          file: build/gigamonkey-${{ steps.release.outputs.tag_name }}-linux.tar.gz
+          asset_name: gigamonkey-${{ steps.release.outputs.tag_name }}-linux.tar.gz
