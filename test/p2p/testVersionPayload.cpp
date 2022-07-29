@@ -20,7 +20,7 @@ namespace Gigamonkey::Bitcoin::P2P {
 class VersionPayloadTest : public ::testing::Test {
 
 protected:
-    data::bytes testPacket=strToTestVector("7f1101002500000000000000f1fc6d5e00000000000000000000000000000000000000000000ffff5c183534a2da010000000000000000000000000000000000ffff00000000000034ad423c6f4caf7d1e2f707974686f6e2d6d696e696e6f64652d7465737465723a302e302e332fffffffff01");
+		data::bytes testPacket=strToTestVector("7f1101002500000000000000f1fc6d5e00000000000000000000000000000000000000000000ffff5c183534a2da010000000000000000000000000000000000ffff00000000000034ad423c6f4caf7d1e2f707974686f6e2d6d696e696e6f64652d7465737465723a302e302e332fffffffff01");
 };
     TEST_F(VersionPayloadTest,TestVersionDecode) {
         // run
@@ -42,10 +42,14 @@ protected:
   EXPECT_THAT(temp,::testing::ElementsAreArray(testPacket.data(),testPacket.size()));
 	}
 
+	TEST_F(VersionPayloadTest,TestReaderAndWriter) {
+		Messages::MessagePayload *temp = new Messages::VersionPayload(0,Networks::MainNet);
+		data::bytes_reader reader(testPacket.begin(),testPacket.end());
+	}
 	TEST_F(VersionPayloadTest,TestReaders) {
 		Messages::MessagePayload *temp = new Messages::VersionPayload(0,Networks::MainNet);
 		lazy_bytes_writer temp2;
-		auto ver=static_cast<Messages::VersionPayload*>(temp);
+		auto ver=dynamic_cast<Messages::VersionPayload*>(temp);
 		ver->setVersion(99999);
 		ver->setUserAgent("/Gigamonkey:1.1/");
 		(*boost::dynamic_pointer_cast<UUIDAssociationId>(ver->getAssocId())).generateRandom();
