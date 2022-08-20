@@ -37,7 +37,7 @@ namespace Gigamonkey::Bitcoin {
         ms <<= null_push;
         for (const secp256k1::secret &sk : s) ms <<= push_data(signature::sign(sk, sighash::all, sd));
         ms <<= OP_CODESEPARATOR;
-        return compile(ms << mp);
+        return compile(ms + mp);
     }
     
     bytes multisig_script(const redemption_document &doc, list<secp256k1::secret> s, list<secp256k1::pubkey> p) {

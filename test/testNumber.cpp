@@ -577,15 +577,15 @@ namespace Gigamonkey::Bitcoin {
     
     TEST(NumberTest, TestNumberAbs) {
         
-        EXPECT_EQ(Z(0).abs(), N(0));
-        EXPECT_EQ(Z(1).abs(), N(1));
-        EXPECT_EQ(Z(-1).abs(), N(1));
-        EXPECT_EQ(Z(127).abs(), N(127));
-        EXPECT_EQ(Z(-127).abs(), N(127));
-        EXPECT_EQ(Z(128).abs(), N(128));
-        EXPECT_EQ(Z(-128).abs(), N(128));
-        EXPECT_EQ(Z(256).abs(), N(256));
-        EXPECT_EQ(Z(-256).abs(), N(256));
+        EXPECT_EQ(abs(Z(0)), N(0));
+        EXPECT_EQ(abs(Z(1)), N(1));
+        EXPECT_EQ(abs(Z(-1)), N(1));
+        EXPECT_EQ(abs(Z(127)), N(127));
+        EXPECT_EQ(abs(Z(-127)), N(127));
+        EXPECT_EQ(abs(Z(128)), N(128));
+        EXPECT_EQ(abs(Z(-128)), N(128));
+        EXPECT_EQ(abs(Z(256)), N(256));
+        EXPECT_EQ(abs(Z(-256)), N(256));
         
     }
     
