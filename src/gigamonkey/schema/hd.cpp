@@ -18,7 +18,6 @@
 //#include <unicode/unistr.h>
 #include <bitset>
 
-
 namespace Gigamonkey::Bitcoin::hd::bip32 {
 
     uint256 CURVE_ORDER = secp256k1::secret::order();
@@ -78,9 +77,9 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
         uint256 k = uint256{};
         std::copy(sec.Secret.Value.begin(), sec.Secret.Value.end(), k.begin());
         std::reverse(k.begin(), k.end());
-        auto keyCode = (data::math::number::gmp::N) ll;
-        keyCode += (data::math::number::gmp::N) k;
-        keyCode %= (data::math::number::gmp::N) CURVE_ORDER;
+        auto keyCode = (data::N) ll;
+        keyCode += (data::N) k;
+        keyCode %= (data::N) CURVE_ORDER;
         
         if (keyCode == 0)
             return derive(sec, child + 1);
@@ -168,13 +167,13 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
             return secret();
         bytes_reader reader(view.begin() + 3, view.end());
 
-        data::endian::arithmetic<boost::endian::order::big, false, 1> depth;
+        data::endian::arithmetic<false, boost::endian::order::big, 1> depth;
         reader >> depth;
         secret1.Depth = depth;
-        data::endian::arithmetic<boost::endian::order::big, false, 4> parent;
+        data::endian::arithmetic<false, boost::endian::order::big, 4> parent;
         reader >> parent;
         secret1.Parent = parent;
-        data::endian::arithmetic<boost::endian::order::big, false, 4> sequence;
+        data::endian::arithmetic<false, boost::endian::order::big, 4> sequence;
         reader >> sequence;
         secret1.Sequence = sequence;
         bytes_view chain_code = view.substr(12, 32);
@@ -328,13 +327,13 @@ namespace Gigamonkey::Bitcoin::hd::bip32 {
             return pubkey();
         bytes_reader reader(view.begin() + 3, view.end());
 
-        data::endian::arithmetic<boost::endian::order::big, false, 1> depth;
+        data::endian::arithmetic<false, boost::endian::order::big, 1> depth;
         reader >> depth;
         pubkey1.Depth = depth;
-        data::endian::arithmetic<boost::endian::order::big, false, 4> parent;
+        data::endian::arithmetic<false, boost::endian::order::big, 4> parent;
         reader >> parent;
         pubkey1.Parent = parent;
-        data::endian::arithmetic<boost::endian::order::big, false, 4> sequence;
+        data::endian::arithmetic<false, boost::endian::order::big, 4> sequence;
         reader >> sequence;
         pubkey1.Sequence = sequence;
         //sequence |= view[12] & 0xff;
