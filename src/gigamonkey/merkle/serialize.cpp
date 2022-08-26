@@ -253,7 +253,6 @@ namespace Gigamonkey::BitcoinAssociation {
         for (const optional<digest256> &z : b) {
             if (bool(z)) w = write_node(w, *z);
             else w = write_duplicate(w);
-            b = b.rest();
         }
         return w;
     }

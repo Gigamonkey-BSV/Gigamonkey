@@ -113,7 +113,7 @@ namespace Gigamonkey::Bitcoin {
             if (txs.empty()) return *this;
             return data::fold([](const account& a, const event& e) -> account {
                 return a.reduce(e);
-            }, account{}, txs.values());
+            }, account{}, txs);
             return reduce(txs.first()).reduce(txs.rest());
         }
     };

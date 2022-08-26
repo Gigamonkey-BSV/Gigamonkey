@@ -69,12 +69,12 @@ namespace Gigamonkey::Bitcoin {
     
     TEST(NumberTest, TestNumberConstructorsDecimalPositive) {
         
-        EXPECT_EQ(bytes_view(Z("0")), bytes::from_hex("00"));
+        EXPECT_EQ(bytes_view(Z("0")), bytes::from_hex(""));
         EXPECT_EQ(bytes_view(Z("127")), bytes::from_hex("7f"));
         EXPECT_EQ(bytes_view(Z("128")), bytes::from_hex("8000"));
         EXPECT_EQ(bytes_view(Z("256")), bytes::from_hex("0001"));
         
-        EXPECT_EQ(bytes_view(N("0")), bytes::from_hex("00"));
+        EXPECT_EQ(bytes_view(N("0")), bytes::from_hex(""));
         EXPECT_EQ(bytes_view(N("1")), bytes::from_hex("01"));
         EXPECT_EQ(bytes_view(N("127")), bytes::from_hex("7f"));
         EXPECT_EQ(bytes_view(N("128")), bytes::from_hex("8000"));
