@@ -72,6 +72,10 @@ namespace Gigamonkey::Bitcoin {
         bytes encrypt(const bytes& message) const;
         bytes decrypt(const bytes& message) const;
         
+        explicit operator string() const {
+            return write();
+        }
+        
     private:
         static Bitcoin::address::type to_address_type(type t);
     };

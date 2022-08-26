@@ -291,7 +291,7 @@ namespace Gigamonkey::Merkle {
         public:
             dual_by_index(const dual& d) {
                 Root = d.Root;
-                for (const entry& e : d.Paths) Branches.insert_or_assign(e.Value.Index, e.Value.Digests << e.Key);
+                for (const entry& e : d.Paths.values()) Branches.insert_or_assign(e.Value.Index, e.Value.Digests << e.Key);
             }
             
             operator dual() const {

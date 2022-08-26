@@ -23,7 +23,7 @@ namespace Gigamonkey::hd::bip32 {
     uint256 CURVE_ORDER = secp256k1::secret::order();
 
     uint32_t fp(const digest160& hash) {
-        const byte *hsh = hash.Value.data();
+        const byte *hsh = hash.data();
         return (uint32_t) hsh[0] << 24 | (uint32_t) hsh[1] << 16 | (uint32_t) hsh[2] << 8 | (uint32_t) hsh[3];
     }
 
@@ -90,14 +90,13 @@ namespace Gigamonkey::hd::bip32 {
             child_key.push_back(itr2);
         }
         
-        uint256 key{keyCode};
+        uint256 key = uint256(N_bytes_little(keyCode));
         std::reverse(key.begin(), key.end());
         derived.Secret = secp256k1::secret{key};
         for (int i = 32; i < 64; i++)
             derived.ChainCode.push_back(hmaced[i]);
         return derived;
     }
-    
     
     pubkey derive(const pubkey &pub, uint32 child) {
         pubkey derived;
@@ -149,8 +148,7 @@ namespace Gigamonkey::hd::bip32 {
             derived.ChainCode.push_back(hmaced[i]);
         return derived;
     }
-
-
+    
     secret secret::read(string_view str) {
         Gigamonkey::base58::check tmp(str);
         secret secret1;
@@ -347,7 +345,7 @@ namespace Gigamonkey::hd::bip32 {
         std::copy(key.begin(), key.end(), keyuint.begin());
         pubkey1.ChainCode = bytes(32);
         std::copy(chain_code.begin(), chain_code.end(), pubkey1.ChainCode.begin());
-        pubkey1.Pubkey = secp256k1::pubkey{keyuint};
+        pubkey1.Pubkey = secp256k1::pubkey{bytes_view(keyuint)};
         return pubkey1;
     }
     /*

@@ -290,7 +290,7 @@ namespace Gigamonkey::secp256k1 {
     signature secret::sign(bytes_view sk, const digest& d) {
         secp256k1_ecdsa_signature x;
         auto context = Signing();
-        if (secp256k1_ecdsa_sign(context, &x, d.Value.data(), sk.data(),
+        if (secp256k1_ecdsa_sign(context, &x, d.data(), sk.data(),
             secp256k1_nonce_function_rfc6979, nullptr) != 1) return {};
         
         signature sig{};

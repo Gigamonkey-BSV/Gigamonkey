@@ -12,10 +12,12 @@
 #include <data/encoding/halves.hpp>
 
 #include <data/numbers.hpp>
+#include <gigamonkey/types.hpp>
 
 namespace Gigamonkey {
     
-    template <size_t size> struct uint;
+    // a representation of uints of any size. 
+    template <size_t X> using uint = data::uint_little<X>; 
     
     // sizes of standard hash functions.
     using uint128 = uint<16>; 
@@ -78,107 +80,6 @@ namespace Gigamonkey {
     template <size_t size> bool operator>=(int, const uint<size>&);
     template <size_t size> bool operator<(int, const uint<size>&);
     template <size_t size> bool operator>(int, const uint<size>&);*/
-    
-    // a representation of uints of any size. 
-    template <size_t X> struct uint : public base_uint<8 * X> {
-        static const unsigned int bits = 8 * X;
-        uint(base_uint<bits> &&b) : base_uint<bits>{b} {}
-        uint(const base_uint<bits> &b) : base_uint<bits>{b} {}
-        uint(uint64 u) : base_uint<bits>(u) {}
-        uint() : uint(0) {}
-        
-        uint(const slice<X>);
-        
-        // valid inputs are a hexidecimal number, which will be written 
-        // to the digest in little endian (in other words, reversed
-        // from the way it is written) or a hex string, which will be
-        // written to the digest as given, without reversing. 
-        explicit uint(string_view hex);
-        
-        explicit uint(const N& n);
-        
-        explicit uint(const ::uint256&);
-        
-        explicit operator N() const;
-        explicit operator float64() const;
-        
-        operator bytes_view() const;
-        operator slice<X>();
-        operator const slice<X>() const;
-        
-        uint& operator=(uint64_t b);
-        uint& operator=(const base_uint<bits>& b);
-        
-        uint operator~();
-        uint operator^(const uint &);
-        uint operator|(const uint &);
-        uint operator&(const uint &);
-        
-        uint operator+(const uint &);
-        uint operator-(const uint &);
-        uint operator*(const uint &);
-        
-        uint& operator^=(const uint &);
-        uint& operator&=(const uint &);
-        uint& operator|=(const uint &);
-        
-        uint operator<<(unsigned int shift) const;
-        uint operator>>(unsigned int shift) const;
-        
-        uint& operator<<=(unsigned int shift);
-        uint& operator>>=(unsigned int shift);
-        
-        uint& operator+=(const uint &);
-        uint& operator-=(const uint &);
-        uint& operator*=(const uint &);
-        
-        math::division<uint<X>> divide(const uint &) const;
-        
-        uint operator/(const uint &) const;
-        uint operator%(const uint &) const;
-        
-        uint& operator/=(const uint &);
-        uint& operator%=(const uint &);
-        
-        uint& operator++();
-        const uint operator++(int);
-        
-        uint& operator--();
-        const uint operator--(int);
-        
-        byte* begin();
-        byte* end();
-        
-        const byte* begin() const;
-        const byte* end() const;
-        
-        byte* data();
-        const byte* data() const;
-        
-        explicit operator string() const;
-        
-        const byte& operator[](int i) const {
-            if (i < 0) return operator[](X + i);
-            return data()[i];
-        }
-        
-        byte& operator[](int i) {
-            if (i < 0) return operator[](X + i);
-            return data()[i];
-        }
-        
-        size_t serialized_size() const;
-        size_t size() const {
-            return X;
-        }
-        
-        using words_type = data::encoding::words<endian::little, byte>;
-        
-        const words_type words() const {
-            return words_type{data::slice<byte>(*this)};
-        }
-        
-    };
     
     template <size_t size> writer &operator<<(writer &, const uint<size> &);
     template <size_t size> reader &operator>>(reader &, uint<size> &);
@@ -340,22 +241,6 @@ namespace Gigamonkey::Bitcoin {
     
 }
 
-namespace Gigamonkey {
-    
-    template <size_t size> 
-    inline uint<size>::operator string() const {
-        bytes r(32);
-        std::copy(begin(), end(), r.rbegin());
-        return string{"0x"} + data::encoding::hex::write(r, data::encoding::hex::lower);
-    }
-
-    template <size_t size> 
-    std::ostream inline &operator<<(std::ostream& o, const uint<size>& s) {
-        return o << string(s);
-    }
-    
-}
-
 namespace data::encoding::hexidecimal { 
     
     template <size_t size> 
@@ -384,278 +269,17 @@ namespace data::encoding::decimal {
     
 }
 
-namespace Gigamonkey {
-
-    template <size_t X>
-    inline uint<X>::uint(const slice<X> x) {
-        std::copy(x.begin(), x.end(), begin());
-    }
+namespace Gigamonkey::Bitcoin {
     
-    template <size_t X>
-    uint<X>::operator N() const {
-        N n(0);
-        int width = X / 4;
-        int i;
-        for (i = width - 1; i > 0; i--) {
-            uint32 step = boost::endian::load_little_u32(data() + 4 * i);
-            n += step;
-            n <<= 32;
-        }
-        n += uint64(boost::endian::load_little_u32(data()));
-        return n;
-    }
-    
-    template <size_t X>
-    inline uint<X>::uint(string_view hex) : uint(0) {
-        if (hex.size() != X * 2 + 2) return;
-        if (!data::encoding::hexidecimal::valid(hex)) return;
-        ptr<bytes> read = encoding::hex::read(hex.substr(2));
-        std::reverse_copy(read->begin(), read->end(), begin());
-    }
-    
-    template <size_t X>
-    uint<X>::uint(const N& n) : uint(0) {
-        ptr<bytes> b = encoding::hex::read(encoding::hexidecimal::write(n).substr(2));
-        std::reverse(b->begin(), b->end());
-        if (b->size() > X) std::copy(b->begin(), b->begin() + X, begin());
-        else std::copy(b->begin(), b->end(), begin());
-    }
-    
-    template <size_t X>
-    inline uint<X>::operator bytes_view() const {
-        return bytes_view{data(), X};
-    }
-    
-    template <size_t X>
-    inline uint<X>::operator slice<X>() {
-        return slice<X>(data());
-    }
-    
-    template <size_t X>
-    inline uint<X>::operator const slice<X>() const {
-        return slice<X>(const_cast<byte*>(data()));
-    }
-    
-    template <size_t X>
-    inline uint<X>::operator float64() const {
-        if ((*this) == 0) return 0;
-        
-        // first we have to find the mantissa bis. 
-        uint64_big mantissa = 0;
-        auto mi = mantissa.begin();
-        bool copy = false;
-        int from_left;
-        for (auto i = words().rbegin(); i != words().rend(); i++) {
-            if (*i != 0 && !copy) {
-                copy = true;
-                from_left = (i - words().rbegin()) * 8;
-            }
-            if (copy) {
-                if (mi == mantissa.end()) break;
-                *mi = *i;
-                mi++;
-            }
-        }
-        
-        while (!(mantissa & 0x8000000000000000)) {
-            mantissa <<= 1;
-            from_left ++;
-        }
-        
-        mantissa >>= (64 - standard_binary_interchange_format_mantissa_bits<64>());
-        
-        // next we need to convert a mantissa into a significand. 
-        float64 significand = 0;
-        while (mantissa != 0) {
-            if (mantissa & 0x0000000000000001) significand += 1;
-            significand /=2;
-            mantissa >>= 1;
-        }
-        
-        return ldexp(significand, X * 8 - from_left);    
-    }
-    
-    template <size_t X>
-    inline uint<X>& uint<X>::operator=(uint64_t b) {
-        base_uint<bits>::operator=(b);
-        return *this;
-    }
-    
-    template <size_t X>
-    inline uint<X>& uint<X>::operator=(const base_uint<bits>& b) {
-        base_uint<bits>::operator=(b);
-        return *this;
-    }
-    
-    template <size_t X>
-    inline uint<X>& uint<X>::operator^=(const uint& b) {
-        base_uint<bits>::operator^=(b);
-        return *this;
-    }
-
-    template <size_t X>
-    inline uint<X>& uint<X>::operator&=(const uint& b) {
-        base_uint<bits>::operator&=(b);
-        return *this;
-    }
-
-    template <size_t X>
-    inline uint<X>& uint<X>::operator|=(const uint& b) {
-        base_uint<bits>::operator|=(b);
-        return *this;
-    }
-    
-    template <size_t X>
-    inline uint<X>& uint<X>::operator<<=(unsigned int shift) {
-        base_uint<bits>::operator<<=(shift);
-        return *this;
-    }
-    
-    template <size_t X>
-    inline uint<X>& uint<X>::operator>>=(unsigned int shift) {
-        base_uint<bits>::operator>>=(shift);
-        return *this;
-    }
-    
-    template <size_t X>
-    inline uint<X> uint<X>::operator<<(unsigned int shift) const {
-        return uint<X>(*this) <<= shift;
-    }
-    
-    template <size_t X>
-    inline uint<X> uint<X>::operator>>(unsigned int shift) const {
-        return uint<X>(*this) >>= shift;
-    }
-    
-    template <size_t X>
-    inline uint<X>& uint<X>::operator+=(const uint& b) {
-        base_uint<bits>::operator+=(b);
-        return *this;
-    }
-    
-    template <size_t X>
-    inline uint<X>& uint<X>::operator-=(const uint& b) {
-        base_uint<bits>::operator-=(b);
-        return *this;
-    }
-    
-    template <size_t X>
-    inline uint<X>& uint<X>::operator*=(const uint& b) {
-        base_uint<bits>::operator*=(b);
-        return *this;
-    }
-    
-    template <size_t X>
-    inline uint<X>& uint<X>::operator++() {
-        base_uint<bits>::operator++();
-        return *this;
-    }
-    
-    template <size_t X>
-    inline const uint<X> uint<X>::operator++(int) {
-        // postfix operator
-        const uint ret = *this;
-        ++(*this);
-        return ret;
-    }
-    
-    template <size_t X>
-    inline uint<X>& uint<X>::operator--() {
-        base_uint<bits>::operator--();
-        return *this;
-    }
-    
-    template <size_t X>
-    inline const uint<X> uint<X>::operator--(int) {
-        // postfix operator
-        const uint ret = *this;
-        --(*this);
-        return ret;
-    }
-    
-    template <size_t X> uint<X> inline uint<X>::operator~() {
-        return ~base_uint<bits>(*this);
-    }
-    
-    template <size_t X> uint<X> inline uint<X>::operator^(const uint<X> &b) {
-        return base_uint<bits>(*this) ^= b;
-    }
-    
-    template <size_t X> uint<X> inline uint<X>::operator&(const uint<X> &b) {
-        return base_uint<bits>(*this) &= b;
-    }
-    
-    template <size_t X> uint<X> inline uint<X>::operator|(const uint<X> &b) {
-        return base_uint<bits>(*this) |= b;
-    }
-    
-    template <size_t X> uint<X> inline uint<X>::operator+(const uint<X> &b) {
-        return base_uint<bits>(*this) += b;
-    }
-    
-    template <size_t X> uint<X> inline uint<X>::operator-(const uint<X> &b) {
-        return base_uint<bits>(*this) -= b;
-    }
-    
-    template <size_t X> uint<X> inline uint<X>::operator*(const uint &b) {
-        return base_uint<bits>(*this) *= b;
-    }
-    
-    template <size_t X> math::division<uint<X>>  inline uint<X>::divide(const uint &u) const {
-        return math::number::natural::divide(*this, u);
-    }
-        
-    template <size_t X> uint<X> inline uint<X>::operator/(const uint &u) const {
-        return divide(u).Quotient;
-    }
-    
-    template <size_t X> uint<X> inline uint<X>::operator%(const uint &u) const {
-        return divide(u).Remainder;
-    }
-        
-    template <size_t X> uint<X> inline &uint<X>::operator/=(const uint &u) {
-        return *this = *this / u;
-    }
-    
-    template <size_t X> uint<X> inline &uint<X>::operator%=(const uint &u) {
-        return *this = *this % u;
-    }
-    
-    template <size_t X>
-    inline byte* uint<X>::begin() {
-        return (byte*)base_uint<bits>::pn;
-    }
-    
-    template <size_t X>
-    inline byte* uint<X>::end() {
-        return begin() + X;
-    }
-    
-    template <size_t X>
-    inline const byte* uint<X>::begin() const {
-        return (byte*)this->pn;
-    }
-    
-    template <size_t X>
-    inline const byte* uint<X>::end() const {
-        return begin() + X;
-    }
-    
-    template <size_t X>
-    inline byte* uint<X>::data() {  
-        return begin();
-    }
-    
-    template <size_t X>
-    inline const byte* uint<X>::data() const {
-        return begin();
-    }
-    
-    template <size_t X> size_t uint<X>::serialized_size() const {
+    template <size_t X> size_t serialized_size(const uint<X> &x) {
         size_t last_0 = 0;
-        for (size_t i = 0; i < X; i++) if ((*this)[i] != 0x00) last_0 = i + 1;
-        return last_0 == 0 ? 1 : (*this)[last_0 - 1] & 0x80 ? last_0 + 2 : last_0 + 1;
+        for (size_t i = 0; i < X; i++) if (x[i] != 0x00) last_0 = i + 1;
+        return last_0 == 0 ? 1 : x[last_0 - 1] & 0x80 ? last_0 + 2 : last_0 + 1;
     }
+    
+}
+
+namespace Gigamonkey {
     
     template <size_t X> writer inline &operator<<(writer &w, const uint<X> &u) {
         return w << byte(0x02) << Bitcoin::var_string{natural<endian::big>(u)};
@@ -751,14 +375,6 @@ namespace Gigamonkey {
         return integer(negate(*this));
     }
     
-    template <endian::order r> integer<r> inline integer<r>::operator+(const integer &z) const {
-        return integer(plus(*this, z));
-    }
-    
-    template <endian::order r> integer<r> inline integer<r>::operator-(const integer &z) const {
-        return integer(plus(*this, -z));
-    }
-    
     template <endian::order r> integer<r> inline integer<r>::operator&(const integer &z) const {
         throw 0;
     }
@@ -767,10 +383,18 @@ namespace Gigamonkey {
         throw 0;
     }
     
+    template <endian::order r> integer<r> inline integer<r>::operator+(const integer &z) const {
+        return integer(plus(*this, z));
+    }
+    
+    template <endian::order r> integer<r> inline integer<r>::operator-(const integer &z) const {
+        return integer(plus(*this, -z));
+    }
+    
     template <endian::order r> integer<r> inline integer<r>::operator*(const integer &z) const {
         return integer(times(*this, z));
     }
-        
+    
     template <endian::order r> natural<r> inline natural<r>::operator+(const natural &n) const {
         return natural{integer<r>::plus(*this, n)};
     }
@@ -1352,15 +976,6 @@ namespace Gigamonkey {
     template <> std::vector<byte> numbers::plus<endian::big>(const digits<endian::big> a, const digits<endian::big> b);
     
     template <> std::vector<byte> numbers::times<endian::big>(const digits<endian::big> a, const digits<endian::big> b);
-    
-    template struct uint<16>; 
-    template struct uint<20>;
-    template struct uint<28>;
-    template struct uint<32>;
-    template struct uint<40>;
-    template struct uint<48>;
-    template struct uint<56>;
-    template struct uint<64>;
     
     template struct natural<endian::big>;
     template struct natural<endian::little>;

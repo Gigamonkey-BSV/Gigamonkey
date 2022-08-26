@@ -8,7 +8,7 @@ namespace Gigamonkey::BitcoinAssociation {
     
     string write_digest(const digest256& x) {
         std::stringstream ss;
-        ss << x.Value;
+        ss << x;
         return ss.str().substr(2);
     }
     

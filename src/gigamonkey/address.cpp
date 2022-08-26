@@ -13,6 +13,6 @@ namespace Gigamonkey::Bitcoin {
         Prefix = type(b58.version());
         if (!valid_prefix(Prefix)) return;
         if (b58.payload().size() > 20) return;
-        std::copy(b58.payload().begin(), b58.payload().end(), Digest.Value.begin());
+        std::copy(b58.payload().begin(), b58.payload().end(), Digest.begin());
     }
 }

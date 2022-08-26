@@ -10,7 +10,7 @@ namespace Gigamonkey::Bitcoin {
     Gigamonkey::checksum checksum(bytes_view b) {
         Gigamonkey::checksum x;
         digest256 digest = Hash256(b);
-        std::copy(digest.Value.begin(), digest.Value.begin() + 4, x.begin());
+        std::copy(digest.begin(), digest.begin() + 4, x.begin());
         return x;
     }
     

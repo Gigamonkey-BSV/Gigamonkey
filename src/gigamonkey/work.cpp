@@ -89,7 +89,7 @@ namespace Gigamonkey::work {
     compact::compact(work::difficulty d) {
         
         // this is the value we need to be less than to satisfy the given difficulty. 
-        float64 absolute = float64(work::difficulty::unit()) / float64(d);
+        float64 absolute = float64(data::N(work::difficulty::unit())) / float64(d);
         
         int exponent = 0;
         
@@ -143,7 +143,7 @@ namespace Gigamonkey::work {
     difficulty::operator uint256() const {
         if (!valid()) return 0;
         
-        float64 val = float64(unit()) / Value;
+        float64 val = float64(data::N(unit())) / Value;
         int exp;
         float64 mantissa = frexp(val, &exp);
         uint64 mantissa_bits;

@@ -269,7 +269,7 @@ namespace Gigamonkey::MAPI {
             {"timestamp", timestamp}, 
             {"expiryTime", expiryTime}, 
             {"minerId", string(minerId)}, 
-            {"currentHighestBlockHash", string(currentHighestBlockHash.Value)}, 
+            {"currentHighestBlockHash", string(currentHighestBlockHash)}, 
             {"currentHighestBlockHeight", currentHighestBlockHeight}, 
             {"fees", to_json(fees)}} : json{};
     }
@@ -278,11 +278,11 @@ namespace Gigamonkey::MAPI {
         return valid() ? json{
             {"apiVersion", apiVersion},
             {"timestamp", timestamp},
-            {"txid", string(SubmissionResponse.txid.Value)}, 
+            {"txid", string(SubmissionResponse.txid)}, 
             {"returnResult", to_json(SubmissionResponse.returnResult)}, 
             {"resultDescription", SubmissionResponse.resultDescription}, 
             {"minerId", string(minerId)}, 
-            {"currentHighestBlockHash", string(currentHighestBlockHash.Value)}, 
+            {"currentHighestBlockHash", string(currentHighestBlockHash)}, 
             {"currentHighestBlockHeight", currentHighestBlockHeight}, 
             {"txSecondMempoolExpiry", txSecondMempoolExpiry}} : json{};
     }
@@ -293,7 +293,7 @@ namespace Gigamonkey::MAPI {
         json j{
             {"apiVersion", apiVersion}, 
             {"timestamp", timestamp}, 
-            {"txid", string(txid.Value)}, 
+            {"txid", string(txid)}, 
             {"returnResult", to_json(returnResult)}, 
             {"resultDescription", resultDescription}, 
             {"minerId", string(minerId)}, 
@@ -309,7 +309,7 @@ namespace Gigamonkey::MAPI {
             {"apiVersion", apiVersion}, 
             {"timestamp", timestamp}, 
             {"minerId", string(minerId)}, 
-            {"currentHighestBlockHash", string(currentHighestBlockHash.Value)}, 
+            {"currentHighestBlockHash", string(currentHighestBlockHash)}, 
             {"currentHighestBlockHeight", currentHighestBlockHeight}, 
             {"txSecondMempoolExpiry", txSecondMempoolExpiry}, 
             {"txs", }, 

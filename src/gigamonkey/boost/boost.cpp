@@ -223,8 +223,8 @@ namespace Gigamonkey::Boost {
             boost_output_script = boost_output_script.append(push_data(MinerAddress));
         
         boost_output_script = UseGeneralPurposeBits ? boost_output_script.append(
-            push_data(Category),
-            push_data(Content), 
+            push_data(bytes_view(Category)),
+            push_data(bytes_view(Content)), 
             push_data(Target), 
             push_data(Tag), 
             push_data(UserNonce), 
@@ -259,7 +259,7 @@ namespace Gigamonkey::Boost {
             // check that the given address matches the pubkey and check signature.
             OP_DUP, OP_HASH160, OP_FROMALTSTACK, OP_EQUALVERIFY, OP_CHECKSIG) : boost_output_script.append(
             push_data(Category),
-            push_data(Content), 
+            push_data(bytes_view(Content)), 
             push_data(Target), 
             push_data(Tag), 
             push_data(UserNonce), 

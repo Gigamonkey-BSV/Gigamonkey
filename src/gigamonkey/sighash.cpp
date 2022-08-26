@@ -36,21 +36,23 @@ namespace Gigamonkey::Bitcoin::sighash {
         
     }
     
+    using Hash256_writer = data::crypto::hash::Bitcoin<32>;
+    
     namespace Amaury {
         
-        uint256 hash_prevouts(const incomplete::transaction &tx) {
+        digest256 hash_prevouts(const incomplete::transaction &tx) {
             Hash256_writer w;
             for (const incomplete::input &in : tx.Inputs) w << in.Reference;
             return w.finalize();
         }
         
-        uint256 hash_sequence(const incomplete::transaction &tx) {
+        digest256 hash_sequence(const incomplete::transaction &tx) {
             Hash256_writer w;
             for (const incomplete::input &in : tx.Inputs) w << in.Sequence;
             return w.finalize();
         }
         
-        uint256 hash_outputs(const incomplete::transaction &tx) {
+        digest256 hash_outputs(const incomplete::transaction &tx) {
             Hash256_writer w;
             for (const output &out : tx.Outputs) w << out;
             return w.finalize();
@@ -61,9 +63,9 @@ namespace Gigamonkey::Bitcoin::sighash {
             
             if (!sighash::has_fork_id(d)) return write_original(w, doc, d & ~sighash::fork_id);
             
-            uint256 hashPrevouts;
-            uint256 hashSequence;
-            uint256 hashOutputs;
+            digest256 hashPrevouts;
+            digest256 hashSequence;
+            digest256 hashOutputs;
             
             if (!sighash::is_anyone_can_pay(d)) {
                 hashPrevouts = Amaury::hash_prevouts(doc.Transaction);

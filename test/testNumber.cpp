@@ -574,7 +574,7 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_EQ(-Z(-256), Z(256));
         
     }
-    
+    /*
     TEST(NumberTest, TestNumberAbs) {
         
         EXPECT_EQ(abs(Z(0)), N(0));
@@ -587,7 +587,7 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_EQ(abs(Z(256)), N(256));
         EXPECT_EQ(abs(Z(-256)), N(256));
         
-    }
+    }*/
     
     TEST(NumberTest, TestNumberPlus) {
         

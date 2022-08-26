@@ -55,7 +55,7 @@ namespace Gigamonkey::Stratum::mining {
             Merkle::digests n;
             p.resize(x.size());
             for (auto it = p.rbegin(); it != p.rend(); ++it) { 
-                *it = write(n.first().Value);
+                *it = write(n.first());
                 n = n.rest();
             }
             return p;

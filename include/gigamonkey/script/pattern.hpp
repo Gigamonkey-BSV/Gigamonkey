@@ -328,7 +328,7 @@ namespace Gigamonkey {
             using namespace Bitcoin;
             bytes addr{20};
             if (!pattern(addr).match(script)) return;
-            std::copy(addr.begin(), addr.end(), Address.Value.begin());
+            std::copy(addr.begin(), addr.end(), Address.begin());
         }
         
         static bytes redeem(const Bitcoin::signature& s, const Bitcoin::pubkey& p) {
@@ -360,7 +360,7 @@ namespace Gigamonkey {
         pay_to_hash(bytes_view script) : Hash{} {
             bytes hash{20};
             if (!pattern(hash).match(script)) return;
-            std::copy(hash.begin(), hash.end(), Hash.Value.begin());
+            std::copy(hash.begin(), hash.end(), Hash.begin());
         }
         
         static bytes redeem(const bytes_view s) {
@@ -394,7 +394,7 @@ namespace Gigamonkey {
             using namespace Bitcoin;
             bytes hash{20};
             if (!pattern(hash).match(script)) return;
-            std::copy(hash.begin(), hash.end(), Hash.Value.begin());
+            std::copy(hash.begin(), hash.end(), Hash.begin());
         }
         
         static bytes redeem(const bytes_view s) {

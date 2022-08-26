@@ -47,7 +47,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     output mutate(const output& o) {
-        return output{o.Value + satoshi{1}, pay_to_address::script(digest160{pay_to_address(o.Script).Address.Value + 1})};
+        return output{o.Value + satoshi{1}, pay_to_address::script(digest160{pay_to_address(o.Script).Address + 1})};
     }
     
     sighash::document mutate_output(const sighash::document& doc, index i) {

@@ -105,7 +105,7 @@ namespace Gigamonkey::Bitcoin {
         
         digest160 pubkey_hash;
         
-        random >> pubkey_hash.Value;
+        random >> pubkey_hash;
         
         string address = Bitcoin::address(Bitcoin::address::main, pubkey_hash).write();
         

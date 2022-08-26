@@ -143,7 +143,7 @@ namespace Gigamonkey::Merkle {
         
         json write(const data::map<digest, index> d) {
             json x = json::array();
-            for (const data::entry<digest, index>& e : d) x[e.Value] = data::encoding::hex::write(e.Key);
+            for (const data::entry<digest, index>& e : d.values()) x[e.Value] = data::encoding::hex::write(e.Key);
             return x;
         }
         

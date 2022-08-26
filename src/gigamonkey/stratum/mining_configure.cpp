@@ -53,9 +53,9 @@ namespace Gigamonkey::Stratum::mining {
     }
     
     configure_request::parameters::parameters(extensions::requests r) {
-        for (const data::entry<string, extensions::request> &e : r) {
+        for (const data::entry<string, extensions::request> &e : r.values()) {
             Supported = Supported << e.Key;
-            for (const data::entry<string, json> &j : e.Value) 
+            for (const data::entry<string, json> &j : e.Value.values()) 
                 Parameters[e.Key + string{"."} + j.Key] = j.Value;
         }
     }
@@ -79,10 +79,10 @@ namespace Gigamonkey::Stratum::mining {
     }
     
     configure_response::parameters::parameters(extensions::results r) {
-        for (const data::entry<string, extensions::result> &e : r) {
+        for (const data::entry<string, extensions::result> &e : r.values()) {
             (*this)[e.Key] = json(e.Value.Accepted);
             if (!e.Value.Accepted) continue;
-            for (const data::entry<string, json> &x : *e.Value.Parameters) {
+            for (const data::entry<string, json> &x : e.Value.Parameters->values()) {
                 (*this)[e.Key + string{"."} + x.Key] = x.Value;
             } 
         }

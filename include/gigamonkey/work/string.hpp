@@ -39,12 +39,12 @@ namespace Gigamonkey::work {
             return operator Bitcoin::header().write();
         }
         
-        uint256 hash() const {
+        digest256 hash() const {
             return Bitcoin::Hash256(write());
         }
         
         static bool valid(const slice<80> x) {
-            return Bitcoin::Hash256(x).Value < Bitcoin::header::target(x).expand();
+            return Bitcoin::Hash256(x) < Bitcoin::header::target(x).expand();
         }
         
         bool valid() const;

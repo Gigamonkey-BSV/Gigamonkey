@@ -53,10 +53,6 @@ namespace Gigamonkey::secp256k1 {
         explicit signature(const point&);
         signature normalize() const;
         
-        static size_t serialized_size(const point& p) {
-            return p.S.size() + p.R.size() + 6;
-        }
-        
         signature() : bytes{} {}
     };
     
@@ -160,6 +156,15 @@ namespace Gigamonkey::secp256k1 {
         secret operator*(const secret &) const;
         
     };
+}
+
+namespace Gigamonkey::Bitcoin {
+    size_t inline serialized_size(const secp256k1::point& p) {
+        return serialized_size(p.S) + serialized_size(p.R) + 6;
+    }
+}
+
+namespace Gigamonkey::secp256k1 {
     
     bool inline operator==(const point &a, const point &b) {
         return a.R == b.R && a.S == b.S;
@@ -172,7 +177,7 @@ namespace Gigamonkey::secp256k1 {
     reader &operator>>(reader& r, point& p);
     
     writer inline &operator<<(writer &w, const point& p) {
-        return w << byte(0x30) << Bitcoin::var_int{p.R.serialized_size() + p.S.serialized_size() + 4} << p.R << p.S;
+        return w << byte(0x30) << Bitcoin::var_int{Bitcoin::serialized_size(p.R) + Bitcoin::serialized_size(p.S) + 4} << p.R << p.S;
     }
     
     std::ostream inline &operator<<(std::ostream &o, const secret &s) {
@@ -248,7 +253,7 @@ namespace Gigamonkey::secp256k1 {
     }
     
     signature inline secret::sign(const digest& d) const {
-        return sign(Value, d);
+        return sign(bytes_view(Value), d);
     }
     
     pubkey inline secret::to_public() const {
@@ -312,7 +317,7 @@ namespace Gigamonkey::secp256k1 {
     }
     
     pubkey inline pubkey::operator*(const secret &s) const {
-        return pubkey{pubkey::times(*this, s.Value)};
+        return pubkey{pubkey::times(*this, bytes_view(s.Value))};
     }
 }
 

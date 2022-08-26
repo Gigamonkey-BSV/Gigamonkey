@@ -277,7 +277,7 @@ namespace Gigamonkey::work {
     inline work::difficulty compact::difficulty() const {
         return work::difficulty{
             double(work::difficulty::unit()) / 
-            double(N(expand()))};
+            double(expand())};
     };
     
     inline compact::operator work::difficulty() const {

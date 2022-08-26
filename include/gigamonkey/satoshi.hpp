@@ -4,6 +4,7 @@
 #ifndef GIGAMONKEY_SATOSHI
 #define GIGAMONKEY_SATOSHI
 
+#include <data/math/arithmetic.hpp> 
 #include <gigamonkey/types.hpp>
 
 namespace Gigamonkey::Bitcoin {
