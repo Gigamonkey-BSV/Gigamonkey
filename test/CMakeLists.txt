@@ -8,7 +8,7 @@ endif()
 
 macro(package_add_test TESTNAME)
     # create an exectuable in which the tests will be stored
-    add_executable(${TESTNAME} ${ARGN})
+    add_executable(${TESTNAME} ${ARGN} ${PROJECT_SOURCE_DIR}/test/testUtils.cpp)
     # link the Google test infrastructure, mocking library, and a default main fuction to
     # the test executable.  Remove g_test_main if writing your own main function.
     target_include_directories(${TESTNAME} PUBLIC .)
@@ -45,4 +45,6 @@ package_add_test(testBip32Derivations testBip32Derivations.cpp)
 package_add_test(testBip39 testBip39.cpp)
 package_add_test(testStratum testStratum.cpp)
 package_add_test(testTransaction testTransaction.cpp)
+
+add_subdirectory(p2p)
 #package_add_test(testRPC testRPC.cpp)
