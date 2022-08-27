@@ -4,7 +4,7 @@ from os import environ
 
 class GigamonkeyConan(ConanFile):
     name = "gigamonkey"
-    version = "0.2"
+    version = "0.0.2b"
     license = "<Put the package license here>"
     author = "<Put your name here> <And your email here>"
     url = "<Package recipe repository url here, for issues about the package>"
@@ -49,4 +49,6 @@ class GigamonkeyConan(ConanFile):
         self.copy("libgigamonkey.a", dst="lib", keep_path=False)
 
     def package_info(self):
-        self.cpp_info.libs = ["gigamonkey"]
+        self.cpp_info.libdirs = ["lib", "other_libdir"]  # Default value is 'lib'
+        self.cpp_info.libs = tools.collect_libs(self)
+#        self.cpp_info.libs = ["gigamonkey"]
