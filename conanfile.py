@@ -46,9 +46,9 @@ class GigamonkeyConan(ConanFile):
     def package(self):
         self.copy("*.h", dst="include", src="include")
         self.copy("*.hpp", dst="include", src="include")
-        self.copy("libgigamonkey.a", dst="lib", keep_path=False)
+        self.copy("libgigamonkey.a", src="lib", dst="lib", keep_path=False)
 
     def package_info(self):
-        self.cpp_info.libdirs = ["lib", "other_libdir"]  # Default value is 'lib'
-        self.cpp_info.libs = tools.collect_libs(self)
+        self.cpp_info.libdirs = ["lib"]  # Default value is 'lib'
+        self.cpp_info.libs = self.collect_libs()
 #        self.cpp_info.libs = ["gigamonkey"]
