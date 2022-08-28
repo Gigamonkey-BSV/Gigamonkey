@@ -85,14 +85,13 @@ namespace Gigamonkey {
         
         // compare this to a satoshi_per_byte value to see if the fee is good enough. 
         uint64 expected_size() const {
-            uint64 size = 8u + Bitcoin::var_int::size(Inputs.size()) + Bitcoin::var_int::size(Inputs.size()); + 
+            return 8u + Bitcoin::var_int::size(Inputs.size()) + Bitcoin::var_int::size(Inputs.size()) + 
                 data::fold([](uint64 size, const input &i) -> uint64 {
                     return size + i.serialized_size();
                 }, 0u, Inputs) + 
                 data::fold([](uint64 size, const Bitcoin::output &o) -> uint64 {
                     return size + o.serialized_size();
                 }, 0u, Outputs);
-            return size;
         }
         
         Bitcoin::satoshi spent() const {
@@ -125,7 +124,7 @@ namespace Gigamonkey {
             return data::for_each([&incomplete, &index](const input &in) -> Bitcoin::sighash::document {
                 return Bitcoin::sighash::document{in.Prevout.value(), 
                     bytes::write(in.Prevout.script().size() + in.InputScriptSoFar.size(), in.Prevout.script(), in.InputScriptSoFar), 
-                    incomplete, index};
+                    incomplete, index++};
             }, Inputs);
         }
         

@@ -129,9 +129,9 @@ namespace Gigamonkey::Bitcoin {
         namespace Amaury {
             bytes write(const document&, sighash::directive);
             writer &write(writer &w, const document &doc, sighash::directive d);
-            uint256 hash_prevouts(const incomplete::transaction &);
-            uint256 hash_sequence(const incomplete::transaction &);
-            uint256 hash_outputs(const incomplete::transaction &);
+            digest256 hash_prevouts(const incomplete::transaction &);
+            digest256 hash_sequence(const incomplete::transaction &);
+            digest256 hash_outputs(const incomplete::transaction &);
         }
         
         writer inline &write_Bitcoin_Cash(writer &w, const document &doc, sighash::directive d) {
