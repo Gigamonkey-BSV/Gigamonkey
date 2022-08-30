@@ -45,8 +45,6 @@ include(GoogleTest)
 
 endif()
 
-
-
 ## Enable testing
 include(CTest)
 
@@ -55,8 +53,6 @@ if(PACKAGE_TESTS)
 	add_subdirectory(test)
 endif()
 
-
-
 add_library(gigamonkey STATIC
     src/sv/random.cpp
     src/sv/big_int.cpp
@@ -64,8 +60,6 @@ add_library(gigamonkey STATIC
     src/sv/script/script_error.cpp
     src/sv/script/script_num.cpp
     src/sv/script/script.cpp
-    src/sv/config.cpp
-    src/sv/script/interpreter.cpp
     
     src/gigamonkey/p2p/var_int.cpp
     src/gigamonkey/p2p/checksum.cpp
@@ -76,11 +70,14 @@ add_library(gigamonkey STATIC
     src/gigamonkey/sighash.cpp
     src/gigamonkey/signature.cpp
     
+    src/gigamonkey/script/config.cpp
     src/gigamonkey/script/instruction.cpp
     src/gigamonkey/script/script.cpp
     src/gigamonkey/script/counter.cpp
     src/gigamonkey/script/pattern.cpp
     src/gigamonkey/script/machine.cpp
+    src/gigamonkey/script/interpreter.cpp
+    src/gigamonkey/script/stack.cpp
     
     src/gigamonkey/address.cpp
     src/gigamonkey/wif.cpp

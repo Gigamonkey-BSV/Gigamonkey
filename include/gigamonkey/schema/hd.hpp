@@ -85,7 +85,7 @@ namespace Gigamonkey::hd {
             bool operator!=(const pubkey &rhs) const;
             
             pubkey derive(path l) const;
-            pubkey derive(string_view l) const;
+            pubkey derive(const string &l) const;
             
             explicit operator Bitcoin::address() const {
                 return address();
@@ -158,7 +158,7 @@ namespace Gigamonkey::hd {
             return bip32::derive(*this, l);
         }
         
-        inline pubkey pubkey::derive(string_view l) const {
+        inline pubkey pubkey::derive(const string &l) const {
             return bip32::derive(*this, read_path(l));
         }
         
@@ -242,15 +242,15 @@ namespace Gigamonkey::hd {
             pubkey(const bip32::pubkey& p) : Pubkey{p} {}
             
             Bitcoin::address receive(uint32 index, uint32 account = 0) const {
-                return Bitcoin::address(Pubkey.derive({bip32::harden(account), receive_index, index}));
+                return Bitcoin::address(Pubkey.derive(bip32::path{bip32::harden(account), receive_index, index}));
             }
             
             Bitcoin::address change(uint32 index, uint32 account = 0) const {
-                return Bitcoin::address(Pubkey.derive({bip32::harden(account), change_index, index}));
+                return Bitcoin::address(Pubkey.derive(bip32::path{bip32::harden(account), change_index, index}));
             }
             
             bip32::pubkey account(uint32 a) const {
-                return Pubkey.derive({a});
+                return Pubkey.derive(bip32::path{a});
             }
         };
         

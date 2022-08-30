@@ -1,5 +1,5 @@
 #include <gigamonkey/boost/boost.hpp>
-#include <gigamonkey/script/machine.hpp>
+#include <gigamonkey/script/interpreter.hpp>
 #include <gigamonkey/address.hpp>
 #include <gigamonkey/wif.hpp>
 #include <gigamonkey/stratum/job.hpp>
@@ -921,17 +921,20 @@ namespace Gigamonkey::Boost {
         proof p_contract_v2{locking_script_contract_v2, unlocking_script_contract_v2};
         EXPECT_TRUE(p_contract_v2.valid());
         
-        bool script_valid_bounty_v1 = Bitcoin::evaluate(in_bounty_v1, out_bounty_v1).verify();
-        EXPECT_TRUE(script_valid_bounty_v1);
+        Bitcoin::interpreter zoop(in_bounty_v1, out_bounty_v1);
+        Bitcoin::step_through(zoop);
         
-        bool script_valid_bounty_v2 = Bitcoin::evaluate(in_bounty_v2, out_bounty_v2).verify();
-        EXPECT_TRUE(script_valid_bounty_v2);
+        auto script_valid_bounty_v1 = Bitcoin::evaluate(in_bounty_v1, out_bounty_v1);
+        auto script_valid_bounty_v2 = Bitcoin::evaluate(in_bounty_v2, out_bounty_v2);
+        auto script_valid_contract_v1 = Bitcoin::evaluate(in_contract_v1, out_contract_v1);
+        auto script_valid_contract_v2 = Bitcoin::evaluate(in_contract_v2, out_contract_v2);
         
-        bool script_valid_contract_v1 = Bitcoin::evaluate(in_contract_v1, out_contract_v1).verify();
-        EXPECT_TRUE(script_valid_contract_v1);
+        std::cout << script_valid_bounty_v1 << " " << script_valid_bounty_v2 << " " << script_valid_contract_v1 << " " << script_valid_contract_v2 << std::endl;
         
-        bool script_valid_contract_v2 = Bitcoin::evaluate(in_contract_v2, out_contract_v2).verify();
-        EXPECT_TRUE(script_valid_contract_v2);
+        EXPECT_EQ(script_valid_bounty_v1, SCRIPT_ERR_OK);
+        EXPECT_EQ(script_valid_bounty_v2, SCRIPT_ERR_OK);
+        EXPECT_EQ(script_valid_contract_v1, SCRIPT_ERR_OK);
+        EXPECT_EQ(script_valid_contract_v2, SCRIPT_ERR_OK);
         
         auto proof_contract_v1 = proof{locking_script_contract_v1, unlocking_script_contract_v1};
         auto proof_bounty_v1 = proof{locking_script_bounty_v1, unlocking_script_bounty_v1};

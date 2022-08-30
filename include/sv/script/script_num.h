@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <gigamonkey/script/machine.hpp>
 #include <cassert>
 #include <iosfwd>
 #include <stdexcept>
@@ -82,6 +83,10 @@ public:
 
     int getint() const;
     std::vector<uint8_t> getvch() const;
+    
+    operator Gigamonkey::Bitcoin::machine::element() const {
+        return Gigamonkey::Bitcoin::machine::element{getvch()};
+    }
 
     // Precondition: n <= numeric_limit<int32_t>::max() and n>=0
     size_t to_size_t_limited() const;

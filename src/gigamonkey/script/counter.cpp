@@ -1,11 +1,11 @@
 // Copyright (c) 2021 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#include <gigamonkey/script/counter.hpp>
+#include <gigamonkey/script/interpreter.hpp>
 
-namespace Gigamonkey::Bitcoin::interpreter { 
+namespace Gigamonkey::Bitcoin { 
     
-    bytes find_and_delete(bytes_view script_code, bytes_view instruction) {
+    bytes interpreter::find_and_delete(bytes_view script_code, bytes_view instruction) {
         program_counter p{script_code};
         bytes r(script_code.size());
         bytes_writer w{r.begin(), r.end()};

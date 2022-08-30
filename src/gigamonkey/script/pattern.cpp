@@ -2,7 +2,6 @@
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/script/pattern.hpp>
-#include <gigamonkey/script/counter.hpp>
 #include <data/math/number/bytes/N.hpp>
 
 namespace Gigamonkey {

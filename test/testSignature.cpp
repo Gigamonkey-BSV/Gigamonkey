@@ -5,7 +5,7 @@
 #include <gigamonkey/signature.hpp>
 #include <gigamonkey/script/pattern.hpp>
 #include <gigamonkey/wif.hpp>
-#include <gigamonkey/script/machine.hpp>
+#include <gigamonkey/script/interpreter.hpp>
 #include <sv/script/script.h>
 #include "gtest/gtest.h"
 

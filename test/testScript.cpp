@@ -4,7 +4,7 @@
 
 #include <gigamonkey/redeem.hpp>
 #include <gigamonkey/address.hpp>
-#include <gigamonkey/script/machine.hpp>
+#include <gigamonkey/script/interpreter.hpp>
 #include <data/crypto/NIST_DRBG.hpp>
 #include <data/encoding/hex.hpp>
 #include "gtest/gtest.h"
@@ -12,16 +12,142 @@
 
 namespace Gigamonkey::Bitcoin {
     
-    TEST(ScriptTest, TestP2SH) {
+    using element = machine::element;
+    
+    TEST(ScriptTest, TestScriptHalt) {
+        // require clean stack
+        {
+            machine m{{}};
+            
+            EXPECT_EQ(m.halt(), SCRIPT_ERR_CLEANSTACK);
+            m.push(bytes{});
+            EXPECT_EQ(m.verify(), SCRIPT_ERR_EVAL_FALSE);
+            m.push(bytes{0x01});
+            EXPECT_EQ(m.halt(), SCRIPT_ERR_CLEANSTACK);
+            m.drop();
+            m.drop();
+            m.push(bytes{0x01});
+            EXPECT_EQ(m.halt(), SCRIPT_ERR_OK);
+        }
+        
+        // don't require clean stack
+        {
+            machine m = machine::make(StandardScriptVerifyFlags(true, true) & ~SCRIPT_VERIFY_CLEANSTACK);
+            
+            EXPECT_EQ(m.halt(), SCRIPT_ERR_EVAL_FALSE);
+            m.push(bytes{});
+            EXPECT_EQ(m.verify(), SCRIPT_ERR_EVAL_FALSE);
+            m.push(bytes{0x01});
+            EXPECT_EQ(m.halt(), SCRIPT_ERR_OK);
+            m.drop();
+            m.drop();
+            m.push(bytes{0x01});
+            EXPECT_EQ(m.halt(), SCRIPT_ERR_OK);
+        }
     }
     
-    TEST(ScriptTest, TestPush) {
+    TEST(ScriptTest, TestScriptStack) {
+        machine m{{}};
+        
+        m.step(OP_0);
+        EXPECT_EQ(m, machine({element{{}}}, {}));
+        m.step(OP_1);
+        EXPECT_EQ((m), (machine({element{{}}, element{{0x01}}}, {})));
+        m.step(OP_1NEGATE);
+        EXPECT_EQ((m), (machine({{{}}, {{0x01}}, {{0x81}}}, {})));
+        m.step(OP_TOALTSTACK);
+        EXPECT_EQ((m), (machine({{{}}, {{0x01}}}, {{{0x81}}})));
+        m.step(OP_DROP);
+        EXPECT_EQ((m), (machine({{{}}}, {{{0x81}}})));
+        m.step(OP_FROMALTSTACK);
+        EXPECT_EQ((m), (machine({{{}}, {{0x81}}}, {})));
+        
+    }
+    /*
+    TEST(ScriptTest, TestScriptPush) {
+        {
+            machine m{{}};
+            
+            m.step(OP_0);
+            EXPECT_EQ(m, machine{{false}});
+            EXPECT_EQ(m, machine{{0}});
+            EXPECT_EQ(m, machine{{{{0x00}}}});
+            m.step(OP_1);
+            EXPECT_EQ(m, machine{});
+        }
+        
+        // test with zero memory usage allowed. 
+        {
+            script_config config = get_standard_script_config(true, true);
+            config.MaxStackMemoryUsage = 0;
+            machine m{StandardScriptVerifyFlags(true, true), config};
+            
+            EXPECT_EQ(m.push(bytes{}), SCRIPT_ERR_STACK_SIZE);
+        }
+        
+        // test with some memory allowed. 
+        {
+            script_config config = get_standard_script_config(true, true);
+            config.MaxStackMemoryUsage = 0;
+            machine m{StandardScriptVerifyFlags(true, true), config};
+            
+            EXPECT_EQ(m.push(bytes{}), SCRIPT_ERR_OK);
+            EXPECT_EQ(m.Stack.size(), 1);
+            EXPECT_EQ(m.push(bytes{0x01}), SCRIPT_ERR_STACK_SIZE);
+        }
+        
+        {
+            machine m{{}};
+            EXPECT_EQ(m.memory_usage(), 0);
+            m.push(bytes{});
+            EXPECT_EQ(m.memory_usage(), 32);
+            m.push(bytes{0x01});
+            EXPECT_EQ(m.memory_usage(), 65);
+            m.push(bytes{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
+            EXPECT_EQ(m.memory_usage(), 104);
+            m.to_alt();
+            EXPECT_EQ(m.memory_usage(), 104);
+            m.from_alt();
+            EXPECT_EQ(m.memory_usage(), 104);
+        }
+    }*/
+    
+    TEST(ScriptTest, TestScriptVerify) {
+        {
+            machine m{{}};
+            
+            m.verify();
+            
+            EXPECT_EQ(m.verify(), SCRIPT_ERR_VERIFY);
+            m.push(element{{}});
+            EXPECT_EQ(m.verify(), SCRIPT_ERR_VERIFY);
+            m.push(element{{0x01}});
+            EXPECT_EQ(m.verify(), SCRIPT_ERR_OK);
+        }
     }
     
-    TEST(ScriptTest, TestBitShift) {
+    TEST(ScriptTest, TestScriptDropDepth) {
+        
     }
     
-    TEST(ScriptTest, TestBin2Num2Bin) {
+    TEST(ScriptTest, TestScriptAltStack) {
+        
+    }
+    
+    TEST(ScriptTest, TestScriptP2SH) {
+        
+    }
+    
+    TEST(ScriptTest, TestScriptBitShift) {
+        
+    }
+    
+    TEST(ScriptTest, TestScriptBin2Num2Bin) {
+        
+    }
+    
+    TEST(ScriptTest, TestScriptCatSplitSize) {
+        
     }
     
     bytes multisig_script(const redemption_document &doc, list<secp256k1::secret> s, list<secp256k1::pubkey> p, const instruction &null_push) {
@@ -69,13 +195,14 @@ namespace Gigamonkey::Bitcoin {
             redemption_document Doc;
             bytes Test;
             
-            result run() {
+            ScriptError run() {
                 return evaluate({}, Test, Doc, 0);
             }
             
             void test() {
-                result r = run();
-                EXPECT_EQ(bool(r), Expected) << Number << ": script " << decompile(Test) << " expect " << Expected << "; results in " << r;
+                ScriptError r = run();
+                EXPECT_EQ(r == SCRIPT_ERR_OK, Expected) << Number << ": script " << 
+                    decompile(Test) << " expect " << Expected << "; results in " << r;
             }
             
             multisig_test(int num, bool ex, const redemption_document &doc, list<secp256k1::secret> s, list<secp256k1::pubkey> p) : 

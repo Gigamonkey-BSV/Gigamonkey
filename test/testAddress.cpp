@@ -8,7 +8,7 @@
 
 #include <gigamonkey/redeem.hpp>
 #include <gigamonkey/address.hpp>
-#include <gigamonkey/script/machine.hpp>
+#include <gigamonkey/script/interpreter.hpp>
 #include <data/crypto/NIST_DRBG.hpp>
 #include <data/encoding/hex.hpp>
 #include "gtest/gtest.h"
@@ -17,7 +17,6 @@
 namespace Gigamonkey::Bitcoin {
     
     TEST(AddressTest, TestAddresses) {
-        using namespace interpreter;
         
         // We start with a secret key. 
         secret key{secret::test, secp256k1::secret{uint256{"0x00000000000000000000000000000000000000000000000000000000000101a7"}}};

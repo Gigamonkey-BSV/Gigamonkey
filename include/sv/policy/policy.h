@@ -13,7 +13,14 @@
 #include <optional>
 #include <string>
 
-class CScriptConfig;
+namespace Gigamonkey::Bitcoin {
+
+    struct script_config;
+
+}
+
+using CScriptConfig = Gigamonkey::Bitcoin::script_config;
+
 class CCoinsViewCache;
 
 namespace task{class CCancellationToken;}

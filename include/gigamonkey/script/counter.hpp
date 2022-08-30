@@ -4,12 +4,9 @@
 #ifndef GIGAMONKEY_SCRIPT_COUNTER
 #define GIGAMONKEY_SCRIPT_COUNTER
 
-#include <gigamonkey/script/script.hpp>
-#include <gigamonkey/signature.hpp>
+#include <gigamonkey/types.hpp>
 
-namespace Gigamonkey::Bitcoin::interpreter { 
-    
-    bytes find_and_delete(bytes_view script_code, bytes_view sig);
+namespace Gigamonkey::Bitcoin { 
     
     struct program_counter {
         bytes_view Next;
@@ -38,7 +35,6 @@ namespace Gigamonkey::Bitcoin::interpreter {
         program_counter(bytes_view n, bytes_view s, size_t c, size_t l) : 
             Next{n}, Script{s}, Counter{c}, LastCodeSeparator{l} {}
     };
-    
 }
 
 #endif
