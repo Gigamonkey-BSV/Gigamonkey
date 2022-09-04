@@ -1,0 +1,62 @@
+name: Gigamonkey PR Builds
+on:
+  pull_request:
+    branches:
+      - '*'
+env:
+  BUILD_TYPE: Debug
+jobs:
+  prep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Get Conan
+        uses: turtlebrowser/get-conan@v1.0
+      - name: Cache Conan packages
+        id: cache-conan
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-conan-test
+        with:
+          key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}
+          path: |
+            ~/.conan/
+      - if: ${{ steps.cache-conan.outputs.cache-hit != 'true' }}
+        name: Create default profile
+        run: conan profile new default --detect
+      - if: ${{ steps.cache-conan.outputs.cache-hit != 'true' }}
+        name: Update profile 11
+        run: conan profile update settings.compiler.libcxx=libstdc++11 default
+      - if: ${{ steps.cache-conan.outputs.cache-hit != 'true' }}
+        name: Update profile version
+        run: conan profile update settings.compiler.version=10 default
+      - if: ${{ steps.cache-conan.outputs.cache-hit != 'true' }}
+        name: Add conan remote
+        run: |
+          conan config set general.revisions_enabled=True
+          conan remote add proofofwork https://conan.pow.co/artifactory/api/conan/conan
+  test:
+    runs-on: ubuntu-latest
+    needs:
+      - prep
+    steps:
+      - uses: actions/checkout@v2
+      - name: Get Conan
+        uses: turtlebrowser/get-conan@v1.0
+      - name: Cache Conan packages
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-conan-test
+        with:
+          key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}
+          path: |
+            ~/.conan/
+      - name: run tests
+        run: |
+          mkdir test_build
+          cd test_build
+          conan install .. -r=proofofwork
+          cmake .. -DPACKAGE_TESTS=ON
+          cmake --build .
+          cd bin
+          for f in test*; do "./$f" ; done
