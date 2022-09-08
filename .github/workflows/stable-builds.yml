@@ -1,4 +1,4 @@
-name: Stable Gigamonkey Builds
+name: Stable Builds
 on:
   push:
     branches:
@@ -8,7 +8,18 @@ env:
 jobs:
   prep:
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - id: release
+        uses: rymndhng/release-on-push-action@master
+        with:
+          bump_version_scheme: patch
+          use_github_release_notes: true
+      - name: Check Output Parameters
+        run: |
+          echo "Got tag name ${{ steps.release.outputs.tag_name }}"
+          echo "Got release version ${{ steps.release.outputs.version }}"
       - uses: actions/checkout@v2
       - name: Get Conan
         uses: turtlebrowser/get-conan@v1.0
@@ -36,7 +47,9 @@ jobs:
           conan config set general.revisions_enabled=True
           conan remote add proofofwork https://conan.pow.co/artifactory/api/conan/conan
           conan user -p ${{ secrets.CONAN_USER_KEY }} -r proofofwork github
-  test:
+    outputs:
+      releaseVersion: ${{ steps.release.outputs.tag_name }}
+  upload:
     runs-on: ubuntu-latest
     needs:
       - prep
@@ -52,31 +65,19 @@ jobs:
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}
           path: |
             ~/.conan/
-      - name: run tests
+      - name: Run Conan
         run: |
-          mkdir test_build
-          cd test_build
-          conan install .. -r=proofofwork
-          cmake .. -DPACKAGE_TESTS=ON
-          cmake --build .
-          cd bin
-          for f in test*; do "./$f" ; done
-  upload:
+          export CURRENT_VERSION="${{ needs.prep.outputs.releaseVersion }}"
+          conan install . -r proofofwork
+          conan create . proofofwork/stable
+          conan upload gigamonkey/${CURRENT_VERSION}@proofofwork/stable -r proofofwork --all
+  release:
     runs-on: ubuntu-latest
     needs:
-      - test
+      - prep
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - id: release
-        uses: rymndhng/release-on-push-action@master
-        with:
-          bump_version_scheme: patch
-          use_github_release_notes: true
-      - name: Check Output Parameters
-        run: |
-          echo "Got tag name ${{ steps.release.outputs.tag_name }}"
-          echo "Got release version ${{ steps.release.outputs.version }}"
       - uses: actions/checkout@v2
       - name: Get Conan
         uses: turtlebrowser/get-conan@v1.0
@@ -88,12 +89,6 @@ jobs:
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}
           path: |
             ~/.conan/
-      - name: Run Conan
-        run: |
-          export CURRENT_VERSION="${{ steps.release.outputs.tag_name }}"
-          conan install . -r proofofwork
-          conan create . proofofwork/stable
-          conan upload gigamonkey/${CURRENT_VERSION}@proofofwork/stable -r proofofwork --all
       - name: prepare release package
         run: |
           mkdir build
@@ -101,12 +96,13 @@ jobs:
           conan install .. -r=proofofwork
           cmake .. -DPACKAGE_TESTS=Off
           cmake --build .
-          export CURRENT_VERSION="${{ steps.release.outputs.tag_name }}"
+          export CURRENT_VERSION="${{ needs.prep.outputs.releaseVersion }}"
           cp -r ../include ./
           tar -czvf "gigamonkey-${CURRENT_VERSION}-linux.tar.gz" lib include
       - name: Upload release
         uses: svenstaro/upload-release-action@v2
         with:
-          tag: ${{ steps.release.outputs.tag_name }}
-          file: build/gigamonkey-${{ steps.release.outputs.tag_name }}-linux.tar.gz
-          asset_name: gigamonkey-${{ steps.release.outputs.tag_name }}-linux.tar.gz
+          tag: ${{ needs.prep.outputs.releaseVersion }}
+          file: build/gigamonkey-${{ needs.prep.outputs.releaseVersion }}-linux.tar.gz
+          asset_name: gigamonkey-${{ needs.prep.outputs.releaseVersion }}-linux.tar.gz
+
