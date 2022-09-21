@@ -11,10 +11,10 @@ namespace Gigamonkey::Stratum::mining {
     
     struct subscription {
         method Method;
-        session_id ID;
+        string ID;
         
         subscription() : Method{unset}, ID{} {}
-        subscription(method m, session_id id) : Method{m}, ID{id} {}
+        subscription(method m, string id) : Method{m}, ID{id} {}
         explicit subscription(const json&);
         explicit operator json() const;
         

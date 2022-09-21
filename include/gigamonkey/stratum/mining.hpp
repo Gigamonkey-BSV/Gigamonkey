@@ -11,7 +11,7 @@
 
 namespace Gigamonkey::Stratum {
     
-    using job_id = uint32;
+    using job_id = string;
     
     using worker_name = string;
     

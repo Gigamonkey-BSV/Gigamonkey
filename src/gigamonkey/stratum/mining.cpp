@@ -7,24 +7,16 @@ namespace Gigamonkey::Stratum::mining {
     
     namespace {
         
-        inline encoding::hex::fixed<4> write_job_id(const job_id& x) {
-            return encoding::hex::write(uint32_big{x}, encoding::hex::lower);
-        }
-        
         bool read_job_id(const json& j, job_id& x) {
             if (!j.is_string()) return false;
-            string str(j);
-            if (str.size() != 8) return false;
-            ptr<bytes> b = encoding::hex::read(str);
-            if (b != nullptr) return false;
-            uint32_big n;
-            std::copy(b->begin(), b->end(), n.begin());
-            x = uint32(n);
+            x = string(j);
             return true;
         }
         
-        inline encoding::hex::fixed<32> write(const uint256& x) {
-            return encoding::hex::write(x, encoding::hex::lower);
+        encoding::hex::fixed<32> inline write(const uint256& x) {
+            uint256 z = x;
+            for (int i = 0; i < 32; i+=4) std::reverse(z.begin() + i, z.begin() + i + 3);
+            return encoding::hex::write(z, encoding::hex::lower);
         }
         
         bool read(const json& j, uint256& x) {
@@ -32,12 +24,12 @@ namespace Gigamonkey::Stratum::mining {
             string str(j);
             if (str.size() != 64) return false;
             ptr<bytes> b = encoding::hex::read(str);
-            if (b != nullptr) return false;
-            std::copy(b->begin(), b->end(), x.begin());
+            if (b == nullptr) return false;
+            for (int i = 0; i < 8; i++) for (int j = 0; j < 4; j++) x[4 * i + j] = *(b->begin() + 4 * (i + 1) - j - 1);
             return true;
         }
         
-        inline encoding::hex::string write(const bytes& b) {
+        encoding::hex::string inline write(const bytes& b) {
             return encoding::hex::write(b, encoding::hex::lower);
         }
         
@@ -45,7 +37,7 @@ namespace Gigamonkey::Stratum::mining {
             if (!j.is_string()) return false;
             string str(j);
             ptr<bytes> b = encoding::hex::read(str);
-            if (b != nullptr) return false;
+            if (b == nullptr) return false;
             x = *b;
             return true;
         }
@@ -61,7 +53,7 @@ namespace Gigamonkey::Stratum::mining {
             return p;
         }
         
-        inline bool read(const json& j, Merkle::digests& x) {
+        bool inline read(const json& j, Merkle::digests& x) {
             if (!j.is_array()) return false;
             x = {};
             for (json d : j) {
@@ -72,7 +64,7 @@ namespace Gigamonkey::Stratum::mining {
             return true;
         }
         
-        inline encoding::hex::fixed<4> write(const int32_little& x) {
+        encoding::hex::fixed<4> inline write(const int32_little& x) {
             return encoding::hex::write(x, encoding::hex::lower);
         }
         
@@ -81,14 +73,14 @@ namespace Gigamonkey::Stratum::mining {
             string str(j);
             if (str.size() != 8) return false;
             ptr<bytes> b = encoding::hex::read(str);
-            if (b != nullptr) return false;
+            if (b == nullptr) return false;
             int32_big n;
             std::copy(b->begin(), b->end(), n.begin());
             x = int32_little(n);
             return true;
         }
         
-        inline encoding::hex::fixed<4> write(const work::compact& x) {
+        encoding::hex::fixed<4> inline write(const work::compact& x) {
             return encoding::hex::write(uint32_big{static_cast<uint32_little>(x)}, encoding::hex::lower);
         }
         
@@ -97,14 +89,14 @@ namespace Gigamonkey::Stratum::mining {
             string str(j);
             if (str.size() != 8) return false;
             ptr<bytes> b = encoding::hex::read(str);
-            if (b != nullptr) return false;
+            if (b == nullptr) return false;
             uint32_big n;
             std::copy(b->begin(), b->end(), n.begin());
             x = work::compact(uint32_little(n));
             return true;
         }
         
-        inline encoding::hex::fixed<4> write(const Bitcoin::timestamp& x) {
+        encoding::hex::fixed<4> inline write(const Bitcoin::timestamp& x) {
             return encoding::hex::write(uint32_big{x.Value}, encoding::hex::lower);
         }
         
@@ -113,18 +105,18 @@ namespace Gigamonkey::Stratum::mining {
             string str(j);
             if (str.size() != 8) return false;
             ptr<bytes> b = encoding::hex::read(str);
-            if (b != nullptr) return false;
+            if (b == nullptr) return false;
             uint32_big n;
             std::copy(b->begin(), b->end(), n.begin());
             x = Bitcoin::timestamp(uint32_little(n));
             return true;
         }
         
-        inline encoding::hex::fixed<8> write(const uint64_big& x) {
+        encoding::hex::fixed<8> inline write(const uint64_big& x) {
             return encoding::hex::write(x, encoding::hex::lower);
         }
         
-        inline bool read(const json& j, uint64_big& x) {
+        bool inline read(const json& j, uint64_big& x) {
             if (!j.is_string()) return false;
             string str(j);
             if (str.size() != 16) return false;
@@ -133,7 +125,7 @@ namespace Gigamonkey::Stratum::mining {
             return true;
         }
         
-        inline encoding::hex::fixed<4> write(const nonce& x) {
+        encoding::hex::fixed<4> inline write(const nonce& x) {
             return encoding::hex::write(uint32_big{x}, encoding::hex::lower);
         }
         
@@ -151,11 +143,12 @@ namespace Gigamonkey::Stratum::mining {
     }
     
     parameters notify::serialize(const parameters& p) {
-        return Stratum::parameters{write_job_id(p.JobID), write(p.Digest), write(p.GenerationTx1), write(p.GenerationTx2), 
+        return Stratum::parameters{p.JobID, write(p.Digest), write(p.GenerationTx1), write(p.GenerationTx2), 
                 write(p.Path), write(p.Version), write(p.Target), write(p.Now), p.Clean};
     }
     
     notify::parameters notify::deserialize(const Stratum::parameters& n) {
+        
         parameters p;
         
         if (n.size() != 9 || !n[8].is_boolean() ||
@@ -174,10 +167,10 @@ namespace Gigamonkey::Stratum::mining {
     }
         
     parameters submit_request::serialize(const share& Share) {
-        if (Share.Share.Bits) return parameters{Share.Name, write_job_id(Share.JobID), write(Share.Share.ExtraNonce2), 
+        if (Share.Share.Bits) return parameters{Share.Name, Share.JobID, write(Share.Share.ExtraNonce2), 
                 write(Share.Share.Timestamp), write(Share.Share.Nonce), write(*Share.Share.Bits)};
         
-        return parameters{Share.Name, write_job_id(Share.JobID), write(Share.Share.ExtraNonce2), 
+        return parameters{Share.Name, Share.JobID, write(Share.Share.ExtraNonce2), 
                 write(Share.Share.Timestamp), write(Share.Share.Nonce)};
     }
     

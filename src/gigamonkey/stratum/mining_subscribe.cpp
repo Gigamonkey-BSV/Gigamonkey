@@ -7,9 +7,7 @@ namespace Gigamonkey::Stratum::mining {
     
     subscription::subscription(const json& j) : subscription{} {
         if (!(j.is_array() && j.size() == 2 && j[0].is_string())) return;
-        auto id = session_id::deserialize(j[1]);
-        if (!id) return;
-        ID = *id;
+        ID = j[1];
         Method = method_from_string(j[0]);
     }
     
@@ -17,7 +15,7 @@ namespace Gigamonkey::Stratum::mining {
         parameters p;
         p.resize(2);
         p[0] = method_to_string(Method);
-        p[1] = session_id::serialize(ID);
+        p[1] = ID;
         return p;
     }
     

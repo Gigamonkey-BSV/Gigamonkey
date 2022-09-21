@@ -31,7 +31,7 @@ namespace Gigamonkey::Stratum {
         
         notification();
         notification(Stratum::method m, const parameters& p);
-        explicit notification(const json& j) : json{j} {}
+        explicit notification(const json& j) : json(j) {}
     };
     
     struct request : json {
@@ -50,7 +50,7 @@ namespace Gigamonkey::Stratum {
         
         request();
         request(message_id id, Stratum::method m, const parameters& p);
-        explicit request(const json& j) : json{j} {}
+        explicit request(const json& j) : json(j) {}
     };
     
     struct response : json {
@@ -72,7 +72,7 @@ namespace Gigamonkey::Stratum {
         response();
         response(message_id id, const json& p);
         response(message_id id, const json& p, const Stratum::error& e);
-        explicit response(const json& j) : json{j} {}
+        explicit response(const json& j) : json(j) {}
         
         bool is_error() const {
             return bool(error());
@@ -85,23 +85,23 @@ namespace Gigamonkey::Stratum {
     inline request::request(message_id id, Stratum::method m, const parameters& p) : 
         json{{"id", id}, {"method", method_to_string(m)}, {"params", p}} {}
     
-    inline bool request::valid(const json& j) {
+    bool inline request::valid(const json& j) {
         return request::method(j) != unset && j.contains("params") && j["params"].is_array() && j.contains("id") && message_id::valid(j["id"]);
     }
     
-    inline bool request::valid() const {
+    bool inline request::valid() const {
         return valid(*this);
     }
         
-    inline message_id request::id() const {
+    message_id inline request::id() const {
         return id(*this);
     }
     
-    inline Stratum::method request::method() const {
+    Stratum::method inline request::method() const {
         return method(*this);
     }
     
-    inline parameters request::params() const {
+    parameters inline request::params() const {
         return params(*this);
     }
     
@@ -110,19 +110,19 @@ namespace Gigamonkey::Stratum {
     inline notification::notification(Stratum::method m, const parameters& p) : 
         json{{"id", nullptr}, {"method"}, {"params", p}} {}
     
-    inline bool notification::valid(const json& j) {
+    bool inline notification::valid(const json& j) {
         return notification::method(j) != unset && j.contains("params") && j["params"].is_array() && j.contains("id") && j["id"].is_null();
     }
     
-    inline bool notification::valid() const {
+    bool inline notification::valid() const {
         return valid(*this);
     }
     
-    inline Stratum::method notification::method() const {
+    Stratum::method inline notification::method() const {
         return method(*this);
     }
     
-    inline parameters notification::params() const {
+    parameters inline notification::params() const {
         return params(*this);
     }
     

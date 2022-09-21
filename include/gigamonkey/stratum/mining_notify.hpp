@@ -12,7 +12,8 @@
 namespace Gigamonkey::Stratum::mining {
     
     // Representation of a Stratum notify message. 
-    struct notify : notification { 
+    struct notify : notification {
+        
         struct parameters {
             job_id JobID;
             

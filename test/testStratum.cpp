@@ -35,6 +35,43 @@ namespace Gigamonkey::Stratum {
         EXPECT_EQ(id_b, *j_id_b);
     }
     
+    TEST(StratumTest, TestStratumPuzzle) {
+        
+        mining::subscribe_response subscribe_response{json::parse(
+            R"({"id": 1, "result": [ [ ["mining.set_difficulty", "b4b6693b72a50c7116db18d6497cac52"], ["mining.notify", "ae6812eb4cd7735a302a8a9dd95cf71f"]], "08000002", 4], "error": null})")};
+        
+        mining::subscribe_response::parameters srparams = subscribe_response.result();
+        
+        EXPECT_TRUE(subscribe_response.valid());
+        
+        mining::notify notify{json::parse(
+            R"({"params": 
+                ["bf", "4d16b6f85af6e2198f44ae2a6de67f78487ae5611b77c6c0440b921e00000000",
+                    "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff20020862062f503253482f04b8864e5008",
+                    "072f736c7573682f000000000100f2052a010000001976a914d23fcdf86f7e756a64a7a9688ef9903327048ed988ac00000000", 
+                    [], "00000002", "1c2ac4af", "504e86b9", false], 
+                "id": null, "method": "mining.notify"})")};
+        
+        EXPECT_TRUE(notify.valid());
+        
+        mining::submit_request submit_request{json::parse(
+            R"({"params": ["slush.miner1", "bf", "00000001", "504e86ed", "b2957c02"], 
+                "id": 4, "method": "mining.submit"})")};
+        
+        EXPECT_TRUE(submit_request.valid());
+        
+        digest256 expected_block_hash{"32abdc31d947623a2482144f92dbc092a84fd8ee6e2b5ae60f87762000000000"};
+        digest256 expected_prev_hash{"f8b6164d19e2f65a2aae448f787fe66d61e57a48c0c6771b1e920b4400000000"};
+        
+        proof p{worker{"Daniel", subscribe_response.result().ExtraNonce}, notify.params(), submit_request.params()};
+        
+        EXPECT_TRUE(p.valid());
+        work::string z = work::proof(p).string();
+        EXPECT_EQ(expected_block_hash, z.hash());
+        EXPECT_EQ(z.Digest, expected_prev_hash);
+        
+    }
+    
 }
 
 namespace Gigamonkey::Stratum::mining { 
@@ -124,8 +161,8 @@ namespace Gigamonkey::Stratum::mining {
         std::vector<request_test_case> request_test_cases{{23, {"dk", 2}}, {45, {"dk"}}};
         
         std::vector<response_test_case> response_test_cases {
-            {23, {{subscription{mining_set_difficulty, 1}, subscription{mining_notify, 2}}, {7, 8}}}, 
-            {45, {{subscription{mining_notify, 3}}, {30, 8}}}};
+            {23, {{subscription{mining_set_difficulty, "1"}, subscription{mining_notify, "2"}}, {7, 8}}}, 
+            {45, {{subscription{mining_notify, "3"}}, {30, 8}}}};
         
         for (const auto& i : request_test_cases) for (const auto& j : request_test_cases) {
             auto request_i = subscribe_request(i);
@@ -241,7 +278,7 @@ namespace Gigamonkey::Stratum::mining {
     }
     
     TEST(StratumTest, TestStratumProof) {
-        job_id jid = 2333;
+        job_id jid = "2333";
         extranonce en{1, 8};
         int32_little version = 2;
         Bitcoin::timestamp timestamp{3};
