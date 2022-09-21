@@ -67,20 +67,9 @@ namespace Gigamonkey::Stratum {
         proof p{worker{"Daniel", subscribe_response.result().ExtraNonce}, notify.params(), submit_request.params()};
         
         EXPECT_TRUE(p.valid());
-        
-        auto work_proof = work::proof(p);
-        work::string z = work_proof.string();
-        auto block_hash = z.hash();
-        EXPECT_EQ(expected_block_hash, block_hash);
+        work::string z = work::proof(p).string();
+        EXPECT_EQ(expected_block_hash, z.hash());
         EXPECT_EQ(z.Digest, expected_prev_hash);
-        
-        std::cout << "meta: " << work_proof.meta() << std::endl;
-        std::cout << "meta hash: " << Bitcoin::Hash256(work_proof.meta()) << std::endl;
-        std::cout << "string: " << z.write() << std::endl;
-        std::cout << "expected prev hash: " << expected_prev_hash << std::endl;
-        std::cout << "         prev hash:        " << z.Digest << std::endl;
-        std::cout << "expected block hash: " << expected_block_hash << std::endl;
-        std::cout << "         block hash:        " << block_hash << std::endl;
         
     }
     
