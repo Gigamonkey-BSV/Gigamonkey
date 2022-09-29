@@ -117,8 +117,13 @@ namespace Gigamonkey::Stratum {
         if (State.Phase > state::configured) return response{r.id(), false, error{ILLEGAL_METHOD}};
         State.Name = r.params().Username;
         auto authorization = authorize(r.params());
-        if (authorization) State.Phase = state::authorized;
-        return mining::authorize_response{r.id(), authorization};
+        
+        if (authorization) {
+            State.Phase = state::authorized;
+            return mining::authorize_response{r.id(), true};
+        }
+        
+        return mining::authorize_response{r.id(), *authorization};
     }
     
     // subscribe is the 3rd or 2nd method and it is when the client gets its
@@ -162,11 +167,17 @@ namespace Gigamonkey::Stratum {
         switch (r.method()) {
             case mining_submit: {
                 if (!mining::submit_request::valid(r)) return response{r.id(), nullptr, error{ILLEGAL_PARAMS}};
+                
                 if (State.Phase != state::working) {
-                    error_code e = State.Phase == state::initial || State.Phase == state::configured ? UNAUTHORIZED : NOT_SUBSCRIBED;
-                    return response{r.id(), nullptr, error{UNAUTHORIZED}};
+                    error_code e = (State.Phase == state::initial || State.Phase == state::configured) ? 
+                        UNAUTHORIZED : NOT_SUBSCRIBED;
+                    return response{r.id(), nullptr, error{e}};
                 }
-                return mining::submit_response{r.id(), submit(mining::submit_request::params(r))};
+                
+                auto submit_result = submit(mining::submit_request::params(r));
+                return (submit_result) ? 
+                    mining::submit_response{r.id(), true} : 
+                    mining::submit_response{r.id(), *submit_result};
             }
             case mining_configure: return configure(mining::configure_request{r});
             case mining_authorize: return authorize(mining::authorize_request{r});
