@@ -35,6 +35,7 @@ namespace Gigamonkey::Stratum {
         EXPECT_EQ(id_b, *j_id_b);
     }
     
+    // taken from https://braiins.com/stratum-v1/docs
     TEST(StratumTest, TestStratumPuzzle) {
         
         mining::subscribe_response subscribe_response{json::parse(
@@ -66,10 +67,21 @@ namespace Gigamonkey::Stratum {
         proof p{worker{"Daniel", subscribe_response.result().ExtraNonce}, notify.params(), submit_request.params()};
         
         EXPECT_TRUE(p.valid());
-        work::string z = work::proof(p).string();
-        EXPECT_EQ(expected_block_hash, z.hash());
-        EXPECT_EQ(z.Digest, expected_prev_hash);
         
+        auto work_proof = work::proof(p);
+        work::string z = work_proof.string();
+        auto block_hash = z.hash();
+        EXPECT_EQ(expected_block_hash, block_hash);
+        EXPECT_EQ(z.Digest, expected_prev_hash);
+        /*
+        std::cout << "meta: " << work_proof.meta() << std::endl;
+        std::cout << "meta hash: " << Bitcoin::Hash256(work_proof.meta()) << std::endl;
+        std::cout << "string: " << z.write() << std::endl;
+        std::cout << "expected prev hash: " << expected_prev_hash << std::endl;
+        std::cout << "         prev hash:        " << z.Digest << std::endl;
+        std::cout << "expected block hash: " << expected_block_hash << std::endl;
+        std::cout << "         block hash:        " << block_hash << std::endl;
+        */
     }
     
 }
@@ -99,6 +111,30 @@ namespace Gigamonkey::Stratum::mining {
                 EXPECT_NE(response_i, response_j);
             }
         }
+        
+        boolean_response null_no_error{json::parse(R"({"id":55, "result": null, "error": null})")};
+        boolean_response null_with_error{json::parse(R"({"id":55, "result": null, "error": [4, "hi"]})")};
+        boolean_response false_with_error{json::parse(R"({"id":55, "result": false, "error": [4, "hi"]})")};
+        boolean_response false_no_error{json::parse(R"({"id":55, "result": false, "error": null})")};
+        boolean_response true_no_error{json::parse(R"({"id":55, "result": true, "error": null})")};
+        boolean_response true_with_error{json::parse(R"({"id":55, "result": true, "error": [4, "hi"]})")};
+        
+        EXPECT_FALSE(null_no_error.valid());
+        
+        EXPECT_TRUE(null_with_error.valid());
+        EXPECT_FALSE(null_with_error.result());
+        
+        EXPECT_TRUE(false_with_error.valid());
+        EXPECT_FALSE(false_with_error.result());
+        
+        EXPECT_TRUE(false_no_error.valid());
+        EXPECT_FALSE(false_no_error.result());
+        
+        EXPECT_TRUE(true_no_error.valid());
+        EXPECT_TRUE(true_no_error.result());
+        
+        EXPECT_TRUE(true_with_error.valid());
+        EXPECT_FALSE(true_with_error.result());
         
     }
 

@@ -45,6 +45,7 @@ namespace Gigamonkey::Stratum {
         error() : Code{}, Message{} {}
         error(error_code e, string m) : Code{e}, Message{m} {}
         explicit error(error_code e) : Code{e}, Message{error_message_from_code(e)} {}
+        explicit error(const json &);
         
         static bool valid(const json& j) {
             return j.is_array() && j.size() == 2 && j[0].is_number_unsigned() && j[1].is_string();

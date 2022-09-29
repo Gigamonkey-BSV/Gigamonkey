@@ -59,10 +59,10 @@ namespace Gigamonkey::Stratum {
     }
     
     std::optional<Stratum::error> response::error(const json& j) {
-        if (!j.contains("error")) return {};
-        return {error(j["error"])};
+        if (!valid(j)) return {};
+        auto err = j["error"];
+        if (err.is_null()) return {};
+        return {Stratum::error(j["error"])};
     }
     
 }
-
-
