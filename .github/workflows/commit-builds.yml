@@ -11,6 +11,9 @@ env:
 jobs:
   prep:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: [ 10,11 ]
     steps:
       - uses: actions/checkout@v2
       - name: Get Conan
@@ -21,18 +24,21 @@ jobs:
         env:
           cache-name: cache-conan
         with:
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.version }}-${{ hashFiles('**/conanfile.py') }}
           path: |
             ~/.conan/
       - if: ${{ steps.cache-conan.outputs.cache-hit != 'true' }}
         name: Create default profile
         run: conan profile new default --detect
       - if: ${{ steps.cache-conan.outputs.cache-hit != 'true' }}
-        name: Update profile 11
-        run: conan profile update settings.compiler.libcxx=libstdc++11 default
+        name: Update profile settings
+        run: |
+          conan profile update settings.compiler.libcxx=libstdc++11 default
+          conan profile update env.CC=/usr/bin/gcc-${{ matrix.version }} default
+          conan profile update env.CXX=/usr/bin/g++-${{ matrix.version }} default
       - if: ${{ steps.cache-conan.outputs.cache-hit != 'true' }}
         name: Update profile version
-        run: conan profile update settings.compiler.version=10 default
+        run: conan profile update settings.compiler.version=${{ matrix.version }} default
       - if: ${{ steps.cache-conan.outputs.cache-hit != 'true' }}
         name: Add conan remote
         run: |
@@ -52,7 +58,7 @@ jobs:
         env:
           cache-name: cache-conan
         with:
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-10-${{ hashFiles('**/conanfile.py') }}
           path: |
             ~/.conan/
       - name: run tests
@@ -60,12 +66,15 @@ jobs:
           mkdir test_build
           cd test_build
           conan install .. -r=proofofwork
-          cmake .. -DPACKAGE_TESTS=ON
-          cmake --build .
+          CC=/usr/bin/gcc-10 CXX=/usr/bin/g++-10 cmake .. -DPACKAGE_TESTS=ON
+          CC=/usr/bin/gcc-10 CXX=/usr/bin/g++-10 cmake --build .
           cd bin
           for f in test*; do "./$f" ; done
   upload:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: [ 10,11 ]
     needs:
       - test
     steps:
@@ -77,7 +86,7 @@ jobs:
         env:
           cache-name: cache-conan
         with:
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.version }}-${{ hashFiles('**/conanfile.py') }}
           path: |
             ~/.conan/
       - name: Run Conan
