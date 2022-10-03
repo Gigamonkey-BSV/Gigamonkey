@@ -22,6 +22,8 @@ class GigamonkeyConan(ConanFile):
             self.version = environ.get("CIRCLE_TAG")[1:]
         if "CURRENT_VERSION" in environ:
             self.version = environ['CURRENT_VERSION']
+        else:
+            self.version = "dev"
 
     def config_options(self):
         if self.settings.os == "Windows":

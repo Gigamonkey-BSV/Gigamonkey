@@ -20,6 +20,16 @@ jobs:
         run: |
           echo "Got tag name ${{ steps.release.outputs.tag_name }}"
           echo "Got release version ${{ steps.release.outputs.version }}"
+    outputs:
+      releaseVersion: ${{ steps.release.outputs.tag_name }}
+  prep-conan:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: [ 10,11 ]
+    needs:
+      - prep
+    steps:
       - uses: actions/checkout@v2
       - name: Get Conan
         uses: turtlebrowser/get-conan@v1.0
@@ -29,31 +39,41 @@ jobs:
         env:
           cache-name: cache-conan
         with:
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.version }}-${{ hashFiles('**/conanfile.py') }}
           path: |
             ~/.conan/
       - if: ${{ steps.cache-conan.outputs.cache-hit != 'true' }}
         name: Create default profile
         run: conan profile new default --detect
       - if: ${{ steps.cache-conan.outputs.cache-hit != 'true' }}
-        name: Update profile 11
-        run: conan profile update settings.compiler.libcxx=libstdc++11 default
+        name: Update profile settings
+        run: |
+          conan profile update settings.compiler.libcxx=libstdc++11 default
+          conan profile update env.CC=/usr/bin/gcc-${{ matrix.version }} default
+          conan profile update env.CXX=/usr/bin/g++-${{ matrix.version }} default
       - if: ${{ steps.cache-conan.outputs.cache-hit != 'true' }}
         name: Update profile version
-        run: conan profile update settings.compiler.version=10 default
+        run: conan profile update settings.compiler.version=${{ matrix.version }} default
       - if: ${{ steps.cache-conan.outputs.cache-hit != 'true' }}
         name: Add conan remote
         run: |
           conan config set general.revisions_enabled=True
           conan remote add proofofwork https://conan.pow.co/artifactory/api/conan/conan
           conan user -p ${{ secrets.CONAN_USER_KEY }} -r proofofwork github
-    outputs:
-      releaseVersion: ${{ steps.release.outputs.tag_name }}
+
   upload:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: [ 10,11 ]
     needs:
+      - prep-conan
       - prep
     steps:
+      - name: Install correct gcc
+        run: |
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt install -y gcc-${{ matrix.version }} g++-${{ matrix.version }}
       - uses: actions/checkout@v2
       - name: Get Conan
         uses: turtlebrowser/get-conan@v1.0
@@ -62,7 +82,7 @@ jobs:
         env:
           cache-name: cache-conan
         with:
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.version }}-${{ hashFiles('**/conanfile.py') }}
           path: |
             ~/.conan/
       - name: Run Conan
@@ -73,11 +93,19 @@ jobs:
           conan upload gigamonkey/${CURRENT_VERSION}@proofofwork/stable -r proofofwork --all
   release:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: [ 10,11 ]
     needs:
       - prep
+      - prep-conan
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Install correct gcc
+        run: |
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt install -y gcc-${{ matrix.version }} g++-${{ matrix.version }}
       - uses: actions/checkout@v2
       - name: Get Conan
         uses: turtlebrowser/get-conan@v1.0
@@ -86,7 +114,7 @@ jobs:
         env:
           cache-name: cache-conan
         with:
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.version }}-${{ hashFiles('**/conanfile.py') }}
           path: |
             ~/.conan/
       - name: prepare release package
@@ -98,11 +126,11 @@ jobs:
           cmake --build .
           export CURRENT_VERSION="${{ needs.prep.outputs.releaseVersion }}"
           cp -r ../include ./
-          tar -czvf "gigamonkey-${CURRENT_VERSION}-linux.tar.gz" lib include
+          tar -czvf "gigamonkey-${CURRENT_VERSION}-gcc${{ matrix.version }}-linux.tar.gz" lib include
       - name: Upload release
         uses: svenstaro/upload-release-action@v2
         with:
           tag: ${{ needs.prep.outputs.releaseVersion }}
-          file: build/gigamonkey-${{ needs.prep.outputs.releaseVersion }}-linux.tar.gz
-          asset_name: gigamonkey-${{ needs.prep.outputs.releaseVersion }}-linux.tar.gz
+          file: build/gigamonkey-${{ needs.prep.outputs.releaseVersion }}-gcc${{ matrix.version }}-linux.tar.gz
+          asset_name: gigamonkey-${{ needs.prep.outputs.releaseVersion }}-gcc${{ matrix.version }}-linux.tar.gz
 
