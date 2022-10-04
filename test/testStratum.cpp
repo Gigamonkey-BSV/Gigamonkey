@@ -73,7 +73,7 @@ namespace Gigamonkey::Stratum {
         auto block_hash = z.hash();
         EXPECT_EQ(expected_block_hash, block_hash);
         EXPECT_EQ(z.Digest, expected_prev_hash);
-        /*
+        
         std::cout << "meta: " << work_proof.meta() << std::endl;
         std::cout << "meta hash: " << Bitcoin::Hash256(work_proof.meta()) << std::endl;
         std::cout << "string: " << z.write() << std::endl;
@@ -81,7 +81,7 @@ namespace Gigamonkey::Stratum {
         std::cout << "         prev hash:        " << z.Digest << std::endl;
         std::cout << "expected block hash: " << expected_block_hash << std::endl;
         std::cout << "         block hash:        " << block_hash << std::endl;
-        */
+        
     }
     
 }

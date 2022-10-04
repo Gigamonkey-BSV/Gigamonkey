@@ -9,6 +9,7 @@
 #include <gigamonkey/redeem.hpp>
 #include <gigamonkey/address.hpp>
 #include <gigamonkey/script/machine.hpp>
+#include <gigamonkey/script/typed_data_bip_276.hpp>
 #include <data/crypto/NIST_DRBG.hpp>
 #include <data/encoding/hex.hpp>
 #include "gtest/gtest.h"
@@ -156,6 +157,27 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_EQ(address_check, base58::check::recover(replaced));
         EXPECT_EQ(address_check, base58::check::recover(inserted));
         EXPECT_EQ(address_check, base58::check::recover(deleted));
+        
+    }
+    
+    TEST(ScriptTest, TestBIP276) {
+        
+        digest160 digest_one{"0x1111111111111111111111111111111111111111"};
+        digest160 digest_two{"0x2222222222222222222222222222222222222222"};
+        
+        bytes script_p2pkh_one = pay_to_address::script(digest_one);
+        bytes script_p2pkh_two = pay_to_address::script(digest_two);
+        
+        string human_data_one = typed_data::write(typed_data::mainnet, script_p2pkh_one);
+        string human_data_two = typed_data::write(typed_data::mainnet, script_p2pkh_two);
+        
+        EXPECT_NE(human_data_one, human_data_two);
+        
+        typed_data recovered_one = typed_data::read(human_data_one);
+        typed_data recovered_two = typed_data::read(human_data_two);
+        
+        EXPECT_EQ(recovered_one.Data, script_p2pkh_one);
+        EXPECT_EQ(recovered_two.Data, script_p2pkh_two);
         
     }
 
