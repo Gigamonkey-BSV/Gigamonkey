@@ -11,9 +11,6 @@ env:
 jobs:
   prep:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        version: [ 10,11 ]
     steps:
       - uses: actions/checkout@v2
       - name: Get Conan
@@ -24,21 +21,28 @@ jobs:
         env:
           cache-name: cache-conan
         with:
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.version }}-${{ hashFiles('**/conanfile.py') }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}
           path: |
             ~/.conan/
       - if: ${{ steps.cache-conan.outputs.cache-hit != 'true' }}
-        name: Create default profile
-        run: conan profile new default --detect
+        name: Create profiles
+        run: |
+          conan profile new 10 --detect
+          conan profile new 11 --detect
       - if: ${{ steps.cache-conan.outputs.cache-hit != 'true' }}
         name: Update profile settings
         run: |
-          conan profile update settings.compiler.libcxx=libstdc++11 default
-          conan profile update env.CC=/usr/bin/gcc-${{ matrix.version }} default
-          conan profile update env.CXX=/usr/bin/g++-${{ matrix.version }} default
+          conan profile update settings.compiler.libcxx=libstdc++11 10
+          conan profile update env.CC=/usr/bin/gcc-10 10
+          conan profile update env.CXX=/usr/bin/g++-10 10
+          conan profile update settings.compiler.libcxx=libstdc++11 11
+          conan profile update env.CC=/usr/bin/gcc-11 11
+          conan profile update env.CXX=/usr/bin/g++-11 11
       - if: ${{ steps.cache-conan.outputs.cache-hit != 'true' }}
         name: Update profile version
-        run: conan profile update settings.compiler.version=${{ matrix.version }} default
+        run: |
+          conan profile update settings.compiler.version=10 10
+          conan profile update settings.compiler.version=11 11
       - if: ${{ steps.cache-conan.outputs.cache-hit != 'true' }}
         name: Add conan remote
         run: |
@@ -58,26 +62,27 @@ jobs:
         env:
           cache-name: cache-conan
         with:
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-10-${{ hashFiles('**/conanfile.py') }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}
           path: |
             ~/.conan/
       - name: run tests
         run: |
           mkdir test_build
           cd test_build
-          conan install .. -r=proofofwork
+          conan install .. -r=proofofwork -pr=10 -pr:b=10
           CC=/usr/bin/gcc-10 CXX=/usr/bin/g++-10 cmake .. -DPACKAGE_TESTS=ON
           CC=/usr/bin/gcc-10 CXX=/usr/bin/g++-10 cmake --build .
           cd bin
           for f in test*; do "./$f" ; done
   upload:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        version: [ 10,11 ]
     needs:
       - test
     steps:
+      - name: Install correct gcc
+        run: |
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt install -y gcc-10 g++-10 gcc-11 g++-11
       - uses: actions/checkout@v2
       - name: Get Conan
         uses: turtlebrowser/get-conan@v1.0
@@ -86,12 +91,12 @@ jobs:
         env:
           cache-name: cache-conan
         with:
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.version }}-${{ hashFiles('**/conanfile.py') }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}
           path: |
             ~/.conan/
       - name: Run Conan
         run: |
           export CURRENT_VERSION=`git rev-parse --short HEAD`
-          conan install . -r proofofwork
-          conan create . proofofwork/unstable
+          VERBOSE=1 CXX=/usr/bin/g++-10 CC=/usr/bin/gcc-10 conan create . proofofwork/unstable -pr=10 -pr:b=10
+          VERBOSE=1 CXX=/usr/bin/g++-11 CC=/usr/bin/gcc-11 conan create . proofofwork/unstable -pr=11 -pr:b=11
           conan upload gigamonkey/${CURRENT_VERSION}@proofofwork/unstable -r proofofwork --all
