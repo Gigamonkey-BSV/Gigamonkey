@@ -1,7 +1,6 @@
 from conans import ConanFile, CMake
 from os import environ
 
-
 class GigamonkeyConan(ConanFile):
     name = "gigamonkey"
     version = "0.0.2b"
