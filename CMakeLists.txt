@@ -27,8 +27,6 @@ if(PACKAGE_TESTS)
 	add_subdirectory(test)
 endif()
 
-
-
 add_library(gigamonkey STATIC
     src/sv/random.cpp
     src/sv/big_int.cpp
