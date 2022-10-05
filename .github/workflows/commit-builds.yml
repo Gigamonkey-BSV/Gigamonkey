@@ -49,10 +49,35 @@ jobs:
           conan config set general.revisions_enabled=True
           conan remote add proofofwork https://conan.pow.co/artifactory/api/conan/conan
           conan user -p ${{ secrets.CONAN_USER_KEY }} -r proofofwork github
-  upload:
+  test:
     runs-on: ubuntu-latest
     needs:
       - prep
+    steps:
+      - uses: actions/checkout@v2
+      - name: Get Conan
+        uses: turtlebrowser/get-conan@v1.0
+      - name: Cache Conan packages
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-conan
+        with:
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}
+          path: |
+            ~/.conan/
+      - name: run tests
+        run: |
+          mkdir test_build
+          cd test_build
+          conan install .. -r=proofofwork -pr=10 -pr:b=10
+          CC=/usr/bin/gcc-10 CXX=/usr/bin/g++-10 cmake .. -DPACKAGE_TESTS=ON
+          CC=/usr/bin/gcc-10 CXX=/usr/bin/g++-10 cmake --build .
+          cd bin
+          for f in test*; do "./$f" ; done
+  upload:
+    runs-on: ubuntu-latest
+    needs:
+      - test
     steps:
       - name: Install correct gcc
         run: |
