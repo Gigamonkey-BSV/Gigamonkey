@@ -3,7 +3,7 @@ from os import environ
 
 class GigamonkeyConan(ConanFile):
     name = "gigamonkey"
-    version = "0.0.2b"
+    version = "0.0.2c"
     license = "<Put the package license here>"
     author = "<Put your name here> <And your email here>"
     url = "<Package recipe repository url here, for issues about the package>"
