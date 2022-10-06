@@ -27,8 +27,6 @@ if(PACKAGE_TESTS)
 	add_subdirectory(test)
 endif()
 
-
-
 add_library(gigamonkey STATIC
     src/sv/random.cpp
     src/sv/big_int.cpp
@@ -53,6 +51,7 @@ add_library(gigamonkey STATIC
     src/gigamonkey/script/counter.cpp
     src/gigamonkey/script/pattern.cpp
     src/gigamonkey/script/machine.cpp
+    src/gigamonkey/script/typed_data_bip_276.cpp
     
     src/gigamonkey/address.cpp
     src/gigamonkey/wif.cpp
