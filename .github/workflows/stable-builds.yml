@@ -22,3 +22,107 @@ jobs:
           echo "Got release version ${{ steps.release.outputs.version }}"
     outputs:
       releaseVersion: ${{ steps.release.outputs.tag_name }}
+  prep-conan:
+    runs-on: ubuntu-latest
+    needs:
+      - prep
+    steps:
+      - uses: actions/checkout@v2
+      - name: Get Conan
+        uses: turtlebrowser/get-conan@v1.0
+      - name: Cache Conan packages
+        uses: actions/cache@v3
+        id: cache-conan
+        env:
+          cache-name: cache-conan
+        with:
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}
+          path: |
+            ~/.conan/
+      - if: ${{ steps.cache-conan.outputs.cache-hit != 'true' }}
+        name: Create profiles
+        run: |
+          conan profile new 10 --detect
+      - if: ${{ steps.cache-conan.outputs.cache-hit != 'true' }}
+        name: Update profile settings
+        run: |
+          conan profile update settings.compiler.libcxx=libstdc++11 10
+          conan profile update env.CC=/usr/bin/gcc-10 10
+          conan profile update env.CXX=/usr/bin/g++-10 10
+      - if: ${{ steps.cache-conan.outputs.cache-hit != 'true' }}
+        name: Update profile version
+        run: |
+          conan profile update settings.compiler.version=10 10
+      - if: ${{ steps.cache-conan.outputs.cache-hit != 'true' }}
+        name: Add conan remote
+        run: |
+          conan config set general.revisions_enabled=True
+          conan remote add proofofwork https://conan.pow.co/artifactory/api/conan/conan
+          conan user -p ${{ secrets.CONAN_USER_KEY }} -r proofofwork github
+
+  upload:
+    runs-on: ubuntu-latest
+    needs:
+      - prep-conan
+      - prep
+    steps:
+      - name: Install correct gcc
+        run: |
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt install -y gcc-10 g++-10
+      - uses: actions/checkout@v2
+      - name: Get Conan
+        uses: turtlebrowser/get-conan@v1.0
+      - name: Cache Conan packages
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-conan
+        with:
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}
+          path: |
+            ~/.conan/
+      - name: Run Conan
+        run: |
+          export CURRENT_VERSION="${{ needs.prep.outputs.releaseVersion }}"
+          VERBOSE=1 CXX=/usr/bin/g++-10 CC=/usr/bin/gcc-10 conan create . proofofwork/stable -pr=10 -pr:b=10
+          conan upload gigamonkey/${CURRENT_VERSION}@proofofwork/stable -r proofofwork --all
+  release:
+    runs-on: ubuntu-latest
+    needs:
+      - prep
+      - prep-conan
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Install correct gcc
+        run: |
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt install -y gcc-10 g++-10
+      - uses: actions/checkout@v2
+      - name: Get Conan
+        uses: turtlebrowser/get-conan@v1.0
+      - name: Cache Conan packages
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-conan
+        with:
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}
+          path: |
+            ~/.conan/
+      - name: prepare 10 release package
+        run: |
+          mkdir build10
+          cd build10
+          export CURRENT_VERSION="${{ needs.prep.outputs.releaseVersion }}"
+          VERBOSE=1 CXX=/usr/bin/g++-10 CC=/usr/bin/gcc-10  conan install .. -r=proofofwork -pr=10 -pr:b=10
+          VERBOSE=1 CXX=/usr/bin/g++-10 CC=/usr/bin/gcc-10  cmake .. -DPACKAGE_TESTS=Off
+          VERBOSE=1 CXX=/usr/bin/g++-10 CC=/usr/bin/gcc-10  cmake --build .
+          cp -r ../include ./
+          tar -czvf "gigamonkey-${CURRENT_VERSION}-gcc10-linux.tar.gz" lib include
+          cd ..
+      - name: Upload release 10
+        uses: svenstaro/upload-release-action@v2
+        with:
+          tag: ${{ needs.prep.outputs.releaseVersion }}
+          file: build10/gigamonkey-${{ needs.prep.outputs.releaseVersion }}-gcc10-linux.tar.gz
+          asset_name: gigamonkey-${{ needs.prep.outputs.releaseVersion }}-gcc10-linux.tar.gz
