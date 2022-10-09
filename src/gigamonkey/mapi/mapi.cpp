@@ -1,27 +1,166 @@
 // Copyright (c) 2021 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#include<gigamonkey/mapi/envelope.hpp>
-#include<gigamonkey/mapi/mapi.hpp>
+#include <gigamonkey/mapi/envelope.hpp>
+#include <gigamonkey/mapi/mapi.hpp>
 
-namespace Gigamonkey::MAPI {
+namespace Gigamonkey::BitcoinAssociation {
     using namespace Bitcoin;
     
-    satoshi_per_byte spb_from_json(const json& j) {
+    // exceptions that get thrown for invalid responses. 
+    struct unexpected_status : MAPI::exception {
+        unexpected_status(const networking::HTTP::response &);
+        const char* what() const noexcept override;
+    };
+    
+    struct invalid_format : MAPI::exception {
+        invalid_format(const networking::HTTP::response &);
+        const char* what() const noexcept override;
+    };
+    
+    json MAPI::read_MAPI_response(const networking::HTTP::response &r) {
+        if (static_cast<unsigned int>(r.Status) < 200 || 
+            static_cast<unsigned int>(r.Status) >= 300) throw unexpected_status{r};
         
-        if (!(j.is_object() && 
-            j.contains("satoshis") && j["satoshis"].is_number_unsigned() && 
-            j.contains("bytes") && j["bytes"].is_number_unsigned())) return{};
+        if (r.Headers[networking::HTTP::header::content_type] != "application/json") throw invalid_format{r};
         
-        return satoshi_per_byte{satoshi{int64(j["satoshis"])}, uint64(j["bytes"])};
+        json_json_envelope envelope{json::parse(r.Body)};
+        
+        if (!envelope.valid() || !envelope.verify()) throw invalid_format{r};
+        
+        return envelope.payload();
+    }
+    
+    networking::HTTP::request MAPI::transaction_status_HTTP_request(const Bitcoin::txid &request) const {
+        if (!request.valid()) throw std::invalid_argument{"invalid txid"};
+        std::stringstream ss;
+        ss << "/mapi/tx/" << request;
+        return this->Rest.GET(ss.str());
+    }
+    
+    networking::HTTP::request MAPI::submit_transaction_HTTP_request(const submit_transaction_request &request) const {
+        if (!request.valid()) throw std::invalid_argument{"invalid transaction submission request"};
+        return this->Rest(networking::REST::request(request));
+    }
+    
+    networking::HTTP::request MAPI::submit_transactions_HTTP_request(const submit_transactions_request &request) const {
+        if (!request.valid()) throw std::invalid_argument{"invalid transactions submission request"};
+        return this->Rest(networking::REST::request(request));
+    }
+    
+    namespace {
+    
+        satoshi_per_byte spb_from_json(const json& j) {
+            
+            if (!(j.is_object() && 
+                j.contains("satoshis") && j["satoshis"].is_number_unsigned() && 
+                j.contains("bytes") && j["bytes"].is_number_unsigned())) return{};
+            
+            return satoshi_per_byte{satoshi{int64(j["satoshis"])}, uint64(j["bytes"])};
+            
+        }
+        
+        json to_json(const satoshi_per_byte v) {
+            return json{{"satoshis", int64(v.Satoshis)}, {"bytes", v.Bytes}};
+        }
+    
+        string to_json(MAPI::return_result r) {
+            return r == MAPI::success ? "success" : "failure";
+        }
+        
+        json to_json(list<MAPI::transaction_submission> subs) {
+            json j = json::array();
+            
+            for (const MAPI::transaction_submission& sub : subs) j.push_back(json(sub));
+            
+            return j;
+        }
+        
+        json to_json(list<MAPI::fee> fees) {
+            json j = json::array();
+            
+            for (const MAPI::fee& f : fees) {
+                j.push_back(json(f));
+            }
+            
+            return j;
+        }
+        
+        optional<list<ip_address>> read_ip_address_list(const json &); 
+        
+        json to_json(list<ip_address>);
+    
+        MAPI::transaction_status read_transaction_status(const json& j) {
+            MAPI::transaction_status x;
+            
+            if (!(j.is_object() && 
+                j.contains("txid") && j["txid"].is_string() && 
+                j.contains("returnResult") && j["returnResult"].is_string() && 
+                j.contains("returnDescription") && j["returnDescription"].is_string() && 
+                (!j.contains("conflictedWith") || j["conflictedWith"].is_array()))) return {};
+            
+            string rr = j["returnResult"];
+            if (rr == "success") x.returnResult = MAPI::success;
+            else if (rr == "failure") x.returnResult = MAPI::failure;
+            else return {};
+            
+            if (j.contains("conflictedWith")) {
+                list<MAPI::conflicted_with> cw;
+                for (const json& w : j["conflictedWith"]) {
+                    cw = cw << MAPI::conflicted_with{w};
+                    if (!cw.first().valid()) return {};
+                }
+                x.conflictedWith = cw;
+            }
+            
+            x.txid = digest256{string{"0x"} + string(j["txid"])};
+            if (!x.txid.valid()) return {};
+            
+            x.resultDescription = j["resultDescription"];
+            
+            return x;
+        }
+    
+        json to_json(const MAPI::submit_transaction_parameters &x) {
+            json j = json::object_t{};
+            
+            if (x.callbackUrl.has_value()) j["callbackUrl"] = *x.callbackUrl;
+            if (x.callbackToken.has_value()) j["callbackToken"] = *x.callbackToken;
+            if (x.merkleProof.has_value()) j["merkleProof"] = *x.merkleProof;
+            if (x.dsCheck.has_value()) j["dsCheck"] = *x.dsCheck;
+            if (x.callbackEncryption.has_value()) j["callbackEncryption"] = *x.callbackEncryption;
+            
+            return j;
+        }
+    
+        json to_json(const MAPI::transaction_submission &x) {
+            if (!x.valid()) return {};
+            
+            json j = to_json(x.Parameters);
+            
+            j["rawtx"] = encoding::hex::write(x.rawtx);
+            
+            return j;
+        }
+        
+        json to_json(list<MAPI::conflicted_with>);
+        
+        json to_json(const MAPI::transaction_status &tst) {
+            if (!tst.valid()) return {};
+        
+            json j{ 
+                {"txid", string(tst.txid.Value)}, 
+                {"returnResult", to_json(tst.returnResult)}, 
+                {"resultDescription", tst.resultDescription}};
+        
+            if (tst.conflictedWith.size() > 0) j["conflictedWith"] = to_json(tst.conflictedWith);
+            
+            return j;
+        }
         
     }
     
-    json to_json(const satoshi_per_byte v) {
-        return json{{"satoshis", int64(v.Satoshis)}, {"bytes", v.Bytes}};
-    }
-    
-    fee::fee(const json& j) : fee{} {
+    MAPI::fee::fee(const json& j) : fee{} {
         
         if (!(j.is_object() && 
             j.contains("feeType") && j["feeType"].is_string() && 
@@ -41,31 +180,27 @@ namespace Gigamonkey::MAPI {
         
     }
     
-    fee::operator json() const {
-        return json{
+    MAPI::fee::operator json() const {
+        return valid() ? json{
             {"feeType", feeType}, 
             {"miningFee", to_json(miningFee)}, 
-            {"relayFee", to_json(relayFee)}};
+            {"relayFee", to_json(relayFee)}} : json(nullptr);
     }
     
-    submission::operator json() const {
-        if (!valid()) return {};
+    MAPI::conflicted_with::conflicted_with(const json& j) : conflicted_with{} {
         
-        json j{{"rawtx", encoding::hex::write(*rawtx)}};
+        if (!(j.is_object() && 
+            j.contains("txid") && j["txid"].is_string() && 
+            j.contains("size") && j["size"].is_number_unsigned() && 
+            j.contains("hex") && j["hex"].is_string())) return;
         
-        if (Parameters.callbackUrl.has_value()) j["callbackUrl"] = *Parameters.callbackUrl;
-        if (Parameters.callbackToken.has_value()) j["callbackToken"] = *Parameters.callbackToken;
-        if (Parameters.merkleProof.has_value()) j["merkleProof"] = *Parameters.merkleProof;
-        if (Parameters.dsCheck.has_value()) j["dsCheck"] = *Parameters.dsCheck;
-        if (Parameters.callbackEncryption.has_value()) j["callbackEncryption"] = *Parameters.callbackEncryption;
+        txid = digest256{string{"0x"} + string(j["txid"])};
+        size = uint64(j["size"]);
+        hex = j["hex"];
         
-        return j;
     }
     
-    get_fee_quote_response::get_fee_quote_response(const string& r) : 
-        get_fee_quote_response{} {
-        
-        json j = json::parse(r);
+    MAPI::get_fee_quote_response::get_fee_quote_response(const json& j) : get_fee_quote_response{} {
         
         if (!(j.is_object() && 
             j.contains("apiVersion") && j["apiVersion"].is_string() && 
@@ -83,74 +218,67 @@ namespace Gigamonkey::MAPI {
             if (!f.first().valid()) return;
         }
         
+        auto pk_hex = encoding::hex::read(string(j["minerId"]));
+        if (pk_hex == nullptr) return;
+        
+        digest256 last_block{string{"0x"} + string(j["currentHighestBlockHash"])};
+        if (!last_block.valid()) return;
+        
         apiVersion = j["apiVersion"];
         timestamp = j["timestamp"];
         expiryTime = j["expiryTime"];
-        minerId = pubkey{string(j["minerId"])};
-        currentHighestBlockHash = digest256{string{"0x"} + string(j["currentHighestBlockHash"])};
+        
+        minerId = secp256k1::pubkey{*pk_hex};
+        currentHighestBlockHash = last_block;
         currentHighestBlockHeight = j["currentHighestBlockHeight"];
         fees = f;
         
     }
-    /*
-    fee get_fee_quote_response::to(service z) const {
-        data::map<string, fee> fz;
-        for (const fee& f : fees) {
-            fz = fz.insert(f.feeType, f);
-        }
-        
-        fee x{};
-        if (!fz.contains("standard")) return x;
-        x.Standard = fz["standard"].get(z);
-        if (!fz.contains("data")) x.Data = x.Standard;
-        else x.Data = fz["data"].get(z);
-        return x;
-    }*/
     
-    conflicted_with::conflicted_with(const json& j) : conflicted_with{} {
-        
-        if (!(j.is_object() && 
-            j.contains("txid") && j["txid"].is_string() && 
-            j.contains("size") && j["size"].is_number_unsigned() && 
-            j.contains("hex") && j["hex"].is_string())) return;
-        
-        txid = digest256{string{"0x"} + string(j["txid"])};
-        size = uint64(j["size"]);
-        hex = j["hex"];
-        
+    MAPI::get_fee_quote_response::operator json() const {
+        std::stringstream ss;
+        ss << currentHighestBlockHash;
+        return valid() ? json{
+            {"apiVersion", apiVersion},
+            {"timestamp", timestamp}, 
+            {"expiryTime", expiryTime}, 
+            {"minerId", encoding::hex::write(minerId)}, 
+            {"currentHighestBlockHash", ss.str().substr(2)}, 
+            {"currentHighestBlockHeight", currentHighestBlockHeight}, 
+            {"fees", to_json(fees)}} : json{};
     }
     
-    submission_response::submission_response(const json& j) : submission_response{} {
+    MAPI::get_policy_quote_response::get_policy_quote_response(const json &j) : get_fee_quote_response{} {
         
-        if (!(j.is_object() && 
-            j.contains("txid") && j["txid"].is_string() && 
-            j.contains("returnResult") && j["returnResult"].is_string() && 
-            j.contains("returnDescription") && j["returnDescription"].is_string() && 
-            (!j.contains("conflictedWith") || j["conflictedWith"].is_array()))) return;
+        if (!j.contains("callbacks") || !j.contains("policies")) return;
         
-        string rr = j["returnResult"];
-        if (rr == "success") returnResult = success;
-        else if (rr == "failure") returnResult = failure;
-        else return;
+        get_fee_quote_response parent{j};
+        if (!parent.valid()) return;
         
-        if (j.contains("conflictedWith")) {
-            list<conflicted_with> cw;
-            for (const json& w : j["conflictedWith"]) {
-                cw = cw << conflicted_with{w};
-                if (!cw.first().valid()) return;
-            }
-            conflictedWith = cw;
-        }
+        auto ips = read_ip_address_list(j["callbacks"]);
+        if (!bool(ips)) return;
         
-        txid = digest256{string{"0x"} + string(j["txid"])};
-        resultDescription = j["resultDescription"];
+        if (!MAPI::policies::valid(j["policies"])) return;
         
+        static_cast<get_fee_quote_response>(*this) = parent;
+        
+        policies = MAPI::policies{j["policies"]};
+        callbacks = *ips;
     }
     
-    submit_transaction_response::submit_transaction_response(const string& r) : 
+    MAPI::get_policy_quote_response::operator json() const {
+        json j = get_fee_quote_response::operator json();
+        
+        if (j == nullptr) return nullptr;
+        
+        j["callbacks"] = to_json(callbacks);
+        j["policies"] = json(policies);
+        
+        return j;
+    }
+    
+    MAPI::submit_transaction_response::submit_transaction_response(const json& j) : 
         submit_transaction_response{} {
-        
-        json j = json::parse(r);
         
         if (!(j.is_object() && 
             j.contains("apiVersion") && j["apiVersion"].is_string() && 
@@ -160,59 +288,97 @@ namespace Gigamonkey::MAPI {
             j.contains("currentHighestBlockHeight") && j["currentHighestBlockHeight"].is_number_unsigned() && 
             j.contains("txSecondMempoolExpiry") && j["txSecondMempoolExpiry"].is_number_unsigned())) return;
         
-        submission_response sub{j};
+        transaction_status sub = read_transaction_status(j);
         
         if (!sub.valid()) return;
         
+        auto pk_hex = encoding::hex::read(string(j["minerId"]));
+        if (pk_hex == nullptr) return;
+        
+        digest256 block_hash{string{"0x"} + string(j["currentHighestBlockHash"])};
+        if (!block_hash.valid()) return;
+        
         apiVersion = j["apiVersion"];
         timestamp = j["timestamp"];
-        minerId = pubkey{string(j["minerId"])};
-        currentHighestBlockHash = digest256{string{"0x"} + string(j["currentHighestBlockHash"])};
+        
+        minerId = secp256k1::pubkey{*pk_hex};
+        currentHighestBlockHash = block_hash;
         currentHighestBlockHeight = j["currentHighestBlockHeight"];
         txSecondMempoolExpiry = uint32(j["txSecondMempoolExpiry"]);
-        SubmissionResponse = sub;
+        static_cast<transaction_status>(*this) = sub;
         
     }
     
-    query_transaction_status_response::query_transaction_status_response(const string& r) : 
-        query_transaction_status_response{} {
+    MAPI::submit_transaction_response::operator json() const {
+        if (!valid()) return nullptr;
         
-        json j = json::parse(r);
+        json j = to_json(static_cast<transaction_status>(*this));
+        
+        std::stringstream ss;
+        ss << currentHighestBlockHash;
+        
+        j["apiVersion"] = apiVersion;
+        j["timestamp"] = timestamp;
+        j["minerId"] = encoding::hex::write(minerId);
+        j["currentHighestBlockHash"] = ss.str().substr(2);
+        j["currentHighestBlockHeight"] = currentHighestBlockHeight;
+        j["txSecondMempoolExpiry"] = txSecondMempoolExpiry;
+        
+        return j;
+    }
+    
+    MAPI::transaction_status_response::transaction_status_response(const json& j) : 
+        transaction_status_response{} {
         
         if (!(j.is_object() && 
             j.contains("apiVersion") && j["apiVersion"].is_string() && 
             j.contains("timestamp") && j["timestamp"].is_string() && 
-            j.contains("txid") && j["txid"].is_string() && 
-            j.contains("returnResult") && j["returnResult"].is_string() && 
-            j.contains("returnDescription") && j["returnDescription"].is_string() && 
             j.contains("blockHash") && j["blockHash"].is_string() && 
             j.contains("blockHeight") && j["blockHeight"].is_number_unsigned() && 
             j.contains("minerId") && j["minerId"].is_string() && 
             (!j.contains("confirmations") || j["confirmations"].is_number_unsigned()) && 
             j.contains("txSecondMempoolExpiry") && j["txSecondMempoolExpiry"].is_number_unsigned())) return;
         
-        string rr = j["returnResult"];
-        if (rr == "success") returnResult = success;
-        else if (rr == "failure") returnResult = failure;
-        else return;
+        transaction_status sub = read_transaction_status(j);
+        if (!sub.valid()) return;
+        
+        auto pk_hex = encoding::hex::read(string(j["minerId"]));
+        if (pk_hex == nullptr) return;
+        
+        digest256 block_hash{string{"0x"} + string(j["blockHash"])};
+        if (!block_hash.valid()) return;
+        
+        minerId = secp256k1::pubkey{*pk_hex};
+        blockHash = block_hash;
+        
+        static_cast<transaction_status>(*this) = sub;
         
         apiVersion = j["apiVersion"];
         timestamp = j["timestamp"];
-        txid = Bitcoin::txid{string(j["txid"])};
-        resultDescription = j["resultDescription"];
-        blockHash = digest256{string(j["blockHash"])};
         blockHeight = j["blockHeight"];
-        minerId = pubkey{string(j["minerId"])};
         txSecondMempoolExpiry = uint32(j["txSecondMempoolExpiry"]);
         
         if (j.contains("confirmations")) confirmations = uint64(j["confirmations"]);
         
     }
     
-    submit_multiple_transactions_response::submit_multiple_transactions_response(const string& r) : 
-        submit_multiple_transactions_response{} {
+    MAPI::transaction_status_response::operator json() const {
+        if (!valid()) return nullptr;
         
-        json j = json::parse(r);
+        json j = to_json(static_cast<transaction_status>(*this));
+        
+        j["apiVersion"] = apiVersion; 
+        j["timestamp"] = timestamp; 
+        j["minerId"] = encoding::hex::write(minerId); 
+        j["txSecondMempoolExpiry"] = txSecondMempoolExpiry;
+    
+        if (confirmations.has_value()) j["confirmations"] = *confirmations; 
+    
+        return j;
+    }
+    
+    MAPI::submit_transactions_response::submit_transactions_response(const json& j) : 
+        submit_transactions_response{} {
         
         if (!(j.is_object() && 
             j.contains("apiVersion") && j["apiVersion"].is_string() && 
@@ -224,16 +390,23 @@ namespace Gigamonkey::MAPI {
             j.contains("txs") && j["txs"].is_array() && 
             j.contains("failureCount") && j["failureCount"].is_number_unsigned())) return;
         
-        list<submission_response> sr;
+        list<transaction_status> sr;
         for (const json& w : j["txs"]) {
-            sr = sr << submission_response{w};
+            sr = sr << read_transaction_status(w);
             if (!sr.first().valid()) return;
         }
         
+        auto pk_hex = encoding::hex::read(string(j["minerId"]));
+        if (pk_hex == nullptr) return;
+        
+        digest256 block_hash{string{"0x"} + string(j["blockHash"])};
+        if (!block_hash.valid()) return;
+        
+        minerId = secp256k1::pubkey{*pk_hex};
+        currentHighestBlockHash = block_hash;
+        
         apiVersion = j["apiVersion"];
         timestamp = j["timestamp"];
-        minerId = pubkey{string(j["minerId"])};
-        currentHighestBlockHash = digest256{string(j["currentHighestBlockHash"])};
         currentHighestBlockHeight = j["currentHighestBlockHeight"];
         txSecondMempoolExpiry = uint32(j["txSecondMempoolExpiry"]);
         txs = sr;
@@ -241,199 +414,19 @@ namespace Gigamonkey::MAPI {
         
     }
     
-    string to_json(return_result r) {
-        return r == success ? "success" : "failure";
-    }
-    
-    json to_json(list<submission> subs) {
-        json j = json::array();
+    MAPI::submit_transactions_response::operator json() const {
+        std::stringstream ss;
+        ss << currentHighestBlockHash;
         
-        for (const submission& sub : subs) j.push_back(json(sub));
-        
-        return j;
-    }
-    
-    json to_json(list<fee> fees) {
-        json j = json::array();
-        
-        for (const fee& f : fees) {
-            j.push_back(json(f));
-        }
-        
-        return j;
-    }
-    
-    get_fee_quote_response::operator json() const {
-        return valid() ? json{
-            {"apiVersion", apiVersion},
-            {"timestamp", timestamp}, 
-            {"expiryTime", expiryTime}, 
-            {"minerId", string(minerId)}, 
-            {"currentHighestBlockHash", string(currentHighestBlockHash.Value)}, 
-            {"currentHighestBlockHeight", currentHighestBlockHeight}, 
-            {"fees", to_json(fees)}} : json{};
-    }
-    
-    submit_transaction_response::operator json() const {
-        return valid() ? json{
-            {"apiVersion", apiVersion},
-            {"timestamp", timestamp},
-            {"txid", string(SubmissionResponse.txid.Value)}, 
-            {"returnResult", to_json(SubmissionResponse.returnResult)}, 
-            {"resultDescription", SubmissionResponse.resultDescription}, 
-            {"minerId", string(minerId)}, 
-            {"currentHighestBlockHash", string(currentHighestBlockHash.Value)}, 
-            {"currentHighestBlockHeight", currentHighestBlockHeight}, 
-            {"txSecondMempoolExpiry", txSecondMempoolExpiry}} : json{};
-    }
-    
-    query_transaction_status_response::operator json() const {
-        if (!valid()) return {};
-        
-        json j{
-            {"apiVersion", apiVersion}, 
-            {"timestamp", timestamp}, 
-            {"txid", string(txid.Value)}, 
-            {"returnResult", to_json(returnResult)}, 
-            {"resultDescription", resultDescription}, 
-            {"minerId", string(minerId)}, 
-            {"txSecondMempoolExpiry", txSecondMempoolExpiry}};
-    
-        if (confirmations.has_value()) j["confirmations"] = *confirmations; 
-    
-        return j;
-    }
-    
-    submit_multiple_transactions_response::operator json() const {
         return valid() ? json{
             {"apiVersion", apiVersion}, 
             {"timestamp", timestamp}, 
-            {"minerId", string(minerId)}, 
-            {"currentHighestBlockHash", string(currentHighestBlockHash.Value)}, 
+            {"minerId", encoding::hex::write(minerId)}, 
+            {"currentHighestBlockHash", ss.str().substr(2)}, 
             {"currentHighestBlockHeight", currentHighestBlockHeight}, 
             {"txSecondMempoolExpiry", txSecondMempoolExpiry}, 
             {"txs", }, 
             {"failureCount", failureCount}} : json{};
     }
-    
-    std::map<string, string> submission_parameters::http_parameters() const {
-        
-        std::map<string, string> params;
-            
-        if (callbackUrl.has_value()) params["callbackUrl"] = *callbackUrl;
-        if (callbackToken.has_value()) params["callbackToken"] = *callbackToken;
-        if (merkleProof.has_value()) params["merkleProof"] = *merkleProof;
-        if (dsCheck.has_value()) params["dsCheck"] = *dsCheck;
-        if (callbackEncryption.has_value()) params["callbackEncryption"] = *callbackEncryption;
-        
-        return params;
-        
-    }
-    /*
-    get_fee_quote_response merchant_api::get_fee_quote() {
-        
-        JSONEnvelope envelope;
-        try {
-            auto response = Http->GET(Host, string{get_fee_quote_path});
-            
-            envelope = JSONEnvelope{response};
-        } catch (...) {
-            return {};
-        }
-        
-        if (!envelope.valid()) return {};
-        
-        return get_fee_quote_response{envelope.payload};
-        
-    }
-    
-    query_transaction_status_response merchant_api::query_transaction_status(const Bitcoin::txid& id) {
-        
-        JSONEnvelope envelope;
-        try {
-            envelope = JSONEnvelope{Http->GET(Host, 
-                string{query_transaction_status_path} + string(id.Value).substr(2))};
-        } catch (...) {
-            return {};
-        }
-        
-        if (!envelope.valid()) return {};
-        
-        return query_transaction_status_response{envelope.payload};
-        
-    }*/
-    /*
-    submit_transaction_response merchant_api::submit_transaction(submit_transaction_request request) {
-        
-        if (!request.valid()) return {};
-        
-        std::map<string, string> params;
-        std::map<http::header, string> headers;
-        string body;
-        
-        if (request.ContentType == application_json) {
-            headers[http::header::content_type] = "application/json";
-            body = string(json(request.Submission));
-        } else {
-            headers[http::header::content_type] = "application/octet-stream";
-            body.resize(request.Submission.rawtx->size());
-            std::copy(request.Submission.rawtx->begin(), request.Submission.rawtx->end(), body.begin());
-            
-            params = request.Submission.Parameters.http_parameters();
-        }
-        
-        JSONEnvelope envelope;
-        try {
-            envelope = JSONEnvelope{Http->POST(Host, submit_transaction_path, params, headers, body)};
-        } catch (...) {
-            return {};
-        }
-        
-        if (!envelope.valid()) return {};
-        
-        return submit_transaction_response{envelope.payload};
-        
-    }
-    
-    submit_multiple_transactions_response 
-    merchant_api::submit_multiple_transactions(submit_multiple_transactions_request request) {
-        
-        if (!request.valid()) return {};
-        
-        std::map<string, string> params = request.DefaultParameters.http_parameters();
-        std::map<http::header, string> headers;
-        string body;
-        
-        if (request.ContentType == application_json) {
-            headers[http::header::content_type] = "application/json";
-            body = string(to_json(request.Submissions));
-        } else {
-            headers[http::header::content_type] = "application/octet-stream";
-            uint64 total_size = 0;
-            
-            for (const submission& x : request.Submissions) {
-                total_size += x.rawtx->size();
-            }
-            
-            body.resize(total_size);
-            
-            auto it = body.begin();
-            for (const submission& x : request.Submissions) {
-                std::copy(x.rawtx->begin(), x.rawtx->end(), it);
-            }
-        }
-        
-        JSONEnvelope envelope;
-        try {
-            envelope = JSONEnvelope{Http->POST(Host, submit_multiple_transactions_path, params, headers, body)};
-        } catch (...) {
-            return {};
-        }
-        
-        if (!envelope.valid()) return {};
-        
-        return submit_multiple_transactions_response{envelope.payload};
-        
-    }*/
     
 }
