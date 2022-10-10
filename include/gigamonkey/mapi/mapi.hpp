@@ -350,12 +350,6 @@ namespace Gigamonkey::BitcoinAssociation {
             
         };
         
-        // exceptions that get thrown for invalid results inheret from this.
-        struct exception : std::logic_error {
-            networking::HTTP::response Response;
-            exception(const networking::HTTP::response &);
-        };
-        
     private:
         networking::HTTP::request get_policy_quote_HTTP_request() const {
             return this->Rest.GET("/mapi/policyQuote");

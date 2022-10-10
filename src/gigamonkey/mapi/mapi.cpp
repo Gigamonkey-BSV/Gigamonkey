@@ -7,26 +7,15 @@
 namespace Gigamonkey::BitcoinAssociation {
     using namespace Bitcoin;
     
-    // exceptions that get thrown for invalid responses. 
-    struct unexpected_status : MAPI::exception {
-        unexpected_status(const networking::HTTP::response &);
-        const char* what() const noexcept override;
-    };
-    
-    struct invalid_format : MAPI::exception {
-        invalid_format(const networking::HTTP::response &);
-        const char* what() const noexcept override;
-    };
-    
     json MAPI::read_MAPI_response(const networking::HTTP::response &r) {
         if (static_cast<unsigned int>(r.Status) < 200 || 
-            static_cast<unsigned int>(r.Status) >= 300) throw unexpected_status{r};
+            static_cast<unsigned int>(r.Status) >= 300) throw networking::HTTP::response{r};
         
-        if (r.Headers[networking::HTTP::header::content_type] != "application/json") throw invalid_format{r};
+        if (r.Headers[networking::HTTP::header::content_type] != "application/json") throw networking::HTTP::response{r};
         
         json_json_envelope envelope{json::parse(r.Body)};
         
-        if (!envelope.valid() || !envelope.verify()) throw invalid_format{r};
+        if (!envelope.valid() || !envelope.verify()) throw networking::HTTP::response{r};
         
         return envelope.payload();
     }
