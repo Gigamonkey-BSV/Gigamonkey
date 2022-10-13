@@ -40,6 +40,16 @@ namespace Gigamonkey::Stratum {
         
     public:
         
+        struct options {
+            bool CanSubmitWithoutAuthorization{true};
+            
+            // maximum number of seconds a share can differ from our own 
+            // clock to be accepted. 
+            uint32 MaxTimeDifferenceSeconds{10};
+            
+            optional<extensions::options> ExtensionsParameters{};
+        };
+        
         // get_version is the only request that the server sends to the client.
         // It doesn't depend on state so can be sent at any time. 
         string get_version();
@@ -48,27 +58,19 @@ namespace Gigamonkey::Stratum {
         
         // the state data of the protocol. 
         struct state {
-        
-            // Stratum clients sessions optionally first negotiate extensions and parameters, 
-            // then authorize themselves with the server, and then get some ids from the server
-            // with the subscribe method. Then they enter a mining loop until disconnection. 
-            enum phase {
-                initial, 
-                configured, 
-                authorized, 
-                working 
-            };
-        
-            phase Phase{initial};
-        
-            // Defines what extensions are supported by the server. 
-            extensions::results ExtensionsSupported{};
+            
+            options Options;
             
             // Extensions requested by the client. 
             optional<extensions::requests> ExtensionsRequested{};
             
             // Extension parameters returned by the server. 
             extensions::results ExtensionsParameters{};
+            
+            // whether we have received and responded to a mining.configure message. 
+            bool configured() const {
+                return bool(Options.ExtensionsParameters) && bool(ExtensionsRequested);
+            }
         
             static optional<extensions::version_mask> make_version_mask(
                 extensions::version_mask x, 
@@ -90,6 +92,11 @@ namespace Gigamonkey::Stratum {
             // The user name of the worker. 
             // Set during the authorize method. 
             optional<string> Name{};
+            
+            // whether we have received and responded 'true' to a mining.authorize message.
+            bool authorized() const {
+                return bool(Name);
+            };
         
             string username() const {
                 if (Name.has_value()) return *Name;
@@ -108,18 +115,27 @@ namespace Gigamonkey::Stratum {
             }
         
             // subscriptions are assigned during the subscribe method. 
-            optional<mining::subscribe_response::parameters> Subscriptions; 
+            optional<mining::subscription> Subscriptions; 
+            
+            // whether we have received and responded true' to a mining.subscribe message. 
+            bool subscribed() {
+                return bool(Subscriptions);
+            }
+            
+            Stratum::extranonce Extranonce;
+            Stratum::extranonce NextExtranonce;
             
             Stratum::extranonce extranonce() const {
-                return (Subscriptions) ? Subscriptions->ExtraNonce : Stratum::extranonce{};
+                return ExtraNonce;
             }
         
             void set_extranonce(const Stratum::extranonce &n) {
-                if (Phase != working) throw 0;
-                Subscriptions->ExtraNonce = n;
+                if (!subscribed()) throw std::logic_error{"Cannot set extra nonce before client is subscribed"};
+                NextExtranonce = n;
             }
         
-            optional<Stratum::difficulty> Difficulty;
+            Stratum::difficulty Difficulty;
+            Stratum::difficulty NextDifficulty;
         
             Stratum::difficulty difficulty() const {
                 if (!Difficulty) return Stratum::difficulty{0};
@@ -127,7 +143,7 @@ namespace Gigamonkey::Stratum {
             }
             
             void set_difficulty(const Stratum::difficulty& d) {
-                if (Phase != working) throw 0;
+                if (!subscribed()) throw std::logic_error{"Cannot set difficulty before client is subscribed"};
                 Difficulty = d;
             }
             
@@ -183,10 +199,12 @@ namespace Gigamonkey::Stratum {
             void notify(const mining::notify::parameters& p) {
                 if (p.Clean) Recent = set<byte_array<80>>{};
                 Notifies.push(version_mask(), extranonce(), p);
+                Extranonce = NextExtranonce;
+                Difficulty = NextDifficulty;
             }
             
             state() {}
-            state(const mining::configure_response::parameters &x) : ExtensionsSupported{x} {}
+            state(const options &x) : Options{x} {}
             
         };
         
@@ -196,39 +214,42 @@ namespace Gigamonkey::Stratum {
         
     public:
         
-        state::phase phase() const;
-        
         extensions::version_mask version_mask() const;
         
+        // send a set_version_mask message to the client. 
         void set_version_mask(const extensions::version_mask& p);
         
         string username() const;
         
         Stratum::extranonce extranonce() const;
         
+        // send a set_extranonce message to the client. 
+        // this will not go into effect until the next 
+        // notify message is sent. 
         void set_extranonce(const Stratum::extranonce &n);
         
         Stratum::difficulty difficulty() const;
         
+        // send a set_difficulty message to the client. 
+        // this will not go into effect until the next 
+        // notify message is sent. 
         void set_difficulty(const Stratum::difficulty& d);
         
+        // notify the client of a new job. 
         void notify(const mining::notify::parameters& p);
         
     private:
         
         // generate a configure response from a configure request message. 
-        // this the optional first method of the protocol. 
+        // this is the optional first method of the protocol. 
         mining::configure_response configure(const mining::configure_request &r);
         
         // authorize the client to the server. 
-        // this is the original first method of the protocol. 
         mining::authorize_response authorize(const mining::authorize_request &r);
             
-        // subscribe is the 3rd or 2nd method and it is when the client gets its
+        // subscribe is when the client gets its
         // session id, which is also known as extra nonce 1. 
         mining::subscribe_response subscribe(const mining::subscribe_request &r);
-        
-        uint32 min_time_difference;
         
         // empty return value for an accepted share. 
         optional<error> submit(const share &x);
@@ -240,14 +261,8 @@ namespace Gigamonkey::Stratum {
         }
         
     public:
-        server_session(tcp::socket &s) : remote{s}, State{} {}
-        server_session(tcp::socket &s, const mining::configure_response::parameters &x) : remote{s}, State{x} {}
+        server_session(tcp::socket &s, const options &x = {}) : remote{s}, State{x} {}
     };
-    
-    server_session::state::phase inline server_session::phase() const {
-        std::shared_lock lock(Mutex);
-        return State.Phase;
-    }
     
     extensions::version_mask inline server_session::version_mask() const {
         std::shared_lock lock(Mutex);

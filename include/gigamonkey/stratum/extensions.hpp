@@ -147,6 +147,16 @@ namespace Gigamonkey::Stratum::extensions {
         std::optional<configured<x>> get() const;
     };
     
+    struct options {
+        // whether extension version_rolling is supported and 
+        // parameter version mask. 
+        optional<version_mask> DefaultVersionMask{};
+        
+        bool SupportExtensionSubscribeExtranonce{false};
+        bool SupportExtensionMinimumDifficulty{false};
+        bool SupportExtensionInfo{false};
+    };
+    
     inline encoding::hex::fixed<4> write_version_mask(const version_mask& x) {
         return encoding::hex::write(x, encoding::hex::lower);
     }
