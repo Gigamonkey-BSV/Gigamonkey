@@ -130,31 +130,42 @@ namespace Gigamonkey::Stratum::extensions {
         
     };
     
-    struct results : public data::map<string, result> {
-        using data::map<string, result>::map;
-        results(data::map<string, result> m);
-        
-        template <extension x>
-        results insert(const configured<x> &n) const;
-        
-        template <extension x>
-        results insert() const;
-        
-        template <extension x>
-        results insert(const string &err) const;
-        
-        template <extension x>
-        std::optional<configured<x>> get() const;
-    };
+    using results = data::map<string, result>;
     
     struct options {
         // whether extension version_rolling is supported and 
         // parameter version mask. 
-        optional<version_mask> DefaultVersionMask{};
+        optional<version_mask> VersionRollingMask{};
         
         bool SupportExtensionSubscribeExtranonce{false};
         bool SupportExtensionMinimumDifficulty{false};
         bool SupportExtensionInfo{false};
+    };
+    
+    template <extension> struct parameters;
+    
+    template <> struct parameters<version_rolling> {
+        version_mask LocalMask;
+        configuration<version_rolling> RequestedMask;
+        
+        static optional<version_mask> make(version_mask local, const configuration<extensions::version_rolling> &r);
+        
+        parameters() : LocalMask{}, RequestedMask{} {}
+        
+        optional<version_mask> get() const {
+            return make(LocalMask, RequestedMask);
+        }
+        
+        optional<version_mask> configure(const configuration<version_rolling> &requested) {
+            RequestedMask = requested;
+            return get();
+        }
+        
+        optional<version_mask> set(const version_mask &mask) {
+            LocalMask = mask;
+            return get();
+        }
+        
     };
     
     inline encoding::hex::fixed<4> write_version_mask(const version_mask& x) {
@@ -223,32 +234,6 @@ namespace Gigamonkey::Stratum::extensions {
     
     bool inline result::valid() const {
         return Accepted.valid() && (!bool(Accepted) || bool(Parameters));
-    }
-    
-    inline results::results(data::map<string, result> m) : data::map<string, result>{m} {}
-    
-    template <extension x>
-    results results::insert(const configured<x> &n) const {
-        return results{data::map<string, result>::insert(extension_to_string(x), result{data::map<string, json>(n)})};
-    }
-    
-    template <extension x>
-    results results::insert() const {
-        return {data::map<string, result>::insert(extension_to_string(x), result{})};
-    }
-    
-    template <extension x>
-    results results::insert(const string &err) const {
-        return {data::map<string, result>::insert(extension_to_string(x), result{accepted{err}})};
-    }
-    
-    template <extension x>
-    std::optional<configured<x>> results::get() const {
-        string ext = extension_to_string(x);
-        auto r = this->contains(ext);
-        if (r) return {};
-        if (!bool(r->Accepted)) return {};
-        return {configured<x>::read(*r->Parameters)};
     }
     
     std::ostream inline &operator<<(std::ostream &o, const accepted &a) {

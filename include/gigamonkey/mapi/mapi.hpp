@@ -17,6 +17,7 @@ namespace Gigamonkey {
 namespace Gigamonkey::BitcoinAssociation {
 
     struct MAPI : networking::HTTP_client {
+        MAPI(networking::HTTP_client &client) : networking::HTTP_client{client} {}
         
         // there are five calls in MAPI
         

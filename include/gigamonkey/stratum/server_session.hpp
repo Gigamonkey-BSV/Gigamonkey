@@ -18,27 +18,15 @@
 namespace Gigamonkey::Stratum {
     
     // this represents a server talking to a remote client. 
-    class server_session : public remote {
+    struct server_session : public remote {
         
-        // we need a database of users to check logins. 
-        // empty return value means a successful authorization. 
-        virtual optional<error> authorize(const mining::authorize_request::parameters&) = 0;
-        
-        // We also need a way to assign session ids and subscriptions to users. 
-        virtual mining::subscribe_response::parameters subscribe(const mining::subscribe_request::parameters&) = 0;
-        
-        // typically the client does not send notifications to the server.
-        virtual void handle_notification(const notification &n) override {
-            throw std::logic_error{string{"unknown notification received: "} + string(n)};
-        }
-        
-        // indicate that a user has earned a payment. 
-        virtual void payment(const string &username, const difficulty &) = 0;
-        
-        // solution found. 
-        virtual void solution(const proof &) = 0;
-        
-    public:
+        struct initial_job {
+            mining::subscribe_response::parameters SubscribeParams;
+            Stratum::difficulty InitialDifficulty;
+            mining::notify::parameters NotifyParams;
+            
+            initial_job();
+        };
         
         struct options {
             bool CanSubmitWithoutAuthorization{true};
@@ -47,40 +35,63 @@ namespace Gigamonkey::Stratum {
             // clock to be accepted. 
             uint32 MaxTimeDifferenceSeconds{10};
             
+            uint32 RememberOldJobsSeconds{60};
+            
             optional<extensions::options> ExtensionsParameters{};
+            
+            options() {};
         };
         
+        server_session(tcp::socket &s, const options &x = {}) : remote{s}, State{x} {}
+        
+    private:
         // get_version is the only request that the server sends to the client.
         // It doesn't depend on state so can be sent at any time. 
         string get_version();
         
-    private:
+        // we need a database of users to check logins. 
+        // empty return value means a successful authorization. 
+        virtual optional<error> authorize(const mining::authorize_request::parameters&) = 0;
         
+        // We also need a way to assign session ids and subscriptions to users. 
+        virtual initial_job subscribe(const mining::subscribe_request::parameters&) = 0;
+        
+        // typically the client does not send notifications to the server.
+        virtual void handle_notification(const notification &n) override {
+            throw std::logic_error{string{"unknown notification received: "} + string(n)};
+        }
+        
+        // solution found. 
+        virtual void solution(const proof &) = 0;
+        
+    protected:
         // the state data of the protocol. 
         struct state {
             
             options Options;
             
-            // Extensions requested by the client. 
-            optional<extensions::requests> ExtensionsRequested{};
+            bool extensions_supported() const {
+                return bool(Options.ExtensionsParameters);
+            }
             
-            // Extension parameters returned by the server. 
-            extensions::results ExtensionsParameters{};
+            bool Configured{false};
             
             // whether we have received and responded to a mining.configure message. 
             bool configured() const {
-                return bool(Options.ExtensionsParameters) && bool(ExtensionsRequested);
+                return Configured;
             }
-        
-            static optional<extensions::version_mask> make_version_mask(
-                extensions::version_mask x, 
-                const extensions::configuration<extensions::version_rolling> &r);
             
             // Extension version_rolling allows clients to use ASICBoost. Server and client agree
             // on a mask that says what bits of the version field the client is allowed to alter. 
-            extensions::version_mask version_mask() const;
+            extensions::parameters<extensions::version_rolling> VersionRollingMaskParameters;
             
-            optional<extensions::version_mask> set_version_mask(extensions::version_mask x);
+            optional<extensions::version_mask> version_mask() const {
+                return VersionRollingMaskParameters.get();
+            }
+            
+            optional<extensions::version_mask> set_version_mask(const extensions::version_mask &x) {
+                return VersionRollingMaskParameters.set(x);
+            }
             
             extensions::result configure_result(
                 const string &extension, 
@@ -115,18 +126,18 @@ namespace Gigamonkey::Stratum {
             }
         
             // subscriptions are assigned during the subscribe method. 
-            optional<mining::subscription> Subscriptions; 
+            list<mining::subscription> Subscriptions; 
             
             // whether we have received and responded true' to a mining.subscribe message. 
             bool subscribed() {
-                return bool(Subscriptions);
+                return Subscriptions.size() > 0;
             }
             
             Stratum::extranonce Extranonce;
             Stratum::extranonce NextExtranonce;
             
             Stratum::extranonce extranonce() const {
-                return ExtraNonce;
+                return Extranonce;
             }
         
             void set_extranonce(const Stratum::extranonce &n) {
@@ -138,51 +149,50 @@ namespace Gigamonkey::Stratum {
             Stratum::difficulty NextDifficulty;
         
             Stratum::difficulty difficulty() const {
-                if (!Difficulty) return Stratum::difficulty{0};
-                return *Difficulty;
+                return Difficulty;
             }
             
             void set_difficulty(const Stratum::difficulty& d) {
                 if (!subscribed()) throw std::logic_error{"Cannot set difficulty before client is subscribed"};
-                Difficulty = d;
+                if (bool(MinimumDifficulty) && d > *MinimumDifficulty) NextDifficulty = d; 
+                NextDifficulty = d;
             }
             
             // we need to keep track of the last few notify notifications that have been sent. 
-            struct notifies {
+            struct history {
                 struct entry {
-                    std::chrono::time_point<std::chrono::system_clock> Time;
-                    extensions::version_mask Mask;
+                    optional<extensions::version_mask> Mask;
                     Stratum::extranonce ExtraNonce;
                     mining::notify::parameters Notification;
                     
                     entry();
                     entry(
-                        const std::chrono::time_point<std::chrono::system_clock> &t,
-                        const extensions::version_mask &m,
+                        const optional<extensions::version_mask> &m,
                         const Stratum::extranonce &n,
                         const mining::notify::parameters &p) : 
-                        Time{t}, Mask{m}, ExtraNonce{n}, Notification{p} {}
+                        Mask{m}, ExtraNonce{n}, Notification{p} {}
+                    
+                    Bitcoin::timestamp time() const {
+                        return Notification.Now;
+                    }
                 };
                 
+                double RememberForThisMuchTime;
                 std::list<entry> Notifications;
-                std::chrono::duration<uint64> RememberForThisMuchTime;
-                uint32 MaxSize;
                 
                 void push(
-                    extensions::version_mask mask,
+                    optional<extensions::version_mask> mask,
                     Stratum::extranonce n,
                     const mining::notify::parameters &p) {
-                    const std::chrono::time_point<std::chrono::system_clock> now =
-                        std::chrono::system_clock::now();
-                        
-                    while (Notifications.size() > MaxSize) Notifications.pop_back();
-                    while (Notifications.size() > 0 && (now - Notifications.back().Time) > RememberForThisMuchTime) Notifications.pop_back();
                     
-                    Notifications.push_front({now, mask, n, p});
+                    while (Notifications.size() > 0 && (p.Now - Notifications.back().time()) > RememberForThisMuchTime)
+                        Notifications.pop_back();
+                    
+                    Notifications.push_front({mask, n, p});
                 }
             };
         
-            notifies Notifies{};
+            history Notifies;
             set<byte_array<80>> Recent;
             
             struct found {
@@ -196,15 +206,10 @@ namespace Gigamonkey::Stratum {
             
             found find(const share &x) const;
         
-            void notify(const mining::notify::parameters& p) {
-                if (p.Clean) Recent = set<byte_array<80>>{};
-                Notifies.push(version_mask(), extranonce(), p);
-                Extranonce = NextExtranonce;
-                Difficulty = NextDifficulty;
-            }
+            void notify(const mining::notify::parameters& p);
             
             state() {}
-            state(const options &x) : Options{x} {}
+            state(const options &x) : Options{x}, Notifies{x.RememberOldJobsSeconds}, Recent{} {}
             
         };
         
@@ -238,6 +243,8 @@ namespace Gigamonkey::Stratum {
         // notify the client of a new job. 
         void notify(const mining::notify::parameters& p);
         
+        void handle_request(const Stratum::request &r) final override;
+        
     private:
         
         // generate a configure response from a configure request message. 
@@ -246,27 +253,17 @@ namespace Gigamonkey::Stratum {
         
         // authorize the client to the server. 
         mining::authorize_response authorize(const mining::authorize_request &r);
-            
-        // subscribe is when the client gets its
-        // session id, which is also known as extra nonce 1. 
-        mining::subscribe_response subscribe(const mining::subscribe_request &r);
         
         // empty return value for an accepted share. 
         optional<error> submit(const share &x);
         
-        response respond(const Stratum::request &r);
-        
-        void handle_request(const Stratum::request &r) final override {
-            this->send(respond(r));
-        }
-        
-    public:
-        server_session(tcp::socket &s, const options &x = {}) : remote{s}, State{x} {}
     };
     
     extensions::version_mask inline server_session::version_mask() const {
         std::shared_lock lock(Mutex);
-        return State.version_mask();
+        auto mask = State.version_mask();
+        if (!mask) return 0;
+        return *mask;
     }
     
     string inline server_session::username() const {
