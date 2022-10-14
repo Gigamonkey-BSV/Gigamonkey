@@ -9,19 +9,19 @@ namespace Gigamonkey::BitcoinAssociation {
     bool json_envelope::verify() const {
         if (!valid()) return false;
         
-        if (!bool(publicKey)) return true;
+        if (!bool(PublicKey)) return true;
         
-        switch (encoding) {
+        switch (Encoding) {
             default: return false;
             
             case base64 : {
-                ptr<bytes> decoded = encoding::base64::read(payload);
+                ptr<bytes> decoded = encoding::base64::read(Payload);
                 if (decoded == nullptr) return false;
-                return publicKey->verify(Gigamonkey::SHA2_256(*decoded), *signature);
+                return PublicKey->verify(Gigamonkey::SHA2_256(*decoded), *Signature);
             }
             
             case UTF_8 : 
-                return publicKey->verify(Gigamonkey::SHA2_256(encoding::unicode::utf8_encode(payload)), *signature);
+                return PublicKey->verify(Gigamonkey::SHA2_256(encoding::unicode::utf8_encode(Payload)), *Signature);
         }
     }
     
@@ -39,21 +39,21 @@ namespace Gigamonkey::BitcoinAssociation {
             else {
                 auto sig_hex = encoding::hex::read(string(j["signature"]));
                 if (sig_hex == nullptr) return;
-                envelope.signature = secp256k1::signature{*sig_hex};
+                envelope.Signature = secp256k1::signature{*sig_hex};
                 
                 auto pk_hex = encoding::hex::read(string(j["publicKey"]));
                 if (pk_hex == nullptr) return;
-                envelope.publicKey = secp256k1::pubkey{*pk_hex};
+                envelope.PublicKey = secp256k1::pubkey{*pk_hex};
             }
         }
         
         string encoding = j["encoding"];
-        if (encoding == "base64") envelope.encoding = base64;
-        else if (encoding == "UTF_8") envelope.encoding = UTF_8;
+        if (encoding == "base64") envelope.Encoding = base64;
+        else if (encoding == "UTF_8") envelope.Encoding = UTF_8;
         else return;
         
-        envelope.payload = j["payload"];
-        envelope.mimetype = j["mimetype"];
+        envelope.Payload = j["payload"];
+        envelope.Mimetype = j["mimetype"];
         
         *this = envelope;
         
@@ -62,15 +62,25 @@ namespace Gigamonkey::BitcoinAssociation {
     json_envelope::operator json() const {
         if (!valid()) return nullptr;
         
-        json j{{"payload", payload}, {"mimetype", mimetype}};
-        j["encoding"] = encoding == base64 ? "base64" : "UTF_8";
+        json j{{"payload", Payload}, {"mimetype", Mimetype}};
+        j["encoding"] = Encoding == base64 ? "base64" : "UTF_8";
         
-        if (bool(publicKey)) {
-            j["publicKey"] = encoding::hex::write(*publicKey);
-            j["signature"] = encoding::hex::write(*signature);
+        if (bool(PublicKey)) {
+            j["publicKey"] = encoding::hex::write(*PublicKey);
+            j["signature"] = encoding::hex::write(*Signature);
         }
         
         return j;
+    }
+    
+    bool json_json_envelope::valid() const {
+        if (!json_envelope::valid()) return false;
+        try {
+            payload();
+            return true;
+        } catch (const json::exception &) {
+            return false;
+        }
     }
     
 }

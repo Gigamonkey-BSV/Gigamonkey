@@ -4,20 +4,16 @@
 #ifndef GIGAMONKEY_MAPI_MAPI
 #define GIGAMONKEY_MAPI_MAPI
 
-#include <boost/asio/ip/address.hpp>
 #include <data/networking/HTTP_client.hpp>
+#include <gigamonkey/mapi/envelope.hpp>
 #include <gigamonkey/fees.hpp>
 
 // https://github.com/bitcoin-sv-specs/brfc-merchantapi 
 
-namespace Gigamonkey {
-    using ip_address = boost::asio::ip::address;
-}
-
 namespace Gigamonkey::BitcoinAssociation {
 
     struct MAPI : networking::HTTP_client {
-        MAPI(networking::HTTP_client &client) : networking::HTTP_client{client} {}
+        using networking::HTTP_client::HTTP_client;
         
         // there are five calls in MAPI
         
@@ -44,32 +40,32 @@ namespace Gigamonkey::BitcoinAssociation {
         };
         
         struct fee {
-            string feeType;
-            satoshi_per_byte miningFee;
-            satoshi_per_byte relayFee;
+            string FeeType;
+            satoshi_per_byte MiningFee;
+            satoshi_per_byte RelayFee;
             
             bool valid() const;
             
             fee(string type, satoshi_per_byte mining, satoshi_per_byte relay) : 
-                feeType{type}, miningFee{mining}, relayFee{relay} {}
+                FeeType{type}, MiningFee{mining}, RelayFee{relay} {}
                 
             fee(const json &j);
             operator json() const;
             
             satoshi_per_byte get_fee(service z) const;
             
-            fee() : feeType{}, miningFee{0, 0}, relayFee{0, 0} {}
+            fee() : FeeType{}, MiningFee{0, 0}, RelayFee{0, 0} {}
         };
     
         struct get_fee_quote_response {
             
-            string apiVersion;
-            string timestamp;
-            string expiryTime;
-            secp256k1::pubkey minerId;
-            digest256 currentHighestBlockHash;
-            uint64 currentHighestBlockHeight;
-            list<fee> fees;
+            string APIVersion;
+            string Timestamp;
+            string ExpiryTime;
+            secp256k1::pubkey MinerID;
+            digest256 CurrentHighestBlockHash;
+            uint64 CurrentHighestBlockHeight;
+            list<fee> Fees;
             
             bool valid() const;
             
@@ -88,35 +84,9 @@ namespace Gigamonkey::BitcoinAssociation {
             get_fee_quote_response();
         };
         
-        struct policies {
-            
-            list<uint32> skipscriptflags;
-            uint64 maxtxsizepolicy;
-            uint64 datacarriersize;
-            uint64 maxscriptsizepolicy;
-            uint64 maxscriptnumlengthpolicy;
-            uint64 maxstackmemoryusagepolicy;
-            uint64 limitancestorcount;
-            uint64 limitcpfpgroupmemberscount;
-            bool acceptnonstdoutputs;
-            bool datacarrier;
-            uint64 maxstdtxvalidationduration;
-            uint64 maxnonstdtxvalidationduration;
-            optional<uint64> dustrelayfee;
-            optional<uint64> dustlimitfactor;
-            
-            static bool valid(const json &);
-            
-            policies(const json &);
-            operator json() const;
-            
-            policies();
-        
-        };
-        
         struct get_policy_quote_response : get_fee_quote_response {
-            list<ip_address> callbacks;
-            MAPI::policies policies;
+            list<string> Callbacks;
+            json Policies;
             
             get_policy_quote_response(
                 const string& apiVersion, 
@@ -126,8 +96,8 @@ namespace Gigamonkey::BitcoinAssociation {
                 const digest256& currentHighestBlockHash,
                 uint64 currentHighestBlockHeight, 
                 list<fee> fees, 
-                list<ip_address> callbacks, 
-                const MAPI::policies& policies);
+                list<string> callbacks, 
+                const json& policies);
             
             bool valid();
             
@@ -146,51 +116,52 @@ namespace Gigamonkey::BitcoinAssociation {
         // to indicate a double spend. 
         struct conflicted_with {
             
-            Bitcoin::txid txid;
-            uint64 size;
-            encoding::hex::string hex;
+            Bitcoin::txid TXID;
+            uint64 Size;
+            bytes Transaction;
             
             bool valid() const;
             
             conflicted_with(const json &);
             operator json() const;
             
-            conflicted_with() : txid{}, size{}, hex{} {}
+            conflicted_with() : TXID{}, Size{}, Transaction{} {}
             
         };
         
         struct transaction_status {
             
-            digest256 txid;
-            return_result returnResult;
-            string resultDescription;
-            list<conflicted_with> conflictedWith;
+            digest256 TXID;
+            return_result ReturnResult;
+            string ResultDescription;
+            list<conflicted_with> ConflictedWith;
             
             bool valid() const;
             
             transaction_status(
-                const digest256& Txid, 
-                return_result ReturnResult,
-                const string& ResultDescription,
-                list<conflicted_with> Conflicted = {}) :
-                txid{Txid}, returnResult{ReturnResult}, 
-                resultDescription{ResultDescription}, conflictedWith{Conflicted} {}
+                const digest256& txid, 
+                return_result returnResult,
+                const string& resultDescription,
+                list<conflicted_with> conflicted = {}) :
+                TXID{txid}, ReturnResult{returnResult}, 
+                ResultDescription{resultDescription}, ConflictedWith{conflicted} {}
             
-            transaction_status();
+            transaction_status() = default;
+            operator json() const;
             
         };
         
         struct transaction_status_response : transaction_status {
             
-            string apiVersion;
-            string timestamp;
-            secp256k1::pubkey minerId;
-            uint32 txSecondMempoolExpiry;
+            string APIVersion;
+            string Timestamp;
+            secp256k1::pubkey MinerID;
+            uint32 TxSecondMempoolExpiry;
             
             // optional fields included for txs that have been mined. 
-            optional<digest256> blockHash;
-            optional<uint32> blockHeight;
-            optional<uint32> confirmations;
+            optional<digest256> BlockHash;
+            optional<uint32> BlockHeight;
+            optional<uint32> Confirmations;
             
             bool valid() const;
             
@@ -218,7 +189,7 @@ namespace Gigamonkey::BitcoinAssociation {
             transaction_status_response(const json &);
             operator json() const;
             
-            transaction_status_response();
+            transaction_status_response() = default;
             
         };
     
@@ -229,27 +200,27 @@ namespace Gigamonkey::BitcoinAssociation {
     
         struct submit_transaction_parameters {
             
-            optional<string> callbackUrl;
-            optional<string> callbackToken;
-            optional<bool> merkleProof;
-            optional<string> merkleFormat;
-            optional<bool> dsCheck;
-            optional<string> callbackEncryption;
+            optional<string> CallbackURL;
+            optional<string> CallbackToken;
+            optional<bool> MerkleProof;
+            optional<string> MerkleFormat;
+            optional<bool> DSCheck;
+            optional<string> CallbackEncryption;
             
-            submit_transaction_parameters();
+            submit_transaction_parameters() = default;
             
-            submit_transaction_parameters &set_callbackUrl(const string &);
-            submit_transaction_parameters &set_callbackToken(const string &);
-            submit_transaction_parameters &set_merkleProof(bool);
-            submit_transaction_parameters &set_dsCheck(bool);
-            submit_transaction_parameters &set_callbackEncryption(const string &key);
-            submit_transaction_parameters &set_merkleFormat();
+            submit_transaction_parameters &set_CallbackURL(const string &);
+            submit_transaction_parameters &set_CallbackToken(const string &);
+            submit_transaction_parameters &set_MerkleProof(bool);
+            submit_transaction_parameters &set_DSCheck(bool);
+            submit_transaction_parameters &set_CallbackEncryption(const string &key);
+            submit_transaction_parameters &set_MerkleFormat();
             
         };
     
         struct transaction_submission {
             
-            bytes rawtx;
+            bytes Transaction;
             submit_transaction_parameters Parameters;
             
             bool valid() const;
@@ -257,39 +228,32 @@ namespace Gigamonkey::BitcoinAssociation {
             transaction_submission(const json &);
             operator json() const;
             
-            transaction_submission(const bytes raw, const submit_transaction_parameters &);
+            transaction_submission(const bytes raw, const submit_transaction_parameters &p = {}):
+                Transaction{raw}, Parameters{p} {}
             
         };
     
         struct submit_transaction_request : transaction_submission {
             
-            content_type contentType() const;
-            
-            bool valid() const;
+            content_type ContentType;
             
             submit_transaction_request(
                 const bytes tx, 
-                content_type ContentType, 
-                const string &callbackUrl, 
-                const string &callbackToken, 
-                bool merkleProof, 
-                bool dsCheck);
+                const submit_transaction_parameters &params = {}, 
+                content_type ct = application_octet_stream) : transaction_submission{tx, params}, ContentType{ct} {}
             
             operator networking::REST::request() const;
-            
-            submit_transaction_request &set_callbackEncryption(const string &key);
-            submit_transaction_request &set_merkleFormat();
             
         };
         
         struct submit_transaction_response : transaction_status {
             
-            string apiVersion;
-            string timestamp;
-            secp256k1::pubkey minerId;
-            uint32 txSecondMempoolExpiry;
-            digest256 currentHighestBlockHash;
-            uint64 currentHighestBlockHeight;
+            string APIVersion;
+            string Timestamp;
+            secp256k1::pubkey MinerID;
+            uint32 TxSecondMempoolExpiry;
+            digest256 CurrentHighestBlockHash;
+            uint64 CurrentHighestBlockHeight;
             
             submit_transaction_response(
                 const string &apiVersion, 
@@ -306,13 +270,14 @@ namespace Gigamonkey::BitcoinAssociation {
             submit_transaction_response(const json &);
             operator json() const;
             
-            submit_transaction_response();
+            submit_transaction_response() : 
+                transaction_status{}, APIVersion{}, Timestamp{}, MinerID{}, 
+                TxSecondMempoolExpiry{0}, CurrentHighestBlockHash{}, CurrentHighestBlockHeight{0} {}
             
         };
         
         struct submit_transactions_request {
             
-            content_type ContentType;
             list<transaction_submission> Submissions;
             
             submit_transaction_parameters DefaultParameters;
@@ -325,26 +290,26 @@ namespace Gigamonkey::BitcoinAssociation {
         
         struct submit_transactions_response {
             
-            string apiVersion;
-            string timestamp;
-            secp256k1::pubkey minerId;
-            digest256 currentHighestBlockHash;
-            uint64 currentHighestBlockHeight;
-            uint32 txSecondMempoolExpiry;
-            list<transaction_status> txs;
-            uint32 failureCount;
+            string APIVersion;
+            string Timestamp;
+            secp256k1::pubkey MinerID;
+            digest256 CurrentHighestBlockHash;
+            uint64 CurrentHighestBlockHeight;
+            uint32 TxSecondMempoolExpiry;
+            list<transaction_status> Transactions;
+            uint32 FailureCount;
             
             bool valid() const {
-                return apiVersion != "" && timestamp != "" && minerId.valid() && 
-                    currentHighestBlockHash.valid() && currentHighestBlockHeight != 0 && 
-                    txSecondMempoolExpiry != 0 && txs.valid(); 
+                return APIVersion != "" && Timestamp != "" && MinerID.valid() && 
+                    CurrentHighestBlockHash.valid() && CurrentHighestBlockHeight != 0 && 
+                    TxSecondMempoolExpiry != 0 && Transactions.valid(); 
             }
             
             submit_transactions_response() : 
-                apiVersion{}, timestamp{}, minerId{}, 
-                currentHighestBlockHash{}, 
-                currentHighestBlockHeight{0}, 
-                txSecondMempoolExpiry{0}, txs{}, failureCount{0} {}
+                APIVersion{}, Timestamp{}, MinerID{}, 
+                CurrentHighestBlockHash{}, 
+                CurrentHighestBlockHeight{0}, 
+                TxSecondMempoolExpiry{0}, Transactions{}, FailureCount{0} {}
             
             submit_transactions_response(const json&);
             operator json() const;
@@ -388,24 +353,24 @@ namespace Gigamonkey::BitcoinAssociation {
     }
     
     bool inline MAPI::fee::valid() const {
-        return feeType != "" && miningFee.valid() && relayFee.valid();
+        return FeeType != "" && MiningFee.valid() && RelayFee.valid();
     }
     
     satoshi_per_byte inline MAPI::fee::get_fee(service z) const {
-        return z == mine ? miningFee : relayFee;
+        return z == mine ? MiningFee : RelayFee;
     }
             
     bool inline MAPI::conflicted_with::valid() const {
-        return txid.valid() && size * 2 == hex.size();
+        return TXID.valid() && Size == Transaction.size();
     }
     
     bool inline MAPI::transaction_status::valid() const {
-        return txid.valid();
+        return TXID.valid();
     }
     
     bool inline MAPI::get_fee_quote_response::valid() const {
-        return apiVersion != "" && timestamp != "" && expiryTime != "" && minerId.valid() && 
-            currentHighestBlockHash.valid() && currentHighestBlockHeight != 0 && data::valid(fees);
+        return APIVersion != "" && Timestamp != "" && ExpiryTime != "" && MinerID.valid() && 
+            CurrentHighestBlockHash.valid() && CurrentHighestBlockHeight != 0 && data::valid(Fees);
     }
     
     inline MAPI::get_fee_quote_response::get_fee_quote_response(
@@ -416,12 +381,12 @@ namespace Gigamonkey::BitcoinAssociation {
         const digest256& hx,
         uint64 cx, 
         list<fee> f) : 
-        apiVersion{v}, timestamp{t}, expiryTime{ex}, minerId{id}, 
-        currentHighestBlockHash{hx}, currentHighestBlockHeight{cx}, fees{f} {}
+        APIVersion{v}, Timestamp{t}, ExpiryTime{ex}, MinerID{id}, 
+        CurrentHighestBlockHash{hx}, CurrentHighestBlockHeight{cx}, Fees{f} {}
             
     inline MAPI::get_fee_quote_response::get_fee_quote_response() : 
-        apiVersion{}, timestamp{}, expiryTime{}, minerId{}, 
-        currentHighestBlockHash{}, currentHighestBlockHeight{0}, fees{} {}
+        APIVersion{}, Timestamp{}, ExpiryTime{}, MinerID{}, 
+        CurrentHighestBlockHash{}, CurrentHighestBlockHeight{0}, Fees{} {}
             
     inline MAPI::get_policy_quote_response::get_policy_quote_response(
         const string& apiVersion, 
@@ -431,19 +396,32 @@ namespace Gigamonkey::BitcoinAssociation {
         const digest256& currentHighestBlockHash,
         uint64 currentHighestBlockHeight, 
         list<fee> fees, 
-        list<ip_address> Callbacks, 
-        const MAPI::policies& Policies) : 
+        list<string> callbacks, 
+        const json& policies) : 
         get_fee_quote_response{
             apiVersion, timestamp, expiryTime, minerId, 
             currentHighestBlockHash, currentHighestBlockHeight, fees}, 
-        callbacks{Callbacks}, policies{Policies} {}
+        Callbacks{callbacks}, Policies{policies} {}
             
     bool inline MAPI::get_policy_quote_response::valid() {
-        return get_fee_quote_response::valid() && data::valid(fees);
+        return get_fee_quote_response::valid() && data::valid(Fees);
     }
             
     inline MAPI::get_policy_quote_response::get_policy_quote_response() : 
-        get_fee_quote_response{}, callbacks{}, policies{} {}
+        get_fee_quote_response{}, Callbacks{}, Policies{} {}
+    
+    bool inline MAPI::transaction_submission::valid() const {
+        return Transaction.size() > 0;
+    }
+        
+    bool inline MAPI::transaction_status_response::valid() const {
+        return APIVersion != "" && Timestamp != "" && MinerID != secp256k1::pubkey{};
+    }
+    
+    bool inline MAPI::submit_transactions_request::valid() const {
+        return Submissions.size() > 0 && data::valid(Submissions);
+    }
+            
 }
 
 #endif
