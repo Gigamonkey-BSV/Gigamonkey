@@ -11,13 +11,12 @@
 #include <data/encoding/words.hpp>
 #include <data/encoding/halves.hpp>
 
-#include <data/numbers.hpp>
-
 namespace Gigamonkey {
     
-    template <size_t size> struct uint;
+    template <size_t X> struct uint;
     
     // sizes of standard hash functions.
+    
     using uint128 = uint<16>; 
     using uint160 = uint<20>;
     using uint224 = uint<28>;
@@ -96,8 +95,6 @@ namespace Gigamonkey {
         explicit uint(string_view hex);
         
         explicit uint(const N& n);
-        
-        explicit uint(const ::uint256&);
         
         explicit operator N() const;
         explicit operator float64() const;

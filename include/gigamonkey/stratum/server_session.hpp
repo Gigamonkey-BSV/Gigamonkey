@@ -209,7 +209,8 @@ namespace Gigamonkey::Stratum {
             void notify(const mining::notify::parameters& p);
             
             state() {}
-            state(const options &x) : Options{x}, Notifies{x.RememberOldJobsSeconds}, Recent{} {}
+            state(const options &x) : 
+               Options{x}, Notifies{static_cast<double>(x.RememberOldJobsSeconds)}, Recent{} {}
             
         };
         

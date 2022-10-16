@@ -20,6 +20,7 @@
 #include <data/fold.hpp>
 #include <data/for_each.hpp>
 #include <data/encoding/hex.hpp>
+#include <data/math/nonnegative.hpp>
 
 inline bool implies(bool a, bool b) {
     return (!a) || b;
