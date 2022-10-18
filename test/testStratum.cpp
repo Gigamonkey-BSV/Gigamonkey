@@ -6,7 +6,6 @@
 #include <gigamonkey/stratum/mining_subscribe.hpp>
 #include <gigamonkey/stratum/job.hpp>
 #include <gigamonkey/stratum/server_session.hpp>
-#include <gigamonkey/stratum/miner.hpp>
 #include <gigamonkey/work/ASICBoost.hpp>
 #include "gtest/gtest.h"
 

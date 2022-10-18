@@ -62,7 +62,7 @@ namespace Gigamonkey::Stratum {
         
         bool submit(const share &x);
         
-        client_session(tcp::socket &s) : remote{s} {}
+        client_session(networking::tcp::socket &s) : remote{s} {}
         
         virtual ~client_session() {}
         

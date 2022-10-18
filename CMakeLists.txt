@@ -76,10 +76,9 @@ add_library(gigamonkey STATIC
     src/gigamonkey/stratum/mining_authorize.cpp
     src/gigamonkey/stratum/mining.cpp
     src/gigamonkey/stratum/mining_configure.cpp
-    src/gigamonkey/stratum/json_bi_stream.cpp
     src/gigamonkey/stratum/remote.cpp
     src/gigamonkey/stratum/client_session.cpp
-    src/gigamonkey/stratum/miner.cpp
+    #src/gigamonkey/stratum/miner.cpp
     src/gigamonkey/stratum/server_session.cpp
     
     src/gigamonkey/boost/boost.cpp

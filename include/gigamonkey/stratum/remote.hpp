@@ -5,20 +5,21 @@
 #define GIGAMONKEY_STRATUM_REMOTE
 
 #include <gigamonkey/stratum/stratum.hpp>
-#include <gigamonkey/stratum/json_bi_stream.hpp>
 #include <gigamonkey/stratum/mining_configure.hpp>
 #include <gigamonkey/stratum/mining_authorize.hpp>
 #include <gigamonkey/stratum/mining_subscribe.hpp>
 #include <gigamonkey/stratum/mining_submit.hpp>
 #include <gigamonkey/stratum/client_get_version.hpp>
 #include <boost/system/error_code.hpp>
+#include <data/networking/TCP.hpp>
+#include <data/networking/JSON.hpp>
 
 namespace Gigamonkey::Stratum {
     template <typename X> using promise = std::promise<X>;
     template <typename X> using future = std::future<X>;
     
     // can be used for a remote server or a remote client. 
-    class remote : public json_bi_stream {
+    class remote : protected networking::tcp_session, public networking::json_line_session {
         
         virtual void handle_notification(const notification &) = 0;
         
@@ -52,16 +53,17 @@ namespace Gigamonkey::Stratum {
         
         void send_notification(method m, parameters p);
         
-        remote(tcp::socket &s);
+        remote(networking::tcp::socket &s);
         virtual ~remote();
         
     };
     
     void inline remote::send_notification(method m, parameters p) {
-        this->send(notification{m, p});
+        networking::json_line_session::send(notification{m, p});
     }
     
-    inline remote::remote(tcp::socket &s) : json_bi_stream{s} {}
+    inline remote::remote(networking::tcp::socket &s) : 
+        networking::tcp_session{s}, networking::json_line_session{} {}
     
     inline remote::~remote() {
         shutdown();

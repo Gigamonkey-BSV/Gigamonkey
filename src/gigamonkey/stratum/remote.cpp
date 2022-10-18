@@ -37,7 +37,7 @@ namespace Gigamonkey::Stratum {
     response remote::request(method m, parameters p) {
         guard lock(Mutex);
         AwaitingResponse.push_back(std::pair{Stratum::request{message_id(Requests), m, p}, new promise<response>()});
-        this->send(AwaitingResponse.back().first);
+        networking::json_line_session::send(AwaitingResponse.back().first);
         Requests++;
         return AwaitingResponse.back().second->get_future().get();
     }

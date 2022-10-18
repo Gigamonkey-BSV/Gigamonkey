@@ -13,7 +13,6 @@
 namespace Gigamonkey::Stratum {
     
     class miner final : public client_session {
-        using tcp = boost::asio::ip::tcp;
         
         // the notifications we will receive from the server that
         // define the mining job we are to perform. 
@@ -79,18 +78,18 @@ namespace Gigamonkey::Stratum {
             return Version;
         }
         
-        void handle_error(const io_error&) final override {
+        void handle_error(const networking::io_error&) final override {
             shutdown();
             throw std::logic_error{""};
         }
         
-        miner(tcp::socket &socket, uint32 threads);
+        miner(networking::tcp::socket &socket, uint32 threads);
         
     public:
         
         // because we use shared_from_this, miner must be used as a shared_ptr. 
-        static ptr<miner> make(tcp::socket &socket, uint32 threads) {
-            return ptr<miner>(new miner{socket, threads});
+        static ptr<miner> make(networking::tcp::socket &socket, uint32 threads) {
+            return ptr<client_session>(new client_session{socket, threads});
         }
         
         static constexpr char Version[]{"Gigamonkey cpu miner/alpha"};

@@ -29,27 +29,29 @@ namespace Gigamonkey::Stratum {
                         mining::submit_response{r.id(), *submit_result};
                 }
                 
-                return this->send(submit_response);
+                return networking::json_line_session::send(submit_response);
             }
             
-            case mining_configure: return this->send(configure(mining::configure_request{r}));
+            case mining_configure: 
+                return networking::json_line_session::send(configure(mining::configure_request{r}));
             
-            case mining_authorize: return this->send(authorize(mining::authorize_request{r}));
+            case mining_authorize: 
+                return networking::json_line_session::send(authorize(mining::authorize_request{r}));
             
             case mining_subscribe: {
                 if (!r.valid()) {
-                    this->send(response{r.id(), nullptr, error{ILLEGAL_PARAMS}});
+                    networking::json_line_session::send(response{r.id(), nullptr, error{ILLEGAL_PARAMS}});
                     return;
                 }
                 
                 if (State.subscribed()) {
-                    this->send(response{r.id(), nullptr, error{ILLEGAL_METHOD}});
+                    networking::json_line_session::send(response{r.id(), nullptr, error{ILLEGAL_METHOD}});
                 }
                 
                 auto response = subscribe(mining::subscribe_request::params(r));
                 
                 State.Subscriptions = response.SubscribeParams.Subscriptions;
-                this->send(mining::subscribe_response{r.id(), response.SubscribeParams});
+                networking::json_line_session::send(mining::subscribe_response{r.id(), response.SubscribeParams});
                 
                 State.set_difficulty(response.InitialDifficulty);
                 this->send_notification(mining_set_difficulty,
@@ -61,7 +63,8 @@ namespace Gigamonkey::Stratum {
                 return;
             };
             
-            default : this->send(response{r.id(), nullptr, error{ILLEGAL_METHOD}});
+            default : 
+                networking::json_line_session::send(response{r.id(), nullptr, error{ILLEGAL_METHOD}});
         }
     }
     
