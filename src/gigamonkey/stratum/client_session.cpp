@@ -13,8 +13,11 @@ namespace Gigamonkey::Stratum {
     }
     
     void client_session::handle_request(const Stratum::request &r) {
-        if (client::get_version_request::valid(r)) return this->send(client::get_version_response{r.id(), version()});
-        this->send(response{r.id(), nullptr, error{ILLEGAL_METHOD}});
+        if (client::get_version_request::valid(r)) 
+            return networking::json_line_session::send(client::get_version_response{r.id(), version()});
+        
+        networking::json_line_session::send(response{r.id(), nullptr, error{ILLEGAL_METHOD}});
+        
         throw std::logic_error{string{"unknown request received: "} + string(r)};
     }
     

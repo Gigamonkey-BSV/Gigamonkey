@@ -42,7 +42,7 @@ namespace Gigamonkey::Stratum {
             options() {};
         };
         
-        server_session(tcp::socket &s, const options &x = {}) : remote{s}, State{x} {}
+        server_session(networking::tcp::socket &s, const options &x = {}) : remote{s}, State{x} {}
         
     private:
         // get_version is the only request that the server sends to the client.

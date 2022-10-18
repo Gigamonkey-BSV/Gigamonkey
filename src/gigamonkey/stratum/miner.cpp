@@ -125,7 +125,7 @@ namespace Gigamonkey::Stratum {
         make_puzzle();
     }
     
-    miner::miner(tcp::socket &socket, uint32 threads) : 
+    miner::miner(networking::tcp::socket &socket, uint32 threads) : 
         client_session{socket}, Threads{threads}, Mining{new std::thread*[threads]}, 
         WhenMiningStarts{}, WaitToStartMining{WhenMiningStarts.get_future()}, Finished{false} {
         for (int i = 0; i < Threads; i++) Mining[i] == nullptr;
