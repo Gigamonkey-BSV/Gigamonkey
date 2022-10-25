@@ -386,42 +386,13 @@ namespace Gigamonkey::Boost {
     }
     
     bool puzzle::valid() const { 
-        // is there at least one prevout? 
-        if (Prevouts.size() == 0 || !MinerKey.valid()) return false;
-        
-        // are all scripts the same?
-        prevout prev = Prevouts.first();
-        list<prevout> other_prevouts = Prevouts.rest();
+        if (!candidate::valid() || !MinerKey.valid()) return false;
     
-        // Is this a valid boost output? 
-        Boost::output_script script = output_script(); 
-        if (!script.valid()) return false;
-    
-        digest160 address = miner_address();
+        digest160 address = this->miner_address();
         
         // If this is a contract script, we need to check that the key we have been given corresponds 
         // to the miner address in the script. 
-        if (script.Type == Boost::contract && address != MinerKey.address().Digest) return false;
-        
-        // Are all scripts the same?
-        for (const Boost::prevout &p : other_prevouts) 
-            if (p.script() != prev.script()) throw string{"scripts must all be identical"};
-    
-        // Are all outpoints different?
-        {
-            list<Boost::prevout> px = Prevouts;
-            while (!data::empty(px)) {
-                Boost::prevout p1 = px.first();
-                
-                for (const auto &p : px.rest()) if (p1.outpoint() == p.outpoint()) throw string{"utxos must be different"};
-                
-                px = px.rest();
-            }
-        } 
-        
-        auto t = type();
-        
-        return target().valid() && (t == Boost::bounty || t == Boost::contract);
+        return this->Script.Type == Boost::bounty || this->Script.MinerAddress == this->MinerKey.address().Digest;
     }
     
     bytes puzzle::redeem(const work::solution &solution, list<Bitcoin::output> outs) const {
@@ -431,10 +402,10 @@ namespace Gigamonkey::Boost {
                 return {prev.outpoint(), Bitcoin::input::Finalized};
             }, Prevouts);
         
-        Boost::output_script boost_script = output_script();
+        Boost::output_script boost_script = Script;
         
         secret sk = MinerKey;
-        Bitcoin::satoshi val = value();
+        Bitcoin::satoshi val = Value;
         bytes script = boost_script.write();
         incomplete::transaction incomplete {1, incomplete_inputs, outs, 0};
         pubkey pk = sk.to_public();
@@ -446,16 +417,16 @@ namespace Gigamonkey::Boost {
         return bytes(transaction{1, data::map_thread(
             [&sk, &script, &incomplete, &pk, &solution, boost_type, category_mask, &index](
                 const incomplete::input &i, 
-                const Boost::prevout &prev) -> input {
+                const prevout &prev) -> input {
                 return input{i.Reference, input_script{
-                    sk.sign(sighash::document{prev.value(), script, incomplete, index++}), 
+                    sk.sign(sighash::document{prev.Value, script, incomplete, index++}), 
                 pk, solution, boost_type, category_mask}.write(), i.Sequence};
             }, incomplete_inputs, Prevouts), outs, 0});
         
     }
     
     size_t puzzle::expected_size() const {
-        size_t input_script_size = input_script::expected_size(type(), use_general_purpose_bits(), MinerKey.Compressed);
+        size_t input_script_size = input_script::expected_size(Script.Type, Script.UseGeneralPurposeBits, MinerKey.Compressed);
         return Bitcoin::var_int::size(Prevouts.size()) + 
             Prevouts.size() * (input_script_size + Bitcoin::var_int::size(input_script_size) + 40);
     }

@@ -184,22 +184,47 @@ namespace Gigamonkey::hd {
     
     }
     
-    struct keysource final : Gigamonkey::keysource {
+    struct key_source final : Gigamonkey::key_source {
         uint32 Index;
-        bip32::secret HDSecret;
-        Bitcoin::secret Secret;
+        bip32::secret Key;
         
-        keysource(uint32 i, const bip32::secret& s, bool compressed = true) : 
-            Index{i}, HDSecret{s}, Secret{bip32::to_wif(s.Net), bip32::derive(HDSecret, Index).Secret, compressed} {}
+        key_source(uint32 i, const bip32::secret& s, bool compressed = true) : 
+            Index{i}, Key{s} {}
         
-        keysource(const bip32::secret& s, bool compressed = true) : keysource{1, s, compressed} {}
+        key_source(const bip32::secret& s, bool compressed = true) : key_source{1, s, compressed} {}
         
-        Bitcoin::secret first() const override {
-            return Secret;
+        Bitcoin::secret next() override {
+            return Bitcoin::secret(Key.derive(Index++));
         }
         
-        ptr<Gigamonkey::keysource> rest() const override {
-            return std::static_pointer_cast<Gigamonkey::keysource>(std::make_shared<keysource>(Index + 1, HDSecret, Secret.Compressed));
+        Bitcoin::secret first() const {
+            return Bitcoin::secret(Key.derive(Index));
+        }
+        
+        key_source rest() const {
+            return key_source{Index + 1, Key};
+        }
+    };
+    
+    struct address_source final : Gigamonkey::address_source {
+        uint32 Index;
+        bip32::pubkey Key;
+        
+        address_source(uint32 i, const bip32::pubkey& s) : 
+            Index{i}, Key{s} {}
+        
+        address_source(const bip32::pubkey& s) : address_source{1, s} {}
+        
+        Bitcoin::address next() override {
+            return Key.derive(Index++).address();
+        }
+        
+        Bitcoin::address first() const {
+            return Key.derive(Index).address();
+        }
+        
+        address_source rest() const {
+            return address_source{Index + 1, Key};
         }
     };
     
@@ -295,7 +320,10 @@ namespace Gigamonkey::hd {
         
         // Note: electrum sv has its own set of words. It is able to load wallets that were
         // made with the standard set of words, but we do not load electrum words here yet. 
-        secret inline electrum_sv_wallet(const string& words, bip39::language = bip39::electrum_sv_english, bip32::type net = bip32::main) {
+        secret inline electrum_sv_wallet(
+            const string& words, 
+            bip39::language = bip39::electrum_sv_english, 
+            bip32::type net = bip32::main) {
             return secret{bip39::read(words), electrum_sv_coin_type, net};
         }
         
@@ -307,7 +335,7 @@ namespace Gigamonkey::hd {
     
     namespace bip39 {
 
-        inline const cross<std::string>& english_words() {
+        inline const cross<std::string> &english_words() {
             static cross<std::string> Words{
                 "abandon", "ability", "able", "about", "above", "absent", "absorb", "abstract", "absurd", "abuse",
                 "access", "accident", "account", "accuse", "achieve", "acid", "acoustic", "acquire", "across", "act",
@@ -504,7 +532,7 @@ namespace Gigamonkey::hd {
             return Words;
         };
 
-        inline const cross<std::string>& japanese_words() {
+        inline const cross<std::string> &japanese_words() {
             static cross<std::string> Words{
                     "あいこくしん", "あいさつ", "あいだ", "あおぞら", "あかちゃん", "あきる", "あけがた", "あける", "あこがれる",
                     "あさい", "あさひ", "あしあと", "あじわう", "あずかる", "あずき", "あそぶ", "あたえる", "あたためる",
@@ -701,7 +729,6 @@ namespace Gigamonkey::hd {
                     "ろれつ", "ろんぎ", "ろんぱ", "ろんぶん", "ろんり", "わかす", "わかめ", "わかやま", "わかれる", "わしつ", "わじまし", "わすれもの", "わらう",
                     "われる"
             };
-            
             
             return Words;
         }

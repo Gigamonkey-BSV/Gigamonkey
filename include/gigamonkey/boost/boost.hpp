@@ -5,9 +5,9 @@
 #define GIGAMONKEY_BOOST_BOOST
 
 #include <gigamonkey/script/script.hpp>
-#include <gigamonkey/address.hpp>
 #include <gigamonkey/work/proof.hpp>
-#include <gigamonkey/redeem.hpp>
+#include <gigamonkey/wif.hpp>
+#include <gigamonkey/ledger.hpp>
 
 namespace Gigamonkey {
     
@@ -27,20 +27,20 @@ namespace Gigamonkey {
         std::ostream& operator<<(std::ostream& o, const output_script s);
         std::ostream& operator<<(std::ostream& o, const input_script s);
         
-        // A puzzle is created after ExtraNonce is assigned by the mining pool.
-        struct puzzle;
-        // organize by profitability. 
-        bool operator<(const puzzle&, const puzzle&);
-        
-        struct proof;
-        
-        // for wallets
         struct output;
-        struct redeemer;
         
         bool operator==(const output&, const output&);
         
         std::ostream& operator<<(std::ostream& o, const output s);
+        
+        // A candidate is a boost script and a set of of utxos that contain it. 
+        struct candidate;
+        
+        bool operator==(const candidate &, const candidate &);
+        
+        // A puzzle is created after ExtraNonce is assigned by the mining pool.
+        struct puzzle;
+        struct proof;
         
         struct output_script {
             
@@ -277,39 +277,7 @@ namespace Gigamonkey {
                 const work::solution&, Boost::type, 
                 bool category_mask);
             
-            static uint64 expected_size(Boost::type t, bool use_general_purpose_bits, bool compressed_pubkey = true) {
-                return t == Boost::invalid ? 0 : 
-                    Bitcoin::signature::MaxSignatureSize + 
-                    (compressed_pubkey ? 34 : 66) + 
-                    (t == Boost::bounty ? 21 : 0) + 
-                    (use_general_purpose_bits ? 5 : 0) + 23;
-            }
-            
-        };
-        
-        // construct a work::puzzle from an output_script. 
-        // for script type contract, we don't need a miner key. 
-        work::puzzle work_puzzle(const output_script &script, const digest160 &key = {});
-        
-        struct proof : work::proof {
-            type Type;
-            Bitcoin::signature Signature;
-            Bitcoin::pubkey Pubkey;
-            
-            proof();
-            
-            proof(const Boost::output_script& out, const Boost::input_script& in);
-            proof(type t, const work::string& w, const bytes& h, 
-                const Stratum::session_id& n1, const bytes& n2, const bytes& b, 
-                const Bitcoin::signature& x, const Bitcoin::pubkey& p);
-            
-            proof(const work::job& j, const work::share& h, type t, const Bitcoin::signature& x, const Bitcoin::pubkey& p) : 
-                work::proof{j, h}, Type{t}, Signature{x}, Pubkey{p} {}
-            
-            Boost::output_script output_script() const;
-            Boost::input_script input_script() const;
-            
-            bool valid() const;
+            static uint64 expected_size(Boost::type t, bool use_general_purpose_bits, bool compressed_pubkey = true);
             
         };
         
@@ -319,8 +287,8 @@ namespace Gigamonkey {
             digest256 ID;
             
             output();
-            output(Bitcoin::satoshi v, const output_script& x);
-            output(const Bitcoin::output& b);
+            output(Bitcoin::satoshi v, const output_script &x);
+            output(const Bitcoin::output &b);
             
             bool valid() const;
             
@@ -336,34 +304,78 @@ namespace Gigamonkey {
             explicit operator Bitcoin::prevout() const;
         };
         
+        // construct a work::puzzle from an output_script. 
+        // for script type contract, we don't need a miner key. 
+        work::puzzle work_puzzle(const output_script &script, const digest160 &key = {});
+        
+        struct proof : work::proof {
+            type Type;
+            Bitcoin::signature Signature;
+            Bitcoin::pubkey Pubkey;
+            
+            proof();
+            
+            proof(const Boost::output_script &out, const Boost::input_script &in);
+            proof(type t, const work::string &w, const bytes &h, 
+                const Stratum::session_id &n1, const bytes &n2, const bytes &b, 
+                const Bitcoin::signature &x, const Bitcoin::pubkey &p);
+            
+            proof(const work::job &j, const work::share &h, type t, const Bitcoin::signature &x, const Bitcoin::pubkey &p);
+            
+            Boost::output_script output_script() const;
+            Boost::input_script input_script() const;
+            
+            bool valid() const;
+            
+        };
+        
+        struct candidate {
+            
+            struct prevout : Bitcoin::outpoint {
+                Bitcoin::satoshi Value;
+                prevout(const Bitcoin::outpoint &o, Bitcoin::satoshi v) : Bitcoin::outpoint{o}, Value{v} {}
+            };
+            
+            output_script Script;
+            
+            priority_queue<prevout> Prevouts;
+            
+            Bitcoin::satoshi Value;
+            digest256 id() const;
+            
+            candidate(): Script{}, Prevouts{}, Value{0} {};
+            candidate(const Boost::output_script &script, list<Boost::prevout> utxos);
+            
+            bool valid() const;
+            
+            double difficulty() const;
+            
+            double profitability() const;
+            
+            candidate add(const Boost::prevout &p) const;
+            
+            explicit operator work::candidate() const;
+            
+        public:
+            candidate(const Boost::output_script &script, priority_queue<prevout> prevouts, Bitcoin::satoshi value) :
+                Script{script}, Prevouts{prevouts}, Value{value} {}
+        };
+        
         // A boost output cannot be redeemed until after a miner address
         // is assigned. A puzzle represnts a boost after an address has
         // been assigned. IT is possible for more than one output to 
         // have the same output script. 
-        struct puzzle {
-            list<prevout> Prevouts;
+        struct puzzle : candidate {
             Bitcoin::secret MinerKey;
             
             bool valid() const;
-            Bitcoin::satoshi value() const;
-            work::difficulty difficulty() const;
-            double profitability() const;
-            digest256 id() const;
             
-            Boost::output_script output_script() const;
-            Boost::type type() const;
             digest160 miner_address() const;
-            int32_little category() const;
-            uint256 content() const;
-            work::compact target() const;
-            bytes tag() const;
-            uint32_little user_nonce() const;
-            bytes additional_data() const;
-            bool use_general_purpose_bits() const;
             
             puzzle();
             
-            puzzle(list<prevout> prevouts, const Bitcoin::secret& addr);
+            puzzle(const candidate &c, const Bitcoin::secret& addr) : 
+                candidate{c}, MinerKey{addr} {}
             
             static bytes header(const bytes& tag, const digest160& miner_address);
             
@@ -374,7 +386,7 @@ namespace Gigamonkey {
             bytes body() const;
             
             explicit operator work::puzzle() const {
-                return work_puzzle(output_script(), miner_address());
+                return work_puzzle(this->Script, miner_address());
             }
             
             // construct a transaction out of a solution and outputs. 
@@ -385,36 +397,7 @@ namespace Gigamonkey {
             
         };
         
-        struct redeemer final : spendable::redeemer {
-            Bitcoin::secret Secret;
-            Bitcoin::pubkey Pubkey;
-            work::solution Solution;
-            type Type;
-            bool UseGeneralPurposeBits;
-            
-            redeemer(
-                const Bitcoin::secret& k, 
-                const Bitcoin::pubkey& p, 
-                const work::solution& z, type t, 
-                bool use_general_purpose_bits) : 
-                Secret{k}, Pubkey{p}, Solution{z}, Type{t}, UseGeneralPurposeBits{use_general_purpose_bits} {}
-            
-            bytes redeem(const Bitcoin::sighash::document& document, Bitcoin::sighash::directive d) const override {
-                return input_script{
-                    Bitcoin::signature::sign(Secret.Secret, d, document), 
-                    Pubkey, Solution, Type, UseGeneralPurposeBits}.write();
-            }
-            
-            uint32 expected_size() const override {
-                return input_script::expected_size(Type, UseGeneralPurposeBits);
-            }
-            
-            uint32 sigops() const override {
-                return 1;
-            }
-        };
-        
-        bool inline operator==(const output_script& a, const output_script& b) {
+        bool inline operator==(const output_script &a, const output_script &b) {
             return a.Type == b.Type && 
                 a.Category == b.Category && 
                 a.UseGeneralPurposeBits == b.UseGeneralPurposeBits && 
@@ -426,7 +409,7 @@ namespace Gigamonkey {
                 a.MinerAddress == b.MinerAddress;
         }
         
-        bool inline operator==(const input_script& a, const input_script& b) {
+        bool inline operator==(const input_script &a, const input_script &b) {
             return a.Type == b.Type && 
                 a.Signature == b.Signature && 
                 a.Pubkey == b.Pubkey && 
@@ -438,8 +421,8 @@ namespace Gigamonkey {
                 a.MinerAddress == b.MinerAddress;
         }
         
-        bool inline operator==(const proof& a, const proof& b) {
-            return a.Type == b.Type && work::operator==(static_cast<const work::proof&>(a), static_cast<const work::proof&>(b));
+        bool inline operator==(const proof &a, const proof &b) {
+            return a.Type == b.Type && work::operator==(static_cast<const work::proof &>(a), static_cast<const work::proof &>(b));
         }
         
         inline output_script::output_script() : Type{Boost::invalid}, 
@@ -450,11 +433,11 @@ namespace Gigamonkey {
         inline output_script::output_script(
             Boost::type type, 
             int32_little category, 
-            const uint256& content, 
+            const uint256 &content, 
             work::compact target, 
-            const bytes& tag, 
+            const bytes &tag, 
             uint32_little user_nonce, 
-            const bytes& data, 
+            const bytes &data, 
             const digest160& miner_address, 
             bool masked_category) : output_script{type == Boost::invalid ? output_script{} : 
                 type == Boost::bounty ? output_script::bounty(category, content, target, tag, user_nonce, data, masked_category) : 
@@ -462,22 +445,22 @@ namespace Gigamonkey {
         
         output_script inline output_script::bounty(
             int32_little category,
-            const uint256& content,
+            const uint256 &content,
             work::compact target, 
-            const bytes& tag, 
+            const bytes &tag, 
             uint32_little user_nonce, 
-            const bytes& data, bool masked_category) {
+            const bytes &data, bool masked_category) {
             if (tag.size() > 20) return output_script{};
             return output_script{category, content, target, tag, user_nonce, data, masked_category};    
         }
         
         output_script inline output_script::contract(
             int32_little category,
-            const uint256& content,
+            const uint256 &content,
             work::compact target, 
-            const bytes& tag, 
+            const bytes &tag, 
             uint32_little user_nonce, 
-            const bytes& data, 
+            const bytes &data, 
             const digest160& miner_address, 
             bool masked_category) {
             return output_script{category, 
@@ -546,11 +529,11 @@ namespace Gigamonkey {
         
         inline output_script::output_script(
             int32_little category, 
-            const uint256& content,
+            const uint256 &content,
             work::compact target, 
-            const bytes& tag, 
+            const bytes &tag, 
             uint32_little user_nonce, 
-            const bytes& data, bool use_general_purpose_bits) : Type{Boost::bounty},  
+            const bytes &data, bool use_general_purpose_bits) : Type{Boost::bounty},  
             MinerAddress{}, 
             Category{category},
             UseGeneralPurposeBits{use_general_purpose_bits}, 
@@ -562,12 +545,12 @@ namespace Gigamonkey {
         
         inline output_script::output_script(
             int32_little category, 
-            const uint256& content,
+            const uint256 &content,
             work::compact target, 
-            const bytes& tag, 
+            const bytes &tag, 
             uint32_little user_nonce, 
-            const bytes& data,
-            const digest160& miner_address, 
+            const bytes &data,
+            const digest160 &miner_address, 
             bool use_general_purpose_bits) : Type{Boost::contract}, 
             MinerAddress{miner_address}, 
             Category{category},
@@ -579,13 +562,13 @@ namespace Gigamonkey {
             AdditionalData{data} {} 
         
         inline input_script::input_script(
-            const Bitcoin::signature& signature, 
-            const Bitcoin::pubkey& pubkey, 
+            const Bitcoin::signature &signature, 
+            const Bitcoin::pubkey &pubkey, 
             uint32_little nonce,
             Bitcoin::timestamp timestamp,
-            const bytes& extra_nonce_2,
+            const bytes &extra_nonce_2,
             Stratum::session_id extra_nonce_1,
-            const digest160& miner_address) : Type{Boost::bounty}, 
+            const digest160 &miner_address) : Type{Boost::bounty}, 
             Signature{signature}, 
             Pubkey{pubkey}, 
             Nonce{nonce},
@@ -596,11 +579,11 @@ namespace Gigamonkey {
             MinerAddress{miner_address} {}
         
         inline input_script::input_script(
-            const Bitcoin::signature& signature, 
-            const Bitcoin::pubkey& pubkey, 
+            const Bitcoin::signature &signature, 
+            const Bitcoin::pubkey &pubkey, 
             uint32_little nonce,
             Bitcoin::timestamp timestamp,
-            const bytes& extra_nonce_2,
+            const bytes &extra_nonce_2,
             Stratum::session_id extra_nonce_1) : Type{Boost::contract}, 
             Signature{signature}, 
             Pubkey{pubkey}, 
@@ -612,14 +595,14 @@ namespace Gigamonkey {
             MinerAddress{} {}
         
         inline input_script::input_script(
-            const Bitcoin::signature& signature, 
-            const Bitcoin::pubkey& pubkey, 
+            const Bitcoin::signature &signature, 
+            const Bitcoin::pubkey &pubkey, 
             uint32_little nonce,
             Bitcoin::timestamp timestamp,
-            const bytes& extra_nonce_2,
+            const bytes &extra_nonce_2,
             Stratum::session_id extra_nonce_1,
             int32_little general_purpose_bits, 
-            const digest160& miner_address) : Type{Boost::bounty}, 
+            const digest160 &miner_address) : Type{Boost::bounty}, 
             Signature{signature}, 
             Pubkey{pubkey}, 
             Nonce{nonce},
@@ -630,11 +613,11 @@ namespace Gigamonkey {
             MinerAddress{miner_address} {}
         
         inline input_script::input_script(
-            const Bitcoin::signature& signature, 
-            const Bitcoin::pubkey& pubkey, 
+            const Bitcoin::signature &signature, 
+            const Bitcoin::pubkey &pubkey, 
             uint32_little nonce,
             Bitcoin::timestamp timestamp,
-            const bytes& extra_nonce_2,
+            const bytes &extra_nonce_2,
             Stratum::session_id extra_nonce_1,
             int32_little general_purpose_bits) : Type{Boost::contract}, 
             Signature{signature}, 
@@ -667,46 +650,46 @@ namespace Gigamonkey {
         
         // construct a Boost bounty input script. 
         input_script inline input_script::bounty(
-            const Bitcoin::signature& signature, 
-            const Bitcoin::pubkey& pubkey,  
+            const Bitcoin::signature &signature, 
+            const Bitcoin::pubkey &pubkey,  
             uint32_little nonce,
             Bitcoin::timestamp timestamp,
-            const bytes& extra_nonce_2,
+            const bytes &extra_nonce_2,
             Stratum::session_id extra_nonce_1, 
-            const digest160& miner_address) {
+            const digest160 &miner_address) {
             return input_script{signature, pubkey, nonce, timestamp, extra_nonce_2, extra_nonce_1, miner_address};
         }
         
         // construct a Boost bounty input script. 
         input_script inline input_script::bounty(
-            const Bitcoin::signature& signature, 
-            const Bitcoin::pubkey& pubkey,  
+            const Bitcoin::signature &signature, 
+            const Bitcoin::pubkey &pubkey,  
             uint32_little nonce,
             Bitcoin::timestamp timestamp,
-            const bytes& extra_nonce_2,
+            const bytes &extra_nonce_2,
             Stratum::session_id extra_nonce_1, 
             int32_little category_bits, 
-            const digest160& miner_address) {
+            const digest160 &miner_address) {
             return input_script{signature, pubkey, nonce, timestamp, extra_nonce_2, extra_nonce_1, category_bits, miner_address};
         }
         
         // construct a Boost contract input script.
         input_script inline input_script::contract(
-            const Bitcoin::signature& signature, 
-            const Bitcoin::pubkey& pubkey,  
+            const Bitcoin::signature &signature, 
+            const Bitcoin::pubkey &pubkey,  
             uint32_little nonce,
             Bitcoin::timestamp timestamp,
-            const bytes& extra_nonce_2,
+            const bytes &extra_nonce_2,
             Stratum::session_id extra_nonce_1) {
             return input_script{signature, pubkey, nonce, timestamp, extra_nonce_2, extra_nonce_1};
         }
         
         input_script inline input_script::contract(
-            const Bitcoin::signature& signature, 
-            const Bitcoin::pubkey& pubkey,  
+            const Bitcoin::signature &signature, 
+            const Bitcoin::pubkey &pubkey,  
             uint32_little nonce,
             Bitcoin::timestamp timestamp,
-            const bytes& extra_nonce_2,
+            const bytes &extra_nonce_2,
             Stratum::session_id extra_nonce_1, 
             int32_little category_bits) {
             return input_script{signature, pubkey, nonce, timestamp, extra_nonce_2, extra_nonce_1, category_bits};
@@ -741,20 +724,27 @@ namespace Gigamonkey {
         digest160 inline input_script::miner_address(script x) {
             return read(x).MinerAddress;
         }
+            
+        uint64 inline input_script::expected_size(Boost::type t, bool use_general_purpose_bits, bool compressed_pubkey) {
+            return t == Boost::invalid ? 0 : 
+                Bitcoin::signature::MaxSignatureSize + 
+                (compressed_pubkey ? 34 : 66) + 
+                (t == Boost::bounty ? 21 : 0) + 
+                (use_general_purpose_bits ? 5 : 0) + 23;
+        }
         
         inline proof::proof() : work::proof{}, Type{invalid} {}
         
-        inline proof::proof(type t, const work::string& w, const bytes& h, 
-            const Stratum::session_id& n1, const bytes& n2, const bytes& b, 
-            const Bitcoin::signature& x, const Bitcoin::pubkey& p) : 
+        inline proof::proof(type t, const work::string &w, const bytes &h, 
+            const Stratum::session_id &n1, const bytes &n2, const bytes &b, 
+            const Bitcoin::signature &x, const Bitcoin::pubkey &p) : 
             work::proof{w, {}, h, n1, n2, b}, Type{t}, Signature{x}, Pubkey{p} {}
+        
+        inline proof::proof(const work::job &j, const work::share &h, type t, const Bitcoin::signature &x, const Bitcoin::pubkey &p) : 
+                work::proof{j, h}, Type{t}, Signature{x}, Pubkey{p} {}
         
         digest160 inline puzzle::miner_address() const {
             return MinerKey.address().Digest;
-        }
-        
-        output_script inline proof::output_script() const {
-            return puzzle().output_script();
         }
         
         input_script inline proof::input_script() const {
@@ -765,16 +755,16 @@ namespace Gigamonkey {
             return a.Script == b.Script && a.Value == b.Value && a.ID == b.ID;
         }
         
-        std::ostream inline &operator<<(std::ostream& o, const output s) {
+        std::ostream inline &operator<<(std::ostream &o, const output s) {
             return o << "boost_output{Script: " << s.Script << ", Value: " << s.Value << "}";
         }
         
         inline output::output() : Value{-1}, Script{}, ID{} {}
         
-        inline output::output(Bitcoin::satoshi v, const output_script& x) : 
+        inline output::output(Bitcoin::satoshi v, const output_script &x) : 
             Value{v}, Script{x}, ID{Script.hash()} {}
         
-        inline output::output(const Bitcoin::output& b) : 
+        inline output::output(const Bitcoin::output &b) : 
             Value{b.Value}, Script{Boost::output_script::read(b.Script)}, ID{Script.hash()} {}
         
         bool inline output::valid() const {
@@ -805,7 +795,32 @@ namespace Gigamonkey {
             return Bitcoin::prevout {Key, Bitcoin::output{value(), script().write()}};
         }
         
-        bytes inline puzzle::header(const bytes& tag, const digest160& miner_address) {
+        inline candidate::candidate(const Boost::output_script &script, list<Boost::prevout> utxos) : 
+            Script{script}, Prevouts{data::for_each(
+                [](const Boost::prevout &p) -> prevout {
+                    return prevout {p.outpoint(), p.value()};
+                }, utxos)}, Value{
+                data::fold([](const Bitcoin::satoshi so_far, const prevout &u) -> Bitcoin::satoshi {
+                    return so_far + u.Value;
+                }, Bitcoin::satoshi{0}, Prevouts)} {}
+        
+        double inline candidate::difficulty() const {
+            return double(work::difficulty(Script.Target));
+        }
+        
+        double inline candidate::profitability() const {
+            return double(Value) / difficulty();
+        }
+        
+        bool inline operator==(const candidate &a, const candidate &b) {
+            return a.Script == b.Script && b.Prevouts == b.Prevouts;
+        }
+        
+        candidate inline candidate::add(const Boost::prevout &p) const {
+            return candidate{Script, Prevouts << prevout{p.outpoint(), p.value()}, Value + p.value()};
+        }
+        
+        bytes inline puzzle::header(const bytes &tag, const digest160 &miner_address) {
             return write(tag.size() + 20, tag, miner_address);
         }
         
@@ -814,78 +829,25 @@ namespace Gigamonkey {
         }
         
         bytes inline puzzle::header() const {
-            return header(tag(), miner_address());
+            return header(Script.Tag, miner_address());
         }
         
         bytes inline puzzle::body() const {
-            return body(user_nonce(), additional_data());
+            return body(Script.UserNonce, Script.AdditionalData);
         }
         
-        Boost::output_script inline puzzle::output_script() const {
-            return Prevouts.first().script();
-        }
-        
-        Boost::type inline puzzle::type() const {
-            return output_script().Type;
-        }
-        
-        int32_little inline puzzle::category() const {
-            return output_script().Category;
-        }
-        
-        uint256 inline puzzle::content() const {
-            return output_script().Content;
-        }
-        
-        work::compact inline puzzle::target() const {
-            return output_script().Target;
-        }
-        
-        bytes inline puzzle::tag() const {
-            return output_script().Tag;
-        }
-        
-        uint32_little inline puzzle::user_nonce() const {
-            return output_script().UserNonce;
-        }
-        
-        bytes inline puzzle::additional_data() const {
-            return output_script().AdditionalData;
-        }
-        
-        bool inline puzzle::use_general_purpose_bits() const {
-            return output_script().UseGeneralPurposeBits;
-        }
-        
-        inline puzzle::puzzle(): Prevouts{}, MinerKey{} {}
-        
-        inline puzzle::puzzle(list<prevout> prevouts, const Bitcoin::secret& addr) : 
-            Prevouts{prevouts}, MinerKey{addr} {}
-        
-        Bitcoin::satoshi inline puzzle::value() const {
-            return fold([](Bitcoin::satoshi running, const prevout &prev) -> Bitcoin::satoshi {
-                return running + prev.value();
-            }, Bitcoin::satoshi{0}, Prevouts);
-        }
+        inline puzzle::puzzle(): candidate{}, MinerKey{} {}
         
         bool inline proof::valid() const {
             return (work::proof::Puzzle.Mask == -1 || work::proof::Puzzle.Mask == work::ASICBoost::Mask) && work::proof::valid();
         }
         
-        work::difficulty inline puzzle::difficulty() const {
-            return work::difficulty(target());
+        digest256 inline candidate::id() const {
+            return Script.hash();
         }
-        
-        double inline puzzle::profitability() const {
-            return double(value()) / difficulty();
-        }
-        
-        digest256 inline puzzle::id() const {
-            return Prevouts.first().id();
-        }
-        
-        bool inline operator<(const puzzle &a, const puzzle &b) {
-            return a.profitability() < b.profitability();
+    
+        bool inline candidate::valid() const { 
+            return Prevouts.size() > 0 && Prevouts.valid() && Script.valid();
         }
         
     }

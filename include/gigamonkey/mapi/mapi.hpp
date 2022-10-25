@@ -329,27 +329,27 @@ namespace Gigamonkey::BitcoinAssociation {
         networking::HTTP::request submit_transaction_HTTP_request(const submit_transaction_request &) const;
         networking::HTTP::request submit_transactions_HTTP_request(const submit_transactions_request &) const;
         
-        static json read_MAPI_response(const networking::HTTP::response &r);
+        json call(const networking::HTTP::request &r);
     };
     
     MAPI::get_policy_quote_response inline MAPI::get_policy_quote() {
-        return read_MAPI_response((*this)(get_policy_quote_HTTP_request()));
+        return call(get_policy_quote_HTTP_request());
     }
     
     MAPI::get_fee_quote_response inline MAPI::get_fee_quote() {
-        return read_MAPI_response((*this)(get_fee_quote_HTTP_request()));
+        return call(get_fee_quote_HTTP_request());
     }
     
     MAPI::transaction_status_response inline MAPI::get_transaction_status(const Bitcoin::txid &txid) {
-        return read_MAPI_response((*this)(transaction_status_HTTP_request(txid)));
+        return call(transaction_status_HTTP_request(txid));
     }
     
     MAPI::submit_transaction_response inline MAPI::submit_transaction(const submit_transaction_request &r) {
-        return read_MAPI_response((*this)(submit_transaction_HTTP_request(r)));
+        return call(submit_transaction_HTTP_request(r));
     }
     
     MAPI::submit_transactions_response inline MAPI::submit_transactions(const submit_transactions_request &r) {
-        return read_MAPI_response((*this)(submit_transactions_HTTP_request(r)));
+        return call(submit_transactions_HTTP_request(r));
     }
     
     bool inline MAPI::fee::valid() const {
