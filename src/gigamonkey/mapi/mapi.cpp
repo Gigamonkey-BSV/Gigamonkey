@@ -6,15 +6,20 @@
 namespace Gigamonkey::BitcoinAssociation {
     using namespace Bitcoin;
     
-    json MAPI::read_MAPI_response(const networking::HTTP::response &r) {
-        if (static_cast<unsigned int>(r.Status) < 200 || 
-            static_cast<unsigned int>(r.Status) >= 300) throw networking::HTTP::response{r};
+    json MAPI::call(const networking::HTTP::request &q) {
+        networking::HTTP::response r = (*this)(q);
         
-        if (r.Headers[networking::HTTP::header::content_type] != "application/json") throw networking::HTTP::response{r};
+        if (static_cast<unsigned int>(r.Status) < 200 || 
+            static_cast<unsigned int>(r.Status) >= 300) 
+            throw networking::HTTP::exception{q, r, "response code"};
+        
+        if (r.Headers[networking::HTTP::header::content_type] != "application/json") 
+            throw networking::HTTP::exception{q, r, "content type is not json"};
         
         json_json_envelope envelope{json::parse(r.Body)};
         
-        if (!envelope.valid() || !envelope.verify()) throw networking::HTTP::response{r};
+        if (!envelope.valid() || !envelope.verify()) 
+            throw networking::HTTP::exception{q, r, "MAPI signature verify fail"};
         
         return envelope.payload();
     }

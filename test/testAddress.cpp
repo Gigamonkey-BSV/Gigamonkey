@@ -102,7 +102,7 @@ namespace Gigamonkey::Bitcoin {
         ptr<crypto::entropy> entropy = std::static_pointer_cast<crypto::entropy>(std::make_shared<crypto::fixed_entropy>(
             bytes_view(bytes::from_string("atehu=eSRCjt.r83085[934[498[35"))));
         
-        crypto::nist::drbg random{crypto::nist::drbg::HMAC_DRBG, entropy, bytes{}, 305};
+        crypto::NIST::DRBG random{crypto::NIST::DRBG::HMAC_DRBG, entropy, bytes{}, 305};
         
         digest160 pubkey_hash;
         

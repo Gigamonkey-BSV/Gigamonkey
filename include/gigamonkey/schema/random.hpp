@@ -23,31 +23,23 @@ namespace Gigamonkey {
 
 namespace Gigamonkey::Bitcoin {
     
-    class random_keysource final : public keysource {
-        ptr<data::crypto::random> Random;
+    class random_key_source final : public key_source {
+        data::crypto::random &Random;
         secret::type Net;
         bool Compressed;
         
     public:
-        secret First;
         
-        static ptr<keysource> make(ptr<data::crypto::random> r, 
-            secret::type net = secret::main, bool compressed = true) {
-            return std::static_pointer_cast<keysource>(std::make_shared<random_keysource>(r, net, compressed));
+        secret next() override {
+            secret x;
+            do {Random >> x.Secret.Value; } while (!x.valid());
+            x.Prefix = Net;
+            x.Compressed = Compressed;
+            return x;
         }
         
-        secret first() const override {
-            return First;
-        }
-        
-        ptr<keysource> rest() const override {
-            return make(Random);
-        }
-        
-        random_keysource(ptr<data::crypto::random> r, 
-            secret::type net = secret::main, bool compressed = true) : Random{r}, Net{net}, Compressed{compressed}, First{} {
-            do {*r >> First.Secret.Value; } while (!First.valid());
-        }
+        random_key_source(data::crypto::random &r, secret::type net = secret::main, bool compressed = true) : 
+            Random{r}, Net{net}, Compressed{compressed} {}
     };
 
 }

@@ -133,40 +133,4 @@ namespace Gigamonkey {
     
 }
 
-#include <gigamonkey/schema/keysource.hpp>
-
-namespace Gigamonkey {
-    
-    struct change {
-        bytes OutputScript;
-        ptr<spendable::redeemer> Redeemer;
-    };
-    
-    struct output_pattern {
-        virtual change create_redeemable(ptr<keysource>&) const = 0;
-        virtual ~output_pattern() {}
-    };
-    
-    struct pay_to_pubkey_pattern final : output_pattern {
-        pay_to_pubkey_pattern() : output_pattern{} {}
-        change create_redeemable(ptr<keysource>& k) const override {
-            Bitcoin::secret s = k->first();
-            k = k->rest();
-            return change{pay_to_pubkey::script(s.to_public()),
-                std::make_shared<redeem_pay_to_pubkey>(s)};
-        };
-    };
-    
-    struct pay_to_address_pattern final : output_pattern {
-        pay_to_address_pattern() : output_pattern{} {}
-        change create_redeemable(ptr<keysource>& k) const override {
-            Bitcoin::secret s = k->first();
-            k = k->rest();
-            return change{pay_to_address::script(s.address().Digest), 
-                std::make_shared<redeem_pay_to_address>(s, s.to_public())};
-        };
-    };
-    
-}
-
 #endif
