@@ -22,8 +22,8 @@ namespace Gigamonkey::Stratum {
         EXPECT_NE(hex_a, hex_b);
         EXPECT_EQ(id_a, session_id{hex_a});
         EXPECT_EQ(id_b, session_id{hex_b});
-        json j_a = session_id::serialize(id_a);
-        json j_b = session_id::serialize(id_b);
+        JSON j_a = session_id::serialize(id_a);
+        JSON j_b = session_id::serialize(id_b);
         EXPECT_NE(j_a, j_b);
         optional<session_id> j_id_a = session_id::deserialize(j_a);
         optional<session_id> j_id_b = session_id::deserialize(j_b);
@@ -37,14 +37,14 @@ namespace Gigamonkey::Stratum {
     // taken from https://braiins.com/stratum-v1/docs
     TEST(StratumTest, TestStratumPuzzle) {
         
-        mining::subscribe_response subscribe_response{json::parse(
+        mining::subscribe_response subscribe_response{JSON::parse(
             R"({"id": 1, "result": [ [ ["mining.set_difficulty", "b4b6693b72a50c7116db18d6497cac52"], ["mining.notify", "ae6812eb4cd7735a302a8a9dd95cf71f"]], "08000002", 4], "error": null})")};
         
         mining::subscribe_response::parameters srparams = subscribe_response.result();
         
         EXPECT_TRUE(subscribe_response.valid());
         
-        mining::notify notify{json::parse(
+        mining::notify notify{JSON::parse(
             R"({"params": 
                 ["bf", "4d16b6f85af6e2198f44ae2a6de67f78487ae5611b77c6c0440b921e00000000",
                     "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff20020862062f503253482f04b8864e5008",
@@ -54,7 +54,7 @@ namespace Gigamonkey::Stratum {
         
         EXPECT_TRUE(notify.valid());
         
-        mining::submit_request submit_request{json::parse(
+        mining::submit_request submit_request{JSON::parse(
             R"({"params": ["slush.miner1", "bf", "00000001", "504e86ed", "b2957c02"], 
                 "id": 4, "method": "mining.submit"})")};
         
@@ -100,12 +100,12 @@ namespace Gigamonkey::Stratum::mining {
             }
         }
         
-        boolean_response null_no_error{json::parse(R"({"id":55, "result": null, "error": null})")};
-        boolean_response null_with_error{json::parse(R"({"id":55, "result": null, "error": [4, "hi"]})")};
-        boolean_response false_with_error{json::parse(R"({"id":55, "result": false, "error": [4, "hi"]})")};
-        boolean_response false_no_error{json::parse(R"({"id":55, "result": false, "error": null})")};
-        boolean_response true_no_error{json::parse(R"({"id":55, "result": true, "error": null})")};
-        boolean_response true_with_error{json::parse(R"({"id":55, "result": true, "error": [4, "hi"]})")};
+        boolean_response null_no_error{JSON::parse(R"({"id":55, "result": null, "error": null})")};
+        boolean_response null_with_error{JSON::parse(R"({"id":55, "result": null, "error": [4, "hi"]})")};
+        boolean_response false_with_error{JSON::parse(R"({"id":55, "result": false, "error": [4, "hi"]})")};
+        boolean_response false_no_error{JSON::parse(R"({"id":55, "result": false, "error": null})")};
+        boolean_response true_no_error{JSON::parse(R"({"id":55, "result": true, "error": null})")};
+        boolean_response true_with_error{JSON::parse(R"({"id":55, "result": true, "error": [4, "hi"]})")};
         
         EXPECT_FALSE(null_no_error.valid());
         

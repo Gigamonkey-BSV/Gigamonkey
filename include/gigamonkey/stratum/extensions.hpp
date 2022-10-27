@@ -28,19 +28,19 @@ namespace Gigamonkey::Stratum::extensions {
         using std::variant<bool, string, std::monostate>::variant;
         
         accepted();
-        accepted(json j);
+        accepted(JSON j);
         
         bool valid() const;
         
         operator bool() const;
-        operator json() const;
+        operator JSON() const;
         
         bool has_error() const;
         string error() const;
     };
     
-    using request = data::map<string, json>;
-    using result_params = data::map<string, json>;
+    using request = data::map<string, JSON>;
+    using result_params = data::map<string, JSON>;
     
     template <extension> struct configuration {
         operator request() const {
@@ -174,7 +174,7 @@ namespace Gigamonkey::Stratum::extensions {
     
     inline accepted::accepted() : std::variant<bool, string, std::monostate>{std::monostate{}} {}
         
-    inline accepted::accepted(const json j) : accepted{} {
+    inline accepted::accepted(const JSON j) : accepted{} {
         if (j.is_boolean()) *this = (bool)(j);
         else if (j.is_string()) *this = (string)(j);
     }
@@ -187,8 +187,8 @@ namespace Gigamonkey::Stratum::extensions {
         return std::holds_alternative<string>(*this) ? false : std::get<bool>(*this);
     }
         
-    inline accepted::operator json() const {
-        return std::holds_alternative<string>(*this) ? json(std::get<string>(*this)) : json(std::get<bool>(*this));
+    inline accepted::operator JSON() const {
+        return std::holds_alternative<string>(*this) ? JSON(std::get<string>(*this)) : JSON(std::get<bool>(*this));
     }
         
     bool inline accepted::has_error() const {

@@ -27,7 +27,7 @@ namespace Gigamonkey::Stratum {
         
     }
     
-    void remote::receive(const json &next) {
+    void remote::receive(const JSON &next) {
         if (notification::valid(next)) handle_notification(notification{next});
         if (response::valid(next)) handle_response(response{next});
         if (Stratum::request::valid(next)) handle_request(Stratum::request{next});
@@ -37,7 +37,7 @@ namespace Gigamonkey::Stratum {
     response remote::request(method m, parameters p) {
         guard lock(Mutex);
         AwaitingResponse.push_back(std::pair{Stratum::request{message_id(Requests), m, p}, new promise<response>()});
-        networking::json_line_session::send(AwaitingResponse.back().first);
+        networking::JSON_line_session::send(AwaitingResponse.back().first);
         Requests++;
         return AwaitingResponse.back().second->get_future().get();
     }

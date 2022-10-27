@@ -22,9 +22,9 @@ namespace Gigamonkey::BitcoinAssociation {
         return encoding::hex::write(h.write());
     }
     
-    Merkle::digests read_path(const json::array_t& j, Merkle::leaf l) {
+    Merkle::digests read_path(const JSON::array_t& j, Merkle::leaf l) {
         Merkle::digests d;
-        for (const json& n : j) {
+        for (const JSON& n : j) {
             digest256 next = (n == "*" ? l.Digest : read_digest(n));
             d = d << next;
             l = l.next(next);
@@ -42,9 +42,9 @@ namespace Gigamonkey::BitcoinAssociation {
         return l;
     }
     
-    json write_path(Merkle::branch b) {
-        json::array_t nodes(b.Digests.size());
-        for (json& j : nodes) {
+    JSON write_path(Merkle::branch b) {
+        JSON::array_t nodes(b.Digests.size());
+        for (JSON& j : nodes) {
             if (b.Leaf.Digest == b.Digests.first()) j = "*";
             else j = write_digest(b.Digests.first());
             b = b.rest();
@@ -60,7 +60,7 @@ namespace Gigamonkey::BitcoinAssociation {
         return false;
     }
     
-    bool proofs_serialization_standard::valid(const json &j) {
+    bool proofs_serialization_standard::valid(const JSON &j) {
         if (!j.is_object()) return false;
         
         // composite proofs not yet supported. 
@@ -77,25 +77,25 @@ namespace Gigamonkey::BitcoinAssociation {
             !encoding::hex::valid(string(j["txOrId"]))) return false;
         
         if (j.contains("targetType")) {
-            json targetType = j["targetType"];
+            JSON targetType = j["targetType"];
             if (!targetType.is_string() || (targetType != "hash" && targetType != "header" && targetType != "merkleRoot")) return false;
         } else if (!j.contains("target") || !j["target"].is_string() || !encoding::hex::valid(string(j["target"]))) return false;
         
         if (!j.contains("nodes")) return false;
         
-        json nodes = j["nodes"];
+        JSON nodes = j["nodes"];
         if (nodes.is_array()) {
-            for (const json& node : nodes) if (!node.is_string() || 
+            for (const JSON& node : nodes) if (!node.is_string() || 
                 (node != "*" && !(encoding::hex::valid(string(node)) && string(node).size() == 64))) return false;
         } else return false;
         
         return true;
     }
     
-    proofs_serialization_standard::operator json() const {
+    proofs_serialization_standard::operator JSON() const {
         if (!valid()) return nullptr;
         
-        json j = json::object_t{};
+        JSON j = JSON::object_t{};
         
         j["index"] = Path.Index;
         j["nodes"] = write_path(branch());
@@ -121,7 +121,7 @@ namespace Gigamonkey::BitcoinAssociation {
         return j;
     }
     
-    digest256 inline proofs_serialization_standard::txid(const json& j) {
+    digest256 inline proofs_serialization_standard::txid(const JSON& j) {
         if (!valid(j)) return {};
         if (j["txOrId"].size() == 64) {
             return read_digest(j["txOrId"]);
@@ -130,7 +130,7 @@ namespace Gigamonkey::BitcoinAssociation {
         }
     }
     
-    proofs_serialization_standard proofs_serialization_standard::read_json(const json& j) {
+    proofs_serialization_standard proofs_serialization_standard::read_JSON(const JSON& j) {
         proofs_serialization_standard x;
         if (!proofs_serialization_standard::valid(j)) return {};
         
@@ -300,7 +300,7 @@ namespace Gigamonkey::BitcoinAssociation {
         return b;
     }
     
-    proofs_serialization_standard::target_type_value proofs_serialization_standard::target_type(const json &j) {
+    proofs_serialization_standard::target_type_value proofs_serialization_standard::target_type(const JSON &j) {
         if (!j.contains("targetType")) return target_type_block_hash;
         if (j["targetType"] == "hash") return target_type_block_hash;
         if (j["targetType"] == "header") return target_type_block_header;
@@ -323,14 +323,14 @@ namespace Gigamonkey::BitcoinAssociation {
         Path = p;
     }
     
-    std::optional<digest256> inline proofs_serialization_standard::Merkle_root(const json& j) {
+    std::optional<digest256> inline proofs_serialization_standard::Merkle_root(const JSON& j) {
         target_type_value target = target_type(j);
         if (target == target_type_Merkle_root) return {read_digest(j["target"])};
         if (target == target_type_block_header) return block_header(j)->MerkleRoot;
         return {};
     }
     
-    std::optional<Bitcoin::header> inline proofs_serialization_standard::block_header(const json& j) {
+    std::optional<Bitcoin::header> inline proofs_serialization_standard::block_header(const JSON& j) {
         if (j.contains("targetType") && j["targetType"] == "header") return {read_header(j["target"])};
         return {};
     }

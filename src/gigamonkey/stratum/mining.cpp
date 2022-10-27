@@ -7,7 +7,7 @@ namespace Gigamonkey::Stratum::mining {
     
     namespace {
         
-        bool read_job_id(const json& j, job_id& x) {
+        bool read_job_id(const JSON& j, job_id& x) {
             if (!j.is_string()) return false;
             x = string(j);
             return true;
@@ -19,7 +19,7 @@ namespace Gigamonkey::Stratum::mining {
             return encoding::hex::write(z, encoding::hex::lower);
         }
         
-        bool read(const json& j, uint256& x) {
+        bool read(const JSON& j, uint256& x) {
             if (!j.is_string()) return false;
             string str(j);
             if (str.size() != 64) return false;
@@ -33,7 +33,7 @@ namespace Gigamonkey::Stratum::mining {
             return encoding::hex::write(b, encoding::hex::lower);
         }
         
-        bool read(const json& j, bytes& x) {
+        bool read(const JSON& j, bytes& x) {
             if (!j.is_string()) return false;
             string str(j);
             ptr<bytes> b = encoding::hex::read(str);
@@ -53,10 +53,10 @@ namespace Gigamonkey::Stratum::mining {
             return p;
         }
         
-        bool inline read(const json& j, Merkle::digests& x) {
+        bool inline read(const JSON& j, Merkle::digests& x) {
             if (!j.is_array()) return false;
             x = {};
-            for (json d : j) {
+            for (JSON d : j) {
                 uint256 o;
                 if (!read(d, o)) return false;
                 x = x << digest256{o};
@@ -68,7 +68,7 @@ namespace Gigamonkey::Stratum::mining {
             return encoding::hex::write(x, encoding::hex::lower);
         }
         
-        bool read(const json& j, int32_little& x) {
+        bool read(const JSON& j, int32_little& x) {
             if (!j.is_string()) return false;
             string str(j);
             if (str.size() != 8) return false;
@@ -84,7 +84,7 @@ namespace Gigamonkey::Stratum::mining {
             return encoding::hex::write(uint32_big{static_cast<uint32_little>(x)}, encoding::hex::lower);
         }
         
-        bool read(const json& j, work::compact& x) {
+        bool read(const JSON& j, work::compact& x) {
             if (!j.is_string()) return false;
             string str(j);
             if (str.size() != 8) return false;
@@ -100,7 +100,7 @@ namespace Gigamonkey::Stratum::mining {
             return encoding::hex::write(uint32_big{x.Value}, encoding::hex::lower);
         }
         
-        bool read(const json& j, Bitcoin::timestamp& x) {
+        bool read(const JSON& j, Bitcoin::timestamp& x) {
             if (!j.is_string()) return false;
             string str(j);
             if (str.size() != 8) return false;
@@ -116,7 +116,7 @@ namespace Gigamonkey::Stratum::mining {
             return encoding::hex::write(x, encoding::hex::lower);
         }
         
-        bool inline read(const json& j, uint64_big& x) {
+        bool inline read(const JSON& j, uint64_big& x) {
             if (!j.is_string()) return false;
             string str(j);
             if (str.size() != 16) return false;
@@ -129,7 +129,7 @@ namespace Gigamonkey::Stratum::mining {
             return encoding::hex::write(uint32_big{x}, encoding::hex::lower);
         }
         
-        bool read(const json& j, nonce& x) {
+        bool read(const JSON& j, nonce& x) {
             if (!j.is_string()) return false;
             string str(j);
             if (str.size() != 8) return false;

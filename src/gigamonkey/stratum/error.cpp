@@ -35,7 +35,7 @@ namespace Gigamonkey::Stratum {
         }
     }
     
-    error::error(const json &j) {
+    error::error(const JSON &j) {
         if (!valid(j)) return;
         
         *this = error(j[0], j[1]);

@@ -30,19 +30,19 @@ namespace Gigamonkey::BitcoinAssociation {
         // serialized format isn't always enoughdoes not check the Merkle proof, 
         // so we don't try to check the proof itself. 
         bool valid() const;
-        static bool valid(const json&);
+        static bool valid(const JSON&);
         static bool valid(bytes_view);
         
-        // the proof format has both a binary and a json representation. 
-        static proofs_serialization_standard read_json(const json&);
+        // the proof format has both a binary and a JSON representation. 
+        static proofs_serialization_standard read_JSON(const JSON&);
         static proofs_serialization_standard read_binary(bytes_view);
         
-        explicit operator json() const;
+        explicit operator JSON() const;
         explicit operator bytes() const;
         
         // whether the full transaction is included or just the txid. 
         static bool transaction_included(bytes_view);
-        static bool transaction_included(const json&);
+        static bool transaction_included(const JSON&);
         bool transaction_included() const;
         
         // the target refers to the final element of the proof. 
@@ -54,7 +54,7 @@ namespace Gigamonkey::BitcoinAssociation {
         };
         
         static target_type_value target_type(bytes_view);
-        static target_type_value target_type(const json&);
+        static target_type_value target_type(const JSON&);
         target_type_value target_type() const;
         
         // only proof_type_branch is supported for now. 
@@ -64,12 +64,12 @@ namespace Gigamonkey::BitcoinAssociation {
         };
         
         static proof_type_value proof_type(bytes_view);
-        static proof_type_value proof_type(const json&);
+        static proof_type_value proof_type(const JSON&);
         proof_type_value proof_type() const;
         
         // composite proofs are not yet supported, so these should always return false. 
         static bool composite_proof(bytes_view);
-        static bool composite_proof(const json&);
+        static bool composite_proof(const JSON&);
         bool composite_proof() const;
         
         // transaction not included, target omitted. 
@@ -92,16 +92,16 @@ namespace Gigamonkey::BitcoinAssociation {
         // will only be one entry in this map. 
         map<digest256, Merkle::path> paths() const;
         static map<digest256, Merkle::path> paths(bytes_view);
-        static map<digest256, Merkle::path> paths(const json&);
+        static map<digest256, Merkle::path> paths(const JSON&);
         
         // various kinds of targets that might be included.  
         std::optional<digest256> block_hash() const;
         std::optional<digest256> Merkle_root() const;
         std::optional<Bitcoin::header> block_header() const;
         
-        static std::optional<digest256> block_hash(const json&);
-        static std::optional<digest256> Merkle_root(const json&);
-        static std::optional<Bitcoin::header> block_header(const json&);
+        static std::optional<digest256> block_hash(const JSON&);
+        static std::optional<digest256> Merkle_root(const JSON&);
+        static std::optional<Bitcoin::header> block_header(const JSON&);
         
         static std::optional<digest256> block_hash(bytes_view);
         static std::optional<digest256> Merkle_root(bytes_view);
@@ -117,10 +117,10 @@ namespace Gigamonkey::BitcoinAssociation {
         proofs_serialization_standard() {}
         
         // the first byte in the binary representation is the flags. 
-        // the json representation omits flags as it can be derived from
+        // the JSON representation omits flags as it can be derived from
         // the rest of the structure. 
         byte flags() const;
-        static byte flags(const json&);
+        static byte flags(const JSON&);
         static byte flags(bytes_view);
         
         static bool transaction_included(byte flags);
@@ -130,23 +130,23 @@ namespace Gigamonkey::BitcoinAssociation {
         
         uint32 index() const;
         static uint32 index(bytes_view);
-        static uint32 index(const json&);
+        static uint32 index(const JSON&);
         
         digest256 txid() const;
         static digest256 txid(bytes_view);
-        static digest256 txid(const json&);
+        static digest256 txid(const JSON&);
         
         Merkle::leaf leaf() const;
         static Merkle::leaf leaf(bytes_view);
-        static Merkle::leaf leaf(const json&);
+        static Merkle::leaf leaf(const JSON&);
         
         Merkle::path path() const;
         static Merkle::path path(bytes_view);
-        static Merkle::path path(const json&);
+        static Merkle::path path(const JSON&);
         
         Merkle::branch branch() const;
         static Merkle::branch branch(bytes_view);
-        static Merkle::branch branch(const json&);
+        static Merkle::branch branch(const JSON&);
         
         // one of these must be included. 
         std::optional<bytes> Transaction;
@@ -178,7 +178,7 @@ namespace Gigamonkey::BitcoinAssociation {
         return (composite_proof() << 4) + proof_type() + target_type() + transaction_included();
     }
     
-    byte inline proofs_serialization_standard::flags(const json &j) {
+    byte inline proofs_serialization_standard::flags(const JSON &j) {
         return (composite_proof(j) << 4) + proof_type(j) + target_type(j) + transaction_included(j);
     }
     
@@ -190,7 +190,7 @@ namespace Gigamonkey::BitcoinAssociation {
         return transaction_included(flags(b));
     }
     
-    bool inline proofs_serialization_standard::transaction_included(const json& j) {
+    bool inline proofs_serialization_standard::transaction_included(const JSON& j) {
         return j["txOrId"].size() > 64;
     }
     
@@ -214,7 +214,7 @@ namespace Gigamonkey::BitcoinAssociation {
         return proof_type(flags(b));
     }
     
-    proofs_serialization_standard::proof_type_value inline proofs_serialization_standard::proof_type(const json& j) {
+    proofs_serialization_standard::proof_type_value inline proofs_serialization_standard::proof_type(const JSON& j) {
         if (!j.contains("proofType") || j["proofType"] == "branch") return proof_type_branch;
         return proof_type_tree;
     }
@@ -231,7 +231,7 @@ namespace Gigamonkey::BitcoinAssociation {
         return composite_proof(flags(b));
     }
     
-    bool inline proofs_serialization_standard::composite_proof(const json& j) {
+    bool inline proofs_serialization_standard::composite_proof(const JSON& j) {
         if (!j.contains("composite") || j["composite"] == false) return false;
         return true;
     }
@@ -277,7 +277,7 @@ namespace Gigamonkey::BitcoinAssociation {
         return {};
     }
     
-    std::optional<digest256> inline proofs_serialization_standard::block_hash(const json& j) {
+    std::optional<digest256> inline proofs_serialization_standard::block_hash(const JSON& j) {
         if (j.contains("targetType") && j["targetType"] == "hash") return {digest256{string{"0x"} + string(j["target"])}};
         return {};
     }
@@ -304,7 +304,7 @@ namespace Gigamonkey::BitcoinAssociation {
         return Path.Index;
     }
     
-    uint32 inline proofs_serialization_standard::index(const json &j) {
+    uint32 inline proofs_serialization_standard::index(const JSON &j) {
         if (!valid(j)) return 0;
         return j["index"];
     }
@@ -330,7 +330,7 @@ namespace Gigamonkey::BitcoinAssociation {
         return {};
     }
     
-    Merkle::leaf inline proofs_serialization_standard::leaf(const json& j) {
+    Merkle::leaf inline proofs_serialization_standard::leaf(const JSON& j) {
         return {txid(j), index(j)};
     }
         
@@ -344,8 +344,8 @@ namespace Gigamonkey::BitcoinAssociation {
         return {};
     }
     
-    Merkle::path inline proofs_serialization_standard::path(const json& j) {
-        auto x = read_json(j);
+    Merkle::path inline proofs_serialization_standard::path(const JSON& j) {
+        auto x = read_JSON(j);
         if (x.valid()) return x.path();
         return {};
     }
@@ -360,8 +360,8 @@ namespace Gigamonkey::BitcoinAssociation {
         return {};
     }
     
-    Merkle::branch inline proofs_serialization_standard::branch(const json& j) {
-        auto x = read_json(j);
+    Merkle::branch inline proofs_serialization_standard::branch(const JSON& j) {
+        auto x = read_JSON(j);
         if (x.valid()) return x.branch();
         return {};
     }
@@ -376,8 +376,8 @@ namespace Gigamonkey::BitcoinAssociation {
         return {};
     }
     
-    map<digest256, Merkle::path> inline proofs_serialization_standard::paths(const json& j) {
-        auto x = read_json(j);
+    map<digest256, Merkle::path> inline proofs_serialization_standard::paths(const JSON& j) {
+        auto x = read_JSON(j);
         if (x.valid()) return x.paths();
         return {};
     }
