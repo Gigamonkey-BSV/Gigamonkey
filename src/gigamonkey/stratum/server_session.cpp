@@ -10,7 +10,7 @@ namespace Gigamonkey::Stratum {
             throw std::logic_error{string{"invalid get_version response received: "} + string(r)}; 
         return client::get_version_response{r}.result();
     }
-    
+    /*
     void server_session::handle_request(const Stratum::request &r) {
         std::unique_lock lock(Mutex);
         switch (r.method()) {
@@ -29,29 +29,29 @@ namespace Gigamonkey::Stratum {
                         mining::submit_response{r.id(), *submit_result};
                 }
                 
-                return networking::json_line_session::send(submit_response);
+                return networking::JSON_line_session::send(submit_response);
             }
             
             case mining_configure: 
-                return networking::json_line_session::send(configure(mining::configure_request{r}));
+                return networking::JSON_line_session::send(configure(mining::configure_request{r}));
             
             case mining_authorize: 
-                return networking::json_line_session::send(authorize(mining::authorize_request{r}));
+                return networking::JSON_line_session::send(authorize(mining::authorize_request{r}));
             
             case mining_subscribe: {
                 if (!r.valid()) {
-                    networking::json_line_session::send(response{r.id(), nullptr, error{ILLEGAL_PARAMS}});
+                    networking::JSON_line_session::send(response{r.id(), nullptr, error{ILLEGAL_PARAMS}});
                     return;
                 }
                 
                 if (State.subscribed()) {
-                    networking::json_line_session::send(response{r.id(), nullptr, error{ILLEGAL_METHOD}});
+                    networking::JSON_line_session::send(response{r.id(), nullptr, error{ILLEGAL_METHOD}});
                 }
                 
                 auto response = subscribe(mining::subscribe_request::params(r));
                 
                 State.Subscriptions = response.SubscribeParams.Subscriptions;
-                networking::json_line_session::send(mining::subscribe_response{r.id(), response.SubscribeParams});
+                networking::JSON_line_session::send(mining::subscribe_response{r.id(), response.SubscribeParams});
                 
                 State.set_difficulty(response.InitialDifficulty);
                 this->send_notification(mining_set_difficulty,
@@ -64,9 +64,9 @@ namespace Gigamonkey::Stratum {
             };
             
             default : 
-                networking::json_line_session::send(response{r.id(), nullptr, error{ILLEGAL_METHOD}});
+                networking::JSON_line_session::send(response{r.id(), nullptr, error{ILLEGAL_METHOD}});
         }
-    }
+    }*/
     
     // If this function has been called, then we already know that extensions are supported. 
     extensions::result server_session::state::configure_result(
@@ -209,7 +209,7 @@ namespace Gigamonkey::Stratum {
         State.Recent = State.Recent.insert(string);
         
         if (!f.Proof.valid(work::compact(work::difficulty(State.difficulty())))) return error{LOW_DIFFICULTY};
-        if (f.Proof.valid()) solution(f.Proof);
+        if (f.Proof.valid()) solved(work::proof(f.Proof).Solution);
         
         return {};
     }

@@ -8,13 +8,13 @@
 
 namespace Gigamonkey::Stratum {
     
-    // Stratum difficulty can be a json integer or a json floating point. 
-    struct difficulty : json {
+    // Stratum difficulty can be a JSON integer or a JSON floating point. 
+    struct difficulty : JSON {
         
-        difficulty() : json() {}
-        explicit difficulty(const uint64& d) : json(json::number_unsigned_t{d}) {}
+        difficulty() : JSON() {}
+        explicit difficulty(const uint64& d) : JSON(JSON::number_unsigned_t{d}) {}
         explicit difficulty(const work::compact& t) : difficulty{t.difficulty()} {}
-        explicit difficulty(const work::difficulty& d) : json(json::number_float_t{double(d)}) {}
+        explicit difficulty(const work::difficulty& d) : JSON(JSON::number_float_t{double(d)}) {}
         
         explicit operator work::difficulty() const;
         
@@ -27,7 +27,7 @@ namespace Gigamonkey::Stratum {
     }
     
     bool inline difficulty::valid() const {
-        return (json::is_number_float() && double(*this) > 0) || (json::is_number_unsigned() && uint64(*this) > 0);
+        return (JSON::is_number_float() && double(*this) > 0) || (JSON::is_number_unsigned() && uint64(*this) > 0);
     }
     
 }

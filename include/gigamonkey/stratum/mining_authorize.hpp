@@ -33,10 +33,10 @@ namespace Gigamonkey::Stratum::mining {
         static parameters params(const request &);
         parameters params() const;
         
-        static bool valid(const json&);
+        static bool valid(const JSON&);
         
-        static string username(const json&);
-        static std::optional<string> password(const json&);
+        static string username(const JSON&);
+        static std::optional<string> password(const JSON&);
         
         using request::request;
         authorize_request(message_id id, string u);

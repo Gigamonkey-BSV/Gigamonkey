@@ -15,22 +15,26 @@
 namespace Gigamonkey::Stratum {
     
     // this represents a client talking to a remote server. 
-    class client_session : public remote {
+    class client_session : public remote, public virtual work::challenger {
         
-        virtual void notify(const mining::notify::parameters&) = 0;
-        virtual void set_difficulty(const difficulty&) = 0;
-        virtual void set_extranonce(const mining::set_extranonce::parameters&) = 0;
-        virtual void set_version_mask(const extensions::version_mask&) = 0;
+        void notify(const mining::notify::parameters&);
+        void set_difficulty(const difficulty&);
+        void set_extranonce(const mining::set_extranonce::parameters&);
+        void set_version_mask(const extensions::version_mask&);
         
         virtual void show_message(const string &m) {
             std::cout << "Server says: " << m << std::endl;
         }
         
-        virtual string version() = 0;
+        string version() const {
+            return Version;
+        };
         
         void handle_notification(const notification &n) final override;
         
         void handle_request(const Stratum::request &r) final override;
+        
+        void solved(const work::solution &) final override;
         
     protected:
         bool initialize(
@@ -43,6 +47,13 @@ namespace Gigamonkey::Stratum {
         
         list<mining::subscription> Subscriptions{};
         
+        // the notifications we will receive from the server that
+        // define the mining job we are to perform. 
+        optional<difficulty> Difficulty{};
+        optional<mining::set_extranonce::parameters> ExtraNonce{};
+        optional<extensions::version_mask> VersionMask{};
+        optional<mining::notify::parameters> Notify{};
+        
     public:
         
         extensions::results configure(const extensions::requests &);
@@ -53,16 +64,21 @@ namespace Gigamonkey::Stratum {
         
         bool set_minimum_difficulty(const extensions::configuration<extensions::minimum_difficulty> &);
         
+        bool ready_to_mine() {
+            return bool(ExtraNonce) && bool(Difficulty) && bool(Notify);
+        }
+        
     private:
         
         uint32 SharesSubmitted{0};
         uint32 SharesAccepted{0};
         
-    public:
+        string Version;
         
+    public:
         bool submit(const share &x);
         
-        client_session(networking::tcp::socket &s) : remote{s} {}
+        client_session(networking::TCP::socket &&s, const string &version) : remote{std::move(s)}, Version{version} {}
         
         virtual ~client_session() {}
         

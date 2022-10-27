@@ -19,11 +19,15 @@ namespace Gigamonkey::Stratum {
     template <typename X> using future = std::future<X>;
     
     // can be used for a remote server or a remote client. 
-    class remote : protected networking::tcp_session, public networking::json_line_session {
+    class remote : protected networking::TCP::session, public networking::JSON_line_session {
         
         virtual void handle_notification(const notification &) = 0;
         
         virtual void handle_request(const Stratum::request &) = 0;
+        
+        virtual void parse_error(const string &invalid) override {
+            throw std::logic_error{std::string{"Invalid JSON string: \""} + invalid + string{"\""}};
+        }
         
         // Number of requests sent in this session. It is used as the 
         // message id. 
@@ -32,11 +36,11 @@ namespace Gigamonkey::Stratum {
         // we keep track of requests that were made of the remote peer and
         // promises to the requestor. 
         std::list<std::pair<Stratum::request, promise<response>*>> AwaitingResponse;
-
+        
     public:
         using mutex = std::mutex;
         using guard = std::lock_guard<mutex>;
-
+        
     private:
         mutex Mutex;
         
@@ -44,7 +48,7 @@ namespace Gigamonkey::Stratum {
         
         void handle_response(const response &p);
         
-        void receive(const json &next) final override;
+        void receive(const JSON &next) final override;
         
     public:
         // there are two ways to talk to a server: request and notify. 
@@ -53,17 +57,17 @@ namespace Gigamonkey::Stratum {
         
         void send_notification(method m, parameters p);
         
-        remote(networking::tcp::socket &s);
+        remote(networking::TCP::socket &&s);
         virtual ~remote();
         
     };
     
     void inline remote::send_notification(method m, parameters p) {
-        networking::json_line_session::send(notification{m, p});
+        networking::JSON_line_session::send(notification{m, p});
     }
     
-    inline remote::remote(networking::tcp::socket &s) : 
-        networking::tcp_session{s}, networking::json_line_session{} {}
+    inline remote::remote(networking::TCP::socket &&s) : 
+        networking::TCP::session{std::move(s)}, networking::JSON_line_session{} {}
     
     inline remote::~remote() {
         shutdown();

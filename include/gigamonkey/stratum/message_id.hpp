@@ -12,24 +12,24 @@ namespace Gigamonkey::Stratum {
     struct response;
     
     // Message id is either an integer or string, must be a unique identifier. 
-    struct message_id : json {
+    struct message_id : JSON {
         
-        message_id(const uint64& d) : json(d) {}
-        message_id(const string& x) : json(x) {}
+        message_id(const uint64& d) : JSON(d) {}
+        message_id(const string& x) : JSON(x) {}
         
         bool valid() const;
         
-        static bool valid(const json&); 
+        static bool valid(const JSON&); 
         
     private:
-        message_id() : json{} {}
-        message_id(const json& j) : json(j) {}
+        message_id() : JSON{} {}
+        message_id(const JSON& j) : JSON(j) {}
         
         friend struct request;
         friend struct response;
     };
     
-    bool inline message_id::valid(const json& j) {
+    bool inline message_id::valid(const JSON& j) {
         return j.is_number_unsigned() || j.is_string();
     }
     

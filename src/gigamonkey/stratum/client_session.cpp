@@ -14,9 +14,9 @@ namespace Gigamonkey::Stratum {
     
     void client_session::handle_request(const Stratum::request &r) {
         if (client::get_version_request::valid(r)) 
-            return networking::json_line_session::send(client::get_version_response{r.id(), version()});
+            return networking::JSON_line_session::send(client::get_version_response{r.id(), version()});
         
-        networking::json_line_session::send(response{r.id(), nullptr, error{ILLEGAL_METHOD}});
+        networking::JSON_line_session::send(response{r.id(), nullptr, error{ILLEGAL_METHOD}});
         
         throw std::logic_error{string{"unknown request received: "} + string(r)};
     }
@@ -52,7 +52,7 @@ namespace Gigamonkey::Stratum {
         auto r = extensions::results(mining::configure_response{s}.result());
         
         if (!mining::configure_response::valid_result(r, q))
-            throw std::logic_error{string{"invalid response to "} + string(json{serialized}) + " received: " + string(s)};
+            throw std::logic_error{string{"invalid response to "} + string(JSON{serialized}) + " received: " + string(s)};
         
         std::cout << "configure response received: " << r << std::endl;
         

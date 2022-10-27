@@ -18,15 +18,7 @@
 namespace Gigamonkey::Stratum {
     
     // this represents a server talking to a remote client. 
-    struct server_session : public remote {
-        
-        struct initial_job {
-            mining::subscribe_response::parameters SubscribeParams;
-            Stratum::difficulty InitialDifficulty;
-            mining::notify::parameters NotifyParams;
-            
-            initial_job();
-        };
+    struct server_session : public remote, public virtual work::challenger {
         
         struct options {
             bool CanSubmitWithoutAuthorization{true};
@@ -42,7 +34,8 @@ namespace Gigamonkey::Stratum {
             options() {};
         };
         
-        server_session(networking::tcp::socket &s, const options &x = {}) : remote{s}, State{x} {}
+        server_session(networking::TCP::socket &&s, const options &x = {}) : remote{std::move(s)}, State{x} {}
+        virtual ~server_session() {}
         
     private:
         // get_version is the only request that the server sends to the client.
@@ -54,15 +47,12 @@ namespace Gigamonkey::Stratum {
         virtual optional<error> authorize(const mining::authorize_request::parameters&) = 0;
         
         // We also need a way to assign session ids and subscriptions to users. 
-        virtual initial_job subscribe(const mining::subscribe_request::parameters&) = 0;
+        virtual mining::subscribe_response::parameters subscribe(const mining::subscribe_request::parameters&) = 0;
         
         // typically the client does not send notifications to the server.
         virtual void handle_notification(const notification &n) override {
             throw std::logic_error{string{"unknown notification received: "} + string(n)};
         }
-        
-        // solution found. 
-        virtual void solution(const proof &) = 0;
         
     protected:
         // the state data of the protocol. 
@@ -246,8 +236,9 @@ namespace Gigamonkey::Stratum {
         
         void handle_request(const Stratum::request &r) final override;
         
-    private:
+        void pose(const work::puzzle &) final override;
         
+    private:
         // generate a configure response from a configure request message. 
         // this is the optional first method of the protocol. 
         mining::configure_response configure(const mining::configure_request &r);

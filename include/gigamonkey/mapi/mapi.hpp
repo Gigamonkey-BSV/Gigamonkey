@@ -11,7 +11,7 @@
 // https://github.com/bitcoin-sv-specs/brfc-merchantapi 
 
 namespace Gigamonkey::BitcoinAssociation {
-
+    
     struct MAPI : networking::HTTP_client {
         using networking::HTTP_client::HTTP_client;
         
@@ -48,9 +48,9 @@ namespace Gigamonkey::BitcoinAssociation {
             
             fee(string type, satoshi_per_byte mining, satoshi_per_byte relay) : 
                 FeeType{type}, MiningFee{mining}, RelayFee{relay} {}
-                
-            fee(const json &j);
-            operator json() const;
+            
+            fee(const JSON &j);
+            operator JSON() const;
             
             satoshi_per_byte get_fee(service z) const;
             
@@ -78,15 +78,15 @@ namespace Gigamonkey::BitcoinAssociation {
                 uint64 currentHighestBlockHeight, 
                 list<fee> fees);
             
-            get_fee_quote_response(const json &j);
-            operator json() const;
+            get_fee_quote_response(const JSON &j);
+            operator JSON() const;
             
             get_fee_quote_response();
         };
         
         struct get_policy_quote_response : get_fee_quote_response {
             list<string> Callbacks;
-            json Policies;
+            JSON Policies;
             
             get_policy_quote_response(
                 const string& apiVersion, 
@@ -97,12 +97,12 @@ namespace Gigamonkey::BitcoinAssociation {
                 uint64 currentHighestBlockHeight, 
                 list<fee> fees, 
                 list<string> callbacks, 
-                const json& policies);
+                const JSON& policies);
             
             bool valid();
             
-            get_policy_quote_response(const json &);
-            operator json() const;
+            get_policy_quote_response(const JSON &);
+            operator JSON() const;
             
             get_policy_quote_response();
         };
@@ -122,8 +122,8 @@ namespace Gigamonkey::BitcoinAssociation {
             
             bool valid() const;
             
-            conflicted_with(const json &);
-            operator json() const;
+            conflicted_with(const JSON &);
+            operator JSON() const;
             
             conflicted_with() : TXID{}, Size{}, Transaction{} {}
             
@@ -147,7 +147,7 @@ namespace Gigamonkey::BitcoinAssociation {
                 ResultDescription{resultDescription}, ConflictedWith{conflicted} {}
             
             transaction_status() = default;
-            operator json() const;
+            operator JSON() const;
             
         };
         
@@ -186,15 +186,15 @@ namespace Gigamonkey::BitcoinAssociation {
                 uint32 blockHeight, 
                 uint32 confirmations);
             
-            transaction_status_response(const json &);
-            operator json() const;
+            transaction_status_response(const JSON &);
+            operator JSON() const;
             
             transaction_status_response() = default;
             
         };
     
         enum content_type {
-            application_json,
+            application_JSON,
             application_octet_stream,
         };
     
@@ -225,8 +225,8 @@ namespace Gigamonkey::BitcoinAssociation {
             
             bool valid() const;
             
-            transaction_submission(const json &);
-            operator json() const;
+            transaction_submission(const JSON &);
+            operator JSON() const;
             
             transaction_submission(const bytes raw, const submit_transaction_parameters &p = {}):
                 Transaction{raw}, Parameters{p} {}
@@ -267,8 +267,8 @@ namespace Gigamonkey::BitcoinAssociation {
                 uint64 currentHighestBlockHeight, 
                 list<conflicted_with> conflictedWith = {});
             
-            submit_transaction_response(const json &);
-            operator json() const;
+            submit_transaction_response(const JSON &);
+            operator JSON() const;
             
             submit_transaction_response() : 
                 transaction_status{}, APIVersion{}, Timestamp{}, MinerID{}, 
@@ -311,8 +311,8 @@ namespace Gigamonkey::BitcoinAssociation {
                 CurrentHighestBlockHeight{0}, 
                 TxSecondMempoolExpiry{0}, Transactions{}, FailureCount{0} {}
             
-            submit_transactions_response(const json&);
-            operator json() const;
+            submit_transactions_response(const JSON&);
+            operator JSON() const;
             
         };
         
@@ -329,7 +329,7 @@ namespace Gigamonkey::BitcoinAssociation {
         networking::HTTP::request submit_transaction_HTTP_request(const submit_transaction_request &) const;
         networking::HTTP::request submit_transactions_HTTP_request(const submit_transactions_request &) const;
         
-        json call(const networking::HTTP::request &r);
+        JSON call(const networking::HTTP::request &r);
     };
     
     MAPI::get_policy_quote_response inline MAPI::get_policy_quote() {
@@ -397,7 +397,7 @@ namespace Gigamonkey::BitcoinAssociation {
         uint64 currentHighestBlockHeight, 
         list<fee> fees, 
         list<string> callbacks, 
-        const json& policies) : 
+        const JSON& policies) : 
         get_fee_quote_response{
             apiVersion, timestamp, expiryTime, minerId, 
             currentHighestBlockHash, currentHighestBlockHeight, fees}, 

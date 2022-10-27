@@ -17,6 +17,7 @@
 #include <data/stream.hpp>
 #include <data/tools.hpp>
 #include <data/numbers.hpp>
+#include <data/math.hpp>
 #include <data/fold.hpp>
 #include <data/for_each.hpp>
 #include <data/encoding/hex.hpp>
@@ -40,7 +41,7 @@ namespace Gigamonkey {
     
     enum chain : byte {test, main};
     
-    using json = nlohmann::json;
+    using JSON = nlohmann::json;
     
     template <typename X> using nonzero = data::math::nonzero<X>;
     

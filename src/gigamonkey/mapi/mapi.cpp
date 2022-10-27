@@ -6,17 +6,17 @@
 namespace Gigamonkey::BitcoinAssociation {
     using namespace Bitcoin;
     
-    json MAPI::call(const networking::HTTP::request &q) {
+    JSON MAPI::call(const networking::HTTP::request &q) {
         networking::HTTP::response r = (*this)(q);
         
         if (static_cast<unsigned int>(r.Status) < 200 || 
             static_cast<unsigned int>(r.Status) >= 300) 
             throw networking::HTTP::exception{q, r, "response code"};
         
-        if (r.Headers[networking::HTTP::header::content_type] != "application/json") 
-            throw networking::HTTP::exception{q, r, "content type is not json"};
+        if (r.Headers[networking::HTTP::header::content_type] != "application/JSON") 
+            throw networking::HTTP::exception{q, r, "content type is not JSON"};
         
-        json_json_envelope envelope{json::parse(r.Body)};
+        JSON_JSON_envelope envelope{JSON::parse(r.Body)};
         
         if (!envelope.valid() || !envelope.verify()) 
             throw networking::HTTP::exception{q, r, "MAPI signature verify fail"};
@@ -43,7 +43,7 @@ namespace Gigamonkey::BitcoinAssociation {
     
     namespace {
     
-        satoshi_per_byte spb_from_json(const json& j) {
+        satoshi_per_byte spb_from_JSON(const JSON& j) {
             
             if (!(j.is_object() && 
                 j.contains("satoshis") && j["satoshis"].is_number_unsigned() && 
@@ -53,44 +53,44 @@ namespace Gigamonkey::BitcoinAssociation {
             
         }
         
-        json to_json(const digest256 &v) {
+        JSON to_JSON(const digest256 &v) {
             std::stringstream ss;
             ss << v;
             return ss.str().substr(9, 64);
         }
         
-        json to_json(const satoshi_per_byte v) {
-            return json{{"satoshis", int64(v.Satoshis)}, {"bytes", v.Bytes}};
+        JSON to_JSON(const satoshi_per_byte v) {
+            return JSON{{"satoshis", int64(v.Satoshis)}, {"bytes", v.Bytes}};
         }
     
-        string to_json(MAPI::return_result r) {
+        string to_JSON(MAPI::return_result r) {
             return r == MAPI::success ? "success" : "failure";
         }
         
-        json to_json(list<MAPI::transaction_submission> subs) {
-            json j = json::array();
+        JSON to_JSON(list<MAPI::transaction_submission> subs) {
+            JSON j = JSON::array();
             
-            for (const MAPI::transaction_submission& sub : subs) j.push_back(json(sub));
+            for (const MAPI::transaction_submission& sub : subs) j.push_back(JSON(sub));
             
             return j;
         }
         
-        json to_json(list<MAPI::fee> fees) {
-            json j = json::array();
+        JSON to_JSON(list<MAPI::fee> fees) {
+            JSON j = JSON::array();
             
             for (const MAPI::fee& f : fees) {
-                j.push_back(json(f));
+                j.push_back(JSON(f));
             }
             
             return j;
         }
         
-        optional<list<string>> read_ip_address_list(const json &j) {
+        optional<list<string>> read_ip_address_list(const JSON &j) {
             if (!j.is_array()) return {};
             
             list<string> ips;
             
-            for (const json &i : j) {
+            for (const JSON &i : j) {
                 if (!j.contains("ipAddress")) return {};
                 ips = ips << string(j["ipAddress"]);
             }
@@ -98,8 +98,8 @@ namespace Gigamonkey::BitcoinAssociation {
             return ips;
         } 
         
-        json ip_addresses_to_json(list<string> ips) {
-            json::array_t ii;
+        JSON ip_addresses_to_JSON(list<string> ips) {
+            JSON::array_t ii;
             ii.resize(ips.size());
             
             int i = 0;
@@ -108,7 +108,7 @@ namespace Gigamonkey::BitcoinAssociation {
             return ii;
         }
     
-        MAPI::transaction_status read_transaction_status(const json& j) {
+        MAPI::transaction_status read_transaction_status(const JSON& j) {
             MAPI::transaction_status x;
             
             if (!(j.is_object() && 
@@ -124,7 +124,7 @@ namespace Gigamonkey::BitcoinAssociation {
             
             if (j.contains("conflictedWith")) {
                 list<MAPI::conflicted_with> cw;
-                for (const json& w : j["conflictedWith"]) {
+                for (const JSON& w : j["conflictedWith"]) {
                     cw = cw << MAPI::conflicted_with{w};
                     if (!cw.first().valid()) return {};
                 }
@@ -139,8 +139,8 @@ namespace Gigamonkey::BitcoinAssociation {
             return x;
         }
     
-        json to_json(const MAPI::submit_transaction_parameters &x) {
-            json j = json::object_t{};
+        JSON to_JSON(const MAPI::submit_transaction_parameters &x) {
+            JSON j = JSON::object_t{};
             
             if (x.CallbackURL.has_value()) j["callbackUrl"] = *x.CallbackURL;
             if (x.CallbackToken.has_value()) j["callbackToken"] = *x.CallbackToken;
@@ -150,36 +150,36 @@ namespace Gigamonkey::BitcoinAssociation {
             
             return j;
         }
-    
-        json to_json(const MAPI::transaction_submission &x) {
+        
+        JSON to_JSON(const MAPI::transaction_submission &x) {
             if (!x.valid()) return {};
             
-            json j = to_json(x.Parameters);
+            JSON j = to_JSON(x.Parameters);
             
             j["rawtx"] = encoding::hex::write(x.Transaction);
             
             return j;
         }
         
-        json to_json(list<MAPI::conflicted_with> cx) {
-            json::array_t cf;
+        JSON to_JSON(list<MAPI::conflicted_with> cx) {
+            JSON::array_t cf;
             cf.resize(cx.size());
             
             int i = 0;
-            for (const MAPI::conflicted_with &c : cx) cf[i++] = json(c);
+            for (const MAPI::conflicted_with &c : cx) cf[i++] = JSON(c);
             
             return cf;
         }
         
-        json to_json(const MAPI::transaction_status &tst) {
+        JSON to_JSON(const MAPI::transaction_status &tst) {
             if (!tst.valid()) return {};
         
-            json j{ 
+            JSON j{ 
                 {"txid", string(tst.TXID.Value)}, 
-                {"returnResult", to_json(tst.ReturnResult)}, 
+                {"returnResult", to_JSON(tst.ReturnResult)}, 
                 {"resultDescription", tst.ResultDescription}};
         
-            if (tst.ConflictedWith.size() > 0) j["conflictedWith"] = to_json(tst.ConflictedWith);
+            if (tst.ConflictedWith.size() > 0) j["conflictedWith"] = to_JSON(tst.ConflictedWith);
             
             return j;
         }
@@ -199,8 +199,8 @@ namespace Gigamonkey::BitcoinAssociation {
         
     }
     
-    MAPI::transaction_submission::operator json() const {
-        json j{{"rawtx", encoding::hex::write(Transaction)}};
+    MAPI::transaction_submission::operator JSON() const {
+        JSON j{{"rawtx", encoding::hex::write(Transaction)}};
         
         if (this->Parameters.CallbackURL) j["callbackUrl"] = *this->Parameters.CallbackURL;
         if (this->Parameters.CallbackToken) j["callbackToken"] = *this->Parameters.CallbackToken;
@@ -213,10 +213,10 @@ namespace Gigamonkey::BitcoinAssociation {
     }
     
     MAPI::submit_transaction_request::operator networking::REST::request() const {
-        if (ContentType == application_json) {
+        if (ContentType == application_JSON) {
             return networking::REST::request{networking::HTTP::method::post, "/mapi/tx", {}, 
-                {{networking::HTTP::header::content_type, "application/json"}}, 
-                json(static_cast<const transaction_submission>(*this))};
+                {{networking::HTTP::header::content_type, "application/JSON"}}, 
+                JSON(static_cast<const transaction_submission>(*this))};
         }
         
         std::string tx{};
@@ -231,21 +231,21 @@ namespace Gigamonkey::BitcoinAssociation {
     MAPI::submit_transactions_request::operator networking::REST::request() const {
         return networking::REST::request{networking::HTTP::method::post, "/mapi/tx", 
             to_url_params(DefaultParameters), 
-            {{networking::HTTP::header::content_type, "application/json"}}, 
-            to_json(Submissions)};
+            {{networking::HTTP::header::content_type, "application/JSON"}}, 
+            to_JSON(Submissions)};
     }
     
-    MAPI::fee::fee(const json& j) : fee{} {
+    MAPI::fee::fee(const JSON& j) : fee{} {
         
         if (!(j.is_object() && 
             j.contains("feeType") && j["feeType"].is_string() && 
             j.contains("miningFee") && j.contains("relayFee"))) return;
         
-        satoshi_per_byte mf = spb_from_json(j["miningFee"]);
+        satoshi_per_byte mf = spb_from_JSON(j["miningFee"]);
         
         if (!mf.valid()) return;
         
-        satoshi_per_byte rf = spb_from_json(j["relayFee"]);
+        satoshi_per_byte rf = spb_from_JSON(j["relayFee"]);
         
         if (!rf.valid()) return;
         
@@ -255,22 +255,22 @@ namespace Gigamonkey::BitcoinAssociation {
         
     }
     
-    MAPI::fee::operator json() const {
-        return valid() ? json{
+    MAPI::fee::operator JSON() const {
+        return valid() ? JSON{
             {"feeType", FeeType}, 
-            {"miningFee", to_json(MiningFee)}, 
-            {"relayFee", to_json(RelayFee)}} : json(nullptr);
+            {"miningFee", to_JSON(MiningFee)}, 
+            {"relayFee", to_JSON(RelayFee)}} : JSON(nullptr);
     }
     
-    MAPI::conflicted_with::operator json() const {
-        return json {
-            {"txid", to_json(TXID)}, 
+    MAPI::conflicted_with::operator JSON() const {
+        return JSON {
+            {"txid", to_JSON(TXID)}, 
             {"size", Size}, 
             {"hex", encoding::hex::write(Transaction)}
         };
     }
     
-    MAPI::conflicted_with::conflicted_with(const json& j) : conflicted_with{} {
+    MAPI::conflicted_with::conflicted_with(const JSON& j) : conflicted_with{} {
         
         if (!(j.is_object() && 
             j.contains("txid") && j["txid"].is_string() && 
@@ -286,7 +286,7 @@ namespace Gigamonkey::BitcoinAssociation {
         
     }
     
-    MAPI::get_fee_quote_response::get_fee_quote_response(const json& j) : get_fee_quote_response{} {
+    MAPI::get_fee_quote_response::get_fee_quote_response(const JSON& j) : get_fee_quote_response{} {
         
         if (!(j.is_object() && 
             j.contains("apiVersion") && j["apiVersion"].is_string() && 
@@ -299,7 +299,7 @@ namespace Gigamonkey::BitcoinAssociation {
         
         list<fee> f;
         
-        for (const json& jf : j["fees"]) {
+        for (const JSON& jf : j["fees"]) {
             f = f << fee{jf};
             if (!f.first().valid()) return;
         }
@@ -321,20 +321,20 @@ namespace Gigamonkey::BitcoinAssociation {
         
     }
     
-    MAPI::get_fee_quote_response::operator json() const {
+    MAPI::get_fee_quote_response::operator JSON() const {
         std::stringstream ss;
         ss << CurrentHighestBlockHash;
-        return valid() ? json{
+        return valid() ? JSON{
             {"apiVersion", APIVersion},
             {"timestamp", Timestamp}, 
             {"expiryTime", ExpiryTime}, 
             {"minerId", encoding::hex::write(MinerID)}, 
             {"currentHighestBlockHash", ss.str().substr(2)}, 
             {"currentHighestBlockHeight", CurrentHighestBlockHeight}, 
-            {"fees", to_json(Fees)}} : json{};
+            {"fees", to_JSON(Fees)}} : JSON{};
     }
     
-    MAPI::get_policy_quote_response::get_policy_quote_response(const json &j) : get_fee_quote_response{} {
+    MAPI::get_policy_quote_response::get_policy_quote_response(const JSON &j) : get_fee_quote_response{} {
         
         if (!j.contains("callbacks") || !j.contains("policies")) return;
         
@@ -350,18 +350,18 @@ namespace Gigamonkey::BitcoinAssociation {
         Callbacks = *ips;
     }
     
-    MAPI::get_policy_quote_response::operator json() const {
-        json j = get_fee_quote_response::operator json();
+    MAPI::get_policy_quote_response::operator JSON() const {
+        JSON j = get_fee_quote_response::operator JSON();
         
         if (j == nullptr) return nullptr;
         
-        j["callbacks"] = ip_addresses_to_json(Callbacks);
-        j["policies"] = json(Policies);
+        j["callbacks"] = ip_addresses_to_JSON(Callbacks);
+        j["policies"] = JSON(Policies);
         
         return j;
     }
     
-    MAPI::submit_transaction_response::submit_transaction_response(const json& j) : 
+    MAPI::submit_transaction_response::submit_transaction_response(const JSON& j) : 
         submit_transaction_response{} {
         
         if (!(j.is_object() && 
@@ -393,10 +393,10 @@ namespace Gigamonkey::BitcoinAssociation {
         
     }
     
-    MAPI::submit_transaction_response::operator json() const {
+    MAPI::submit_transaction_response::operator JSON() const {
         if (!valid()) return nullptr;
         
-        json j = to_json(static_cast<transaction_status>(*this));
+        JSON j = to_JSON(static_cast<transaction_status>(*this));
         
         std::stringstream ss;
         ss << CurrentHighestBlockHash;
@@ -411,19 +411,19 @@ namespace Gigamonkey::BitcoinAssociation {
         return j;
     }
     
-    MAPI::transaction_status::operator json() const {
-        json j {
-            {"txid", to_json(TXID) }, 
-            {"returnResult", to_json(ReturnResult) }, 
+    MAPI::transaction_status::operator JSON() const {
+        JSON j {
+            {"txid", to_JSON(TXID) }, 
+            {"returnResult", to_JSON(ReturnResult) }, 
             {"resultDescription", ResultDescription }
         };
         
-        if (ConflictedWith.size() > 0) j["conflictedWith"] = to_json(ConflictedWith);
+        if (ConflictedWith.size() > 0) j["conflictedWith"] = to_JSON(ConflictedWith);
         
         return j;
     }
     
-    MAPI::transaction_status_response::transaction_status_response(const json& j) : 
+    MAPI::transaction_status_response::transaction_status_response(const JSON& j) : 
         transaction_status_response{} {
         
         if (!(j.is_object() && 
@@ -458,10 +458,10 @@ namespace Gigamonkey::BitcoinAssociation {
         
     }
     
-    MAPI::transaction_status_response::operator json() const {
+    MAPI::transaction_status_response::operator JSON() const {
         if (!valid()) return nullptr;
         
-        json j = to_json(static_cast<transaction_status>(*this));
+        JSON j = to_JSON(static_cast<transaction_status>(*this));
         
         j["apiVersion"] = APIVersion; 
         j["timestamp"] = Timestamp; 
@@ -473,7 +473,7 @@ namespace Gigamonkey::BitcoinAssociation {
         return j;
     }
     
-    MAPI::submit_transactions_response::submit_transactions_response(const json& j) : 
+    MAPI::submit_transactions_response::submit_transactions_response(const JSON& j) : 
         submit_transactions_response{} {
         
         if (!(j.is_object() && 
@@ -487,7 +487,7 @@ namespace Gigamonkey::BitcoinAssociation {
             j.contains("failureCount") && j["failureCount"].is_number_unsigned())) return;
         
         list<transaction_status> sr;
-        for (const json& w : j["txs"]) {
+        for (const JSON& w : j["txs"]) {
             sr = sr << read_transaction_status(w);
             if (!sr.first().valid()) return;
         }
@@ -510,17 +510,17 @@ namespace Gigamonkey::BitcoinAssociation {
         
     }
     
-    MAPI::submit_transactions_response::operator json() const {
+    MAPI::submit_transactions_response::operator JSON() const {
         std::stringstream ss;
         ss << CurrentHighestBlockHash;
         
-        json::array_t txs;
+        JSON::array_t txs;
         txs.resize(Transactions.size());
         
         int i = 0;
-        for (const transaction_status &status : Transactions) txs[i++] = json(status);
+        for (const transaction_status &status : Transactions) txs[i++] = JSON(status);
         
-        return valid() ? json{
+        return valid() ? JSON{
             {"apiVersion", APIVersion }, 
             {"timestamp", Timestamp }, 
             {"minerId", encoding::hex::write(MinerID) }, 
@@ -528,7 +528,7 @@ namespace Gigamonkey::BitcoinAssociation {
             {"currentHighestBlockHeight", CurrentHighestBlockHeight }, 
             {"txSecondMempoolExpiry", TxSecondMempoolExpiry }, 
             {"txs", txs }, 
-            {"failureCount", FailureCount}} : json{};
+            {"failureCount", FailureCount}} : JSON{};
     }
     
 }

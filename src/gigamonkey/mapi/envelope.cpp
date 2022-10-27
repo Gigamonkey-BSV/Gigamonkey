@@ -6,7 +6,7 @@
 
 namespace Gigamonkey::BitcoinAssociation {
     
-    bool json_envelope::verify() const {
+    bool JSON_envelope::verify() const {
         if (!valid()) return false;
         
         if (!bool(PublicKey)) return true;
@@ -25,12 +25,12 @@ namespace Gigamonkey::BitcoinAssociation {
         }
     }
     
-    json_envelope::json_envelope(const json &j) : json_envelope{} {
+    JSON_envelope::JSON_envelope(const JSON &j) : JSON_envelope{} {
         if (!j.is_object() || !j.contains("payload") || !j.contains("encoding") || !j.contains("mimetype") || 
             !j["payload"].is_string() || !j["encoding"].is_string() || j["mimetype"].is_string())
             return;
         
-        json_envelope envelope;
+        JSON_envelope envelope;
         
         if (j.contains("publicKey") || j.contains("signature")) {
             if (!j.contains("publicKey") || !j.contains("signature") || 
@@ -59,10 +59,10 @@ namespace Gigamonkey::BitcoinAssociation {
         
     }
     
-    json_envelope::operator json() const {
+    JSON_envelope::operator JSON() const {
         if (!valid()) return nullptr;
         
-        json j{{"payload", Payload}, {"mimetype", Mimetype}};
+        JSON j{{"payload", Payload}, {"mimetype", Mimetype}};
         j["encoding"] = Encoding == base64 ? "base64" : "UTF_8";
         
         if (bool(PublicKey)) {
@@ -73,12 +73,12 @@ namespace Gigamonkey::BitcoinAssociation {
         return j;
     }
     
-    bool json_json_envelope::valid() const {
-        if (!json_envelope::valid()) return false;
+    bool JSON_JSON_envelope::valid() const {
+        if (!JSON_envelope::valid()) return false;
         try {
             payload();
             return true;
-        } catch (const json::exception &) {
+        } catch (const JSON::exception &) {
             return false;
         }
     }
