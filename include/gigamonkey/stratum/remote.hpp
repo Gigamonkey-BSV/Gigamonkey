@@ -15,62 +15,49 @@
 #include <data/networking/JSON.hpp>
 
 namespace Gigamonkey::Stratum {
-    template <typename X> using promise = std::promise<X>;
-    template <typename X> using future = std::future<X>;
+    using JSON_line_session = networking::JSON_line_session;
     
     // can be used for a remote server or a remote client. 
-    class remote : protected networking::TCP::session, public networking::JSON_line_session {
+    struct remote : public JSON_line_session {
+    
+        virtual void receive_notification(const notification &) = 0;
+        virtual void receive_request(const Stratum::request &) = 0;
+        virtual void receive_response(method, const Stratum::response &) = 0;
         
-        virtual void handle_notification(const notification &) = 0;
+        virtual void parse_error(const string &invalid) override;
         
-        virtual void handle_request(const Stratum::request &) = 0;
+        uint32 Requests{0};
+        std::map<request_id, method> Request;
         
-        virtual void parse_error(const string &invalid) override {
-            throw std::logic_error{std::string{"Invalid JSON string: \""} + invalid + string{"\""}};
-        }
-        
-        // Number of requests sent in this session. It is used as the 
-        // message id. 
-        request_id Requests;
-        
-        // we keep track of requests that were made of the remote peer and
-        // promises to the requestor. 
-        std::list<std::pair<Stratum::request, promise<response>*>> AwaitingResponse;
-        
-    public:
         using mutex = std::mutex;
         using guard = std::lock_guard<mutex>;
         
-    private:
-        mutex Mutex;
-        
-        void shutdown();
-        
-        void handle_response(const response &p);
+        mutex Mutex{};
         
         void receive(const JSON &next) final override;
         
-    public:
         // there are two ways to talk to a server: request and notify. 
         // request expects a response and notify does not. 
-        response request(method m, parameters p);
+        request_id send_request(method m, parameters p);
         
         void send_notification(method m, parameters p);
         
-        remote(networking::TCP::socket &&s);
-        virtual ~remote();
+        remote() {}
+        virtual ~remote() {}
         
     };
     
+    struct exception : std::logic_error {
+        using std::logic_error::logic_error;
+        exception(const error &e) : std::logic_error {string{"Stratum error returned: "} + JSON(e).dump()} {}
+    };
+    
     void inline remote::send_notification(method m, parameters p) {
-        networking::JSON_line_session::send(notification{m, p});
+        JSON_line_session::send(notification{m, p});
     }
     
-    inline remote::remote(networking::TCP::socket &&s) : 
-        networking::TCP::session{std::move(s)}, networking::JSON_line_session{} {}
-    
-    inline remote::~remote() {
-        shutdown();
+    void inline remote::parse_error(const string &invalid) {
+        throw exception{std::string{"Invalid JSON string: \""} + invalid + string{"\""}};
     }
     
 }

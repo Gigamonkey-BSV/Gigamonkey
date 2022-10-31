@@ -55,6 +55,8 @@ namespace Gigamonkey::BitcoinAssociation {
     struct JSON_JSON_envelope : JSON_envelope {
         bool valid() const;
         
+        static string de_escape(const string &);
+        
         JSON payload() const {
             return JSON::parse(JSON_envelope::Payload);
         }

@@ -62,7 +62,6 @@ add_library(gigamonkey STATIC
     src/gigamonkey/ledger.cpp
     src/gigamonkey/schema/hd.cpp
     src/gigamonkey/schema/random.cpp
-    #src/gigamonkey/wallet.cpp
     src/gigamonkey/spv.cpp
     src/gigamonkey/accounts.cpp
     

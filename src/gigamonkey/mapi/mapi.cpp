@@ -13,13 +13,13 @@ namespace Gigamonkey::BitcoinAssociation {
             static_cast<unsigned int>(r.Status) >= 300) 
             throw networking::HTTP::exception{q, r, "response code"};
         
-        if (r.Headers[networking::HTTP::header::content_type] != "application/JSON") 
-            throw networking::HTTP::exception{q, r, "content type is not JSON"};
+        if (r.Headers[networking::HTTP::header::content_type] != "application/json") 
+            throw networking::HTTP::exception{q, r, string{"content type is not JSON; it is "} +
+                r.Headers[networking::HTTP::header::content_type]};
         
-        JSON_JSON_envelope envelope{JSON::parse(r.Body)};
+        auto envelope = JSON_JSON_envelope{JSON_envelope{JSON::parse(r.Body)}};
         
-        if (!envelope.valid() || !envelope.verify()) 
-            throw networking::HTTP::exception{q, r, "MAPI signature verify fail"};
+        if (!envelope.verify()) throw networking::HTTP::exception{q, r, "MAPI signature verify fail"};
         
         return envelope.payload();
     }

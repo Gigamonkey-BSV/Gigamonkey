@@ -39,6 +39,7 @@ namespace Gigamonkey::Stratum::extensions {
         string error() const;
     };
     
+    // request for a single extension. 
     using request = data::map<string, JSON>;
     using result_params = data::map<string, JSON>;
     
@@ -99,6 +100,7 @@ namespace Gigamonkey::Stratum::extensions {
         static std::optional<configuration> read(const request &p);
     };
     
+    // requests for all extensions. 
     struct requests : public data::map<string, request> {
         using data::map<string, request>::map;
         requests(data::map<string, request> m) : data::map<string, request>{m} {}
@@ -112,7 +114,7 @@ namespace Gigamonkey::Stratum::extensions {
     
     struct result {
         accepted Accepted;
-        std::optional<result_params> Parameters;
+        result_params Parameters;
         
         result(const result_params &p);
         result();
@@ -120,13 +122,7 @@ namespace Gigamonkey::Stratum::extensions {
         
         bool valid() const;
         
-        bool operator==(const result &r) const {
-            return Accepted == r.Accepted && Parameters == r.Parameters;
-        }
-        
-        bool operator!=(const result &r) const {
-            return !operator==(r);
-        }
+        bool operator==(const result &r) const;
         
     };
     
@@ -152,19 +148,9 @@ namespace Gigamonkey::Stratum::extensions {
         
         parameters() : LocalMask{}, RequestedMask{} {}
         
-        optional<version_mask> get() const {
-            return make(LocalMask, RequestedMask);
-        }
-        
-        optional<version_mask> configure(const configuration<version_rolling> &requested) {
-            RequestedMask = requested;
-            return get();
-        }
-        
-        optional<version_mask> set(const version_mask &mask) {
-            LocalMask = mask;
-            return get();
-        }
+        optional<version_mask> get() const;
+        optional<version_mask> configure(const configuration<version_rolling> &requested);
+        optional<version_mask> set(const version_mask &mask);
         
     };
     
@@ -233,7 +219,7 @@ namespace Gigamonkey::Stratum::extensions {
     inline result::result(accepted ac, const result_params &p): Accepted{ac}, Parameters{p} {}
     
     bool inline result::valid() const {
-        return Accepted.valid() && (!bool(Accepted) || bool(Parameters));
+        return Accepted.valid() && (!bool(Accepted) || Parameters.size() == 0);
     }
     
     std::ostream inline &operator<<(std::ostream &o, const accepted &a) {
@@ -242,8 +228,26 @@ namespace Gigamonkey::Stratum::extensions {
     
     std::ostream inline &operator<<(std::ostream &o, const result &a) {
         o << "[" << a.Accepted;
-        if (a.Parameters) return o << ", " << *a.Parameters;
+        if (a.Parameters.size() > 0) return o << ", " << a.Parameters;
         return o << "]";
+    }
+        
+    bool inline result::operator==(const result &r) const {
+        return Accepted == r.Accepted && Parameters == r.Parameters;
+    }
+    
+    optional<version_mask> inline parameters<version_rolling>::get() const {
+        return make(LocalMask, RequestedMask);
+    }
+    
+    optional<version_mask> inline parameters<version_rolling>::configure(const configuration<version_rolling> &requested) {
+        RequestedMask = requested;
+        return get();
+    }
+    
+    optional<version_mask> inline parameters<version_rolling>::set(const version_mask &mask) {
+        LocalMask = mask;
+        return get();
     }
     
 }

@@ -405,7 +405,7 @@ namespace Gigamonkey::Boost {
         Boost::output_script boost_script = Script;
         
         secret sk = MinerKey;
-        Bitcoin::satoshi val = Value;
+        Bitcoin::satoshi val = value();
         bytes script = boost_script.write();
         incomplete::transaction incomplete {1, incomplete_inputs, outs, 0};
         pubkey pk = sk.to_public();
