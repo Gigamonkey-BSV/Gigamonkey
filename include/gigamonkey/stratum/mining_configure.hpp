@@ -70,9 +70,9 @@ namespace Gigamonkey::Stratum::mining {
         static bool valid(const JSON& j);
         
         // this checks that the result contains a response to every extension that was queried. 
-        static bool valid_result(const parameters& r, const configure_request::parameters& q) {
+        static bool valid_result(const parameters& r, const extensions::requests& q) {
             JSON j{r};
-            for (const string& extension : q.Supported) if (!(j.contains(extension) && j[extension].is_boolean())) return false;
+            for (const auto& extension : q) if (!(j.contains(extension.Key) && j[extension.Key].is_boolean())) return false;
             return true;
         }
     };

@@ -21,13 +21,13 @@ namespace Gigamonkey::BitcoinAssociation {
             }
             
             case UTF_8 : 
-                return PublicKey->verify(Gigamonkey::SHA2_256(encoding::unicode::utf8_encode(Payload)), *Signature);
+                return PublicKey->verify(Gigamonkey::SHA2_256(Payload), *Signature);
         }
     }
     
     JSON_envelope::JSON_envelope(const JSON &j) : JSON_envelope{} {
         if (!j.is_object() || !j.contains("payload") || !j.contains("encoding") || !j.contains("mimetype") || 
-            !j["payload"].is_string() || !j["encoding"].is_string() || j["mimetype"].is_string())
+            !j["payload"].is_string() || !j["encoding"].is_string() || !j["mimetype"].is_string())
             return;
         
         JSON_envelope envelope;
@@ -49,7 +49,7 @@ namespace Gigamonkey::BitcoinAssociation {
         
         string encoding = j["encoding"];
         if (encoding == "base64") envelope.Encoding = base64;
-        else if (encoding == "UTF_8") envelope.Encoding = UTF_8;
+        else if (encoding == "UTF-8") envelope.Encoding = UTF_8;
         else return;
         
         envelope.Payload = j["payload"];
@@ -82,5 +82,27 @@ namespace Gigamonkey::BitcoinAssociation {
             return false;
         }
     }
+    /*
+    string JSON_JSON_envelope::de_escape(const string &x) {
+        std::cout << "de escape string \"" << x << "\"" << std::endl;
+        
+        char *z = new char[x.size() + 1];
+        char *i = z;
+        
+        for (const char &ch : x) {
+            if (ch == '\\') i++;
+            *i = ch;
+            i++;
+        }
+        
+        *i = '\0';
+        
+        string r{z};
+        delete[] z;
+        
+        std::cout << "de escaped string \"" << r << "\"" << std::endl;
+        
+        return r;
+    }*/
     
 }

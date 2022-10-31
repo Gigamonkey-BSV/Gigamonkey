@@ -300,7 +300,7 @@ namespace Gigamonkey::BitcoinAssociation {
             uint32 FailureCount;
             
             bool valid() const {
-                return APIVersion != "" && Timestamp != "" && MinerID.valid() && 
+                return Timestamp != "" && MinerID.valid() && 
                     CurrentHighestBlockHash.valid() && CurrentHighestBlockHeight != 0 && 
                     TxSecondMempoolExpiry != 0 && Transactions.valid(); 
             }
@@ -369,7 +369,7 @@ namespace Gigamonkey::BitcoinAssociation {
     }
     
     bool inline MAPI::get_fee_quote_response::valid() const {
-        return APIVersion != "" && Timestamp != "" && ExpiryTime != "" && MinerID.valid() && 
+        return Timestamp != "" && ExpiryTime != "" && MinerID.valid() && 
             CurrentHighestBlockHash.valid() && CurrentHighestBlockHeight != 0 && data::valid(Fees);
     }
     
