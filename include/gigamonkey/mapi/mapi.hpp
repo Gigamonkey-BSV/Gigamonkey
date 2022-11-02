@@ -5,6 +5,7 @@
 #define GIGAMONKEY_MAPI_MAPI
 
 #include <data/networking/HTTP_client.hpp>
+#include <data/networking/TCP.hpp>
 #include <gigamonkey/mapi/envelope.hpp>
 #include <gigamonkey/fees.hpp>
 
@@ -40,21 +41,21 @@ namespace Gigamonkey::BitcoinAssociation {
         };
         
         struct fee {
-            string FeeType;
             satoshi_per_byte MiningFee;
             satoshi_per_byte RelayFee;
             
             bool valid() const;
             
-            fee(string type, satoshi_per_byte mining, satoshi_per_byte relay) : 
-                FeeType{type}, MiningFee{mining}, RelayFee{relay} {}
-            
-            fee(const JSON &j);
-            operator JSON() const;
+            fee(satoshi_per_byte mining, satoshi_per_byte relay) : 
+                MiningFee{mining}, RelayFee{relay} {}
             
             satoshi_per_byte get_fee(service z) const;
             
-            fee() : FeeType{}, MiningFee{0, 0}, RelayFee{0, 0} {}
+            fee() : MiningFee{0, 0}, RelayFee{0, 0} {}
+            
+            bool operator==(const fee& v) const {
+                return MiningFee == v.MiningFee && RelayFee == v.RelayFee;
+            }
         };
     
         struct get_fee_quote_response {
@@ -65,7 +66,7 @@ namespace Gigamonkey::BitcoinAssociation {
             secp256k1::pubkey MinerID;
             digest256 CurrentHighestBlockHash;
             uint64 CurrentHighestBlockHeight;
-            list<fee> Fees;
+            map<string, fee> Fees;
             
             bool valid() const;
             
@@ -76,7 +77,7 @@ namespace Gigamonkey::BitcoinAssociation {
                 const secp256k1::pubkey& minerId, 
                 const digest256& currentHighestBlockHash,
                 uint64 currentHighestBlockHeight, 
-                list<fee> fees);
+                map<string, fee> fees);
             
             get_fee_quote_response(const JSON &j);
             operator JSON() const;
@@ -85,7 +86,7 @@ namespace Gigamonkey::BitcoinAssociation {
         };
         
         struct get_policy_quote_response : get_fee_quote_response {
-            list<string> Callbacks;
+            list<networking::IP::address> Callbacks;
             JSON Policies;
             
             get_policy_quote_response(
@@ -95,8 +96,8 @@ namespace Gigamonkey::BitcoinAssociation {
                 const secp256k1::pubkey& minerId, 
                 const digest256& currentHighestBlockHash,
                 uint64 currentHighestBlockHeight, 
-                list<fee> fees, 
-                list<string> callbacks, 
+                map<string, fee> fees, 
+                list<networking::IP::address> callbacks, 
                 const JSON& policies);
             
             bool valid();
@@ -353,7 +354,7 @@ namespace Gigamonkey::BitcoinAssociation {
     }
     
     bool inline MAPI::fee::valid() const {
-        return FeeType != "" && MiningFee.valid() && RelayFee.valid();
+        return MiningFee.valid() && RelayFee.valid();
     }
     
     satoshi_per_byte inline MAPI::fee::get_fee(service z) const {
@@ -380,7 +381,7 @@ namespace Gigamonkey::BitcoinAssociation {
         const secp256k1::pubkey& id, 
         const digest256& hx,
         uint64 cx, 
-        list<fee> f) : 
+        map<string, fee> f) : 
         APIVersion{v}, Timestamp{t}, ExpiryTime{ex}, MinerID{id}, 
         CurrentHighestBlockHash{hx}, CurrentHighestBlockHeight{cx}, Fees{f} {}
             
@@ -395,8 +396,8 @@ namespace Gigamonkey::BitcoinAssociation {
         const secp256k1::pubkey& minerId, 
         const digest256& currentHighestBlockHash,
         uint64 currentHighestBlockHeight, 
-        list<fee> fees, 
-        list<string> callbacks, 
+        map<string, fee> fees, 
+        list<networking::IP::address> callbacks, 
         const JSON& policies) : 
         get_fee_quote_response{
             apiVersion, timestamp, expiryTime, minerId, 

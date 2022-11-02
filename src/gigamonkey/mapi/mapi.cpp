@@ -44,7 +44,7 @@ namespace Gigamonkey::BitcoinAssociation {
     namespace {
     
         satoshi_per_byte spb_from_JSON(const JSON& j) {
-            
+            std::cout << "read JSON fees " << j << std::endl;
             if (!(j.is_object() && 
                 j.contains("satoshis") && j["satoshis"].is_number_unsigned() && 
                 j.contains("bytes") && j["bytes"].is_number_unsigned())) return{};
@@ -75,35 +75,37 @@ namespace Gigamonkey::BitcoinAssociation {
             return j;
         }
         
-        JSON to_JSON(list<MAPI::fee> fees) {
+        JSON to_JSON(map<string, MAPI::fee> fees) {
             JSON j = JSON::array();
             
-            for (const MAPI::fee& f : fees) {
-                j.push_back(JSON(f));
-            }
+            for (const data::entry<string, MAPI::fee>& f : fees) 
+                j.push_back(f.valid() ? JSON{
+                    {"feeType", f.Key}, 
+                    {"miningFee", to_JSON(f.Value.MiningFee)}, 
+                    {"relayFee", to_JSON(f.Value.RelayFee)}} : JSON(nullptr));
             
             return j;
         }
         
-        optional<list<string>> read_ip_address_list(const JSON &j) {
+        optional<list<networking::IP::address>> read_ip_address_list(const JSON &j) {
             if (!j.is_array()) return {};
             
-            list<string> ips;
+            list<networking::IP::address> ips;
             
             for (const JSON &i : j) {
                 if (!j.contains("ipAddress")) return {};
-                ips = ips << string(j["ipAddress"]);
+                ips = ips << networking::IP::address{string(j["ipAddress"])};
             }
             
             return ips;
         } 
         
-        JSON ip_addresses_to_JSON(list<string> ips) {
+        JSON ip_addresses_to_JSON(list<networking::IP::address> ips) {
             JSON::array_t ii;
             ii.resize(ips.size());
             
             int i = 0;
-            for (const string &ip : ips) ii[i++] = ip;
+            for (const networking::IP::address &ip : ips) ii[i++] = string(ip);
             
             return ii;
         }
@@ -235,33 +237,6 @@ namespace Gigamonkey::BitcoinAssociation {
             to_JSON(Submissions)};
     }
     
-    MAPI::fee::fee(const JSON& j) : fee{} {
-        
-        if (!(j.is_object() && 
-            j.contains("feeType") && j["feeType"].is_string() && 
-            j.contains("miningFee") && j.contains("relayFee"))) return;
-        
-        satoshi_per_byte mf = spb_from_JSON(j["miningFee"]);
-        
-        if (!mf.valid()) return;
-        
-        satoshi_per_byte rf = spb_from_JSON(j["relayFee"]);
-        
-        if (!rf.valid()) return;
-        
-        FeeType = j["feeType"];
-        MiningFee = mf;
-        RelayFee = rf;
-        
-    }
-    
-    MAPI::fee::operator JSON() const {
-        return valid() ? JSON{
-            {"feeType", FeeType}, 
-            {"miningFee", to_JSON(MiningFee)}, 
-            {"relayFee", to_JSON(RelayFee)}} : JSON(nullptr);
-    }
-    
     MAPI::conflicted_with::operator JSON() const {
         return JSON {
             {"txid", to_JSON(TXID)}, 
@@ -297,11 +272,24 @@ namespace Gigamonkey::BitcoinAssociation {
             j.contains("currentHighestBlockHeight") && j["currentHighestBlockHeight"].is_number_unsigned() && 
             j.contains("fees") && j["fees"].is_array())) return;
         
-        list<fee> f;
+        map<string, fee> f;
         
         for (const JSON& jf : j["fees"]) {
-            f = f << fee{jf};
-            if (!f.first().valid()) return;
+            
+            if (!(jf.is_object() && 
+                jf.contains("feeType") && jf["feeType"].is_string() && 
+                jf.contains("miningFee") && jf.contains("relayFee"))) return;
+            
+            satoshi_per_byte mf = spb_from_JSON(jf["miningFee"]);
+            
+            if (!mf.valid()) return;
+            
+            satoshi_per_byte rf = spb_from_JSON(jf["relayFee"]);
+            
+            if (!rf.valid()) return;
+            
+            f = f.insert(jf["feeType"], MAPI::fee{mf, rf});
+            
         }
         
         auto pk_hex = encoding::hex::read(string(j["minerId"]));

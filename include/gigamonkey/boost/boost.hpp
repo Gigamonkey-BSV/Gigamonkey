@@ -731,7 +731,7 @@ namespace Gigamonkey {
                 Bitcoin::signature::MaxSignatureSize + 
                 (compressed_pubkey ? 34 : 66) + 
                 (t == Boost::bounty ? 21 : 0) + 
-                (use_general_purpose_bits ? 5 : 0) + 23;
+                (use_general_purpose_bits ? 5 : 0) + 24;
         }
         
         inline proof::proof() : work::proof{}, Type{invalid} {}
