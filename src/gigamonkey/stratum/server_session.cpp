@@ -3,15 +3,78 @@
 
 #include <gigamonkey/stratum/server_session.hpp>
 
-namespace Gigamonkey::Stratum {/*
-    string server_session::get_version() {
-        response r = request(client_get_version, {});
-        if (!client::get_version_response::valid(r)) 
-            throw std::logic_error{string{"invalid get_version response received: "} + string(r)}; 
-        return client::get_version_response{r}.result();
+namespace Gigamonkey::Stratum {
+    
+    bool server_session::state::set_difficulty(const Stratum::difficulty& d) {
+        if (!subscribed()) throw std::logic_error{"Cannot set difficulty before client is subscribed"};
+        if (bool(MinimumDifficulty) && d < *MinimumDifficulty) return false;
+        if (d == NextDifficulty) return false;
+        NextDifficulty = d; 
+        return true;
     }
     
-    void server_session::handle_request(const Stratum::request &r) {
+    bool server_session::state::set_extranonce(const Stratum::extranonce &n) {
+        if (!subscribed()) throw std::logic_error{"Cannot set extra nonce before client is subscribed"};
+        if (NextExtranonce == n || (NextExtranonce == Stratum::extranonce{} && Extranonce == n)) return false;
+        NextExtranonce = n;
+        return true;
+    }
+    
+    // return value is whether the version mask has changed. 
+    bool server_session::state::set_version_mask(const extensions::version_mask &x) {
+        auto current = version_mask();
+        if (bool(current) && *current == x) return false;
+        VersionRollingMaskParameters.set(x);
+        return true;
+    }
+    
+    void server_session::receive_response(method m, const Stratum::response &r) {
+        if (m != client_get_version) 
+            throw exception{string{"unknown response returned: "} + method_to_string(m) + "; " + r.dump()};
+        
+        if (!client::get_version_response::valid(r)) 
+            throw std::logic_error{string{"invalid get_version response received: "} + string(r)};
+        
+        string client_version = client::get_version_response{r}.result();
+        State.set_client_version(client_version);
+        receive_get_version(client_version);
+    }
+    
+    // authorize the client to the server. 
+    // this is the original first method of the protocol. 
+    mining::authorize_response server_session::authorize(const mining::authorize_request &r) {
+        if (!r.valid()) return response{r.id(), nullptr, error{ILLEGAL_PARAMS}};
+        
+        if (State.authorized()) return response{r.id(), false, error{ILLEGAL_METHOD}};
+        
+        auto authorization = authorize(r.params());
+        
+        if (authorization) {
+            State.set_name(r.params().Username);
+            return mining::authorize_response{r.id(), true};
+        }
+        
+        return mining::authorize_response{r.id(), *authorization};
+    }
+    /*
+    // generate a configure response from a configure request message. 
+    // this the optional first method of the protocol. 
+    mining::configure_response server_session::configure(const mining::configure_request &r) {
+        if (!State.extensions_supported()) return response{r.id(), nullptr, error{ILLEGAL_METHOD}};
+        
+        if (!r.valid()) return response{r.id(), nullptr, error{ILLEGAL_PARAMS}};
+        
+        // minimum difficulty is allowed after the initial configure message. 
+        auto params = r.params();
+        if (State.configured() || !is_minimum_difficulty_only(params)) 
+            return response{r.id(), nullptr, error{ILLEGAL_METHOD}};
+        
+        auto config = State.configure(extensions::requests(params));
+        if (config) return response{r.id(), nullptr, error{ILLEGAL_METHOD}};
+        return mining::configure_response{r.id(), mining::configure_response::parameters{*config}};
+    }
+    
+    void server_session::receive_request(const Stratum::request &r) {
         std::unique_lock lock(Mutex);
         switch (r.method()) {
             case mining_submit: {
@@ -124,40 +187,6 @@ namespace Gigamonkey::Stratum {/*
     
     bool is_minimum_difficulty_only(const mining::configure_request::parameters &params) {
         return params.Supported.size() == 1 && params.Supported.first() == "minimum_difficulty";
-    }
-    
-    // generate a configure response from a configure request message. 
-    // this the optional first method of the protocol. 
-    mining::configure_response server_session::configure(const mining::configure_request &r) {
-        if (!State.extensions_supported()) return response{r.id(), nullptr, error{ILLEGAL_METHOD}};
-        
-        if (!r.valid()) return response{r.id(), nullptr, error{ILLEGAL_PARAMS}};
-        
-        // minimum difficulty is allowed after the initial configure message. 
-        auto params = r.params();
-        if (State.configured() || !is_minimum_difficulty_only(params)) 
-            return response{r.id(), nullptr, error{ILLEGAL_METHOD}};
-        
-        auto config = State.configure(extensions::requests(params));
-        if (config) return response{r.id(), nullptr, error{ILLEGAL_METHOD}};
-        return mining::configure_response{r.id(), mining::configure_response::parameters{*config}};
-    }
-    
-    // authorize the client to the server. 
-    // this is the original first method of the protocol. 
-    mining::authorize_response server_session::authorize(const mining::authorize_request &r) {
-        if (!r.valid()) return response{r.id(), nullptr, error{ILLEGAL_PARAMS}};
-        
-        if (State.authorized()) return response{r.id(), false, error{ILLEGAL_METHOD}};
-        
-        auto authorization = authorize(r.params());
-        
-        if (authorization) {
-            State.Name = r.params().Username;
-            return mining::authorize_response{r.id(), true};
-        }
-        
-        return mining::authorize_response{r.id(), *authorization};
     }
     
     void server_session::set_version_mask(const extensions::version_mask& p) {
