@@ -421,7 +421,7 @@ namespace Gigamonkey::Boost {
                 return input{i.Reference, input_script{
                     sk.sign(sighash::document{prev.Value, script, incomplete, index++}), 
                 pk, solution, boost_type, category_mask}.write(), i.Sequence};
-            }, incomplete_inputs, Prevouts), outs, 0});
+            }, incomplete_inputs, Prevouts.values()), outs, 0});
         
     }
     

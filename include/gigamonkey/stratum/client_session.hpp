@@ -81,7 +81,7 @@ namespace Gigamonkey::Stratum {
         uint32 SharesSubmitted{0};
         uint32 SharesAccepted{0};
         
-        void pose_puzzle();
+        void pose_current_puzzle();
         
     };
     
@@ -115,7 +115,7 @@ namespace Gigamonkey::Stratum {
     void inline client_session::receive_notify(const mining::notify::parameters &x) {
         remote::guard lock(Mutex);
         Notify = x;
-        pose_puzzle();
+        pose_current_puzzle();
     }
     
     void inline client_session::receive_set_difficulty(const difficulty &x) {
@@ -131,7 +131,7 @@ namespace Gigamonkey::Stratum {
     void inline client_session::receive_set_version_mask(const extensions::version_mask &x) {
         remote::guard lock(Mutex);
         VersionMask = x;
-        pose_puzzle();
+        pose_current_puzzle();
     }
     
 }

@@ -9,7 +9,7 @@ namespace Gigamonkey::Stratum {
         if (mining::set_extranonce::valid(n)) return receive_set_extranonce(mining::set_extranonce{n}.params());
         if (mining::set_version_mask::valid(n)) return receive_set_version_mask(mining::set_version_mask{n}.params());
         if (client::show_message::valid(n)) return receive_show_message(client::show_message{n}.params());
-        throw std::logic_error{string{"unknown notification received: "} + string(n)};
+        throw exception{string{"unknown notification received: "} + string(n)};
     }
     
     void client_session::receive_request(const Stratum::request &r) {
@@ -31,7 +31,7 @@ namespace Gigamonkey::Stratum {
                 if (r.error()) receive_authorize_error(*r.error());
                 else {
                     if (!mining::authorize_response::valid(r)) 
-                        throw std::logic_error{string{"invalid authorization response received: "} + string(r)};
+                        throw exception{string{"invalid authorization response received: "} + string(r)};
                     
                     receive_authorize(mining::authorize_response{r}.result());
                 }

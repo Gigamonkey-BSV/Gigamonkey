@@ -334,15 +334,33 @@ namespace Gigamonkey {
             struct prevout : Bitcoin::outpoint {
                 Bitcoin::satoshi Value;
                 prevout(const Bitcoin::outpoint &o, Bitcoin::satoshi v) : Bitcoin::outpoint{o}, Value{v} {}
+                prevout(): Bitcoin::outpoint{}, Value{} {}
                 
-                bool operator==(const prevout &p) {
+                bool operator==(const prevout &p) const {
                     return static_cast<Bitcoin::outpoint>(*this) == static_cast<Bitcoin::outpoint>(p)
                         && Value == p.Value;
                 }
+                
+                bool operator<(const prevout &p) const {
+                    return static_cast<const Bitcoin::outpoint &>(*this) < static_cast<const Bitcoin::outpoint &>(p);
+                }
+                
+                bool operator>(const prevout &p) const {
+                    return static_cast<const Bitcoin::outpoint &>(*this) > static_cast<const Bitcoin::outpoint &>(p);
+                }
+                
+                bool operator<=(const prevout &p) const {
+                    return static_cast<const Bitcoin::outpoint &>(*this) <= static_cast<const Bitcoin::outpoint &>(p);
+                }
+                
+                bool operator>=(const prevout &p) const {
+                    return static_cast<const Bitcoin::outpoint &>(*this) >= static_cast<const Bitcoin::outpoint &>(p);
+                }
+                
             };
             
             output_script Script;
-            priority_queue<prevout> Prevouts;
+            set<prevout> Prevouts;
             
             digest256 id() const;
             
@@ -361,7 +379,7 @@ namespace Gigamonkey {
             explicit operator work::candidate() const;
             
         public:
-            candidate(const Boost::output_script &script, priority_queue<prevout> prevouts) :
+            candidate(const Boost::output_script &script, set<prevout> prevouts) :
                 Script{script}, Prevouts{prevouts} {}
         };
         
@@ -815,7 +833,8 @@ namespace Gigamonkey {
         }
         
         candidate inline candidate::add(const Boost::prevout &p) const {
-            return candidate{Script, Prevouts << prevout{p.outpoint(), p.value()}};
+            prevout pp{p.outpoint(), p.value()};
+            return Prevouts.contains(pp) ? *this : candidate{Script, Prevouts << pp};
         }
         
         bytes inline puzzle::header(const bytes &tag, const digest160 &miner_address) {
@@ -847,7 +866,7 @@ namespace Gigamonkey {
         Bitcoin::satoshi inline candidate::value() const {
             return data::fold([](const Bitcoin::satoshi so_far, const prevout &u) -> Bitcoin::satoshi {
                     return so_far + u.Value;
-                }, Bitcoin::satoshi{0}, Prevouts);
+                }, Bitcoin::satoshi{0}, Prevouts.values());
         }
     
         bool inline candidate::valid() const { 
