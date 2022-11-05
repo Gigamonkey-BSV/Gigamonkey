@@ -84,7 +84,6 @@ add_library(gigamonkey STATIC
     
     src/gigamonkey/mapi/mapi.cpp
     src/gigamonkey/mapi/envelope.cpp
-		src/gigamonkey/p2p/header_string.cpp
     
 )
 
