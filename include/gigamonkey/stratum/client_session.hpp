@@ -4,6 +4,7 @@
 #ifndef GIGAMONKEY_STRATUM_CLIENT_SESSION
 #define GIGAMONKEY_STRATUM_CLIENT_SESSION
 
+#include <gigamonkey/work/solver.hpp>
 #include <gigamonkey/stratum/remote.hpp>
 #include <gigamonkey/stratum/mining_notify.hpp>
 #include <gigamonkey/stratum/mining_set_difficulty.hpp>
@@ -15,7 +16,7 @@
 namespace Gigamonkey::Stratum {
     
     // A client talking to a remote server. 
-    struct client_session : public remote, public virtual work::challenger {
+    struct client_session : public remote, public work::solver {
         request_id send_configure(const extensions::requests &);
         request_id send_authorize(const mining::authorize_request::parameters &);
         request_id send_subscribe(const mining::subscribe_request::parameters &);

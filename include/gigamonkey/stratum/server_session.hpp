@@ -4,6 +4,7 @@
 #ifndef GIGAMONKEY_STRATUM_SERVER_SESSION
 #define GIGAMONKEY_STRATUM_SERVER_SESSION
 
+#include <gigamonkey/work/solver.hpp>
 #include <gigamonkey/stratum/remote.hpp>
 #include <gigamonkey/stratum/mining_notify.hpp>
 #include <gigamonkey/stratum/mining_configure.hpp>
@@ -18,7 +19,7 @@
 namespace Gigamonkey::Stratum {
     
     // this represents a server talking to a remote client. 
-    struct server_session : public remote, public virtual work::challenger {
+    struct server_session : public remote, public work::selector {
         
         struct options {
             bool CanSubmitWithoutAuthorization{true};
@@ -92,7 +93,7 @@ namespace Gigamonkey::Stratum {
         
         void receive_request(const Stratum::request &) final override;
         void receive_response(method, const Stratum::response &) final override;
-        void pose(const work::puzzle &) final override;
+        work::puzzle select() final override;
         
         // generate a configure response from a configure request message. 
         // this is the optional first method of the protocol. 
