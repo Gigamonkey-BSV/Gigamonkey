@@ -158,12 +158,6 @@ namespace Gigamonkey::work {
         }
     };
     
-    struct challenger {
-        virtual void pose(const puzzle &) = 0;
-        virtual void solved(const solution &) = 0;
-        virtual ~challenger() {}
-    };
-    
     proof cpu_solve(const puzzle& p, const solution& initial);
     
     // right now we only have cpu mining in this lib. 
