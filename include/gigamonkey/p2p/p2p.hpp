@@ -5,6 +5,7 @@
 #define GIGAMONKEY_P2P_P2P
 
 #include <gigamonkey/p2p/header_string.hpp>
+#include <gigamonkey/timechain.hpp>
 
 namespace Gigamonkey::Bitcoin::p2p {
     

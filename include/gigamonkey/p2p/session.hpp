@@ -5,6 +5,7 @@
 #define GIGAMONKEY_P2P_SESSION
 
 #include <gigamonkey/p2p/p2p.hpp>
+#include <gigamonkey/p2p/checksum.hpp>
 #include <data/networking/session.hpp>
 
 namespace Gigamonkey::Bitcoin::p2p {
@@ -15,7 +16,7 @@ namespace Gigamonkey::Bitcoin::p2p {
             message_writer(bytes &);
             
             bytes_writer Bytes;
-            Hash256_writer Hash;
+            checksum_writer Hash;
             
             // write to both the hash writer and the bytes_writer
             void write(const word*, size_t size) final override;

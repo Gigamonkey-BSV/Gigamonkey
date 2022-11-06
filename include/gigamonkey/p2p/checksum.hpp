@@ -57,6 +57,23 @@ namespace Gigamonkey::Bitcoin {
 
 }
 
+namespace Gigamonkey::Bitcoin::p2p {
+    
+    struct checksum_writer : Hash256_writer {
+        Gigamonkey::checksum finalize() {
+            Gigamonkey::checksum x;
+            digest256 digest = Hash256_writer::finalize();
+            std::copy(digest.Value.begin(), digest.Value.begin() + 4, x.begin());
+            return x;
+        }
+        
+        Gigamonkey::checksum operator()(bytes_view b) {
+            return checksum(b);
+        }
+    };
+
+}
+
 namespace Gigamonkey::base58 {
 
     inline bool check::valid() const {
