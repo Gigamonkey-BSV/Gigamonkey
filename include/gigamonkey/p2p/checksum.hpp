@@ -42,7 +42,7 @@ namespace Gigamonkey::base58 {
 
 namespace Gigamonkey::Bitcoin {
 
-    // A Bitcoin checksum takes the hash256 value of a string
+    // A Bitcoin checksum takes the Hash256 value of a string
     // and appends the last 4 bytes of the result. 
     Gigamonkey::checksum checksum(bytes_view b);
 
