@@ -60,10 +60,12 @@ add_library(gigamonkey STATIC
     src/gigamonkey/timechain.cpp
     src/gigamonkey/work.cpp
     src/gigamonkey/ledger.cpp
-    src/gigamonkey/schema/hd.cpp
-    src/gigamonkey/schema/random.cpp
     src/gigamonkey/spv.cpp
     src/gigamonkey/accounts.cpp
+    
+    src/gigamonkey/schema/random.cpp
+    src/gigamonkey/schema/hd.cpp
+    src/gigamonkey/schema/bip_39.cpp
     
     src/gigamonkey/merkle/dual.cpp
     src/gigamonkey/merkle/serialize.cpp
