@@ -12,12 +12,12 @@ class Bip32Test :
 
 };
 
-namespace Gigamonkey::hd {
+namespace Gigamonkey::HD {
 
 TEST(Bip32,Basic)
 {
-    bip32::secret secret = 
-        bip32::secret::read("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi");
+    BIP_32::secret secret = 
+        BIP_32::secret::read("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi");
 }
 
 std::vector<char> HexToBytes(const std::string& hex) {
@@ -32,24 +32,23 @@ std::vector<char> HexToBytes(const std::string& hex) {
     return bytes;
 }
 
-
 TEST(Bip32, DeriveChain) {
     string path1 = "0\'";
     string path2 = "0\'/1";
     
     string secret_string = "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi";
-    bip32::secret secret = bip32::secret::read(secret_string);
+    BIP_32::secret secret = BIP_32::secret::read(secret_string);
     
     EXPECT_EQ(string(secret), secret_string);
     
-    bip32::secret derived = bip32::derive(secret, path1);
-    bip32::pubkey derived_pubkey = derived.to_public();
+    BIP_32::secret derived = BIP_32::derive(secret, path1);
+    BIP_32::pubkey derived_pubkey = derived.to_public();
     
-    bip32::secret expected = 
-        bip32::secret::read("xprv9uHRZZhk6KAJC1avXpDAp4MDc3sQKNxDiPvvkX8Br5ngLNv1TxvUxt4cV1rGL5hj6KCesnDYUhd7oWgT11eZG7XnxHrnYeSvkzY7d2bhkJ7");
+    BIP_32::secret expected = 
+        BIP_32::secret::read("xprv9uHRZZhk6KAJC1avXpDAp4MDc3sQKNxDiPvvkX8Br5ngLNv1TxvUxt4cV1rGL5hj6KCesnDYUhd7oWgT11eZG7XnxHrnYeSvkzY7d2bhkJ7");
     
-    bip32::pubkey expected_pubkey = 
-        bip32::pubkey::read("xpub68Gmy5EdvgibQVfPdqkBBCHxA5htiqg55crXYuXoQRKfDBFA1WEjWgP6LHhwBZeNK1VTsfTFUHCdrfp1bgwQ9xv5ski8PX9rL2dZXvgGDnw");
+    BIP_32::pubkey expected_pubkey = 
+        BIP_32::pubkey::read("xpub68Gmy5EdvgibQVfPdqkBBCHxA5htiqg55crXYuXoQRKfDBFA1WEjWgP6LHhwBZeNK1VTsfTFUHCdrfp1bgwQ9xv5ski8PX9rL2dZXvgGDnw");
     
     EXPECT_EQ(expected, derived);
     ASSERT_EQ(derived.to_public(), expected_pubkey);
@@ -59,15 +58,15 @@ TEST(Bip32, DeriveChain) {
     EXPECT_NE(secret.to_public().derive(path1), expected_pubkey);
     EXPECT_FALSE(secret.to_public().derive(path1).valid());
     
-    bip32::secret expected2 =
-        bip32::secret::read("xprv9wTYmMFdV23N2TdNG573QoEsfRrWKQgWeibmLntzniatZvR9BmLnvSxqu53Kw1UmYPxLgboyZQaXwTCg8MSY3H2EU4pWcQDnRnrVA1xe8fs");
+    BIP_32::secret expected2 =
+        BIP_32::secret::read("xprv9wTYmMFdV23N2TdNG573QoEsfRrWKQgWeibmLntzniatZvR9BmLnvSxqu53Kw1UmYPxLgboyZQaXwTCg8MSY3H2EU4pWcQDnRnrVA1xe8fs");
     
-        ASSERT_EQ(expected2, bip32::derive(secret, path2));
+        ASSERT_EQ(expected2, BIP_32::derive(secret, path2));
 }
 
 
 TEST(Bip32,PublicRead) {
-    bip32::pubkey read=bip32::pubkey::read("xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8");
+    BIP_32::pubkey read=BIP_32::pubkey::read("xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8");
     ASSERT_EQ(read.Sequence,0) << "Invalid Sequence";
     ASSERT_EQ(read.Depth,0) << "Invalid Depth";
     ASSERT_EQ(read.Parent,0) << "Invalid Parent Fingerprint";
@@ -77,7 +76,7 @@ TEST(Bip32,PublicRead) {
 }
 
 TEST(Bip32,PublicWrite) {
-    bip32::pubkey expected=bip32::pubkey::read("xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8");
+    BIP_32::pubkey expected=BIP_32::pubkey::read("xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8");
     ASSERT_EQ(expected.write(),"xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8");
 }
 
@@ -87,10 +86,10 @@ TEST(Bip32,ToPublic) {
     Gigamonkey::bytes seed(input.size());
     std::copy(input.begin(),input.end(),seed.begin());
 
-    bip32::secret secret=bip32::secret::from_seed(seed,bip32::main);
-    bip32::secret secret2=bip32::secret::read("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi");
-    bip32::pubkey pubkey=secret.to_public();
-    bip32::pubkey expected=bip32::pubkey::read("xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8");
+    BIP_32::secret secret=BIP_32::secret::from_seed(seed,BIP_32::main);
+    BIP_32::secret secret2=BIP_32::secret::read("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi");
+    BIP_32::pubkey pubkey=secret.to_public();
+    BIP_32::pubkey expected=BIP_32::pubkey::read("xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8");
 
 }
 
