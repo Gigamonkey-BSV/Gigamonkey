@@ -43,7 +43,7 @@ namespace Gigamonkey::HD::BIP_39 {
         }
     }
 
-    seed read(std::string words,const string& passphrase,language lang) {
+    seed read(std::string words, const string& passphrase, language lang) {
         if(lang!=english)
             throw data::method::unimplemented("Non English Language");
         /*if(!valid(passphrase,lang)) {
@@ -65,7 +65,7 @@ namespace Gigamonkey::HD::BIP_39 {
         return seedObj;
     }
 
-    std::string generate(entropy ent,language lang) {
+    std::string generate(entropy ent, language lang) {
         if(lang!=english)
             throw data::method::unimplemented("Non English Language");
         assert(ent.size()%4==0);

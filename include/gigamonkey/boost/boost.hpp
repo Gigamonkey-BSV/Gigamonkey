@@ -746,7 +746,7 @@ namespace Gigamonkey {
             
         uint64 inline input_script::expected_size(Boost::type t, bool use_general_purpose_bits, bool compressed_pubkey) {
             return t == Boost::invalid ? 0 : 
-                Bitcoin::signature::MaxSignatureSize + 
+                Bitcoin::signature::MaxSize + 
                 (compressed_pubkey ? 34 : 66) + 
                 (t == Boost::bounty ? 21 : 0) + 
                 (use_general_purpose_bits ? 5 : 0) + 24;
