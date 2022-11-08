@@ -12,7 +12,8 @@ namespace Gigamonkey::Bitcoin {
     // a Bitcoin signature. It consists of an secp256k1::signature with a
     // sighash directive at the end. This is what goes in an input script. 
     struct signature : bytes {
-        constexpr static size_t MaxSignatureSize = 73;
+        // aka 73
+        constexpr static size_t MaxSize = secp256k1::signature::MaxSize + 1;
         
         static Bitcoin::sighash::directive directive(bytes_view x) {
             return x.size() > 0 ? x[x.size() - 1] : 0;

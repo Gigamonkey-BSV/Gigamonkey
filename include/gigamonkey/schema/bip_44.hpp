@@ -30,17 +30,17 @@ namespace Gigamonkey::HD::BIP_44 {
         return list<uint32>{purpose, coin_type, BIP_32::harden(account), uint32(change), index};
     }
     
-    struct pubkey {
+    struct master_pubkey {
         BIP_32::pubkey Pubkey;
         
-        pubkey(const BIP_32::pubkey& p) : Pubkey{p} {}
+        master_pubkey(const BIP_32::pubkey& p) : Pubkey{p} {}
         
-        Bitcoin::address receive(uint32 index, uint32 account = 0) const {
-            return Bitcoin::address(Pubkey.derive({BIP_32::harden(account), receive_index, index}));
+        Bitcoin::address receive(uint32 index) const {
+            return Bitcoin::address(Pubkey.derive({receive_index, index}));
         }
         
-        Bitcoin::address change(uint32 index, uint32 account = 0) const {
-            return Bitcoin::address(Pubkey.derive({BIP_32::harden(account), change_index, index}));
+        Bitcoin::address change(uint32 index) const {
+            return Bitcoin::address(Pubkey.derive({change_index, index}));
         }
         
         BIP_32::pubkey account(uint32 a) const {
@@ -48,28 +48,35 @@ namespace Gigamonkey::HD::BIP_44 {
         }
     };
     
-    struct secret {
+    struct master_secret {
         BIP_32::secret Secret;
         
-        pubkey to_public() const {
-            return pubkey{Secret.to_public()};
+        master_pubkey to_public() const {
+            return master_pubkey{Secret.to_public()};
         }
         
-        secret(const BIP_32::secret &s) : Secret{s} {}
-        secret(const seed &x, uint32 coin_type = coin_type_Bitcoin, BIP_32::type net = BIP_32::main) : 
-            Secret{BIP_32::secret::from_seed(x, net).derive({purpose, coin_type})} {}
+        master_secret(const BIP_32::secret &s) : Secret{s} {}
         
-        Bitcoin::secret receive(uint32 index, uint32 account = 0) const {
-            return Bitcoin::secret(Secret.derive({BIP_32::harden(account), receive_index, index}));
+        Bitcoin::secret receive(uint32 index) const {
+            return Bitcoin::secret(Secret.derive({receive_index, index}));
         }
         
-        Bitcoin::secret change(uint32 index, uint32 account = 0) const {
-            return Bitcoin::secret(Secret.derive({BIP_32::harden(account), change_index, index}));
+        Bitcoin::secret change(uint32 index) const {
+            return Bitcoin::secret(Secret.derive({change_index, index}));
+        }
+    };
+    
+    BIP_32::secret inline from_root(const BIP_32::secret &x, uint32 coin_type, uint32 account) {
+        return x.derive({purpose, coin_type, BIP_32::harden(account)});
+    }
+    
+    struct root {
+        BIP_32::secret Secret;
+        
+        master_secret master(uint32 coin_type, uint32 account = 0) {
+            return master_secret{from_root(Secret, coin_type, account)};
         }
         
-        BIP_32::secret account(uint32 a) const {
-            return Secret.derive({a});
-        }
     };
     
     // coin types for standard wallets. 
@@ -81,26 +88,21 @@ namespace Gigamonkey::HD::BIP_44 {
     
     constexpr uint32 electrum_sv_coin_type = coin_type_Bitcoin_Cash;
     
-    secret inline simply_cash_wallet(const string& words, BIP_32::type net = BIP_32::main) {
-        return secret{BIP_39::read(words), simply_cash_coin_type, net};
+    master_secret inline simply_cash_wallet(const string& words, BIP_32::type net = BIP_32::main) {
+        return root{BIP_32::secret::from_seed(BIP_39::read(words), net)}.master(simply_cash_coin_type, 0);
     }
     
-    secret inline moneybutton_wallet(const string& words, BIP_32::type net = BIP_32::main) {
-        return secret{BIP_39::read(words), moneybutton_coin_type, net};
+    master_secret inline moneybutton_wallet(const string& words, BIP_32::type net = BIP_32::main) {
+        return root{BIP_32::secret::from_seed(BIP_39::read(words), net)}.master(moneybutton_coin_type, 0);
     }
     
     // Note: electrum sv has its own set of words. It is able to load wallets that were
     // made with the standard set of words, but we do not load electrum words here yet. 
-    secret inline electrum_sv_wallet(
-        const string& words, 
-        BIP_39::language = BIP_39::electrum_sv_english, 
-        BIP_32::type net = BIP_32::main) {
-        return secret{BIP_39::read(words), electrum_sv_coin_type, net};
-    }
+    master_secret electrum_sv_wallet(const string& words, BIP_32::type net = BIP_32::main); // TODO
     
-    secret relay_x_wallet(const string& words); // TODO
+    master_secret relay_x_wallet(const string& words); // TODO
     
-    secret centbee_wallet(const string& words, uint32 pin); // TODO
+    master_secret centbee_wallet(const string& words, uint32 pin); // TODO
     
 }
 

@@ -76,6 +76,10 @@ namespace Gigamonkey {
             uint64 serialized_size() const {
                 return 40 + Bitcoin::var_int::size(ExpectedScriptSize) + ExpectedScriptSize;
             }
+            
+            bytes script_code() const {
+                return bytes::write(Prevout.script().size() + InputScriptSoFar.size(), Prevout.script(), InputScriptSoFar);
+            }
         };
         
         int32_little Version; 
@@ -110,6 +114,10 @@ namespace Gigamonkey {
             return spent() - sent();
         }
         
+        double fee_rate() const {
+            return double(int64(fee())) / double(expected_size());
+        }
+        
         // convert to an incomplete tx for signing. 
         explicit operator Bitcoin::incomplete::transaction() const {
             return Bitcoin::incomplete::transaction {Version, data::for_each([](const input &in) -> Bitcoin::incomplete::input {
@@ -122,10 +130,19 @@ namespace Gigamonkey {
             Bitcoin::incomplete::transaction incomplete(*this);
             uint32 index = 0;
             return data::for_each([&incomplete, &index](const input &in) -> Bitcoin::sighash::document {
-                return Bitcoin::sighash::document{in.Prevout.value(), 
-                    bytes::write(in.Prevout.script().size() + in.InputScriptSoFar.size(), in.Prevout.script(), in.InputScriptSoFar), 
-                    incomplete, index++};
+                return Bitcoin::sighash::document{in.Prevout.value(), in.script_code(), incomplete, index++};
             }, Inputs);
+        }
+        
+        ledger::vertex complete(list<script> redeem) {
+            return ledger::vertex {Bitcoin::incomplete::transaction(*this).complete(redeem), 
+                data::fold(
+                    [](data::map<Bitcoin::outpoint, Bitcoin::output> m, 
+                        const input &i) -> data::map<Bitcoin::outpoint, Bitcoin::output> {
+                        return m.insert(i.Prevout);
+                    }, 
+                    data::map<Bitcoin::outpoint, Bitcoin::output>{}, 
+                    Inputs)};
         }
         
     };

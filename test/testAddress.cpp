@@ -6,9 +6,10 @@
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "cert-err58-cpp"
 
-#include <gigamonkey/redeem.hpp>
-#include <gigamonkey/address.hpp>
+#include <gigamonkey/wif.hpp>
 #include <gigamonkey/script/machine.hpp>
+#include <gigamonkey/script/pattern/pay_to_address.hpp>
+#include <gigamonkey/script/pattern/pay_to_pubkey.hpp>
 #include <gigamonkey/script/typed_data_bip_276.hpp>
 #include <data/crypto/NIST_DRBG.hpp>
 #include <data/encoding/hex.hpp>
@@ -18,7 +19,6 @@
 namespace Gigamonkey::Bitcoin {
     
     TEST(AddressTest, TestAddresses) {
-        using namespace interpreter;
         
         // We start with a secret key. 
         secret key{secret::test, secp256k1::secret{uint256{"0x00000000000000000000000000000000000000000000000000000000000101a7"}}};
@@ -46,11 +46,6 @@ namespace Gigamonkey::Bitcoin {
         bytes script_p2pkh_compressed = pay_to_address::script(address_compressed.Digest);
         bytes script_p2pkh_uncompressed = pay_to_address::script(address_uncompressed.Digest);
         
-        // we only need 3 redeemers because the redeem script is the same for p2pk compressed and uncompressed. 
-        redeem_pay_to_pubkey p2pk_redeemer(key);
-        redeem_pay_to_address p2pkh_compressed_redeemer(key, pubkey_compressed);
-        redeem_pay_to_address p2pkh_uncompressed_redeemer(key, pubkey_uncompressed);
-        
         redemption_document doc{redeemed_value, 
             incomplete::transaction{
                 transaction::LatestVersion, 
@@ -59,11 +54,15 @@ namespace Gigamonkey::Bitcoin {
         
         sighash::directive directive = sighash::all | sighash::fork_id;
         
-        bytes redeem_p2pk_compressed = p2pk_redeemer.redeem(doc.add_script_code(script_p2pk_compressed), directive);
-        bytes redeem_p2pk_uncompressed = p2pk_redeemer.redeem(doc.add_script_code(script_p2pk_uncompressed), directive);
+        bytes redeem_p2pk_compressed = pay_to_pubkey::redeem(key.sign(doc.add_script_code(script_p2pk_compressed)));
+        bytes redeem_p2pk_uncompressed = pay_to_pubkey::redeem(key.sign(doc.add_script_code(script_p2pk_uncompressed)));
         
-        bytes redeem_p2pkh_compressed = p2pkh_compressed_redeemer.redeem(doc.add_script_code(script_p2pkh_compressed), directive);
-        bytes redeem_p2pkh_uncompressed = p2pkh_uncompressed_redeemer.redeem(doc.add_script_code(script_p2pkh_uncompressed), directive);
+        bytes redeem_p2pkh_compressed = pay_to_address::redeem(
+            key.sign(doc.add_script_code(script_p2pkh_compressed)), 
+            pubkey_compressed);
+        bytes redeem_p2pkh_uncompressed = pay_to_address::redeem(
+            key.sign(doc.add_script_code(script_p2pkh_uncompressed)), 
+            pubkey_uncompressed);
         
         auto evaluate_p2pk_compressed = evaluate(redeem_p2pk_compressed, script_p2pk_compressed, doc);
         auto evaluate_p2pk_uncompressed = evaluate(redeem_p2pk_uncompressed, script_p2pk_uncompressed, doc);

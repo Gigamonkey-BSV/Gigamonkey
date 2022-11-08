@@ -2,7 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <gigamonkey/redeem.hpp>
+#include <gigamonkey/script/pattern/pay_to_address.hpp>
 #include <gigamonkey/address.hpp>
 #include <gigamonkey/script/machine.hpp>
 #include <data/crypto/NIST_DRBG.hpp>
