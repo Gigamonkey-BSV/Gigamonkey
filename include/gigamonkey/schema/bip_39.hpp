@@ -21,7 +21,7 @@ namespace Gigamonkey::HD::BIP_39 {
     
     std::string generate(entropy, language lang=language::english);
     bool valid(std::string words, language lang=language::english);
-    
+	std::string getLangSplit(language lang);
     const cross<std::string> &english_words();
     const cross<std::string> &japanese_words();
 }
