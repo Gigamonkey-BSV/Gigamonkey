@@ -2,7 +2,6 @@
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/ecies/electrum.hpp>
-#include "gigamonkey/schema/electrum.hpp"
 
 namespace Gigamonkey::ECIES::electrum {
     
@@ -15,7 +14,3 @@ namespace Gigamonkey::ECIES::electrum {
     }
     
 }
-
-
-
-
