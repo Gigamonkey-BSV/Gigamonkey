@@ -65,6 +65,7 @@ add_library(gigamonkey STATIC
     src/gigamonkey/schema/random.cpp
     src/gigamonkey/schema/hd.cpp
     src/gigamonkey/schema/bip_39.cpp
+	src/gigamonkey/schema/electrum.cpp
     
     src/gigamonkey/merkle/dual.cpp
     src/gigamonkey/merkle/serialize.cpp

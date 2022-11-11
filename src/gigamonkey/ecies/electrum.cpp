@@ -14,6 +14,3 @@ namespace Gigamonkey::ECIES::electrum {
     }
     
 }
-
-
-
