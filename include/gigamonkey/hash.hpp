@@ -388,7 +388,7 @@ namespace Gigamonkey {
         ptr<bytes> b = data::encoding::hex::read(s);
         if (b != nullptr) {
             std::copy(b->begin(), b->end(), begin());
-        } else *this = digest{uint<size>{s}};
+        } else *this = digest{uint<size>{string(s)}};
     }
     
     template <size_t size>

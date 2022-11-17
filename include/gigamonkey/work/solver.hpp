@@ -10,7 +10,7 @@ namespace Gigamonkey::work {
     
     struct evaluator {
         virtual void solved(const solution &) = 0;
-        virtual ~evaluator() = 0;
+        virtual ~evaluator() {};
     };
     
     struct solver : virtual evaluator {

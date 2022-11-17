@@ -9,7 +9,7 @@ namespace Gigamonkey::Stratum {
         if (mining::set_extranonce::valid(n)) return receive_set_extranonce(mining::set_extranonce{n}.params());
         if (mining::set_version_mask::valid(n)) return receive_set_version_mask(mining::set_version_mask{n}.params());
         if (client::show_message::valid(n)) return receive_show_message(client::show_message{n}.params());
-        throw exception{string{"unknown notification received: "} + string(n)};
+        throw exception{} << "unknown notification received: " + n.dump();
     }
     
     void client_session::receive_request(const Stratum::request &r) {
@@ -18,7 +18,7 @@ namespace Gigamonkey::Stratum {
         
         JSON_line_session::send(response{r.id(), nullptr, error{ILLEGAL_METHOD}});
         
-        throw exception{string{"unknown request received: "} + string(r)};
+        throw exception{} << "unknown request received: " << r;
     }
     
     void client_session::receive_response(method m, const Stratum::response &r) {
@@ -31,7 +31,7 @@ namespace Gigamonkey::Stratum {
                 if (r.error()) receive_authorize_error(*r.error());
                 else {
                     if (!mining::authorize_response::valid(r)) 
-                        throw exception{string{"invalid authorization response received: "} + string(r)};
+                        throw exception{} << "invalid authorization response received: " << r;
                     
                     receive_authorize(mining::authorize_response{r}.result());
                 }
@@ -50,17 +50,14 @@ namespace Gigamonkey::Stratum {
     
     void client_session::receive_configure(const extensions::results &r) {
         
-        if (!Options.ConfigureRequest) throw exception{"configure response returned without knowing what was requested."};
+        if (!Options.ConfigureRequest) throw exception{} << "configure response returned without knowing what was requested.";
         
         auto q = *Options.ConfigureRequest;
         
         if (!mining::configure_response::valid_result(r, q))
-            throw exception{string{"invalid configure response received. "}};
-        
-        std::cout << "configure response received: " << r << std::endl;
+            throw exception{} << "invalid configure response received. ";
         
         if (auto configuration = q.get<extensions::version_rolling>(); bool(configuration)) {
-            std::cout << q["version-rolling"] << " requested; ";
             
             auto result = r.contains("version-rolling");
             
@@ -76,13 +73,11 @@ namespace Gigamonkey::Stratum {
         }
         
         if (auto configuration = q.get<extensions::minimum_difficulty>(); bool(configuration)) {
-            std::cout << q["minimum-difficulty"] << " requested; ";
             
             auto result = r.contains("minimum-difficulty");
             
             if (result) std::cout << "no response received."; 
             else {
-                std::cout << "response = " << *result << std::endl; 
                 if (result->Accepted) Minimum = configuration->Value;
             }
         }

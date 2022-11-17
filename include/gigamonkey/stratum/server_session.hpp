@@ -88,7 +88,7 @@ namespace Gigamonkey::Stratum {
         
         // typically the client does not send notifications to the server.
         virtual void receive_notification(const notification &n) override {
-            throw std::logic_error{string{"unknown notification received: "} + string(n)};
+            throw exception{} << "unknown notification received: " + n.dump();
         }
         
         void receive_request(const Stratum::request &) final override;

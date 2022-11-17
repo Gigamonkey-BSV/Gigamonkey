@@ -6,7 +6,7 @@
 namespace Gigamonkey::Stratum {
     
     bool server_session::state::set_difficulty(const Stratum::difficulty& d) {
-        if (!subscribed()) throw std::logic_error{"Cannot set difficulty before client is subscribed"};
+        if (!subscribed()) throw exception{"Cannot set difficulty before client is subscribed"};
         if (bool(MinimumDifficulty) && d < *MinimumDifficulty) return false;
         if (d == NextDifficulty) return false;
         NextDifficulty = d; 
@@ -14,7 +14,7 @@ namespace Gigamonkey::Stratum {
     }
     
     bool server_session::state::set_extranonce(const Stratum::extranonce &n) {
-        if (!subscribed()) throw std::logic_error{"Cannot set extra nonce before client is subscribed"};
+        if (!subscribed()) throw exception{"Cannot set extra nonce before client is subscribed"};
         if (NextExtranonce == n || (NextExtranonce == Stratum::extranonce{} && Extranonce == n)) return false;
         NextExtranonce = n;
         return true;
@@ -30,10 +30,10 @@ namespace Gigamonkey::Stratum {
     
     void server_session::receive_response(method m, const Stratum::response &r) {
         if (m != client_get_version) 
-            throw exception{string{"unknown response returned: "} + method_to_string(m) + "; " + r.dump()};
+            throw exception{} << "unknown response returned: " << method_to_string(m) << "; " << r.dump();
         
         if (!client::get_version_response::valid(r)) 
-            throw std::logic_error{string{"invalid get_version response received: "} + string(r)};
+            throw exception{} << "invalid get_version response received: " << r;
         
         string client_version = client::get_version_response{r}.result();
         State.set_client_version(client_version);

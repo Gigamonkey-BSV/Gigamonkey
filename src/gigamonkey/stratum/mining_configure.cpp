@@ -68,10 +68,10 @@ namespace Gigamonkey::Stratum::mining {
         for (const std::pair<string, JSON> &j : Parameters) {
             std::vector<std::string> z;
             boost::split(z, j.first, boost::is_any_of("."));
-            if (z.size() != 2) throw "invalid format";
+            if (z.size() != 2) throw data::exception{"invalid format"};
             
             auto x = m.contains(z[0]);
-            if (!x) throw "invalid format";
+            if (!x) throw data::exception{"invalid format"};
             *x = x->insert(z[1], j.second);
         }
         
@@ -96,7 +96,7 @@ namespace Gigamonkey::Stratum::mining {
             std::vector<std::string> z;
             boost::split(z, j.first, boost::is_any_of("."));
             
-            if (z.size() > 2 || z.size() == 0) throw "invalid format";
+            if (z.size() > 2 || z.size() == 0) throw data::exception{"invalid format"};
             
             if (z.size() == 1) {
                 accepted[z[0]] = extensions::accepted{j.second};
@@ -109,7 +109,7 @@ namespace Gigamonkey::Stratum::mining {
         } 
         
         for (const std::pair<string, extensions::result_params> &d : params) 
-            if (accepted.find(d.first) == accepted.end()) throw "invalid format";
+            if (accepted.find(d.first) == accepted.end()) throw data::exception{"invalid format"};
         
         data::map<string, extensions::result> results;
         

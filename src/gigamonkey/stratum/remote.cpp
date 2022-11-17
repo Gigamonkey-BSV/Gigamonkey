@@ -17,7 +17,7 @@ namespace Gigamonkey::Stratum {
             {
                 guard lock(Mutex);
                 auto x = Request.find(r.id());
-                if (x == Request.end()) throw std::logic_error{"response with unknown message id returned"};
+                if (x == Request.end()) throw exception{"response with unknown message id returned"};
                 m = x->second;
                 Request.erase(x);
             }
@@ -31,7 +31,7 @@ namespace Gigamonkey::Stratum {
             return;
         }
         
-        throw exception{string{"invalid Stratum message received: "} + string(next)};
+        throw exception{} << "invalid Stratum message received: " << next.dump();
     }
     
     request_id remote::send_request(method m, parameters p) {

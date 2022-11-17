@@ -47,9 +47,16 @@ namespace Gigamonkey::Stratum {
         
     };
     
-    struct exception : std::logic_error {
-        using std::logic_error::logic_error;
-        exception(const error &e) : std::logic_error {string{"Stratum error returned: "} + JSON(e).dump()} {}
+    struct exception : data::exception {
+        using data::exception::exception;
+        exception(const error &e) : data::exception{} {
+            this->write("Stratum error returned: ", JSON(e).dump());
+        }
+        
+        template <typename X> exception &operator<<(X x) {
+            this->write(x);
+            return *this;
+        }
     };
     
     void inline remote::send_notification(method m, parameters p) {
@@ -57,7 +64,7 @@ namespace Gigamonkey::Stratum {
     }
     
     void inline remote::parse_error(const string &invalid) {
-        throw exception{std::string{"Invalid JSON string: \""} + invalid + string{"\""}};
+        throw exception {} << "Invalid JSON string: \"" << invalid << "\"";
     }
     
 }

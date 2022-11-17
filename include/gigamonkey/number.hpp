@@ -92,7 +92,7 @@ namespace Gigamonkey {
         // to the digest in little endian (in other words, reversed
         // from the way it is written) or a hex string, which will be
         // written to the digest as given, without reversing. 
-        explicit uint(string_view hex);
+        explicit uint(const string &hex);
         
         explicit uint(const N& n);
         
@@ -357,12 +357,12 @@ namespace data::encoding::hexidecimal {
     
     template <size_t size> 
     std::string inline write(const Gigamonkey::uint<size>& n) {
-        return write((data::N)(n));
+        return write<hex::lower>((data::N)(n));
     }
     
     template <size_t size> 
     std::ostream inline &write(std::ostream& o, const Gigamonkey::uint<size>& n) {
-        return write(o, data::N(n));
+        return o << write<hex::lower>(data::N(n));
     }
     
 }
@@ -403,7 +403,7 @@ namespace Gigamonkey {
     }
     
     template <size_t X>
-    inline uint<X>::uint(string_view hex) : uint(0) {
+    inline uint<X>::uint(const string &hex) : uint(0) {
         if (hex.size() != X * 2 + 2) return;
         if (!data::encoding::hexidecimal::valid(hex)) return;
         ptr<bytes> read = encoding::hex::read(hex.substr(2));
@@ -412,7 +412,7 @@ namespace Gigamonkey {
     
     template <size_t X>
     uint<X>::uint(const N& n) : uint(0) {
-        ptr<bytes> b = encoding::hex::read(encoding::hexidecimal::write(n).substr(2));
+        ptr<bytes> b = encoding::hex::read(encoding::hexidecimal::write<encoding::hex::lower>(n).substr(2));
         std::reverse(b->begin(), b->end());
         if (b->size() > X) std::copy(b->begin(), b->begin() + X, begin());
         else std::copy(b->begin(), b->end(), begin());
@@ -737,11 +737,11 @@ namespace Gigamonkey {
     }
     
     template <endian::order r> natural<r> inline natural<r>::operator&(const natural &z) const {
-        throw 0;
+        throw method::unimplemented{"natural & natural"};
     }
     
     template <endian::order r> natural<r> inline natural<r>::operator|(const natural &z) const {
-        throw 0;
+        throw method::unimplemented{"natural | natural"};
     }
     
     template <endian::order r> integer<r> inline integer<r>::operator-() const {
@@ -757,11 +757,11 @@ namespace Gigamonkey {
     }
     
     template <endian::order r> integer<r> inline integer<r>::operator&(const integer &z) const {
-        throw 0;
+        throw method::unimplemented{"integer & integer"};
     }
     
     template <endian::order r> integer<r> inline integer<r>::operator|(const integer &z) const {
-        throw 0;
+        throw method::unimplemented{"integer | integer"};
     }
     
     template <endian::order r> integer<r> inline integer<r>::operator*(const integer &z) const {
