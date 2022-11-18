@@ -2,50 +2,107 @@
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/mapi/envelope.hpp>
-#include <data/encoding/base64.hpp>
-#include <data/encoding/unicode.hpp>
+#include <gigamonkey/address.hpp>
 
-namespace Gigamonkey {
+namespace Gigamonkey::BitcoinAssociation {
+    
+    bool JSON_envelope::verify() const {
+        if (!valid()) return false;
         
-    bool JSONEnvelope::verify(const string& payload, const secp256k1::signature& signature, const secp256k1::pubkey& publicKey, payload_encoding enc) {        
-        switch (enc) {
+        if (!bool(PublicKey)) return true;
+        
+        switch (Encoding) {
             default: return false;
+            
             case base64 : {
-                ptr<bytes> decoded = data::encoding::base64::read(payload);
+                ptr<bytes> decoded = encoding::base64::read(Payload);
                 if (decoded == nullptr) return false;
-                return publicKey.verify(Gigamonkey::SHA2_256(*decoded), signature);
+                return PublicKey->verify(Gigamonkey::SHA2_256(*decoded), *Signature);
             }
+            
             case UTF_8 : 
-                return publicKey.verify(Gigamonkey::SHA2_256(data::encoding::unicode::utf8_encode(payload)), signature);
+                return PublicKey->verify(Gigamonkey::SHA2_256(Payload), *Signature);
         }
     }
     
-    JSONEnvelope::JSONEnvelope(const string& e) : JSONEnvelope{} {
+    JSON_envelope::JSON_envelope(const JSON &j) : JSON_envelope{} {
+        if (!j.is_object() || !j.contains("payload") || !j.contains("encoding") || !j.contains("mimetype") || 
+            !j["payload"].is_string() || !j["encoding"].is_string() || !j["mimetype"].is_string())
+            return;
         
-        json j = json::parse(e);
+        JSON_envelope envelope;
         
-        if (!(j.is_object() &&
-            j.contains("payload") && j["payload"].is_string() &&
-            j.contains("signature") && j["signature"].is_string() && 
-            j.contains("publicKey") && j["publicKey"].is_string() && 
-            j.contains("encoding") && j["encoding"].is_string() && 
-            j.contains("mimetype") && j["mimetype"].is_string())) return;
+        if (j.contains("publicKey") || j.contains("signature")) {
+            if (!j.contains("publicKey") || !j.contains("signature") || 
+                !j["publicKey"].is_string() || !j["signature"].is_string())
+                return;
+            else {
+                auto sig_hex = encoding::hex::read(string(j["signature"]));
+                if (sig_hex == nullptr) return;
+                envelope.Signature = secp256k1::signature{*sig_hex};
+                
+                auto pk_hex = encoding::hex::read(string(j["publicKey"]));
+                if (pk_hex == nullptr) return;
+                envelope.PublicKey = secp256k1::pubkey{*pk_hex};
+            }
+        }
         
-        ptr<bytes> sig = encoding::hex::read(string(j["signature"]));
-        
-        if (sig == nullptr) return;
-        
-        string enc = j["encoding"];
-        
-        if (enc == "UTF-8") encoding = UTF_8;
-        else if (enc == "base64") encoding = base64;
+        string encoding = j["encoding"];
+        if (encoding == "base64") envelope.Encoding = base64;
+        else if (encoding == "UTF-8") envelope.Encoding = UTF_8;
         else return;
         
-        payload = j["payload"];
-        signature = secp256k1::signature{*sig};
-        publicKey = Bitcoin::pubkey{string(j["publicKey"])};
-        mimetype = j["mimetype"];
+        envelope.Payload = j["payload"];
+        envelope.Mimetype = j["mimetype"];
+        
+        *this = envelope;
         
     }
+    
+    JSON_envelope::operator JSON() const {
+        if (!valid()) return nullptr;
+        
+        JSON j{{"payload", Payload}, {"mimetype", Mimetype}};
+        j["encoding"] = Encoding == base64 ? "base64" : "UTF_8";
+        
+        if (bool(PublicKey)) {
+            j["publicKey"] = encoding::hex::write(*PublicKey);
+            j["signature"] = encoding::hex::write(*Signature);
+        }
+        
+        return j;
+    }
+    
+    bool JSON_JSON_envelope::valid() const {
+        if (!JSON_envelope::valid()) return false;
+        try {
+            payload();
+            return true;
+        } catch (const JSON::exception &) {
+            return false;
+        }
+    }
+    /*
+    string JSON_JSON_envelope::de_escape(const string &x) {
+        std::cout << "de escape string \"" << x << "\"" << std::endl;
+        
+        char *z = new char[x.size() + 1];
+        char *i = z;
+        
+        for (const char &ch : x) {
+            if (ch == '\\') i++;
+            *i = ch;
+            i++;
+        }
+        
+        *i = '\0';
+        
+        string r{z};
+        delete[] z;
+        
+        std::cout << "de escaped string \"" << r << "\"" << std::endl;
+        
+        return r;
+    }*/
     
 }

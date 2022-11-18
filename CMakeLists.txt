@@ -28,6 +28,7 @@ if(PACKAGE_TESTS)
 endif()
 
 add_library(gigamonkey STATIC
+    
     src/sv/random.cpp
     src/sv/big_int.cpp
     src/sv/script/opcodes.cpp
@@ -58,15 +59,17 @@ add_library(gigamonkey STATIC
     src/gigamonkey/merkle.cpp
     src/gigamonkey/timechain.cpp
     src/gigamonkey/work.cpp
-    src/gigamonkey/redeem.cpp
-    src/gigamonkey/schema/hd.cpp
-    src/gigamonkey/schema/random.cpp
-    #src/gigamonkey/wallet.cpp
+    src/gigamonkey/ledger.cpp
     src/gigamonkey/spv.cpp
-    src/gigamonkey/accounts.cpp
+    
+    src/gigamonkey/schema/random.cpp
+    src/gigamonkey/schema/hd.cpp
+    src/gigamonkey/schema/bip_39.cpp
     
     src/gigamonkey/merkle/dual.cpp
     src/gigamonkey/merkle/serialize.cpp
+    
+    src/gigamonkey/boost/boost.cpp
     
     src/gigamonkey/stratum/method.cpp
     src/gigamonkey/stratum/error.cpp
@@ -76,13 +79,9 @@ add_library(gigamonkey STATIC
     src/gigamonkey/stratum/mining_authorize.cpp
     src/gigamonkey/stratum/mining.cpp
     src/gigamonkey/stratum/mining_configure.cpp
-    src/gigamonkey/stratum/json_bi_stream.cpp
     src/gigamonkey/stratum/remote.cpp
     src/gigamonkey/stratum/client_session.cpp
-    src/gigamonkey/stratum/miner.cpp
     src/gigamonkey/stratum/server_session.cpp
-    
-    src/gigamonkey/boost/boost.cpp
     
     src/gigamonkey/mapi/mapi.cpp
     src/gigamonkey/mapi/envelope.cpp

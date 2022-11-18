@@ -15,8 +15,8 @@ namespace Gigamonkey::Stratum::mining {
         
         subscription() : Method{unset}, ID{} {}
         subscription(method m, string id) : Method{m}, ID{id} {}
-        explicit subscription(const json&);
-        explicit operator json() const;
+        explicit subscription(const JSON&);
+        explicit operator JSON() const;
         
         bool valid() const {
             return Method != unset;
@@ -51,9 +51,9 @@ namespace Gigamonkey::Stratum::mining {
         static Stratum::parameters serialize(const parameters&);
         static parameters deserialize(const Stratum::parameters&);
         
-        static bool valid(const json& j);
-        static string user_agent(const json& j);
-        static std::optional<session_id> extra_nonce_1(const json& j);
+        static bool valid(const JSON& j);
+        static string user_agent(const JSON& j);
+        static std::optional<session_id> extra_nonce_1(const JSON& j);
         
         bool valid() const;
         string user_agent() const;
@@ -85,7 +85,7 @@ namespace Gigamonkey::Stratum::mining {
             bool operator==(const parameters& p) const;
             bool operator!=(const parameters& p) const;
             
-            operator json() const;
+            operator JSON() const;
             
         private:
             parameters() : Subscriptions{}, ExtraNonce{} {}
@@ -103,10 +103,10 @@ namespace Gigamonkey::Stratum::mining {
             return result(*this);
         }
         
-        static bool valid(const json& j);
-        static list<subscription> subscriptions(const json& j);
-        static session_id extra_nonce_1(const json& j);
-        static uint32 extra_nonce_2_size(const json& j);
+        static bool valid(const JSON& j);
+        static list<subscription> subscriptions(const JSON& j);
+        static session_id extra_nonce_1(const JSON& j);
+        static uint32 extra_nonce_2_size(const JSON& j);
         
         bool valid() const;
         list<subscription> subscriptions() const;
@@ -146,7 +146,7 @@ namespace Gigamonkey::Stratum::mining {
     }
     
     inline std::ostream& operator<<(std::ostream& o, const subscription& s) {
-        return o << json(s);
+        return o << JSON(s);
     }
     
     inline subscribe_response::parameters::parameters(list<subscription> s, extranonce n1) : 
@@ -172,31 +172,31 @@ namespace Gigamonkey::Stratum::mining {
         return extra_nonce_1(*this);
     }
     
-    bool inline subscribe_request::valid(const json& j) {
+    bool inline subscribe_request::valid(const JSON& j) {
         return request::valid(j) && deserialize(j["params"]).valid();
     }
     
-    string inline subscribe_request::user_agent(const json& j) {
+    string inline subscribe_request::user_agent(const JSON& j) {
         return deserialize(j["params"]).UserAgent;
     }
     
-    std::optional<session_id> inline subscribe_request::extra_nonce_1(const json& j) {
+    std::optional<session_id> inline subscribe_request::extra_nonce_1(const JSON& j) {
         return deserialize(j["params"]).ExtraNonce1;
     }
         
-    bool inline subscribe_response::valid(const json& j) {
+    bool inline subscribe_response::valid(const JSON& j) {
         return response::valid(j) && deserialize(j["result"]).valid();
     }
     
-    list<subscription> inline subscribe_response::subscriptions(const json& j) {
+    list<subscription> inline subscribe_response::subscriptions(const JSON& j) {
         return deserialize(j["result"]).Subscriptions;
     }
     
-    session_id inline subscribe_response::extra_nonce_1(const json& j) {
+    session_id inline subscribe_response::extra_nonce_1(const JSON& j) {
         return deserialize(j["result"]).ExtraNonce.ExtraNonce1;
     }
     
-    uint32 inline subscribe_response::extra_nonce_2_size(const json& j) {
+    uint32 inline subscribe_response::extra_nonce_2_size(const JSON& j) {
         return deserialize(j["result"]).ExtraNonce.ExtraNonce2Size;
     }
     
@@ -220,7 +220,7 @@ namespace Gigamonkey::Stratum::mining {
         return serialize(*this);
     }
     
-    inline subscribe_response::parameters::operator json() const {
+    inline subscribe_response::parameters::operator JSON() const {
         return serialize(*this);
     }
     

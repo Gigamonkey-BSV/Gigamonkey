@@ -7,6 +7,7 @@
 #include <sv/script/script.h>
 #include <sv/script/script_num.h>
 #include <sv/policy/policy.h>
+#include <sv/hash.h>
 #include <boost/scoped_ptr.hpp>
 
 // not in use but required by config.h dependency

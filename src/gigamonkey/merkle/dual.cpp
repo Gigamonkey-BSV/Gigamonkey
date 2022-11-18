@@ -44,7 +44,7 @@ namespace Gigamonkey::Merkle {
             
             index Index;
             
-            explicit operator json() const;
+            explicit operator JSON() const;
             
             bool valid() const {
                 return Nodes.size() != 0;
@@ -128,7 +128,7 @@ namespace Gigamonkey::Merkle {
             std::vector<digest> Digests;
             std::vector<tree_node> Nodes;
             
-            explicit inverted_to(const json& j);
+            explicit inverted_to(const JSON& j);
             
             explicit operator dual() const;
             
@@ -141,24 +141,24 @@ namespace Gigamonkey::Merkle {
             }
         };
         
-        json write(const data::map<digest, index> d) {
-            json x = json::array();
+        JSON write(const data::map<digest, index> d) {
+            JSON x = JSON::array();
             for (const data::entry<digest, index>& e : d) x[e.Value] = data::encoding::hex::write(e.Key);
             return x;
         }
         
-        json write(const std::map<uint32, tree_node> v) {
-            json x = json::array();
+        JSON write(const std::map<uint32, tree_node> v) {
+            JSON x = JSON::array();
             for (const std::pair<uint32, tree_node> n : v) 
-                x.push_back(json::array({n.second.Digest, int32(n.second.Left), int32(n.second.Right)}));
+                x.push_back(JSON::array({n.second.Digest, int32(n.second.Left), int32(n.second.Right)}));
             return x;
         }
         
-        inverted_from::operator json() const {
-            return json::array({write(Digests), write(Nodes)});
+        inverted_from::operator JSON() const {
+            return JSON::array({write(Digests), write(Nodes)});
         } 
         
-        bool read_digest(const json& j, digest& d) {
+        bool read_digest(const JSON& j, digest& d) {
             if (!j.is_string()) return false;
             string hex_digest = j;
             ptr<bytes> v = data::encoding::hex::read(hex_digest);
@@ -167,7 +167,7 @@ namespace Gigamonkey::Merkle {
             return true;
         }
         
-        std::vector<digest> read_digests(const json& j) {
+        std::vector<digest> read_digests(const JSON& j) {
             if (!j.is_array() || j.size() == 0) return {};
             
             std::vector<digest> digests{};
@@ -178,7 +178,7 @@ namespace Gigamonkey::Merkle {
             return digests;
         }
         
-        bool read_tree_node(const json& j, tree_node& n) {
+        bool read_tree_node(const JSON& j, tree_node& n) {
             
             if (!j.is_array() || 
                 j.size() != 3 || 
@@ -194,7 +194,7 @@ namespace Gigamonkey::Merkle {
             return true;
         } 
         
-        std::vector<tree_node> read_nodes(const json& j) {
+        std::vector<tree_node> read_nodes(const JSON& j) {
             if (!j.is_array() || j.size() == 0) return {};
             
             std::vector<tree_node> nodes{};
@@ -205,7 +205,7 @@ namespace Gigamonkey::Merkle {
             return nodes;
         }
         
-        inverted_to::inverted_to(const json& j) {
+        inverted_to::inverted_to(const JSON& j) {
             
             if (!j.is_array() || j.size() != 2) return;
             
@@ -249,11 +249,11 @@ namespace Gigamonkey::Merkle {
         
     }
     
-    json dual::serialize() const {
-        return json(inverted_from{*this});
+    JSON dual::serialize() const {
+        return JSON(inverted_from{*this});
     }
     
-    dual dual::deserialize(const json& j) {
+    dual dual::deserialize(const JSON& j) {
         return dual(inverted_to{j});
     }
     

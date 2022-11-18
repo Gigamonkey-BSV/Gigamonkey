@@ -8,41 +8,76 @@
 
 namespace Gigamonkey {
     
-    struct keysource {
-        virtual Bitcoin::secret first() const = 0;
-        virtual ptr<keysource> rest() const = 0;
-        virtual ~keysource() {}
+    struct key_source {
+        virtual Bitcoin::secret next() = 0;
+        virtual ~key_source() {}
+    };
+    
+    struct address_source {
+        virtual Bitcoin::address next() = 0;
+        virtual ~address_source() {}
     };
     
     // a key source containing a single key. 
-    struct single_key final : keysource {
+    struct single_key_source final : key_source {
         Bitcoin::secret Key;
         
-        explicit single_key(const Bitcoin::secret& k) : Key{k} {}
+        explicit single_key_source(const Bitcoin::secret &k) : Key{k} {}
+        
+        Bitcoin::secret next() override {
+            return Key;
+        }
         
         Bitcoin::secret first() const {
             return Key;
         }
         
-        ptr<keysource> rest() const {
-            return std::make_shared<single_key>(Key);
+        single_key_source rest() const {
+            return single_key_source{Key};
         }
+        
+    };
+    
+    // a key source containing a single key. 
+    struct single_address_source final : address_source {
+        Bitcoin::address Address;
+        
+        explicit single_address_source(const Bitcoin::address &addr) : Address{addr} {}    
+        
+        Bitcoin::address next() override {
+            return Address;
+        }
+        
+        Bitcoin::address first() const {
+            return Address;
+        }
+        
+        single_address_source rest() const {
+            return single_address_source{Address};
+        }
+        
     };
     
     // a key source that increments the key. 
-    struct increment_key final : keysource {
+    struct increment_key_source final : key_source {
         Bitcoin::secret Key;
         
-        explicit increment_key(const Bitcoin::secret& k) : Key{k} {}
+        explicit increment_key_source(const Bitcoin::secret& k) : Key{k} {}
         
-        Bitcoin::secret first() const override {
+        Bitcoin::secret next() override {
+            auto k = Key;
+            Key.Secret = Key.Secret + secp256k1::secret{uint256{1}};
+            return k;
+        }
+        
+        Bitcoin::secret first() const {
             return Key;
         }
         
-        ptr<keysource> rest() const override {
-            ptr<increment_key> k = std::make_shared<increment_key>(Key);
-            k->Key.Secret = k->Key.Secret + secp256k1::secret{uint256{1}};
-            return k;
+        increment_key_source rest() const {
+            auto g = *this;
+            g.next();
+            return g;
         }
     };
 }

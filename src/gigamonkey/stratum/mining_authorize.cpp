@@ -15,20 +15,20 @@ namespace Gigamonkey::Stratum::mining {
         return parameters{string(p[0]), string(p[1])};
     }
     
-    bool authorize_request::valid(const json& j) {
+    bool authorize_request::valid(const JSON& j) {
         auto p = request::params(j);
         if (p.size() < 1 || p.size() > 2 || !p[0].is_string()) return false;
         if (p.size() == 2 && !p[1].is_string()) return false;
         return true;
     }
     
-    string username(const json& j) {
+    string username(const JSON& j) {
         auto p = request::params(j);
         if (p.size() == 0) return "";
         return string(p[1]);
     }
         
-    std::optional<string> password(const json& j) {
+    std::optional<string> password(const JSON& j) {
         auto p = request::params(j);
         if (p.size() < 2) return {};
         return {string(p[1])};

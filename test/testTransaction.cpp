@@ -2,7 +2,7 @@
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/spv.hpp>
-#include <gigamonkey/script/pattern.hpp>
+#include <gigamonkey/script/pattern/pay_to_address.hpp>
 #include "gtest/gtest.h"
 #include <gigamonkey/boost/boost.hpp>
 

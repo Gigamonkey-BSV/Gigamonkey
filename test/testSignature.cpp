@@ -3,7 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <gigamonkey/signature.hpp>
-#include <gigamonkey/script/pattern.hpp>
+#include <gigamonkey/script/pattern/pay_to_address.hpp>
 #include <gigamonkey/wif.hpp>
 #include <gigamonkey/script/machine.hpp>
 #include <sv/script/script.h>

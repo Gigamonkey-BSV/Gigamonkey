@@ -25,7 +25,7 @@ namespace Gigamonkey::Stratum::client {
     struct get_version_response : response {
         
         using response::response;
-        get_version_response(message_id id, string version) : response{id, json::string_t(version)} {} 
+        get_version_response(message_id id, string version) : response{id, JSON::string_t(version)} {} 
         
         static bool valid(const response &r) {
             return r.valid() && r.result().is_string();

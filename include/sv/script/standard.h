@@ -7,7 +7,6 @@
 #define BITCOIN_SCRIPT_STANDARD_H
 
 #include <sv/script/interpreter.h>
-#include <sv/uint256.h>
 
 #include <boost/variant.hpp>
 
@@ -17,14 +16,6 @@ static const bool DEFAULT_ACCEPT_DATACARRIER = true;
 
 class CKeyID;
 class CScript;
-
-/** A reference to a CScript: the Hash160 of its serialization (see script.h) */
-class CScriptID : public uint160 {
-public:
-    CScriptID() : uint160() {}
-    CScriptID(const CScript &in);
-    CScriptID(const uint160 &in) : uint160(in) {}
-};
 
 //!< bytes (+1 for OP_RETURN, +2 for the pushdata opcodes)
 static const uint64_t DEFAULT_DATA_CARRIER_SIZE = UINT32_MAX;
@@ -53,27 +44,7 @@ enum txnouttype {
     TX_NULL_DATA,
 };
 
-class CNoDestination {
-public:
-    friend bool operator==(const CNoDestination &a, const CNoDestination &b) {
-        return true;
-    }
-    friend bool operator<(const CNoDestination &a, const CNoDestination &b) {
-        return true;
-    }
-};
-
-/**
- * A txout script template with a specific destination. It is either:
- *  * CNoDestination: no destination set
- *  * CKeyID: TX_PUBKEYHASH destination
- *  * CScriptID: TX_SCRIPTHASH destination
- *  A CTxDestination is the internal data type encoded in a bitcoin address
- */
-typedef boost::variant<CNoDestination, CKeyID, CScriptID> CTxDestination;
-
 const char *GetTxnOutputType(txnouttype t);
-bool IsValidDestination(const CTxDestination &dest);
 
 /**
  * Return public keys or hashes from scriptPubKey, for 'standard' transaction
@@ -81,19 +52,7 @@ bool IsValidDestination(const CTxDestination &dest);
  */
 bool Solver(const CScript& scriptPubKey, bool genesisEnabled, txnouttype& typeRet,
     std::vector<std::vector<uint8_t>>& vSolutionsRet);
-
-/*
- * Extract a single destination from P2PK, P2PKH, P2SH
- */
-bool ExtractDestination(const CScript &scriptPubKey, bool isGenesisEnabled, CTxDestination &addressRet);
-/**
- * Extracts all destinations from the script. P2PK, P2PKH, P2SH and MULTISIG.
- */
-bool ExtractDestinations(const CScript &scriptPubKey, bool isGenesisEnabled, txnouttype &typeRet,
-                         std::vector<CTxDestination> &addressRet,
-                         int &nRequiredRet);
-
-CScript GetScriptForDestination(const CTxDestination &dest);
+    
 CScript GetScriptForRawPubKey(const CPubKey &pubkey);
 CScript GetScriptForMultisig(int nRequired, const std::vector<CPubKey> &keys);
 

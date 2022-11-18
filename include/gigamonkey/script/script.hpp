@@ -25,7 +25,11 @@ namespace Gigamonkey::Bitcoin {
     struct redemption_document;
     
     // Evaluate script with real signature operations. 
-    result evaluate(const script& unlock, const script& lock, const redemption_document &doc, uint32 flags = StandardScriptVerifyFlags(true, true));
+    result evaluate(
+        const script& unlock, 
+        const script& lock, 
+        const redemption_document &doc, 
+        uint32 flags = StandardScriptVerifyFlags(true, true));
     
     bool operator==(const result &, const result &);
     bool operator!=(const result &, const result &);

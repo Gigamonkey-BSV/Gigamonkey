@@ -5,13 +5,13 @@
 
 namespace Gigamonkey::Stratum::mining {
     
-    subscription::subscription(const json& j) : subscription{} {
+    subscription::subscription(const JSON& j) : subscription{} {
         if (!(j.is_array() && j.size() == 2 && j[0].is_string())) return;
         ID = j[1];
         Method = method_from_string(j[0]);
     }
     
-    subscription::operator json() const {
+    subscription::operator JSON() const {
         parameters p;
         p.resize(2);
         p[0] = method_to_string(Method);
@@ -50,7 +50,7 @@ namespace Gigamonkey::Stratum::mining {
         s.resize(p.Subscriptions.size());
         auto n = s.begin();
         for (const subscription& x : p.Subscriptions) {
-            *n = json(x);
+            *n = JSON(x);
             n++;
         }
         
@@ -69,7 +69,7 @@ namespace Gigamonkey::Stratum::mining {
         if (!id) return {};
         x.ExtraNonce.ExtraNonce1 = *id; 
         
-        for (const json& j : p[0]) {
+        for (const JSON& j : p[0]) {
             subscription z{j};
             if (!z.valid()) return {};
             x.Subscriptions = x.Subscriptions << z;

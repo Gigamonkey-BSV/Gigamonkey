@@ -17,7 +17,7 @@ namespace Gigamonkey::Stratum::mining {
         
         struct parameters {
             list<string> Supported;
-            json::object_t Parameters;
+            JSON::object_t Parameters;
         
             static bool valid(const Stratum::parameters&);
             
@@ -40,14 +40,14 @@ namespace Gigamonkey::Stratum::mining {
         
         bool valid() const;
         
-        static bool valid(const json& j);
+        static bool valid(const JSON& j);
     };
     
     struct configure_response : response {
         using response::response;
         
-        struct parameters : public json::object_t {
-            using json::object_t::object_t;
+        struct parameters : public JSON::object_t {
+            using JSON::object_t::object_t;
             
             parameters() {}
             
@@ -67,12 +67,12 @@ namespace Gigamonkey::Stratum::mining {
         
         bool valid() const;
         
-        static bool valid(const json& j);
+        static bool valid(const JSON& j);
         
         // this checks that the result contains a response to every extension that was queried. 
-        static bool valid_result(const parameters& r, const configure_request::parameters& q) {
-            json j{r};
-            for (const string& extension : q.Supported) if (!(j.contains(extension) && j[extension].is_boolean())) return false;
+        static bool valid_result(const parameters& r, const extensions::requests& q) {
+            JSON j{r};
+            for (const auto& extension : q) if (!(j.contains(extension.Key) && j[extension.Key].is_boolean())) return false;
             return true;
         }
     };
@@ -85,7 +85,7 @@ namespace Gigamonkey::Stratum::mining {
         return valid(*this);
     }
     
-    bool inline configure_response::valid(const json& j) {
+    bool inline configure_response::valid(const JSON& j) {
         return response::valid(j) && j["result"].is_object();
     }
     

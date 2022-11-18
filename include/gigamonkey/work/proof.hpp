@@ -66,10 +66,17 @@ namespace Gigamonkey::work {
         int32_little Mask;
         
         puzzle();
-        puzzle(int32_little v, const uint256& d, compact g,
-            Merkle::path mp, const bytes& h, const bytes& b, int32_little mask = -1) : puzzle{candidate{v, d, g, mp}, h, b, mask} {} 
+        puzzle(
+            int32_little v, 
+            const uint256& d, 
+            compact g, 
+            Merkle::path mp, 
+            const bytes& h, 
+            const bytes& b, 
+            int32_little mask = -1) : puzzle{candidate{v, d, g, mp}, h, b, mask} {} 
         
-        puzzle(const candidate& x, const bytes& h, const bytes& b, int32_little mask = -1) : Candidate{x}, Header{h}, Body{b}, Mask{mask} {} 
+        puzzle(const candidate& x, const bytes& h, const bytes& b, int32_little mask = -1) : 
+            Candidate{x}, Header{h}, Body{b}, Mask{mask} {} 
         
         bool valid() const;
     };

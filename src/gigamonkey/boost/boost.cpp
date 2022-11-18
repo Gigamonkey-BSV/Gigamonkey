@@ -1,6 +1,7 @@
 #include <gigamonkey/boost/boost.hpp>
 #include <gigamonkey/script/pattern.hpp>
 #include <data/encoding/halves.hpp>
+#include <gigamonkey/p2p/var_int.hpp>
 #include <iostream>
 
 namespace Gigamonkey::Bitcoin {
@@ -319,45 +320,6 @@ namespace Gigamonkey::Boost {
         const work::solution& x, Boost::type t, 
         bool category_mask) : input_script{from_solution(signature, pubkey, x, t, category_mask)} {}
     
-    Boost::output_script job::output_script() const {
-        
-        if (!valid()) return Boost::output_script();
-        
-        size_t puzzle_header_size = job::Puzzle.Header.size();
-        size_t puzzle_body_size = job::Puzzle.Body.size();
-        
-        if (puzzle_header_size < 20) return Boost::output_script();
-        if (puzzle_body_size < 4) return Boost::output_script();
-        
-        size_t tag_size = puzzle_header_size - 20;
-        size_t data_size = puzzle_body_size - 4;
-        
-        Boost::output_script out = Type == bounty ? 
-            Boost::output_script::bounty(job::Puzzle.Candidate.Category, 
-                job::Puzzle.Candidate.Digest, job::Puzzle.Candidate.Target, 
-                bytes(tag_size), 0, bytes(data_size), use_general_purpose_bits()) :
-            Boost::output_script::contract(job::Puzzle.Candidate.Category, 
-                job::Puzzle.Candidate.Digest, job::Puzzle.Candidate.Target, 
-                bytes(tag_size), 0, bytes(data_size), miner_address(), use_general_purpose_bits());
-        
-        std::copy(job::Puzzle.Header.begin(), job::Puzzle.Header.begin() + tag_size, out.Tag.begin());
-        std::copy(job::Puzzle.Body.begin(), job::Puzzle.Body.begin() + 4, out.UserNonce.begin());
-        std::copy(job::Puzzle.Body.begin() + 4, job::Puzzle.Body.end(), out.AdditionalData.begin());
-        
-        return out;
-        
-    }
-    
-    digest160 job::miner_address() const {
-        size_t puzzle_header_size = job::Puzzle.Header.size();
-        if (puzzle_header_size < 20) return {};
-        digest160 x;
-        std::copy(job::Puzzle.Header.end() - 20, 
-                  job::Puzzle.Header.end(), 
-                  x.begin());
-        return x;
-    }
-
     std::ostream& operator<<(std::ostream& o, const Gigamonkey::Boost::output_script s) {
         using namespace Gigamonkey::Boost;
         if (s.Type == invalid) return o << "BoostOutputScript{Type : invalid}";
@@ -387,23 +349,86 @@ namespace Gigamonkey::Boost {
         if (s.Type == bounty) o << ", MinerAddress: " << s.MinerAddress;
         return o << "}";
     }
-        
+
     proof::proof(const Boost::output_script& out, const Boost::input_script& in) : proof{} {
         if (out.Type == invalid || in.Type != out.Type) return;
+        auto miner_address = out.Type == bounty ? in.MinerAddress : out.MinerAddress;
         if (out.UseGeneralPurposeBits && bool(in.GeneralPurposeBits)) {
             int32_little gpr = *in.GeneralPurposeBits;
-            *this = proof{Boost::job{out.Type, out.Category, out.Content, 
-                    out.Target, out.Tag, out.UserNonce, out.AdditionalData, 
-                    out.Type == bounty ? in.MinerAddress : out.MinerAddress, in.ExtraNonce1, true},
-                work::share{in.Timestamp, in.Nonce, in.ExtraNonce2, gpr}, in.Signature, in.Pubkey};
+            *this = proof{work::job{work::puzzle{
+                        out.Category, out.Content, out.Target, Merkle::path{}, 
+                        puzzle::header(out.Tag, miner_address), 
+                        puzzle::body(out.UserNonce, out.AdditionalData), 
+                        work::ASICBoost::Mask}, 
+                    in.ExtraNonce1},
+                work::share{in.Timestamp, in.Nonce, in.ExtraNonce2, gpr}, out.Type, in.Signature, in.Pubkey};
             return; 
         } else if (!out.UseGeneralPurposeBits && !bool(in.GeneralPurposeBits)) {
-            *this = proof{Boost::job{out.Type, out.Category, out.Content, 
-                    out.Target, out.Tag, out.UserNonce, out.AdditionalData, 
-                    out.Type == bounty ? in.MinerAddress : out.MinerAddress, in.ExtraNonce1, false},
-                work::share{in.Timestamp, in.Nonce, in.ExtraNonce2}, in.Signature, in.Pubkey};
+            *this = proof{work::job{work::puzzle{
+                        out.Category, out.Content, out.Target, Merkle::path{}, 
+                        puzzle::header(out.Tag, miner_address), 
+                        puzzle::body(out.UserNonce, out.AdditionalData), 
+                        int32_little{-1}}, 
+                    in.ExtraNonce1},
+                work::share{in.Timestamp, in.Nonce, in.ExtraNonce2}, out.Type, in.Signature, in.Pubkey};
             return;
         }
+    }
+        
+    work::puzzle work_puzzle(const output_script &script, const digest160 &address) {
+        if (!script.valid()) return {};
+        digest160 miner_address = script.Type == contract ? script.MinerAddress : address;
+        if (!miner_address.valid()) return {};
+        return {script.Category, script.Content, script.Target, Merkle::path{}, 
+            puzzle::header(script.Tag, miner_address), 
+            puzzle::body(script.UserNonce, script.AdditionalData), 
+            script.UseGeneralPurposeBits ? work::ASICBoost::Mask : int32_little{-1}};
+    }
+    
+    bool puzzle::valid() const { 
+        if (!candidate::valid() || !MinerKey.valid()) return false;
+    
+        digest160 address = this->miner_address();
+        
+        // If this is a contract script, we need to check that the key we have been given corresponds 
+        // to the miner address in the script. 
+        return this->Script.Type == Boost::bounty || this->Script.MinerAddress == this->MinerKey.address().Digest;
+    }
+    
+    bytes puzzle::redeem(const work::solution &solution, list<Bitcoin::output> outs) const {
+        // construct the incomplete inputs
+        list<incomplete::input> incomplete_inputs = data::for_each(
+            [](const Boost::prevout &prev) -> incomplete::input {
+                return {prev.outpoint(), Bitcoin::input::Finalized};
+            }, Prevouts);
+        
+        Boost::output_script boost_script = Script;
+        
+        secret sk = MinerKey;
+        Bitcoin::satoshi val = value();
+        bytes script = boost_script.write();
+        incomplete::transaction incomplete {1, incomplete_inputs, outs, 0};
+        pubkey pk = sk.to_public();
+        Boost::type boost_type = boost_script.Type;
+        bool category_mask = boost_script.UseGeneralPurposeBits;
+        
+        uint32 index = 0;
+        
+        return bytes(transaction{1, data::map_thread(
+            [&sk, &script, &incomplete, &pk, &solution, boost_type, category_mask, &index](
+                const incomplete::input &i, 
+                const prevout &prev) -> input {
+                return input{i.Reference, input_script{
+                    sk.sign(sighash::document{prev.Value, script, incomplete, index++}), 
+                pk, solution, boost_type, category_mask}.write(), i.Sequence};
+            }, incomplete_inputs, Prevouts.values()), outs, 0});
+        
+    }
+    
+    size_t puzzle::expected_size() const {
+        size_t input_script_size = input_script::expected_size(Script.Type, Script.UseGeneralPurposeBits, MinerKey.Compressed);
+        return Bitcoin::var_int::size(Prevouts.size()) + 
+            Prevouts.size() * (input_script_size + Bitcoin::var_int::size(input_script_size) + 40);
     }
 
 }

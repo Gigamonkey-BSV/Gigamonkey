@@ -28,19 +28,20 @@ namespace Gigamonkey::Stratum::extensions {
         using std::variant<bool, string, std::monostate>::variant;
         
         accepted();
-        accepted(json j);
+        accepted(JSON j);
         
         bool valid() const;
         
         operator bool() const;
-        operator json() const;
+        operator JSON() const;
         
         bool has_error() const;
         string error() const;
     };
     
-    using request = data::map<string, json>;
-    using result_params = data::map<string, json>;
+    // request for a single extension. 
+    using request = data::map<string, JSON>;
+    using result_params = data::map<string, JSON>;
     
     template <extension> struct configuration {
         operator request() const {
@@ -99,6 +100,7 @@ namespace Gigamonkey::Stratum::extensions {
         static std::optional<configuration> read(const request &p);
     };
     
+    // requests for all extensions. 
     struct requests : public data::map<string, request> {
         using data::map<string, request>::map;
         requests(data::map<string, request> m) : data::map<string, request>{m} {}
@@ -112,7 +114,7 @@ namespace Gigamonkey::Stratum::extensions {
     
     struct result {
         accepted Accepted;
-        std::optional<result_params> Parameters;
+        result_params Parameters;
         
         result(const result_params &p);
         result();
@@ -120,31 +122,36 @@ namespace Gigamonkey::Stratum::extensions {
         
         bool valid() const;
         
-        bool operator==(const result &r) const {
-            return Accepted == r.Accepted && Parameters == r.Parameters;
-        }
-        
-        bool operator!=(const result &r) const {
-            return !operator==(r);
-        }
+        bool operator==(const result &r) const;
         
     };
     
-    struct results : public data::map<string, result> {
-        using data::map<string, result>::map;
-        results(data::map<string, result> m);
+    using results = data::map<string, result>;
+    
+    struct options {
+        // whether extension version_rolling is supported and 
+        // parameter version mask. 
+        optional<version_mask> VersionRollingMask{};
         
-        template <extension x>
-        results insert(const configured<x> &n) const;
+        bool SupportExtensionSubscribeExtranonce{false};
+        bool SupportExtensionMinimumDifficulty{false};
+        bool SupportExtensionInfo{false};
+    };
+    
+    template <extension> struct parameters;
+    
+    template <> struct parameters<version_rolling> {
+        version_mask LocalMask;
+        configuration<version_rolling> RequestedMask;
         
-        template <extension x>
-        results insert() const;
+        static optional<version_mask> make(version_mask local, const configuration<extensions::version_rolling> &r);
         
-        template <extension x>
-        results insert(const string &err) const;
+        parameters() : LocalMask{}, RequestedMask{} {}
         
-        template <extension x>
-        std::optional<configured<x>> get() const;
+        optional<version_mask> get() const;
+        optional<version_mask> configure(const configuration<version_rolling> &requested);
+        optional<version_mask> set(const version_mask &mask);
+        
     };
     
     inline encoding::hex::fixed<4> write_version_mask(const version_mask& x) {
@@ -153,7 +160,7 @@ namespace Gigamonkey::Stratum::extensions {
     
     inline accepted::accepted() : std::variant<bool, string, std::monostate>{std::monostate{}} {}
         
-    inline accepted::accepted(const json j) : accepted{} {
+    inline accepted::accepted(const JSON j) : accepted{} {
         if (j.is_boolean()) *this = (bool)(j);
         else if (j.is_string()) *this = (string)(j);
     }
@@ -166,8 +173,8 @@ namespace Gigamonkey::Stratum::extensions {
         return std::holds_alternative<string>(*this) ? false : std::get<bool>(*this);
     }
         
-    inline accepted::operator json() const {
-        return std::holds_alternative<string>(*this) ? json(std::get<string>(*this)) : json(std::get<bool>(*this));
+    inline accepted::operator JSON() const {
+        return std::holds_alternative<string>(*this) ? JSON(std::get<string>(*this)) : JSON(std::get<bool>(*this));
     }
         
     bool inline accepted::has_error() const {
@@ -212,33 +219,7 @@ namespace Gigamonkey::Stratum::extensions {
     inline result::result(accepted ac, const result_params &p): Accepted{ac}, Parameters{p} {}
     
     bool inline result::valid() const {
-        return Accepted.valid() && (!bool(Accepted) || bool(Parameters));
-    }
-    
-    inline results::results(data::map<string, result> m) : data::map<string, result>{m} {}
-    
-    template <extension x>
-    results results::insert(const configured<x> &n) const {
-        return results{data::map<string, result>::insert(extension_to_string(x), result{data::map<string, json>(n)})};
-    }
-    
-    template <extension x>
-    results results::insert() const {
-        return {data::map<string, result>::insert(extension_to_string(x), result{})};
-    }
-    
-    template <extension x>
-    results results::insert(const string &err) const {
-        return {data::map<string, result>::insert(extension_to_string(x), result{accepted{err}})};
-    }
-    
-    template <extension x>
-    std::optional<configured<x>> results::get() const {
-        string ext = extension_to_string(x);
-        auto r = this->contains(ext);
-        if (r) return {};
-        if (!bool(r->Accepted)) return {};
-        return {configured<x>::read(*r->Parameters)};
+        return Accepted.valid() && (!bool(Accepted) || Parameters.size() == 0);
     }
     
     std::ostream inline &operator<<(std::ostream &o, const accepted &a) {
@@ -247,8 +228,26 @@ namespace Gigamonkey::Stratum::extensions {
     
     std::ostream inline &operator<<(std::ostream &o, const result &a) {
         o << "[" << a.Accepted;
-        if (a.Parameters) return o << ", " << *a.Parameters;
+        if (a.Parameters.size() > 0) return o << ", " << a.Parameters;
         return o << "]";
+    }
+        
+    bool inline result::operator==(const result &r) const {
+        return Accepted == r.Accepted && Parameters == r.Parameters;
+    }
+    
+    optional<version_mask> inline parameters<version_rolling>::get() const {
+        return make(LocalMask, RequestedMask);
+    }
+    
+    optional<version_mask> inline parameters<version_rolling>::configure(const configuration<version_rolling> &requested) {
+        RequestedMask = requested;
+        return get();
+    }
+    
+    optional<version_mask> inline parameters<version_rolling>::set(const version_mask &mask) {
+        LocalMask = mask;
+        return get();
     }
     
 }

@@ -3,58 +3,61 @@
 
 namespace Gigamonkey::Stratum {
     
-    void client_session::handle_notification(const notification &n) {
-        if (mining::notify::valid(n)) return notify(mining::notify{n}.params());
-        if (mining::set_difficulty::valid(n)) return set_difficulty(mining::set_difficulty{n}.params());
-        if (mining::set_extranonce::valid(n)) return set_extranonce(mining::set_extranonce{n}.params());
-        if (mining::set_version_mask::valid(n)) return set_version_mask(mining::set_version_mask{n}.params());
-        if (client::show_message::valid(n)) return show_message(client::show_message{n}.params());
-        throw std::logic_error{string{"unknown notification received: "} + string(n)};
+    void client_session::receive_notification(const notification &n) {
+        if (mining::notify::valid(n)) return receive_notify(mining::notify{n}.params());
+        if (mining::set_difficulty::valid(n)) return receive_set_difficulty(mining::set_difficulty{n}.params());
+        if (mining::set_extranonce::valid(n)) return receive_set_extranonce(mining::set_extranonce{n}.params());
+        if (mining::set_version_mask::valid(n)) return receive_set_version_mask(mining::set_version_mask{n}.params());
+        if (client::show_message::valid(n)) return receive_show_message(client::show_message{n}.params());
+        throw exception{} << "unknown notification received: " + n.dump();
     }
     
-    void client_session::handle_request(const Stratum::request &r) {
-        if (client::get_version_request::valid(r)) return this->send(client::get_version_response{r.id(), version()});
-        this->send(response{r.id(), nullptr, error{ILLEGAL_METHOD}});
-        throw std::logic_error{string{"unknown request received: "} + string(r)};
+    void client_session::receive_request(const Stratum::request &r) {
+        if (client::get_version_request::valid(r)) 
+            return JSON_line_session::send(client::get_version_response{r.id(), Options.Version});
+        
+        JSON_line_session::send(response{r.id(), nullptr, error{ILLEGAL_METHOD}});
+        
+        throw exception{} << "unknown request received: " << r;
     }
     
-    bool client_session::initialize(
-        const std::optional<extensions::requests> c, 
-        const mining::authorize_request::parameters& ap, 
-        const mining::subscribe_request::parameters& sp) {
-        
-        if (c) this->configure(*c);
-        
-        if (!this->authorize(ap)) {
-            std::cout << "failed to authorize" << std::endl;
-            return false;
+    void client_session::receive_response(method m, const Stratum::response &r) {
+        switch (m) {
+            case mining_configure : {
+                if (r.error()) receive_configure_error(*r.error());
+                else receive_configure(extensions::results(mining::configure_response::result(r)));
+            } break;
+            case mining_authorize : {
+                if (r.error()) receive_authorize_error(*r.error());
+                else {
+                    if (!mining::authorize_response::valid(r)) 
+                        throw exception{} << "invalid authorization response received: " << r;
+                    
+                    receive_authorize(mining::authorize_response{r}.result());
+                }
+            } break;
+            case mining_subscribe : {
+                if (r.error()) receive_subscribe_error(*r.error());
+                else receive_subscribe(mining::subscribe_response::deserialize(r.result()));
+            } break;
+            case mining_submit : {
+                if (r.error()) receive_submit(false);
+                else receive_submit(r.result());
+            } break;
+            default: throw exception{"Invalid method returned? Should not be possible."};
         }
-        
-        auto subs = subscribe(sp);
-        Subscriptions = subs.Subscriptions;
-        set_extranonce(subs.ExtraNonce);
-        return true;
     }
     
-    extensions::results client_session::configure(const extensions::requests &q) {
-        auto serialized = mining::configure_request::serialize(mining::configure_request::parameters{q});
+    void client_session::receive_configure(const extensions::results &r) {
         
-        std::cout << "sending configure request " << serialized << std::endl;
+        if (!Options.ConfigureRequest) throw exception{} << "configure response returned without knowing what was requested.";
         
-        response s = request(mining_configure, serialized);
-        
-        if (!mining::configure_response::valid(s)) 
-            throw std::logic_error{string{"invalid configure response received: "} + string(s)};
-        
-        auto r = extensions::results(mining::configure_response{s}.result());
+        auto q = *Options.ConfigureRequest;
         
         if (!mining::configure_response::valid_result(r, q))
-            throw std::logic_error{string{"invalid response to "} + string(json{serialized}) + " received: " + string(s)};
-        
-        std::cout << "configure response received: " << r << std::endl;
+            throw exception{} << "invalid configure response received. ";
         
         if (auto configuration = q.get<extensions::version_rolling>(); bool(configuration)) {
-            std::cout << q["version-rolling"] << " requested; ";
             
             auto result = r.contains("version-rolling");
             
@@ -62,21 +65,19 @@ namespace Gigamonkey::Stratum {
             else {
                 std::cout << "response = " << *result << std::endl; 
                 if (result->Accepted) {
-                    auto x = extensions::configured<extensions::version_rolling>::read(*result->Parameters);
-                    if (x) set_version_mask(x->Mask);
-                    else std::cout << "invalid version-rolling response received: " << *result->Parameters << std::endl;
+                    auto x = extensions::configured<extensions::version_rolling>::read(result->Parameters);
+                    if (x) receive_set_version_mask(x->Mask);
+                    else std::cout << "invalid version-rolling response received: " << result->Parameters << std::endl;
                 }
             }
         }
         
         if (auto configuration = q.get<extensions::minimum_difficulty>(); bool(configuration)) {
-            std::cout << q["minimum-difficulty"] << " requested; ";
             
             auto result = r.contains("minimum-difficulty");
             
             if (result) std::cout << "no response received."; 
             else {
-                std::cout << "response = " << *result << std::endl; 
                 if (result->Accepted) Minimum = configuration->Value;
             }
         }
@@ -99,24 +100,15 @@ namespace Gigamonkey::Stratum {
             else std::cout << "response = " << *result << std::endl; 
         }
         
-        return r;
+        ExtensionResults = r;
     }
     
-    bool client_session::authorize(const mining::authorize_request::parameters &x) {
-        auto serialized = mining::authorize_request::serialize(x);
-        
-        std::cout << "sending authorize request " << serialized << std::endl;
-        
-        response r = request(mining_authorize, serialized);
-        
-        if (!mining::authorize_response::valid(r)) 
-            throw std::logic_error{string{"invalid authorization response received: "} + string(r)};
-        
-        bool result = mining::authorize_response{r}.result();
-        std::cout << (result ? "authorization successful!" : "authorization failed!") << std::endl;
-        return result;
+    void client_session::receive_authorize(bool r) {
+        std::cout << (r ? "authorization successful!" : "authorization failed!") << std::endl;
+        if (r) Authorized = true;
     }
     
+    /*
     mining::subscribe_response::parameters client_session::subscribe(const mining::subscribe_request::parameters &x) {
         auto serialized = mining::subscribe_request::serialize(x);
         
@@ -158,6 +150,6 @@ namespace Gigamonkey::Stratum {
         }
         
         return false;
-    }
+    }*/
     
 }

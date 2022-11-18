@@ -38,6 +38,7 @@ namespace Gigamonkey::secp256k1 {
     struct signature final : bytes {
         
         // Format: 0x30 [total-length] 0x02 [R-length] [R] 0x02 [S-length] [S]
+        // max size is 6 + 2 * 33
         constexpr static size_t MaxSize = 72; 
         
         static bool valid(bytes_view x);

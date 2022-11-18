@@ -48,12 +48,6 @@ namespace Gigamonkey::Bitcoin {
     bool header::valid(const slice<80> h) {
         return header_valid(Bitcoin::header{h}) && header_valid_work(h);
     }
-    
-    Gigamonkey::uint256 satoshi_uint256_to_uint256(::uint256 x) {
-        Gigamonkey::uint256 y;
-        std::copy(x.begin(), x.end(), y.begin());
-        return y;
-    }
         
     bool header::valid() const {
         return header_valid_work(write()) && header_valid(*this);
@@ -68,7 +62,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     uint64 transaction::serialized_size() const {
-        return 8 + var_int::size(Inputs.size()) + var_int::size(Inputs.size()) + 
+        return 8 + var_int::size(Inputs.size()) + var_int::size(Outputs.size()) + 
             data::fold([](uint64 size, const Bitcoin::input& i) -> uint64 {
                 return size + i.serialized_size();
             }, 0u, Inputs) + 

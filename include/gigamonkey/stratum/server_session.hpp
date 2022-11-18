@@ -4,6 +4,7 @@
 #ifndef GIGAMONKEY_STRATUM_SERVER_SESSION
 #define GIGAMONKEY_STRATUM_SERVER_SESSION
 
+#include <gigamonkey/work/solver.hpp>
 #include <gigamonkey/stratum/remote.hpp>
 #include <gigamonkey/stratum/mining_notify.hpp>
 #include <gigamonkey/stratum/mining_configure.hpp>
@@ -18,67 +19,156 @@
 namespace Gigamonkey::Stratum {
     
     // this represents a server talking to a remote client. 
-    class server_session : public remote {
+    struct server_session : public remote, public work::selector {
+        
+        struct options {
+            bool CanSubmitWithoutAuthorization{true};
+            
+            // maximum number of seconds a share can differ from our own 
+            // clock to be accepted. 
+            uint32 MaxTimeDifferenceSeconds{10};
+            
+            uint32 RememberOldJobsSeconds{60};
+            
+            optional<extensions::options> ExtensionsParameters{};
+            
+            // if minimum difficulty is supported, do we honor 
+            // the client's requested minimum difficulty or 
+            // do we ignore it? 
+            bool HonorMinimumDifficulty{true};
+            
+            options() {};
+        };
+        
+        server_session(const options &x = {}) : State{x} {}
+        virtual ~server_session() {}
+        
+        Stratum::difficulty difficulty() const;
+        
+        // send a set_difficulty message to the client. 
+        // this will not go into effect until the next 
+        // notify message is sent. 
+        void send_set_difficulty(const Stratum::difficulty& d);
+        
+        optional<string> username() const;
+        
+        // notify the client of a new job. 
+        void send_notify(const mining::notify::parameters& p);
+        
+        optional<string> client_version() const;
+        
+        extensions::version_mask version_mask() const;
+        
+        // send a set_version_mask message to the client. 
+        void send_set_version_mask(const extensions::version_mask& p);
+        
+        Stratum::extranonce extranonce() const;
+        
+        // send a set_extranonce message to the client. 
+        // this will not go into effect until the next 
+        // notify message is sent. 
+        void send_set_extranonce(const Stratum::extranonce &n);
+        
+        // get_version is the only request that the server sends to the client.
+        // It doesn't depend on state so can be sent at any time. 
+        request_id send_get_version();
+        
+    private:
+        virtual void receive_get_version(const string &) {};
         
         // we need a database of users to check logins. 
         // empty return value means a successful authorization. 
         virtual optional<error> authorize(const mining::authorize_request::parameters&) = 0;
         
+        // authorize the client to the server. 
+        mining::authorize_response authorize(const mining::authorize_request &r);
+        
         // We also need a way to assign session ids and subscriptions to users. 
         virtual mining::subscribe_response::parameters subscribe(const mining::subscribe_request::parameters&) = 0;
         
         // typically the client does not send notifications to the server.
-        virtual void handle_notification(const notification &n) override {
-            throw std::logic_error{string{"unknown notification received: "} + string(n)};
+        virtual void receive_notification(const notification &n) override {
+            throw exception{} << "unknown notification received: " + n.dump();
         }
         
-        // indicate that a user has earned a payment. 
-        virtual void payment(const string &username, const difficulty &) = 0;
+        void receive_request(const Stratum::request &) final override;
+        void receive_response(method, const Stratum::response &) final override;
+        work::puzzle select() final override;
         
-        // solution found. 
-        virtual void solution(const proof &) = 0;
+        // generate a configure response from a configure request message. 
+        // this is the optional first method of the protocol. 
+        mining::configure_response configure(const mining::configure_request &r);
         
-    public:
-        
-        // get_version is the only request that the server sends to the client.
-        // It doesn't depend on state so can be sent at any time. 
-        string get_version();
-        
-    private:
+        // empty return value for an accepted share. 
+        optional<error> submit(const share &x);
         
         // the state data of the protocol. 
-        struct state {
-        
-            // Stratum clients sessions optionally first negotiate extensions and parameters, 
-            // then authorize themselves with the server, and then get some ids from the server
-            // with the subscribe method. Then they enter a mining loop until disconnection. 
-            enum phase {
-                initial, 
-                configured, 
-                authorized, 
-                working 
-            };
-        
-            phase Phase{initial};
-        
-            // Defines what extensions are supported by the server. 
-            extensions::results ExtensionsSupported{};
+        class state {
             
-            // Extensions requested by the client. 
-            optional<extensions::requests> ExtensionsRequested{};
+            options Options;
             
-            // Extension parameters returned by the server. 
-            extensions::results ExtensionsParameters{};
-        
-            static optional<extensions::version_mask> make_version_mask(
-                extensions::version_mask x, 
-                const extensions::configuration<extensions::version_rolling> &r);
+            // whether we have received and responded to a mining.configure message. 
+            bool Configured{false};
             
             // Extension version_rolling allows clients to use ASICBoost. Server and client agree
             // on a mask that says what bits of the version field the client is allowed to alter. 
-            extensions::version_mask version_mask() const;
+            extensions::parameters<extensions::version_rolling> VersionRollingMaskParameters;
             
-            optional<extensions::version_mask> set_version_mask(extensions::version_mask x);
+            // optionally a client can request a minimum difficulty. 
+            optional<Stratum::difficulty> MinimumDifficulty;
+            
+            // we can ask the client for its version string and we 
+            // store that here if we get it. 
+            optional<string> ClientVersion;
+            
+            // The user name of the worker. 
+            // Set during the authorize method. 
+            optional<string> Name{};
+            
+            // subscriptions are assigned during the subscribe method. 
+            list<mining::subscription> Subscriptions; 
+            
+            // set_extranonce and set_difficulty do go into effect until 
+            // after the next mining.notify message is sent, so we have 
+            // to remember two of each. 
+            Stratum::extranonce Extranonce;
+            Stratum::extranonce NextExtranonce;
+            
+            Stratum::difficulty Difficulty;
+            Stratum::difficulty NextDifficulty;
+            
+        public:
+            bool extensions_supported() const;
+            
+            // whether we have received and responded to a mining.configure message. 
+            bool configured() const;
+            
+            // whether we have received and responded 'true' to a mining.authorize message.
+            bool authorized() const;
+            
+            string name() const;
+            void set_name(const string &x);
+            
+            optional<string> client_version() const;
+            void set_client_version(const string &x);
+            
+            // whether we have received and responded true' to a mining.subscribe message. 
+            bool subscribed() const;
+        
+            Stratum::difficulty difficulty() const;
+            bool set_difficulty(const Stratum::difficulty& d);
+            
+            Stratum::extranonce extranonce() const;
+            bool set_extranonce(const Stratum::extranonce &n);
+            
+            // version mask that the client is using. 
+            optional<extensions::version_mask> version_mask() const;
+            
+            // return value is whether the version mask has changed. 
+            bool set_version_mask(const extensions::version_mask &x);
+            
+            Stratum::difficulty minimum_difficulty() const;
+            void set_minimum_difficulty(optional<Stratum::difficulty> d);
             
             extensions::result configure_result(
                 const string &extension, 
@@ -87,86 +177,41 @@ namespace Gigamonkey::Stratum {
             // empty return value means extensions are not supported. 
             optional<extensions::results> configure(const extensions::requests& p);
             
-            // The user name of the worker. 
-            // Set during the authorize method. 
-            optional<string> Name{};
-        
-            string username() const {
-                if (Name.has_value()) return *Name;
-                return "";
-            }
-            
-            optional<Stratum::difficulty> MinimumDifficulty;
-            
-            Stratum::difficulty minimum_difficulty() const {
-                if (!MinimumDifficulty) return Stratum::difficulty{0};
-                return *MinimumDifficulty;
-            }
-            
-            void set_minimum_difficulty(optional<Stratum::difficulty> d) {
-                MinimumDifficulty = d;
-            }
-        
-            // subscriptions are assigned during the subscribe method. 
-            optional<mining::subscribe_response::parameters> Subscriptions; 
-            
-            Stratum::extranonce extranonce() const {
-                return (Subscriptions) ? Subscriptions->ExtraNonce : Stratum::extranonce{};
-            }
-        
-            void set_extranonce(const Stratum::extranonce &n) {
-                if (Phase != working) throw 0;
-                Subscriptions->ExtraNonce = n;
-            }
-        
-            optional<Stratum::difficulty> Difficulty;
-        
-            Stratum::difficulty difficulty() const {
-                if (!Difficulty) return Stratum::difficulty{0};
-                return *Difficulty;
-            }
-            
-            void set_difficulty(const Stratum::difficulty& d) {
-                if (Phase != working) throw 0;
-                Difficulty = d;
-            }
-            
             // we need to keep track of the last few notify notifications that have been sent. 
-            struct notifies {
+            struct history {
                 struct entry {
-                    std::chrono::time_point<std::chrono::system_clock> Time;
-                    extensions::version_mask Mask;
+                    optional<extensions::version_mask> Mask;
                     Stratum::extranonce ExtraNonce;
                     mining::notify::parameters Notification;
                     
                     entry();
                     entry(
-                        const std::chrono::time_point<std::chrono::system_clock> &t,
-                        const extensions::version_mask &m,
+                        const optional<extensions::version_mask> &m,
                         const Stratum::extranonce &n,
                         const mining::notify::parameters &p) : 
-                        Time{t}, Mask{m}, ExtraNonce{n}, Notification{p} {}
+                        Mask{m}, ExtraNonce{n}, Notification{p} {}
+                    
+                    Bitcoin::timestamp time() const {
+                        return Notification.Now;
+                    }
                 };
                 
+                double RememberForThisMuchTime;
                 std::list<entry> Notifications;
-                std::chrono::duration<uint64> RememberForThisMuchTime;
-                uint32 MaxSize;
                 
                 void push(
-                    extensions::version_mask mask,
+                    optional<extensions::version_mask> mask,
                     Stratum::extranonce n,
                     const mining::notify::parameters &p) {
-                    const std::chrono::time_point<std::chrono::system_clock> now =
-                        std::chrono::system_clock::now();
-                        
-                    while (Notifications.size() > MaxSize) Notifications.pop_back();
-                    while (Notifications.size() > 0 && (now - Notifications.back().Time) > RememberForThisMuchTime) Notifications.pop_back();
                     
-                    Notifications.push_front({now, mask, n, p});
+                    while (Notifications.size() > 0 && (p.Now - Notifications.back().time()) > RememberForThisMuchTime)
+                        Notifications.pop_back();
+                    
+                    Notifications.push_front({mask, n, p});
                 }
             };
         
-            notifies Notifies{};
+            history Notifies;
             set<byte_array<80>> Recent;
             
             struct found {
@@ -180,13 +225,11 @@ namespace Gigamonkey::Stratum {
             
             found find(const share &x) const;
         
-            void notify(const mining::notify::parameters& p) {
-                if (p.Clean) Recent = set<byte_array<80>>{};
-                Notifies.push(version_mask(), extranonce(), p);
-            }
+            void notify(const mining::notify::parameters& p);
             
             state() {}
-            state(const mining::configure_response::parameters &x) : ExtensionsSupported{x} {}
+            state(const options &x) : 
+               Options{x}, Notifies{static_cast<double>(x.RememberOldJobsSeconds)}, Recent{} {}
             
         };
         
@@ -194,69 +237,11 @@ namespace Gigamonkey::Stratum {
         
         mutable std::shared_mutex Mutex{};
         
-    public:
-        
-        state::phase phase() const;
-        
-        extensions::version_mask version_mask() const;
-        
-        void set_version_mask(const extensions::version_mask& p);
-        
-        string username() const;
-        
-        Stratum::extranonce extranonce() const;
-        
-        void set_extranonce(const Stratum::extranonce &n);
-        
-        Stratum::difficulty difficulty() const;
-        
-        void set_difficulty(const Stratum::difficulty& d);
-        
-        void notify(const mining::notify::parameters& p);
-        
-    private:
-        
-        // generate a configure response from a configure request message. 
-        // this the optional first method of the protocol. 
-        mining::configure_response configure(const mining::configure_request &r);
-        
-        // authorize the client to the server. 
-        // this is the original first method of the protocol. 
-        mining::authorize_response authorize(const mining::authorize_request &r);
-            
-        // subscribe is the 3rd or 2nd method and it is when the client gets its
-        // session id, which is also known as extra nonce 1. 
-        mining::subscribe_response subscribe(const mining::subscribe_request &r);
-        
-        uint32 min_time_difference;
-        
-        // empty return value for an accepted share. 
-        optional<error> submit(const share &x);
-        
-        response respond(const Stratum::request &r);
-        
-        void handle_request(const Stratum::request &r) final override {
-            this->send(respond(r));
-        }
-        
-    public:
-        server_session(tcp::socket &s) : remote{s}, State{} {}
-        server_session(tcp::socket &s, const mining::configure_response::parameters &x) : remote{s}, State{x} {}
     };
     
-    server_session::state::phase inline server_session::phase() const {
+    optional<string> inline server_session::username() const {
         std::shared_lock lock(Mutex);
-        return State.Phase;
-    }
-    
-    extensions::version_mask inline server_session::version_mask() const {
-        std::shared_lock lock(Mutex);
-        return State.version_mask();
-    }
-    
-    string inline server_session::username() const {
-        std::shared_lock lock(Mutex);
-        return State.username();
+        return State.name();
     }
     
     Stratum::extranonce inline server_session::extranonce() const {
@@ -264,10 +249,21 @@ namespace Gigamonkey::Stratum {
         return State.extranonce();
     }
     
-    void inline server_session::set_extranonce(const Stratum::extranonce &n) {
+    void inline server_session::send_set_extranonce(const Stratum::extranonce &n) {
         std::unique_lock lock(Mutex);
-        State.set_extranonce(n);
-        this->send_notification(mining_set_extranonce, mining::set_extranonce::serialize(n));
+        if (State.set_extranonce(n)) this->send_notification(mining_set_extranonce, mining::set_extranonce::serialize(n));
+    }
+    
+    extensions::version_mask inline server_session::version_mask() const {
+        std::shared_lock lock(Mutex);
+        auto mask = State.version_mask();
+        return bool(mask) ? *mask : extensions::version_mask{0};
+    }
+    
+    void inline server_session::send_set_version_mask(const extensions::version_mask &n) {
+        std::unique_lock lock(Mutex);
+        if (State.set_version_mask(n)) 
+            this->send_notification(mining_set_extranonce, mining::set_version_mask::serialize(*State.version_mask()));
     }
     
     Stratum::difficulty inline server_session::difficulty() const {
@@ -275,16 +271,80 @@ namespace Gigamonkey::Stratum {
         return State.difficulty();
     }
     
-    void inline server_session::set_difficulty(const Stratum::difficulty& d) {
+    void inline server_session::send_set_difficulty(const Stratum::difficulty& d) {
         std::unique_lock lock(Mutex);
-        State.set_difficulty(d);
-        this->send_notification(mining_set_difficulty, mining::set_difficulty::serialize(d));
+        if (State.set_difficulty(d)) this->send_notification(mining_set_difficulty, mining::set_difficulty::serialize(d));
     }
     
-    void inline server_session::notify(const mining::notify::parameters& p) {
+    void inline server_session::send_notify(const mining::notify::parameters& p) {
         std::shared_lock lock(Mutex);
         State.notify(p);
         this->send_notification(mining_notify, mining::notify::serialize(p));
+    }
+    
+    request_id inline server_session::send_get_version() {
+        return this->send_request(client_get_version, {});
+    }
+    
+    optional<string> inline server_session::client_version() const {
+        return State.client_version();
+    }
+    
+    bool inline server_session::state::extensions_supported() const {
+        return bool(Options.ExtensionsParameters);
+    }
+    
+    // whether we have received and responded to a mining.configure message. 
+    bool inline server_session::state::configured() const {
+        return Configured;
+    }
+    
+    // whether we have received and responded 'true' to a mining.authorize message.
+    bool inline server_session::state::authorized() const {
+        return bool(Name);
+    }
+    
+    string inline server_session::state::name() const {
+        return bool(Name) ? *Name : "";
+    }
+    
+    void inline server_session::state::set_name(const string &x) {
+        Name = x;
+    }
+    
+    optional<string> inline server_session::state::client_version() const {
+        return ClientVersion;
+    }
+    
+    void inline server_session::state::set_client_version(const string &x) {
+        ClientVersion = x;
+    }
+    
+    // whether we have received and responded true' to a mining.subscribe message. 
+    bool inline server_session::state::subscribed() const {
+        return Subscriptions.size() > 0;
+    }
+    
+    Stratum::difficulty inline server_session::state::difficulty() const {
+        return Difficulty;
+    }
+    
+    Stratum::extranonce inline server_session::state::extranonce() const {
+        return Extranonce;
+    }
+    
+    // version mask that the client is using. 
+    optional<extensions::version_mask> inline server_session::state::version_mask() const {
+        return VersionRollingMaskParameters.get();
+    }
+    
+    Stratum::difficulty inline server_session::state::minimum_difficulty() const {
+        if (!MinimumDifficulty) return Stratum::difficulty{0};
+        return *MinimumDifficulty;
+    }
+    
+    void inline server_session::state::set_minimum_difficulty(optional<Stratum::difficulty> d) {
+        MinimumDifficulty = d;
     }
 }
 

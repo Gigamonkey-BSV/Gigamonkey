@@ -74,7 +74,7 @@ namespace Gigamonkey::Merkle {
                 q.Root = fail;
                 EXPECT_FALSE(q.valid());
                 
-                json serialized = ReconstructedLeft.serialize();
+                JSON serialized = ReconstructedLeft.serialize();
                 auto DeserializedLeft = dual::deserialize(serialized);
                 ASSERT_EQ(ReconstructedLeft, DeserializedLeft);
             }
@@ -111,7 +111,7 @@ namespace Gigamonkey::Merkle {
             "f22992062d8fd4b8d55de7b060006fcc978b3f999a3dbb85a6ae55edc06dd9a30855a030b450206c3646dadbd8c000423ab027"
             "3c2572880cdc0030034c72ec300ec9dd7bbc7d3f948a9d41b3621e39");
         
-        std::stringstream json_message{R"JSON({
+        std::stringstream JSON_message{R"JSON({
             "index": 12,
             "txOrId": "ffeff11c25cde7c06d407490d81ef4d0db64aad6ab3d14393530701561a465ef",
             "target": "75edb0a69eb195cdd81e310553aa4d25e18450e08f168532a2c2e9cf447bf169",
@@ -124,21 +124,21 @@ namespace Gigamonkey::Merkle {
             ]
         })JSON"};
         
-        json json_format;
-        json_message >> json_format;
+        JSON JSON_format;
+        JSON_message >> JSON_format;
         
         using namespace BitcoinAssociation;
         
         auto read_binary = proofs_serialization_standard::read_binary(binary_format);
-        auto read_json = proofs_serialization_standard::read_json(json_format);
+        auto read_JSON = proofs_serialization_standard::read_JSON(JSON_format);
         
         auto write_binary_from_binary = bytes(read_binary);
-        auto write_binary_from_json = bytes(read_json);
+        auto write_binary_from_JSON = bytes(read_JSON);
         
         EXPECT_EQ(write_binary_from_binary, binary_format);
-        EXPECT_EQ(json(read_json), json_format);
-        EXPECT_EQ(json(read_binary), json_format);
-        EXPECT_EQ(write_binary_from_json, binary_format);
+        EXPECT_EQ(JSON(read_JSON), JSON_format);
+        EXPECT_EQ(JSON(read_binary), JSON_format);
+        EXPECT_EQ(write_binary_from_JSON, binary_format);
         
     }
 }

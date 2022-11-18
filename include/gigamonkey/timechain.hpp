@@ -18,7 +18,6 @@ namespace Gigamonkey::Bitcoin {
     struct outpoint;
     
     bool operator==(const outpoint&, const outpoint&);
-    bool operator!=(const outpoint&, const outpoint&);
     
     bool operator>(const outpoint&, const outpoint&);
     bool operator<(const outpoint&, const outpoint&);
@@ -33,7 +32,6 @@ namespace Gigamonkey::Bitcoin {
     struct input;
     
     bool operator==(const input&, const input&);
-    bool operator!=(const input&, const input&);
     
     writer &operator<<(writer &w, const input& h);
     reader &operator>>(reader &r, input& h);
@@ -43,7 +41,6 @@ namespace Gigamonkey::Bitcoin {
     struct output;
     
     bool operator==(const output&, const output&);
-    bool operator!=(const output&, const output&);
     
     writer &operator<<(writer &w, const output& h);
     reader &operator>>(reader &r, output& h);
@@ -53,7 +50,6 @@ namespace Gigamonkey::Bitcoin {
     struct transaction;
     
     bool operator==(const transaction&, const transaction&);
-    bool operator!=(const transaction&, const transaction&);
     
     writer &operator<<(writer &w, const transaction& h);
     reader &operator>>(reader &r, transaction& h);
@@ -63,7 +59,6 @@ namespace Gigamonkey::Bitcoin {
     struct header;
     
     bool operator==(const header& a, const header& b);
-    bool operator!=(const header& a, const header& b);
     
     bool operator>(const header&, const header&);
     bool operator<(const header&, const header&);
@@ -78,7 +73,6 @@ namespace Gigamonkey::Bitcoin {
     struct block;
     
     bool operator==(const block&, const block&);
-    bool operator!=(const block&, const block&);
     
     writer &operator<<(writer &w, const block& h);
     reader &operator>>(reader &r, block& h);
@@ -294,48 +288,24 @@ namespace Gigamonkey::Bitcoin {
             && a.Timestamp == b.Timestamp && a.Target == b.Target && a.Nonce == b.Nonce;
     }
     
-    bool inline operator!=(const header& a, const header& b) {
-        return !(a == b);
-    }
-    
     bool inline operator==(const outpoint& a, const outpoint& b) {
         return a.Digest == b.Digest && a.Index == b.Index;
-    }
-    
-    bool inline operator!=(const outpoint& a, const outpoint& b) {
-        return !(a == b);
     }
     
     bool inline operator==(const input& a, const input& b) {
         return a.Reference == b.Reference && a.Script == b.Script && a.Sequence == b.Sequence;
     }
     
-    bool inline operator!=(const input& a, const input& b) {
-        return !(a == b);
-    }
-    
     bool inline operator==(const output& a, const output& b) {
         return a.Value == b.Value && a.Script == b.Script;
-    }
-    
-    bool inline operator!=(const output& a, const output& b) {
-        return !(a == b);
     }
     
     bool inline operator==(const transaction& a, const transaction& b) {
         return a.Version == b.Version && a.Inputs == b.Inputs && a.Outputs == b.Outputs && a.Locktime == b.Locktime;
     }
     
-    bool inline operator!=(const transaction& a, const transaction& b) {
-        return !(a == b);
-    }
-    
     bool inline operator==(const block& a, const block& b) {
         return a.Header == b.Header && a.Transactions == b.Transactions;
-    }
-    
-    bool inline operator!=(const block& a, const block& b) {
-        return !(a == b);
     }
     
     std::ostream inline &operator<<(std::ostream& o, const header& h) {

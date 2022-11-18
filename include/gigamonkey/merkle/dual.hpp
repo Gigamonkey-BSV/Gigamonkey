@@ -59,8 +59,8 @@ namespace Gigamonkey::Merkle {
         
         dual& operator=(const dual& d);
         
-        json serialize() const;
-        static dual deserialize(const json&);
+        JSON serialize() const;
+        static dual deserialize(const JSON&);
     };
     
     inline bool operator==(const dual& a, const dual& b) {

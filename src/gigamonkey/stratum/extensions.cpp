@@ -48,5 +48,25 @@ namespace Gigamonkey::Stratum::extensions {
         return {configuration{*a, *b, *c, *d}};
         
     }
+
+    optional<version_mask> parameters<version_rolling>::make(
+        version_mask x, 
+        const configuration<version_rolling> &r) {
+        version_mask new_mask = x & r.Mask;
+        int bit_count = 0;
+        for (int i = 0; i < 32; i++) if (((new_mask >> i) & 1) == 1) bit_count++;
+        
+        return bit_count < r.MinBitCount ? optional<version_mask>{} : optional<version_mask>{new_mask};
+    }
+    
+    std::string extension_to_string(extension m) {
+        switch (m) {
+            case (version_rolling) : return "version_rolling";
+            case (minimum_difficulty) : return "minimum_difficulty";
+            case (subscribe_extranonce) : return "subscribe_extranonce";
+            case (info) : return "info";
+            default: throw std::invalid_argument{"Unknown extension"};
+        }
+    }
     
 }
