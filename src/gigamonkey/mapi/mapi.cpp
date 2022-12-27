@@ -44,7 +44,6 @@ namespace Gigamonkey::BitcoinAssociation {
     namespace {
     
         satoshi_per_byte spb_from_JSON(const JSON& j) {
-            std::cout << "read JSON fees " << j << std::endl;
             if (!(j.is_object() && 
                 j.contains("satoshis") && j["satoshis"].is_number_unsigned() && 
                 j.contains("bytes") && j["bytes"].is_number_unsigned())) return{};
@@ -186,15 +185,15 @@ namespace Gigamonkey::BitcoinAssociation {
             return j;
         }
         
-        map<string, string> to_url_params(const MAPI::submit_transaction_parameters &ts) {
-            map<string, string> params;
+        list<data::entry<string, string>> to_url_params(const MAPI::submit_transaction_parameters &ts) {
+            list<data::entry<string, string>> params;
             
-            if (ts.CallbackURL) params = params.insert("callbackUrl", *ts.CallbackURL);
-            if (ts.CallbackToken) params = params.insert("callbackToken", *ts.CallbackToken);
-            if (ts.MerkleProof) params = params.insert("merkleProof", std::to_string(*ts.MerkleProof));
-            if (ts.MerkleFormat) params = params.insert("merkleFormat", *ts.MerkleFormat);
-            if (ts.DSCheck) params = params.insert("dsCheck", std::to_string(*ts.DSCheck));
-            if (ts.CallbackEncryption) params = params.insert("callbackEncryption", *ts.CallbackEncryption);
+            if (ts.CallbackURL) params = params << data::entry<string, string>{"callbackUrl", *ts.CallbackURL};
+            if (ts.CallbackToken) params = params << data::entry<string, string>{"callbackToken", *ts.CallbackToken};
+            if (ts.MerkleProof) params = params << data::entry<string, string>{"merkleProof", std::to_string(*ts.MerkleProof)};
+            if (ts.MerkleFormat) params = params << data::entry<string, string>{"merkleFormat", *ts.MerkleFormat};
+            if (ts.DSCheck) params = params << data::entry<string, string>{"dsCheck", std::to_string(*ts.DSCheck)};
+            if (ts.CallbackEncryption) params = params << data::entry<string, string>{"callbackEncryption", *ts.CallbackEncryption};
             
             return params;
         }

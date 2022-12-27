@@ -16,7 +16,7 @@
 namespace Gigamonkey::Stratum {
     
     // A client talking to a remote server. 
-    struct client_session : public remote, public work::solver {
+    struct client_session : public remote, public virtual work::solver {
         request_id send_configure(const extensions::requests &);
         request_id send_authorize(const mining::authorize_request::parameters &);
         request_id send_subscribe(const mining::subscribe_request::parameters &);
