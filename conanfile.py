@@ -2,8 +2,8 @@ from conans import ConanFile, CMake
 from os import environ
 
 class GigamonkeyConan(ConanFile):
-    name = "gigamonkey"
-    version = "v0.0.12"
+    name = "Gigamonkey"
+    version = "v0.0.13"
     license = "Open BSV"
     author = "Daniel Krawisz"
     url = "https://github.com/Gigamonkey-BSV/Gigamonkey"
@@ -14,7 +14,7 @@ class GigamonkeyConan(ConanFile):
     default_options = {"shared": False, "fPIC": True}
     generators = "cmake"
     exports_sources = "*"
-    requires = "boost/1.76.0", "openssl/1.1.1k", "cryptopp/8.5.0", "nlohmann_json/3.10.0", "gmp/6.2.1", "SECP256K1/0.2.0@proofofwork/stable", "data/v0.0.23@proofofwork/stable", "gtest/1.12.1"
+    requires = "boost/1.81.0", "openssl/1.1.1k", "cryptopp/8.5.0", "nlohmann_json/3.10.0", "gmp/6.2.1", "SECP256K1/0.2.0@proofofwork/stable", "data/v0.0.25@proofofwork/stable", "gtest/1.12.1"
     
     def set_version(self):
         if "CIRCLE_TAG" in environ:
@@ -22,7 +22,7 @@ class GigamonkeyConan(ConanFile):
         if "CURRENT_VERSION" in environ:
             self.version = environ['CURRENT_VERSION']
         else:
-            self.version = "v0.0.12"
+            self.version = "v0.0.13"
 
     def config_options(self):
         if self.settings.os == "Windows":
