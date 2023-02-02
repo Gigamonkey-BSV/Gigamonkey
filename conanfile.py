@@ -14,7 +14,15 @@ class GigamonkeyConan(ConanFile):
     default_options = {"shared": False, "fPIC": True}
     generators = "cmake"
     exports_sources = "*"
-    requires = "boost/1.81.0", "openssl/1.1.1k", "cryptopp/8.5.0", "nlohmann_json/3.10.0", "gmp/6.2.1", "SECP256K1/0.2.0@proofofwork/stable", "data/v0.0.25@proofofwork/stable", "gtest/1.12.1"
+    requires = [
+        "boost/1.80.0",
+        "openssl/1.1.1k",
+        "cryptopp/8.5.0",
+        "nlohmann_json/3.10.0",
+        "gmp/6.2.1",
+        "SECP256K1/0.2.0@proofofwork/stable",
+        "data/v0.0.25@proofofwork/stable",
+        "gtest/1.12.1"]
     
     def set_version(self):
         if "CIRCLE_TAG" in environ:
