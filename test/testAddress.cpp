@@ -7,6 +7,7 @@
 #pragma ide diagnostic ignored "cert-err58-cpp"
 
 #include <gigamonkey/wif.hpp>
+#include <gigamonkey/p2p/checksum.hpp>
 #include <gigamonkey/script/machine.hpp>
 #include <gigamonkey/script/pattern/pay_to_address.hpp>
 #include <gigamonkey/script/pattern/pay_to_pubkey.hpp>
@@ -114,13 +115,13 @@ namespace Gigamonkey::Bitcoin {
         string characters = encoding::base58::characters ();
         
         string replaced;
+
         {
-        
             int replace_at = std::uniform_int_distribution<int>(0, address.size() - 1) (random);
             
             char replace_with;
             do {
-                replace_with = characters[std::uniform_int_distribution<int>(0, 57) (random)];
+                replace_with = characters[std::uniform_int_distribution<int> (0, 57) (random)];
             } while (replace_with == address[replace_at]);
             
             replaced = address;
@@ -129,54 +130,54 @@ namespace Gigamonkey::Bitcoin {
         }
         
         string inserted;
+
         {
-            
-            int insert_at = std::uniform_int_distribution<int>(0, address.size()) (random);
-            char to_insert = characters[std::uniform_int_distribution<int>(0, 57) (random)];
+            int insert_at = std::uniform_int_distribution<int> (0, address.size ()) (random);
+            char to_insert = characters[std::uniform_int_distribution<int> (0, 57) (random)];
         
-            inserted.resize(address.size() + 1);
-            std::copy(address.begin(), address.begin() + insert_at, inserted.begin());
-            std::copy(address.begin() + insert_at, address.end(), inserted.begin() + insert_at + 1);
+            inserted.resize (address.size () + 1);
+            std::copy (address.begin (), address.begin () + insert_at, inserted.begin ());
+            std::copy (address.begin () + insert_at, address.end (), inserted.begin () + insert_at + 1);
             
             inserted[insert_at] = to_insert;
             
         }
         
         string deleted;
+
         {
+            int delete_at = std::uniform_int_distribution<int> (0, address.size () - 1) (random);
             
-            int delete_at = std::uniform_int_distribution<int>(0, address.size() - 1)(random);
+            deleted.resize (address.size () - 1);
             
-            deleted.resize(address.size() - 1);
-            
-            std::copy(address.begin(), address.begin() + delete_at, deleted.begin());
-            std::copy(address.begin() + delete_at + 1, address.end(), deleted.begin() + delete_at);
+            std::copy (address.begin (), address.begin () + delete_at, deleted.begin ());
+            std::copy (address.begin () + delete_at + 1, address.end (), deleted.begin () + delete_at);
         }
         
-        EXPECT_EQ(address_check, base58::check::recover(replaced));
-        EXPECT_EQ(address_check, base58::check::recover(inserted));
-        EXPECT_EQ(address_check, base58::check::recover(deleted));
+        EXPECT_EQ (address_check, base58::check::recover(replaced));
+        EXPECT_EQ (address_check, base58::check::recover(inserted));
+        EXPECT_EQ (address_check, base58::check::recover(deleted));
         
     }
     
-    TEST(ScriptTest, TestBIP276) {
+    TEST (ScriptTest, TestBIP276) {
         
-        digest160 digest_one{"0x1111111111111111111111111111111111111111"};
-        digest160 digest_two{"0x2222222222222222222222222222222222222222"};
+        digest160 digest_one {"0x1111111111111111111111111111111111111111"};
+        digest160 digest_two {"0x2222222222222222222222222222222222222222"};
         
-        bytes script_p2pkh_one = pay_to_address::script(digest_one);
-        bytes script_p2pkh_two = pay_to_address::script(digest_two);
+        bytes script_p2pkh_one = pay_to_address::script (digest_one);
+        bytes script_p2pkh_two = pay_to_address::script (digest_two);
         
-        string human_data_one = typed_data::write(typed_data::mainnet, script_p2pkh_one);
-        string human_data_two = typed_data::write(typed_data::mainnet, script_p2pkh_two);
+        string human_data_one = typed_data::write (typed_data::mainnet, script_p2pkh_one);
+        string human_data_two = typed_data::write (typed_data::mainnet, script_p2pkh_two);
         
-        EXPECT_NE(human_data_one, human_data_two);
+        EXPECT_NE (human_data_one, human_data_two);
         
-        typed_data recovered_one = typed_data::read(human_data_one);
-        typed_data recovered_two = typed_data::read(human_data_two);
+        typed_data recovered_one = typed_data::read (human_data_one);
+        typed_data recovered_two = typed_data::read (human_data_two);
         
-        EXPECT_EQ(recovered_one.Data, script_p2pkh_one);
-        EXPECT_EQ(recovered_two.Data, script_p2pkh_two);
+        EXPECT_EQ (recovered_one.Data, script_p2pkh_one);
+        EXPECT_EQ (recovered_two.Data, script_p2pkh_two);
         
     }
 

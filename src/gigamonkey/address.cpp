@@ -2,11 +2,17 @@
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/address.hpp>
-#include <data/encoding/base58.hpp>
+#include <gigamonkey/p2p/checksum.hpp>
 
 namespace Gigamonkey::Bitcoin {
+
+    address address::encode (char prefix, const digest160& d) {
+        address addr {};
+        static_cast<string &> (addr) = std::move (base58::check {byte (prefix), bytes_view {d}}.encode ());
+        return addr;
+    }
     
-   address::decoded address::read (string_view s) {
+   address::decoded address::decode (string_view s) {
         if (s.size () > 35 || s.size () < 5) return {};
         base58::check b58 (s);
         if (!b58.valid ()) return {};

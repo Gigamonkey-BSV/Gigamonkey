@@ -9,13 +9,13 @@
 
 namespace Gigamonkey {
     struct bitcoind_random : data::crypto::random {
-        void get(byte*, size_t) override;
+        void get (byte*, size_t) override;
     };
     
     class bitcoind_entropy : public bitcoind_random, public data::crypto::entropy {
-        bytes get(size_t s) override {
-            bytes b(s);
-            bitcoind_random::get(b.data(), s);
+        bytes get (size_t s) override {
+            bytes b (s);
+            bitcoind_random::get (b.data (), s);
             return b;
         }
     };
@@ -30,16 +30,18 @@ namespace Gigamonkey::Bitcoin {
         
     public:
         
-        secret next() override {
+        secret next () override {
             secret x;
-            do {Random >> x.Secret.Value; } while (!x.valid());
+            do {
+                Random >> x.Secret.Value;
+            } while (!x.valid ());
             x.Prefix = Net;
             x.Compressed = Compressed;
             return x;
         }
         
-        random_key_source(data::crypto::random &r, secret::type net = secret::main, bool compressed = true) : 
-            Random{r}, Net{net}, Compressed{compressed} {}
+        random_key_source (data::crypto::random &r, secret::type net = secret::main, bool compressed = true) :
+            Random {r}, Net {net}, Compressed {compressed} {}
     };
 
 }

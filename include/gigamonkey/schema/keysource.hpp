@@ -7,61 +7,40 @@
 #include <gigamonkey/wif.hpp>
 
 namespace Gigamonkey {
-    
-    struct key_source {
-        virtual Bitcoin::secret next () = 0;
-        virtual ~key_source () {}
-    };
-    
-    struct address_source {
-        virtual Bitcoin::address next () = 0;
-        virtual ~address_source () {}
+
+    // for wallets we need types that provide series of addresses or keys or whatever.
+    template <typename X>
+    struct source {
+        virtual X next () = 0;
+        virtual ~source () {}
     };
 
-    struct key_database : key_source {
-        virtual Bitcoin::secret operator [] (const Bitcoin::address &);
-        virtual ~key_database () {}
-    };
+    using key_source = source<Bitcoin::secret>;
+    using address_source = source<Bitcoin::address::decoded>;
     
-    // a key source containing a single key. 
-    struct single_key_source final : key_source {
-        Bitcoin::secret Key;
+    // a source containing a single item.
+    template <typename X>
+    struct single_source final : source<X> {
+        X It;
         
-        explicit single_key_source (const Bitcoin::secret &k) : Key {k} {}
+        explicit single_source (const X &k) : It {k} {}
         
-        Bitcoin::secret next () override {
-            return Key;
+        X next () override {
+            return It;
         }
         
-        Bitcoin::secret first () const {
-            return Key;
+        X first () const {
+            return It;
         }
         
-        single_key_source rest () const {
-            return single_key_source {Key};
-        }
-        
-    };
-    
-    // a key source containing a single key. 
-    struct single_address_source final : address_source {
-        Bitcoin::address Address;
-        
-        explicit single_address_source (const Bitcoin::address &addr) : Address {addr} {}
-        
-        Bitcoin::address next () override {
-            return Address;
-        }
-        
-        Bitcoin::address first () const {
-            return Address;
-        }
-        
-        single_address_source rest () const {
-            return single_address_source {Address};
+        single_source rest () const {
+            return single_source {It};
         }
         
     };
+
+    using single_key_source = single_source<Bitcoin::secret>;
+    using single_address_source = single_source<Bitcoin::address::decoded>;
     
     // a key source that increments the key. 
     struct increment_key_source final : key_source {
@@ -86,49 +65,6 @@ namespace Gigamonkey {
         }
     };
 
-    struct map_key_database final : key_database {
-        ptr<key_source> Keys;
-        uint32 MaxLookAhead;
-
-        map<Bitcoin::address, Bitcoin::secret> Past;
-        list<Bitcoin::secret> Next;
-
-        explicit map_key_database (ptr<key_source> keys, uint32 max_look_ahead = 0) :
-            Keys {keys}, MaxLookAhead {max_look_ahead}, Past {}, Next {} {}
-
-        Bitcoin::secret next () override {
-            if (data::size (Next) != 0) {
-                auto n = data::first (Next);
-                Next = data::rest (Next);
-                return n;
-            }
-
-            Bitcoin::secret n = Keys->next ();
-            Bitcoin::address a = n.address ();
-
-            if (!Past.contains (a)) Past = Past.insert (a, n);
-
-            return n;
-        }
-
-        Bitcoin::secret operator [] (const Bitcoin::address &addr) override {
-            auto x = Past.contains (addr);
-            if (x) return *x;
-
-            while (data::size (Next) < MaxLookAhead) {
-
-                Bitcoin::secret n = Keys->next ();
-                Bitcoin::address a = n.address ();
-
-                Next = Next.append (n);
-
-                if (!Past.contains (a)) {
-                    Past = Past.insert (a, n);
-                }
-            }
-        }
-
-    };
 }
 
 #endif

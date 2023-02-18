@@ -31,19 +31,19 @@ namespace Gigamonkey::Bitcoin {
             anyone_can_pay = 0x80
         };
         
-        type inline base(directive d) {
-            return type(d & 0x1f);
+        type inline base (directive d) {
+            return type (d & 0x1f);
         }
         
-        bool inline is_anyone_can_pay(directive d) {
+        bool inline is_anyone_can_pay (directive d) {
             return (d & anyone_can_pay) != 0;
         }
         
-        bool inline has_fork_id(directive d) {
+        bool inline has_fork_id (directive d) {
             return (d & fork_id) != 0;
         }
         
-        bool inline valid(directive d) {
+        bool inline valid (directive d) {
             return !(d & 0x3c);
         }
         
@@ -53,8 +53,8 @@ namespace Gigamonkey::Bitcoin {
         
     };
     
-    sighash::directive inline directive(sighash::type t, bool anyone_can_pay = false, bool fork_id = true) {
-        return sighash::directive(t + sighash::fork_id * fork_id + sighash::anyone_can_pay * anyone_can_pay);
+    sighash::directive inline directive (sighash::type t, bool anyone_can_pay = false, bool fork_id = true) {
+        return sighash::directive (t + sighash::fork_id * fork_id + sighash::anyone_can_pay * anyone_can_pay);
     }
     
     namespace sighash {
@@ -77,76 +77,76 @@ namespace Gigamonkey::Bitcoin {
             // the index of the input containing the signature. 
             index InputIndex;
             
-            bool valid() const {
-                return RedeemedValue >= 0 && InputIndex < Transaction.Inputs.size();
+            bool valid () const {
+                return RedeemedValue >= 0 && InputIndex < Transaction.Inputs.size ();
             }
             
-            document(satoshi r, bytes_view script_code, incomplete::transaction tx, index i) : 
-                RedeemedValue{r}, ScriptCode{script_code}, Transaction{tx}, InputIndex{i} {}
+            document (satoshi r, bytes_view script_code, incomplete::transaction tx, index i) :
+                RedeemedValue {r}, ScriptCode {script_code}, Transaction {tx}, InputIndex {i} {}
             
         };
         
-        bytes write(const document&, sighash::directive);
+        bytes write (const document&, sighash::directive);
         
-        writer &write(writer &w, const document &doc, sighash::directive d);
+        writer &write (writer &w, const document &doc, sighash::directive d);
         
-        bytes inline write(const document &doc, sighash::directive d) {
+        bytes inline write (const document &doc, sighash::directive d) {
             lazy_bytes_writer w;
-            write(w, doc, d);
+            write (w, doc, d);
             return w;
         }
         
         // two different functions are in use, due to the bitcoin Cash hard fork. 
-        bytes write_original(const document&, sighash::directive);
-        bytes write_Bitcoin_Cash(const document&, sighash::directive);
+        bytes write_original (const document&, sighash::directive);
+        bytes write_Bitcoin_Cash (const document&, sighash::directive);
         
-        writer &write_original(writer&, const document&, sighash::directive);
-        writer &write_Bitcoin_Cash(writer&, const document&, sighash::directive);
+        writer &write_original (writer&, const document&, sighash::directive);
+        writer &write_Bitcoin_Cash (writer&, const document&, sighash::directive);
         
-        bytes inline write_original(const document &doc, sighash::directive d) {
+        bytes inline write_original (const document &doc, sighash::directive d) {
             lazy_bytes_writer w;
-            write_original(w, doc, d);
+            write_original (w, doc, d);
             return w;
         }
         
-        bytes inline write_Bitcoin_Cash(const document &doc, sighash::directive d) {
+        bytes inline write_Bitcoin_Cash (const document &doc, sighash::directive d) {
             lazy_bytes_writer w;
-            write_Bitcoin_Cash(w, doc, d);
+            write_Bitcoin_Cash (w, doc, d);
             return w;
         }
         
-        writer inline &write(writer &w, const document &doc, sighash::directive d) {
-            return write_Bitcoin_Cash(w, doc, d);
+        writer inline &write (writer &w, const document &doc, sighash::directive d) {
+            return write_Bitcoin_Cash (w, doc, d);
         }
         
         // a fake transaction constructed from an incomplete transaction that is used in the original sighash algorithm. 
-        transaction reconstruct(const document &doc, sighash::directive d);
+        transaction reconstruct (const document &doc, sighash::directive d);
         
-        writer inline &write_original(writer &w, const document &doc, sighash::directive d) {
-            return w << reconstruct(doc, d) << uint32_little{d};
+        writer inline &write_original (writer &w, const document &doc, sighash::directive d) {
+            return w << reconstruct (doc, d) << uint32_little {d};
         }
         
         namespace Amaury {
-            bytes write(const document&, sighash::directive);
-            writer &write(writer &w, const document &doc, sighash::directive d);
-            digest256 hash_prevouts(const incomplete::transaction &);
-            digest256 hash_sequence(const incomplete::transaction &);
-            digest256 hash_outputs(const incomplete::transaction &);
+            bytes write (const document&, sighash::directive);
+            writer &write (writer &w, const document &doc, sighash::directive d);
+            digest256 hash_prevouts (const incomplete::transaction &);
+            digest256 hash_sequence (const incomplete::transaction &);
+            digest256 hash_outputs (const incomplete::transaction &);
         }
         
-        writer inline &write_Bitcoin_Cash(writer &w, const document &doc, sighash::directive d) {
-            return sighash::has_fork_id(d) ? Amaury::write(w, doc, d) : write_original(w, doc, d & ~sighash::fork_id);
+        writer inline &write_Bitcoin_Cash (writer &w, const document &doc, sighash::directive d) {
+            return sighash::has_fork_id (d) ? Amaury::write(w, doc, d) : write_original(w, doc, d & ~sighash::fork_id);
         }
         
         namespace Amaury {
         
-            bytes inline write(const document &doc, sighash::directive d) {
+            bytes inline write (const document &doc, sighash::directive d) {
                 lazy_bytes_writer w;
-                Amaury::write(w, doc, d);
+                Amaury::write (w, doc, d);
                 return w;
             }
             
-            writer &write(writer &w, const document &doc, sighash::directive d);
+            writer &write (writer &w, const document &doc, sighash::directive d);
         }
         
     }
