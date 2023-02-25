@@ -133,7 +133,7 @@ namespace Gigamonkey::Boost {
             push_size {32, Content},
             push_size {4, Target},
             push {x.Tag},
-            push_size{4, UserNonce}, 
+            push_size {4, UserNonce},
             push {x.AdditionalData}, OP_CAT, OP_SWAP,
             // copy mining pool’s pubkey hash to alt stack. A copy remains on the stack.
             push {5}, OP_ROLL, OP_DUP, OP_TOALTSTACK, OP_CAT,
@@ -147,7 +147,7 @@ namespace Gigamonkey::Boost {
             OP_SWAP, OP_CAT, OP_HASH256, 
             // target and content + merkleroot to altstack. 
             OP_SWAP, OP_TOALTSTACK, OP_CAT, OP_TOALTSTACK, 
-            push_data(work::ASICBoost::Mask), OP_DUP, OP_INVERT, OP_TOALTSTACK, OP_AND, 
+            push_data (work::ASICBoost::Mask), OP_DUP, OP_INVERT, OP_TOALTSTACK, OP_AND,
             // check size of general purpose bits 
             OP_SWAP, OP_FROMALTSTACK, OP_AND, OP_OR, 
             OP_FROMALTSTACK, OP_CAT,                             // attach content + merkleroot
@@ -170,7 +170,7 @@ namespace Gigamonkey::Boost {
             x.UseGeneralPurposeBits = false;
         } else return {};
         
-        std::copy(
+        std::copy (
             Category.begin (),
             Category.end (),
             x.Category.data ());
@@ -345,7 +345,7 @@ namespace Gigamonkey::Boost {
             ", Nonce : " << s.Nonce << 
             ", Timestamp : " << s.Timestamp << 
             ", ExtraNonce2 : " << s.ExtraNonce2 << 
-            ", ExtraNonce1 : " << s.ExtraNonce1;
+            ", ExtraNonce1 : " << static_cast<uint32_big>(s.ExtraNonce1);
         if (s.Type == bounty) o << ", MinerPubkeyHash: " << s.MinerPubkeyHash;
         return o << "}";
     }
