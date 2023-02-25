@@ -3,12 +3,12 @@ from os import environ
 
 class GigamonkeyConan(ConanFile):
     name = "gigamonkey"
-    version = "0.0.2c"
-    license = "<Put the package license here>"
-    author = "<Put your name here> <And your email here>"
-    url = "<Package recipe repository url here, for issues about the package>"
-    description = "<Description of Gigamonkey here>"
-    topics = ("<Put some tag here>", "<here>", "<and here>")
+    version = "v0.0.12"
+    license = "Open BSV"
+    author = "Daniel Krawisz"
+    url = "https://github.com/Gigamonkey-BSV/Gigamonkey"
+    description = "Bitcoin and Bitcoin protocols, including Boost POW and Stratum"
+    topics = ("Bitcoin", "Boost POW", "Stratum")
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False], "fPIC": [True, False]}
     default_options = {"shared": False, "fPIC": True}
@@ -22,7 +22,7 @@ class GigamonkeyConan(ConanFile):
         if "CURRENT_VERSION" in environ:
             self.version = environ['CURRENT_VERSION']
         else:
-            self.version = "v0.0.11"
+            self.version = "v0.0.12"
 
     def config_options(self):
         if self.settings.os == "Windows":
