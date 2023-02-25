@@ -286,6 +286,7 @@ namespace Gigamonkey {
             output ();
             output (Bitcoin::satoshi v, const output_script &x);
             output (const Bitcoin::output &b);
+            output (Bitcoin::satoshi v, const output_script &x, const digest256 &id);
             
             bool valid () const;
             
@@ -777,8 +778,10 @@ namespace Gigamonkey {
         
         inline output::output () : Value {-1}, Script {}, ID {} {}
         
-        inline output::output (Bitcoin::satoshi v, const output_script &x) :
-            Value {v}, Script {x}, ID {Script.hash ()} {}
+        inline output::output (Bitcoin::satoshi v, const output_script &x) : output {v, x, x.hash ()} {}
+
+        inline output::output (Bitcoin::satoshi v, const output_script &x, const digest256& script_hash) :
+            Value {v}, Script {x}, ID {script_hash} {}
         
         inline output::output (const Bitcoin::output &b) :
             Value {b.Value}, Script {Boost::output_script::read (b.Script)}, ID {Script.hash ()} {}

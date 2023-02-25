@@ -13,8 +13,8 @@
 
 namespace Gigamonkey::BitcoinAssociation {
     
-    struct MAPI : net::HTTP::client {
-        using net::HTTP::client::client;
+    struct MAPI : net::HTTP::client_blocking {
+        using net::HTTP::client_blocking::client_blocking;
         
         // there are five calls in MAPI
         
