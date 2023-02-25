@@ -4,118 +4,162 @@
 #ifndef GIGAMONKEY_ADDRESS
 #define GIGAMONKEY_ADDRESS
 
-#include <gigamonkey/p2p/checksum.hpp>
 #include <gigamonkey/signature.hpp>
-#include <data/encoding/base58.hpp>
 
 namespace Gigamonkey::Bitcoin {
     
     struct pubkey;
+    struct address;
+
+    std::ostream &operator << (std::ostream& o, const address& a);
+    std::ostream &operator << (std::ostream& o, const pubkey& a);
     
     // A Bitcoin address is a Hash160 digest of a public key 
-    // with a human-readable format designed on it. 
-    struct address {
+    // with a human-readable format in base58 check encoding.
+    struct address : string {
+        // the decoded form of the address has a prefix that
+        // specifies the type of address.
         enum type : byte {
             main = 0x00,
             test = 0x6F
         };
 
-        type Prefix;
+        static bool valid (string_view);
+        static type prefix (string_view);
+        static digest160 digest (string_view);
 
-        using digest = Gigamonkey::digest<20>;
+        bool valid () const;
 
-        digest Digest;
+        type prefix () const;
+        digest160 digest () const;
 
-        address();
-        address(type p, const address::digest& d);
+        address ();
+        address (type p, const digest160& d);
 
-        explicit address(string_view s);
+        explicit address (string_view s);
 
-        address(type p, const secp256k1::pubkey& pub);
+        static address encode (char prefix, const digest160& d);
 
-        bool operator==(const address& a) const;
-        bool operator!=(const address& a) const;
+        static bool valid_prefix (type p);
 
-        static string write(char prefix, const digest& d);
+        // the decoded form of the address, consisting
+        // of a prefix and the Hash160 digest.
+        struct decoded {
+            type Prefix;
+            digest160 Digest;
 
-        string write() const;
+            bool valid () const;
 
-        operator string() const;
+            decoded ();
+            decoded (type, const digest160 &);
+            decoded (string_view);
 
-        static bool valid_prefix(type p);
+            address encode () const;
 
-        bool valid() const;
+            std::strong_ordering operator <=> (const decoded &) const;
+            operator string () const;
+        };
+
+        static decoded decode (string_view);
+        decoded decode () const;
+
+        address (decoded);
     };
-
-    inline address read_address(string_view str) {
-        return address{str};
-    }
-
-    inline std::ostream& operator<<(std::ostream& o, const address& a) {
-        return o << std::string(a);
-    }
     
     // a Bitcoin pubkey is the same as a secp256k1 pubkey except 
     // that we have a standard human representation, which is
     // a hex string. 
     struct pubkey : secp256k1::pubkey {
         using secp256k1::pubkey::pubkey;
-        pubkey(const secp256k1::pubkey &p) : secp256k1::pubkey{p} {}
+        pubkey (const secp256k1::pubkey &p) : secp256k1::pubkey {p} {}
         
-        explicit pubkey(string_view s) : secp256k1::pubkey{} {
+        explicit pubkey (string_view s) : secp256k1::pubkey {} {
             ptr<bytes> hex = encoding::hex::read(s);
             if (hex != nullptr) {
-                this->resize(hex->size());
-                std::copy(hex->begin(), hex->end(), this->begin());
+                this->resize (hex->size ());
+                std::copy (hex->begin (), hex->end (), this->begin ());
             };
         }
         
-        Bitcoin::address address(Bitcoin::address::type t) const {
-            return Bitcoin::address{t, address_hash(*this)};
-        }
+        digest160 address_hash () const;
         
-        explicit operator string() const;
+        explicit operator string () const;
         
-        bool verify(const signature &x, const sighash::document& document) const {
-            return signature::verify(x, *this, document);
+        bool verify (const signature &x, const sighash::document& document) const {
+            return signature::verify (x, *this, document);
         }
     };
 
-    inline address::address() : Prefix{}, Digest{} {}
-    inline address::address(type p, const digest& d) : Prefix{p}, Digest{d} {}
-
-    inline address::address(type p, const secp256k1::pubkey& pub) : address{p, Hash160(pub)} {}
-
-    bool inline address::operator==(const address& a) const {
-        return Prefix == a.Prefix && Digest == a.Digest;
+    std::ostream inline &operator << (std::ostream& o, const address& a) {
+        return o << static_cast<string> (a);
     }
 
-    bool inline address::operator!=(const address& a) const {
-        return !operator==(a);
+    std::ostream inline &operator << (std::ostream& o, const pubkey& a) {
+        return o << string (a);
     }
 
-    string inline address::write(char prefix, const address::digest& d) {
-        return base58::check{byte(prefix), bytes_view{d}}.encode();
+    bool inline address::valid (string_view x) {
+        return decode (x).valid ();
     }
 
-    string inline address::write() const {
-        return write(Prefix, Digest);
+    address::type inline address::prefix (string_view x) {
+        return decode (x).Prefix;
     }
 
-    inline address::operator string() const {
-        return write();
+    digest160 inline address::digest (string_view x) {
+        return decode (x).Digest;
     }
 
-    bool inline address::valid_prefix(type p) {
+    address::type inline address::prefix () const {
+        return prefix (*this);
+    }
+
+    digest160 inline address::digest () const {
+        return digest (*this);
+    }
+
+    bool inline address::valid () const {
+        return valid (*this);
+    }
+
+    inline address::decoded::decoded () : Prefix {}, Digest {} {}
+    inline address::decoded::decoded (type p, const digest160& d) : Prefix {p}, Digest {d} {}
+
+    inline address::address () : string {} {}
+    inline address::address (type p, const digest160& d) : address {encode (p, d)} {}
+
+    bool inline address::valid_prefix (type p) {
         return p == main || p == test;
     }
 
-    bool inline address::valid() const {
-        return Digest.valid() && valid_prefix(Prefix);
+    bool inline address::decoded::valid () const {
+        return Digest.valid () && valid_prefix (Prefix);
+    }
+
+    inline address::address (address::decoded d) : address {d.encode ()} {}
+
+    inline address::address (string_view s) : string {s} {}
+
+    address inline address::decoded::encode () const {
+        return address::encode (Prefix, Digest);
+    }
+
+    address::decoded inline address::decode () const {
+        return decode (*this);
+    }
+
+    inline address::decoded::decoded (string_view x) : decoded {address::decode (x)} {}
+
+    inline address::decoded::operator string () const {
+        return static_cast<string> (encode ());
     }
     
-    inline pubkey::operator string() const {
-        return encoding::hex::write(*this);
+    inline pubkey::operator string () const {
+        return encoding::hex::write (*this);
+    }
+
+    digest160 inline pubkey::address_hash () const {
+        return Bitcoin::address_hash (*this);
     }
 
 }

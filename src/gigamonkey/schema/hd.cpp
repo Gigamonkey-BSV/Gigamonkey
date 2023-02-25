@@ -1,6 +1,7 @@
 // Copyright (c) 2020 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
+#include <gigamonkey/p2p/checksum.hpp>
 #include <gigamonkey/schema/hd.hpp>
 #include <data/encoding/base58.hpp>
 #include <data/encoding/endian/endian.hpp>

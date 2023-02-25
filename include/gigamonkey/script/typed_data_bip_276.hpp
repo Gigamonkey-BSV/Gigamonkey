@@ -19,33 +19,33 @@ namespace Gigamonkey {
             testnet = 2
         };
         
-        static string write(type, byte version, network, const bytes&);
+        static string write (type, byte version, network, const bytes&);
         
-        static string inline write(network n, const bytes& b) {
-            return write(bitcoin_script, 1u, n, b);
+        static string inline write (network n, const bytes& b) {
+            return write (bitcoin_script, 1u, n, b);
         }
         
-        static constexpr auto pattern = ctll::fixed_string{"bitcoin-script:(([0-9a-f][0-9a-f])*)|(([0-9A-F][0-9A-F])*)"};
+        static constexpr auto pattern = ctll::fixed_string {"bitcoin-script:(([0-9a-f][0-9a-f])*)|(([0-9A-F][0-9A-F])*)"};
         
         type Type;
         byte Version;
         network Network;
         bytes Data;
         
-        bool valid() const {
+        bool valid () const {
             return Version != 0;
         }
         
-        string write() const {
-            return write(Type, Version, Network, Data);
+        string write () const {
+            return write (Type, Version, Network, Data);
         }
         
-        static typed_data read(string_view);
+        static typed_data read (string_view);
         
     private:
-        typed_data(type t, byte version, network n, const bytes &b): 
-            Type{t}, Version{version}, Network{n}, Data{b} {} 
-        typed_data(): Type{}, Version{0}, Network{}, Data{} {}
+        typed_data (type t, byte version, network n, const bytes &b):
+            Type {t}, Version {version}, Network {n}, Data {b} {}
+        typed_data (): Type {}, Version {0}, Network {}, Data {} {}
     };
 }
 
