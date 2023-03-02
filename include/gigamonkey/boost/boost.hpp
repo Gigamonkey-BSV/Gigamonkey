@@ -299,6 +299,15 @@ namespace Gigamonkey {
             Bitcoin::outpoint outpoint () const;
             Bitcoin::satoshi value () const;
             digest256 id () const;
+
+            double difficulty () const {
+                return work::difficulty (this->Value.Script.Target);
+            }
+
+            double profitability () const {
+                return double (value ()) / difficulty ();
+            }
+
             explicit operator Bitcoin::prevout () const;
         };
         
