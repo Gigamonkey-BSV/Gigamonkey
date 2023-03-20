@@ -9,36 +9,36 @@
 namespace Gigamonkey {
     
     struct pay_to_address {
-        static Gigamonkey::pattern pattern(bytes& address) {
+        static Gigamonkey::pattern pattern (bytes& address) {
             using namespace Bitcoin;
-            return {OP_DUP, OP_HASH160, push_size{20, address}, OP_EQUALVERIFY, OP_CHECKSIG};
+            return {OP_DUP, OP_HASH160, push_size {20, address}, OP_EQUALVERIFY, OP_CHECKSIG};
         }
         
-        static bytes script(const digest160& a) {
+        static bytes script (const digest160& a) {
             using namespace Bitcoin;
-            return compile(program{OP_DUP, OP_HASH160, bytes_view(a), OP_EQUALVERIFY, OP_CHECKSIG});
+            return compile (program {OP_DUP, OP_HASH160, bytes_view(a), OP_EQUALVERIFY, OP_CHECKSIG});
         }
         
         digest160 Address;
         
-        bool valid() const {
-            return Address.valid();
+        bool valid () const {
+            return Address.valid ();
         }
         
-        bytes script() const {
-            return script(Address);
+        bytes script () const {
+            return script (Address);
         }
         
-        pay_to_address(bytes_view script) : Address{} {
+        pay_to_address (bytes_view script) : Address {} {
             using namespace Bitcoin;
-            bytes addr{20};
-            if (!pattern(addr).match(script)) return;
-            std::copy(addr.begin(), addr.end(), Address.Value.begin());
+            bytes addr {20};
+            if (!pattern (addr).match (script)) return;
+            std::copy (addr.begin (), addr.end (), Address.Value.begin ());
         }
         
-        static bytes redeem(const Bitcoin::signature& s, const Bitcoin::pubkey& p) {
+        static bytes redeem (const Bitcoin::signature& s, const Bitcoin::pubkey& p) {
             using namespace Bitcoin;
-            return compile(program{} << push_data(s) << push_data(p));
+            return compile (program {} << push_data (s) << push_data (p));
         }
     };
     
