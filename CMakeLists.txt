@@ -9,15 +9,19 @@ project (gigamonkey 	VERSION 0.0.13
 		DESCRIPTION "open-source Bitcoin library in c++"
 		LANGUAGES CXX)
 
-# Set cmake as import path for Find*.cmake files
-include (${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-conan_basic_setup (TARGETS)
 
 ## Check if GTests is installed. If not, install it
 
 option (PACKAGE_TESTS "Build the tests" ON)
 
 ## Enable testing
+
+find_package(data CONFIG REQUIRED)
+find_package(Boost CONFIG REQUIRED)
+find_package(OpenSSL CONFIG REQUIRED)
+find_package(cryptopp CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
+find_package(gmp CONFIG REQUIRED)
 
 
 if (PACKAGE_TESTS)
@@ -88,7 +92,17 @@ add_library (gigamonkey STATIC
     
 )
 
-target_link_libraries (gigamonkey PUBLIC CONAN_PKG::data util CONAN_PKG::boost CONAN_PKG::openssl CONAN_PKG::cryptopp CONAN_PKG::nlohmann_json CONAN_PKG::gmp )
+
+
+target_link_libraries(gigamonkey PUBLIC 
+data::data 
+util 
+boost::boost 
+openssl::openssl 
+cryptopp::cryptopp 
+nlohmann_json::nlohmann_json 
+gmp::gmp )
+
 
 target_include_directories (gigamonkey PUBLIC include)
 
@@ -97,3 +111,5 @@ target_compile_features (gigamonkey PUBLIC cxx_std_20)
 set_target_properties (gigamonkey PROPERTIES CXX_EXTENSIONS ON)
 target_compile_options (gigamonkey PUBLIC "-fconcepts")
 
+install(DIRECTORY include/ DESTINATION include)
+install(TARGETS gigamonkey)
