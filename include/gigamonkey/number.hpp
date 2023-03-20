@@ -1113,23 +1113,8 @@ namespace Gigamonkey {
             
             if (x == "-0") return bytes ({0x80});
             
-            if (data::encoding::integer::valid (x)) {
-                bool negative = data::encoding::integer::negative (x);
-                ptr<data::math::Z_bytes<r>> positive_number; 
-                positive_number = negative ? 
-                    data::encoding::integer::read<r> (x.substr (1)) :
-                    data::encoding::integer::read<r> (x);
-                
-                bool has_sign_bit = sign_bit (positive_number->words ());
-                
-                bytes b;
-                b.resize (positive_number->size () + (has_sign_bit ? 1 : 0));
-                auto n = numbers::digits<r> {data::slice<byte> {const_cast<byte*>(b.data ()), b.size ()}};
-                std::copy(positive_number->begin (), positive_number->end (), n.begin ());
-                if (has_sign_bit) *(n.begin () + positive_number->size ()) = negative ? 0x80 : 0x00;
-                else if (negative) *(n.begin () + positive_number->size () - 1) += 0x80;
-                return b;
-            }
+            if (data::encoding::integer::valid (x))
+                return static_cast<bytes>(*data::encoding::integer::read<r, data::math::number::complement::twos> (x));
             
             throw std::logic_error {"Invalid string representation"};
         }

@@ -6,6 +6,7 @@
 #include <gigamonkey/stratum/mining_subscribe.hpp>
 #include <gigamonkey/stratum/job.hpp>
 #include <gigamonkey/work/ASICBoost.hpp>
+#include <data/net/session.hpp>
 #include "gtest/gtest.h"
 
 namespace Gigamonkey::Stratum {
@@ -130,7 +131,7 @@ namespace Gigamonkey::Stratum::mining {
             message_id ID;
             authorize_request::parameters Params;
             
-            operator authorize_reques t() const {
+            operator authorize_request () const {
                 if (Params.Password) return authorize_request {ID, Params.Username, *Params.Password};
                 return authorize_request {ID, Params.Username};
             }
@@ -366,7 +367,7 @@ namespace Gigamonkey::Stratum::mining {
     }
 
 }
-
+/*
 namespace Gigamonkey {
 
     template <typename type>
@@ -416,4 +417,4 @@ namespace Gigamonkey::Stratum {
 
     }
 
-}
+}*/

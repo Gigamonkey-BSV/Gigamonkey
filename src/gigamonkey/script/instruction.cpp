@@ -2,29 +2,29 @@
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/script/pattern.hpp>
-#include <data/math/number/bytes/N.hpp>
+#include <data/math/number/bytes/Z.hpp>
 
 namespace Gigamonkey::Bitcoin {
     
-    writer &operator<<(writer &w, const instruction& i) {
-        if (is_push_data(i.Op)) {
-            if (i.Op <= OP_PUSHSIZE75) w << static_cast<byte>(i.Op);
-            else if (i.Op == OP_PUSHDATA1) w << static_cast<byte>(OP_PUSHDATA1) << static_cast<byte>(i.Data.size()); 
-            else if (i.Op == OP_PUSHDATA2) w << static_cast<byte>(OP_PUSHDATA2) << static_cast<uint16_little>(i.Data.size()); 
-            else w << static_cast<byte>(OP_PUSHDATA2) << static_cast<uint32_little>(i.Data.size());
+    writer &operator << (writer &w, const instruction& i) {
+        if (is_push_data (i.Op)) {
+            if (i.Op <= OP_PUSHSIZE75) w << static_cast<byte> (i.Op);
+            else if (i.Op == OP_PUSHDATA1) w << static_cast<byte> (OP_PUSHDATA1) << static_cast<byte> (i.Data.size ());
+            else if (i.Op == OP_PUSHDATA2) w << static_cast<byte> (OP_PUSHDATA2) << static_cast<uint16_little> (i.Data.size ());
+            else w << static_cast<byte> (OP_PUSHDATA2) << static_cast<uint32_little> (i.Data.size ());
             return w << i.Data;
         }
         
-        return w << static_cast<byte>(i.Op);
+        return w << static_cast<byte> (i.Op);
     }
     
     namespace {
     
-        ScriptError verify_instruction(const instruction &i) {
+        ScriptError verify_instruction (const instruction &i) {
             if (i.Op == OP_INVALIDOPCODE || i.Op == OP_RESERVED || i.Op >= FIRST_UNDEFINED_OP_VALUE) return SCRIPT_ERR_BAD_OPCODE;
             
-            size_t size = i.Data.size();
-            if (!is_push_data(i.Op)) {
+            size_t size = i.Data.size ();
+            if (!is_push_data (i.Op)) {
                 if (size > 0) return SCRIPT_ERR_PUSH_SIZE;
                 return SCRIPT_ERR_OK;
             }
@@ -37,30 +37,30 @@ namespace Gigamonkey::Bitcoin {
             return SCRIPT_ERR_OK;
         }
         
-        bool is_minimal_push(const op o, const bytes& data) {
-            if (!is_push_data(o)) return data.size() == 0;
-            if (data.size() == 1 && (data[0] == 0x81 || (data[0] >= 1 && data[0] <= 16))) return false;
-            if (o == OP_PUSHDATA1) return data.size() > 75;
-            if (o == OP_PUSHDATA2) return data.size() > 256;
-            if (o == OP_PUSHDATA4) return data.size() > 65536;
+        bool is_minimal_push (const op o, const bytes& data) {
+            if (!is_push_data (o)) return data.size () == 0;
+            if (data.size () == 1 && (data[0] == 0x81 || (data[0] >= 1 && data[0] <= 16))) return false;
+            if (o == OP_PUSHDATA1) return data.size () > 75;
+            if (o == OP_PUSHDATA2) return data.size () > 256;
+            if (o == OP_PUSHDATA4) return data.size () > 65536;
             return true;
         }
         
         struct script_writer {
             bytes_writer &Writer;
-            script_writer &operator<<(instruction o) {
+            script_writer &operator << (instruction o) {
                 Writer << o;
                 return *this;
             }
             
-            script_writer &operator<<(program p) {
-                return p.size() == 0 ? *this : (*this << p.first() << p.rest());
+            script_writer &operator << (program p) {
+                return p.size () == 0 ? *this : (*this << p.first () << p.rest ());
             }
             
-            script_writer(bytes_writer &w) : Writer{w} {}
+            script_writer (bytes_writer &w) : Writer {w} {}
         };
     
-        bytes_reader read_push(bytes_reader read, instruction& rest) {
+        bytes_reader read_push (bytes_reader read, instruction& rest) {
             
             uint32 size;
             bytes_reader r = read;
@@ -70,11 +70,13 @@ namespace Gigamonkey::Bitcoin {
                 r >> x;
                 size = x;
             }
+
             if (rest.Op == OP_PUSHDATA2) {
                 uint16_little x;
                 r >> x;
                 size = x;
             }
+
             if (rest.Op == OP_PUSHDATA4) {
                 uint32_little x;
                 r >> x;
@@ -86,14 +88,15 @@ namespace Gigamonkey::Bitcoin {
                 return read;
             }
             
-            rest.Data = bytes(size);
+            rest.Data = bytes (size);
             r >> rest.Data;
             return r;
         }
     
         struct script_reader {
             bytes_reader Reader;
-            script_reader operator>>(instruction& i) {
+
+            script_reader operator >> (instruction& i) {
                 if ((Reader.End - Reader.Begin) == 0) {
                     i = {};
                     return *this;
@@ -101,73 +104,73 @@ namespace Gigamonkey::Bitcoin {
                 
                 byte next;
                 Reader >> next;
-                i.Op = static_cast<op>(next);
-                if (is_push_data(i.Op)) return read_push(Reader, i);
+                i.Op = static_cast<op> (next);
+                if (is_push_data (i.Op)) return read_push (Reader, i);
                 return Reader;
             }
             
-            bool empty() const {
-                return Reader.empty();
+            bool empty () const {
+                return Reader.empty ();
             }
             
-            bytes read_all() {
-                bytes b(Reader.End - Reader.Begin);
-                std::copy(Reader.Begin, Reader.End, b.begin());
+            bytes read_all () {
+                bytes b (Reader.End - Reader.Begin);
+                std::copy (Reader.Begin, Reader.End, b.begin ());
                 Reader.Begin = Reader.End;
                 return b;
             }
             
-            script_reader(bytes_reader r) : Reader{r} {}
-            script_reader(bytes_view b) : Reader{b.data(), b.data() + b.size()} {}
+            script_reader (bytes_reader r) : Reader {r} {}
+            script_reader (bytes_view b) : Reader {b.data (), b.data () + b.size ()} {}
         };
     
     }
     
-    ScriptError instruction::verify(uint32 flags) const {
-        auto script_error = verify_instruction(*this);
+    ScriptError instruction::verify (uint32 flags) const {
+        auto script_error = verify_instruction (*this);
         if (script_error != SCRIPT_ERR_OK) return script_error;
         
-        if (flags & SCRIPT_VERIFY_MINIMALDATA && !is_minimal_push(Op, Data)) return SCRIPT_ERR_MINIMALDATA;
+        if (flags & SCRIPT_VERIFY_MINIMALDATA && !is_minimal_push (Op, Data)) return SCRIPT_ERR_MINIMALDATA;
         
         return SCRIPT_ERR_OK;
     }
     
-    bool is_minimal(const instruction& i) {
-        return verify_instruction(i) == SCRIPT_ERR_OK && is_minimal_push(i.Op, i.Data);
+    bool is_minimal (const instruction& i) {
+        return verify_instruction (i) == SCRIPT_ERR_OK && is_minimal_push (i.Op, i.Data);
     }
     
-    instruction instruction::read(bytes_view b) {
+    instruction instruction::read (bytes_view b) {
         instruction i;
-        script_reader{b} >> i;
+        script_reader {b} >> i;
         return i;
     }
     
-    instruction instruction::push(bytes_view data) {
-        int size = data.size();
-        if (size == 0) return instruction{OP_0};
+    instruction instruction::push (bytes_view data) {
+        int size = data.size ();
+        if (size == 0) return instruction {OP_0};
         
         if (size == 1) {
-            if (data[0] == 0x81) return instruction{OP_1NEGATE};
-            if (data[0] >= 0x01 && data[0] <= 0x10) return instruction{static_cast<op>(data[0] + 0x50)};
+            if (data[0] == 0x81) return instruction {OP_1NEGATE};
+            if (data[0] >= 0x01 && data[0] <= 0x10) return instruction {static_cast<op> (data[0] + 0x50)};
         }
         
-        if (size <= OP_PUSHSIZE75) return instruction{static_cast<op>(size), data};
-        if (size <= 0xffff) return instruction{OP_PUSHDATA1, data};
-        if (size <= 0xffffffff) return instruction{OP_PUSHDATA2, data};
-        return instruction{OP_PUSHDATA4, data};
+        if (size <= OP_PUSHSIZE75) return instruction {static_cast<op> (size), data};
+        if (size <= 0xffff) return instruction {OP_PUSHDATA1, data};
+        if (size <= 0xffffffff) return instruction {OP_PUSHDATA2, data};
+        return instruction {OP_PUSHDATA4, data};
     }
     
     bytes instruction::data() const {
-        if (is_push_data(Op) || Op == OP_RETURN) return Data;
-        if (!is_push(Op)) return {};
+        if (is_push_data (Op) || Op == OP_RETURN) return Data;
+        if (!is_push (Op)) return {};
         if (Op == OP_1NEGATE) return {0x81};
-        return bytes{static_cast<byte>(Op - 0x50)};
+        return bytes {static_cast<byte> (Op - 0x50)};
     }
     
-    uint32 instruction::serialized_size() const {
-        if (Op == OP_RETURN) return Data.size() + 1;
-        if (!is_push_data(Op)) return 1;
-        uint32 size = Data.size();
+    uint32 instruction::serialized_size () const {
+        if (Op == OP_RETURN) return Data.size () + 1;
+        if (!is_push_data (Op)) return 1;
+        uint32 size = Data.size ();
         if (Op <= OP_PUSHSIZE75) return size + 1;
         if (Op == OP_PUSHDATA1) return size + 2;
         if (Op == OP_PUSHDATA2) return size + 3;
@@ -175,32 +178,34 @@ namespace Gigamonkey::Bitcoin {
         return 0; // invalid 
     }
     
-    std::ostream& write_asm(std::ostream& o, instruction i) {
+    std::ostream& write_asm (std::ostream& o, instruction i) {
         if (i.Op == OP_0) return o << "0";
-        if (is_push_data(i.Op)) return o << data::encoding::hex::write(i.Data);
+        if (is_push_data (i.Op)) return o << data::encoding::hex::write (i.Data);
         return o << i.Op;
     }
     
-    string ASM(bytes_view b) {
+    string ASM (bytes_view b) {
         std::stringstream ss;
-        program p = decompile(b);
-        if (p.size() != 0) {
-            auto i = p.begin();
-            write_asm(ss, *i);
-            while (++i != p.end()) write_asm(ss << " ", *i);
+        program p = decompile (b);
+
+        if (p.size () != 0) {
+            auto i = p.begin ();
+            write_asm (ss, *i);
+            while (++i != p.end ()) write_asm (ss << " ", *i);
         }
-        return ss.str();
+
+        return ss.str ();
     }
     
-    bool is_minimal(bytes_view b) {
-        for (const instruction &i : decompile(b)) if (!is_minimal(i)) return false;
+    bool is_minimal (bytes_view b) {
+        for (const instruction &i : decompile (b)) if (!is_minimal (i)) return false;
         return true;
     }
 
-    std::ostream& write_op_code(std::ostream& o, op x) {
+    std::ostream& write_op_code (std::ostream& o, op x) {
         if (x == OP_FALSE) return o << "push_empty";
-        if (is_push(x)) {
-            switch(x) {
+        if (is_push (x)) {
+            switch (x) {
                 case OP_PUSHDATA1 : return o << "push_data_1";
                 case OP_PUSHDATA2 : return o << "push_data_2";
                 case OP_PUSHDATA4 : return o << "push_data_4";
@@ -222,7 +227,7 @@ namespace Gigamonkey::Bitcoin {
                 case OP_14: return o << "(14)";
                 case OP_15: return o << "(15)";
                 case OP_16: return o << "(16)";
-                default : return o << "push_size_" << int{x};
+                default : return o << "push_size_" << int {x};
             }
         }
         
@@ -287,54 +292,56 @@ namespace Gigamonkey::Bitcoin {
         }
     }
 
-    std::ostream& operator<<(std::ostream& o, const instruction& i) {
-        if (!is_push_data(i.Op)) return write_op_code(o, i.Op);
-        return write_op_code(o, i.Op) << "{" << data::encoding::hex::write(i.Data) << "}";
+    std::ostream& operator << (std::ostream& o, const instruction& i) {
+        if (!is_push_data (i.Op)) return write_op_code (o, i.Op);
+        return write_op_code (o, i.Op) << "{" << data::encoding::hex::write (i.Data) << "}";
     }
     
-    bytes compile(program p) {
-        bytes compiled(serialized_size(p));
-        bytes_writer b{compiled.begin(), compiled.end()};
-        script_writer{b} << p;
+    bytes compile (program p) {
+        bytes compiled (serialized_size (p));
+        bytes_writer b {compiled.begin (), compiled.end ()};
+        script_writer {b} << p;
         return compiled;
     }
     
-    bytes compile(instruction i) {
-        bytes compiled(serialized_size(i));
-        bytes_writer b{compiled.begin(), compiled.end()};
-        script_writer{b} << i;
+    bytes compile (instruction i) {
+        bytes compiled (serialized_size (i));
+        bytes_writer b {compiled.begin (), compiled.end ()};
+        script_writer {b} << i;
         return compiled;
     }
     
-    program decompile(bytes_view b) {
+    program decompile (bytes_view b) {
         
-        program p{};
-        script_reader r{bytes_reader{b.data(), b.data() + b.size()}};
+        program p {};
+        script_reader r {bytes_reader {b.data (), b.data () + b.size ()}};
         
         stack<op> Control;
         
-        while(!r.empty()) {
-            instruction i{};
+        while(!r.empty ()) {
+            instruction i {};
             r = r >> i;
             
-            if(i.verify(0) != SCRIPT_ERR_OK) return {};
+            if (i.verify(0) != SCRIPT_ERR_OK) return {};
         
             if (i.Op == OP_RETURN) {
-                if (data::empty(Control)) {
-                    i.Data = r.read_all();
+                if (data::empty (Control)) {
+                    i.Data = r.read_all ();
                     return p << i;
                 };
             }
             
             if (i.Op == OP_ENDIF) {
-                if (Control.empty()) return {};
-                op prev = Control.first();
-                Control = Control.rest();
+                if (Control.empty ()) return {};
+                op prev = Control.first ();
+                Control = Control.rest ();
+
                 if (prev == OP_ELSE) {
-                    if (Control.empty()) return {};
-                    prev = Control.first();
-                    Control = Control.rest();
+                    if (Control.empty ()) return {};
+                    prev = Control.first ();
+                    Control = Control.rest ();
                 }
+
                 if (prev != OP_IF && prev != OP_NOTIF) return {};
             } else if (i.Op == OP_ELSE || i.Op == OP_IF || i.Op == OP_NOTIF) Control = Control << i.Op;
             
@@ -344,46 +351,48 @@ namespace Gigamonkey::Bitcoin {
         return p;
     }
     
-    ScriptError valid_program(program p, stack<op> x, uint32 flags) {
+    ScriptError valid_program (program p, stack<op> x, uint32 flags) {
         
-        if (data::empty(p)) {
-            if (x.empty()) return SCRIPT_ERR_OK;
+        if (data::empty (p)) {
+            if (x.empty ()) return SCRIPT_ERR_OK;
             return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
         }
         
         bool utxo_after_genesis = (flags & SCRIPT_UTXO_AFTER_GENESIS) != 0;
         
-        const instruction& i = p.first();
+        const instruction& i = p.first ();
         
-        auto script_error = i.verify(flags);
+        auto script_error = i.verify (flags);
         if (script_error != SCRIPT_ERR_OK) return script_error;
         
-        if ((flags & SCRIPT_VERIFY_MINIMALDATA) && !is_minimal(i)) return SCRIPT_ERR_MINIMALDATA;
+        if ((flags & SCRIPT_VERIFY_MINIMALDATA) && !is_minimal (i)) return SCRIPT_ERR_MINIMALDATA;
         
         op o = i.Op;
         
         if (o == OP_RETURN) {
             if (!utxo_after_genesis) return SCRIPT_ERR_OP_RETURN;
-            if (data::empty(x) && p.size() == 1) return SCRIPT_ERR_OK;
-            if (i.Data.size() != 0) return SCRIPT_ERR_OP_RETURN;
+            if (data::empty (x) && p.size () == 1) return SCRIPT_ERR_OK;
+            if (i.Data.size () != 0) return SCRIPT_ERR_OP_RETURN;
         }
         
         if (o == OP_ENDIF) {
-            if (x.empty()) return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
-            op prev = x.first();
-            x = x.rest();
+            if (x.empty ()) return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
+            op prev = x.first ();
+            x = x.rest ();
+
             if (prev == OP_ELSE) {
-                if (x.empty()) return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
-                prev = x.first();
-                x = x.rest();
+                if (x.empty ()) return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
+                prev = x.first ();
+                x = x.rest ();
             }
+
             if (prev != OP_IF && prev != OP_NOTIF) return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
         } else if (o == OP_ELSE || o == OP_IF || o == OP_NOTIF) x = x << o;
         
-        return valid_program(p.rest(), x, flags);
+        return valid_program (p.rest (), x, flags);
     }
     
-    ScriptError verify(program p, uint32 flags) {
+    ScriptError verify (program p, uint32 flags) {
         bool script_genesis = (flags & SCRIPT_GENESIS) != 0;
         bool utxo_after_genesis = (flags & SCRIPT_UTXO_AFTER_GENESIS) != 0;
         
@@ -395,12 +404,13 @@ namespace Gigamonkey::Bitcoin {
         
         // first we check for OP_RETURN data. 
         if (script_genesis && utxo_after_genesis) {
-            if (p.size() == 2 && p.first().Op == OP_FALSE && p.first().valid() && p.rest().first().Op == OP_RETURN) return SCRIPT_ERR_OK;
+            if (p.size () == 2 && p.first ().Op == OP_FALSE && p.first ().valid () && p.rest ().first ().Op == OP_RETURN)
+                return SCRIPT_ERR_OK;
         } else {
-            if (p.size() == 1 && p.first().Op == OP_RETURN) return SCRIPT_ERR_OK;
+            if (p.size () == 1 && p.first ().Op == OP_RETURN) return SCRIPT_ERR_OK;
         }
         
-        return valid_program(p, {}, flags);
+        return valid_program (p, {}, flags);
     }
     
 }
