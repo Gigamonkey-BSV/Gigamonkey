@@ -52,6 +52,5 @@ class GigamonkeyConan(ConanFile):
         cmake.install()
 
     def package_info (self):
-        self.cpp_info.libdirs = ["lib"]  # Default value is 'lib'
-        self.cpp_info.libs = self.collect_libs ()
-#        self.cpp_info.libs = ["gigamonkey"]
+#        self.cpp_info.libdirs = ["lib"]  # Default value is 'lib'
+        self.cpp_info.libs = ["gigamonkey"]
