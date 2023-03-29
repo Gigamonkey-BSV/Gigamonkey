@@ -7,9 +7,9 @@
 
 namespace Gigamonkey::Bitcoin {
 
-    TEST(WorkStringTest, TestWorkSTring) {
+    TEST (WorkStringTest, TestWorkSTring) {
         
-        std::string genesis_header_string = std::string{} + 
+        std::string genesis_header_string = std::string {} +
             // version
             "01000000" + 
             // prev block
@@ -23,37 +23,37 @@ namespace Gigamonkey::Bitcoin {
             // nonce 
             "1DAC2B7C";
         
-        ptr<bytes> genesis_header_hex = encoding::hex::read(genesis_header_string);
+        maybe<bytes> genesis_header_hex = encoding::hex::read (genesis_header_string);
         
-        ASSERT_NE(genesis_header_hex, nullptr);
+        ASSERT_TRUE (bool (genesis_header_hex));
         
-        digest256 genesis_hash = Hash256(*genesis_header_hex);
+        digest256 genesis_hash = Hash256 (*genesis_header_hex);
         
-        EXPECT_EQ(genesis_hash, digest256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
+        EXPECT_EQ (genesis_hash, digest256 ("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
         
-        work::string work_string{slice<80>(genesis_header_hex->data())}; 
+        work::string work_string {slice<80> (genesis_header_hex->data ())};
         
-        Bitcoin::header header(slice<80>(genesis_header_hex->data()));
+        Bitcoin::header header (slice<80> (genesis_header_hex->data ()));
         
-        EXPECT_EQ(work_string, work::string(header));
+        EXPECT_EQ (work_string, work::string (header));
         
-        byte_array<80> work_string_written = work_string.write();
+        byte_array<80> work_string_written = work_string.write ();
         
-        byte_array<80> header_written = header.write();
+        byte_array<80> header_written = header.write ();
         
-        EXPECT_EQ(work_string_written, header_written);
+        EXPECT_EQ (work_string_written, header_written);
         
-        EXPECT_EQ(work_string.hash(), digest256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
+        EXPECT_EQ (work_string.hash (), digest256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
         
-        EXPECT_EQ(header.hash(), digest256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
+        EXPECT_EQ (header.hash (), digest256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
         
-        EXPECT_TRUE(work_string.valid());
+        EXPECT_TRUE(work_string.valid ());
         
-        EXPECT_TRUE(header.valid());
+        EXPECT_TRUE (header.valid ());
         
     }
     
-    TEST(WorkStringTest, TestASICBoost) {
+    TEST (WorkStringTest, TestASICBoost) {
         
         int32 VERSIONBITS_IGNORE_MASK = 0xE0001FFFUL;
         int32 VERSIONBITS_IGNORE_LEFT = 0xE0000000UL;
@@ -64,14 +64,14 @@ namespace Gigamonkey::Bitcoin {
         int32 magic_number = ((combined & VERSIONBITS_IGNORE_LEFT) >> 16) + (combined & VERSIONBITS_IGNORE_RIGHT);
         
         int32_little combined_little = combined;
-        int32_little version_little = work::ASICBoost::version(combined);
-        uint16_little gpurpose_little = work::ASICBoost::bits(combined);
-        uint16_little magicnum_little = work::ASICBoost::magic_number(combined);
+        int32_little version_little = work::ASICBoost::version (combined);
+        uint16_little gpurpose_little = work::ASICBoost::bits (combined);
+        uint16_little magicnum_little = work::ASICBoost::magic_number (combined);
         
-        EXPECT_EQ(version_little, version);
-        EXPECT_EQ(gpurpose_little, general_purpose_bits);
-        EXPECT_EQ(magicnum_little, magic_number);
-        EXPECT_EQ(combined_little, work::ASICBoost::category(magicnum_little, gpurpose_little));
+        EXPECT_EQ (version_little, version);
+        EXPECT_EQ (gpurpose_little, general_purpose_bits);
+        EXPECT_EQ (magicnum_little, magic_number);
+        EXPECT_EQ (combined_little, work::ASICBoost::category(magicnum_little, gpurpose_little));
         
     }
 

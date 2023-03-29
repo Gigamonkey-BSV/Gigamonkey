@@ -25,7 +25,7 @@ namespace Gigamonkey::BitcoinAssociation {
         get_fee_quote_response get_fee_quote ();
         
         struct transaction_status_response;
-        transaction_status_response get_transaction_status (const Bitcoin::txid&);
+        transaction_status_response get_transaction_status (const Bitcoin::txid &);
         
         struct submit_transaction_request;
         struct submit_transaction_response;
@@ -159,10 +159,10 @@ namespace Gigamonkey::BitcoinAssociation {
             secp256k1::pubkey MinerID;
             uint32 TxSecondMempoolExpiry;
             
-            // optional fields included for txs that have been mined. 
-            optional<digest256> BlockHash;
-            optional<uint32> BlockHeight;
-            optional<uint32> Confirmations;
+            // maybe fields included for txs that have been mined.
+            maybe<digest256> BlockHash;
+            maybe<uint32> BlockHeight;
+            maybe<uint32> Confirmations;
             
             bool valid () const;
             
@@ -201,12 +201,12 @@ namespace Gigamonkey::BitcoinAssociation {
     
         struct submit_transaction_parameters {
             
-            optional<string> CallbackURL;
-            optional<string> CallbackToken;
-            optional<bool> MerkleProof;
-            optional<string> MerkleFormat;
-            optional<bool> DSCheck;
-            optional<string> CallbackEncryption;
+            maybe<string> CallbackURL;
+            maybe<string> CallbackToken;
+            maybe<bool> MerkleProof;
+            maybe<string> MerkleFormat;
+            maybe<bool> DSCheck;
+            maybe<string> CallbackEncryption;
             
             submit_transaction_parameters () = default;
             

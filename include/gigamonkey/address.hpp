@@ -74,8 +74,8 @@ namespace Gigamonkey::Bitcoin {
         pubkey (const secp256k1::pubkey &p) : secp256k1::pubkey {p} {}
         
         explicit pubkey (string_view s) : secp256k1::pubkey {} {
-            ptr<bytes> hex = encoding::hex::read(s);
-            if (hex != nullptr) {
+            maybe<bytes> hex = encoding::hex::read(s);
+            if (bool (hex)) {
                 this->resize (hex->size ());
                 std::copy (hex->begin (), hex->end (), this->begin ());
             };

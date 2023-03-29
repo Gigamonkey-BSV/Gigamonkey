@@ -16,25 +16,25 @@ namespace Gigamonkey::work {
     struct solution;
     struct proof;
     
-    proof solve (const puzzle& p, const solution& initial);
+    proof solve (const puzzle &p, const solution &initial);
     
-    bool operator == (const share&, const share&);
-    bool operator != (const share&, const share&);
+    bool operator == (const share &, const share &);
+    bool operator != (const share &, const share &);
     
-    bool operator == (const solution&, const solution&);
-    bool operator != (const solution&, const solution&);
+    bool operator == (const solution &, const solution &);
+    bool operator != (const solution &, const solution &);
     
-    bool operator == (const job&, const job&);
-    bool operator != (const job&, const job&);
+    bool operator == (const job &, const job &);
+    bool operator != (const job &, const job &);
     
-    bool operator == (const puzzle&, const puzzle&);
-    bool operator != (const puzzle&, const puzzle&);
+    bool operator == (const puzzle &, const puzzle &);
+    bool operator != (const puzzle &, const puzzle &);
     
-    bool operator == (const proof&, const proof&);
-    bool operator != (const proof&, const proof&);
+    bool operator == (const proof &, const proof &);
+    bool operator != (const proof &, const proof &);
     
-    bool operator == (const candidate&, const candidate&);
-    bool operator != (const candidate&, const candidate&);
+    bool operator == (const candidate &, const candidate &);
+    bool operator != (const candidate &, const candidate &);
     
     // candidate corresponds to a block that has been designed by the node but not completed with a nonce, timestamp, or coinbase. 
     struct candidate {
@@ -45,7 +45,7 @@ namespace Gigamonkey::work {
         Merkle::path Path;
         
         candidate () : Category {}, Digest {}, Target {}, Path {} {}
-        candidate (int32_little v, const uint256& d, compact g, Merkle::path mp) :
+        candidate (int32_little v, const uint256 &d, compact g, Merkle::path mp) :
             Category {v}, Digest {d}, Target {g}, Path {mp} {}
         
         bool valid () const;
@@ -68,14 +68,14 @@ namespace Gigamonkey::work {
         puzzle ();
         puzzle (
             int32_little v, 
-            const uint256& d, 
+            const uint256 &d,
             compact g, 
             Merkle::path mp, 
-            const bytes& h, 
-            const bytes& b, 
+            const bytes &h,
+            const bytes &b,
             int32_little mask = -1) : puzzle {candidate {v, d, g, mp}, h, b, mask} {}
         
-        puzzle(const candidate& x, const bytes& h, const bytes& b, int32_little mask = -1) : 
+        puzzle (const candidate &x, const bytes &h, const bytes &b, int32_little mask = -1) :
             Candidate {x}, Header {h}, Body {b}, Mask {mask} {}
         
         bool valid () const;
@@ -89,7 +89,7 @@ namespace Gigamonkey::work {
         Stratum::session_id ExtraNonce1;
         
         job ();
-        job (const puzzle&, Stratum::session_id extra);
+        job (const puzzle &, Stratum::session_id extra);
         
         bool valid () const;
     };
@@ -103,13 +103,13 @@ namespace Gigamonkey::work {
         
         // see BIP 320
         // https://en.bitcoin.it/wiki/BIP_0320
-        std::optional<int32_little> Bits;
+        maybe<int32_little> Bits;
         
         share (Bitcoin::timestamp t, nonce n, bytes b, int32_little bits);
         share (Bitcoin::timestamp t, nonce n, bytes b);
         share ();
         
-        bool valid() const;
+        bool valid () const;
         
         int32_little general_purpose_bits (int32_little mask) const {
             return int32_little {bool (Bits) ? ((*Bits) & mask) : 0};
@@ -122,7 +122,7 @@ namespace Gigamonkey::work {
         Stratum::session_id ExtraNonce1;
         
         solution () : Share {}, ExtraNonce1 {} {}
-        solution (const share& x, Stratum::session_id n1) : Share {x}, ExtraNonce1 {n1} {}
+        solution (const share &x, Stratum::session_id n1) : Share {x}, ExtraNonce1 {n1} {}
         solution (Bitcoin::timestamp t, nonce n, bytes_view b, Stratum::session_id n1) : solution {share {t, n, b}, n1} {}
         
         bool valid () const {
@@ -137,15 +137,15 @@ namespace Gigamonkey::work {
         bool valid () const;
         
         proof ();
-        proof (const puzzle& p, const solution& x);
-        proof (const job& j, const share& x) : proof {j.Puzzle, solution {x, j.ExtraNonce1}} {}
+        proof (const puzzle &p, const solution &x);
+        proof (const job &j, const share &x) : proof {j.Puzzle, solution {x, j.ExtraNonce1}} {}
         proof (
-            const string& w, 
+            const string &w,
             Merkle::path mp, 
-            const bytes& h, 
-            const Stratum::session_id& n1, 
-            const bytes& n2, 
-            const bytes& b);
+            const bytes &h,
+            const Stratum::session_id &n1,
+            const bytes &n2,
+            const bytes &b);
         
         bytes meta () const;
         
@@ -158,90 +158,90 @@ namespace Gigamonkey::work {
         }
     };
     
-    proof cpu_solve (const puzzle& p, const solution& initial);
+    proof cpu_solve (const puzzle &p, const solution &initial);
     
     // right now we only have cpu mining in this lib. 
     proof inline solve (puzzle p, solution initial) {
         return cpu_solve (p, initial);
     }
     
-    bool inline operator == (const share& a, const share& b) {
+    bool inline operator == (const share &a, const share &b) {
         return a.Timestamp == b.Timestamp && a.Nonce == b.Nonce && 
             a.ExtraNonce2 == b.ExtraNonce2 && a.Bits == b.Bits;
     }
     
-    bool inline operator != (const share& a, const share& b) {
+    bool inline operator != (const share &a, const share &b) {
         return !(a == b);
     }
     
-    bool inline operator == (const solution& a, const solution& b) {
+    bool inline operator == (const solution &a, const solution &b) {
         return a.Share == b.Share && a.ExtraNonce1 == b.ExtraNonce1;
     }
     
-    bool inline operator != (const solution& a, const solution& b) {
+    bool inline operator != (const solution &a, const solution &b) {
         return !(a == b);
     }
     
-    bool inline operator == (const candidate& a, const candidate& b) {
+    bool inline operator == (const candidate &a, const candidate &b) {
         return a.Category == b.Category && 
             a.Digest == b.Digest && 
             a.Target == b.Target && 
             a.Path == b.Path;
     }
     
-    bool inline operator != (const candidate& a, const candidate& b) {
+    bool inline operator != (const candidate &a, const candidate &b) {
         return !(a == b);
     }
     
-    bool inline operator == (const puzzle& a, const puzzle& b) {
+    bool inline operator == (const puzzle &a, const puzzle &b) {
         return a.Candidate == b.Candidate && a.Header == b.Header && 
             a.Body == b.Body && a.Mask == b.Mask;
     }
     
-    bool inline operator != (const puzzle& a, const puzzle& b) {
+    bool inline operator != (const puzzle &a, const puzzle &b) {
         return !(a == b);
     }
     
-    bool inline operator == (const job& a, const job& b) {
+    bool inline operator == (const job &a, const job &b) {
         return a.Puzzle == b.Puzzle && a.ExtraNonce1 == b.ExtraNonce1;
     }
     
-    bool inline operator != (const job& a, const job& b) {
+    bool inline operator != (const job &a, const job &b) {
         return !(a == b);
     }
     
-    bool inline operator == (const proof& a, const proof& b) {
+    bool inline operator == (const proof &a, const proof &b) {
         return a.Puzzle == b.Puzzle && a.Solution == b.Solution;
     }
     
-    bool inline operator != (const proof& a, const proof& b) {
+    bool inline operator != (const proof &a, const proof &b) {
         return !(a == b);
     }
     
-    inline std::ostream& operator << (std::ostream& o, const share& p) {
+    std::ostream inline &operator << (std::ostream &o, const share &p) {
         o << "share{Timestamp: " << p.Timestamp << ", Nonce: " << p.Nonce << ", ExtraNonce2: " << p.ExtraNonce2;
         if (p.Bits) o << ", Bits: " << *p.Bits; 
         return o << "}";
     }
     
-    inline std::ostream& operator << (std::ostream& o, const candidate& p) {
+    std::ostream inline &operator << (std::ostream &o, const candidate &p) {
         return o << "candidate{Category: " << p.Category << ", Digest: " << p.Digest << ", Target: " << 
             p.Target << ", Path: " << p.Path << "}";
     }
     
-    inline std::ostream& operator << (std::ostream& o, const puzzle& p) {
+    std::ostream inline &operator << (std::ostream &o, const puzzle &p) {
         return o << "puzzle{" << p.Candidate << ", Header: " << p.Header << ", Body: " << p.Body << ", Mask: " << p.Mask << "}";
     }
     
-    inline std::ostream& operator << (std::ostream& o, const job& p) {
+    std::ostream inline &operator << (std::ostream &o, const job &p) {
         return o << "job{" << p.Puzzle << ", ExtraNonce1: " << p.ExtraNonce1 << "}";
     }
     
-    inline std::ostream& operator << (std::ostream& o, const solution& p) {
+    std::ostream inline &operator << (std::ostream &o, const solution &p) {
         return o << "solution{" << p.Share << ", ExtraNonce1: " << p.ExtraNonce1 << "}";
     }
     
-    inline std::ostream& operator << (std::ostream& o, const proof& p) {
+    std::ostream inline &operator << (std::ostream &o, const proof &p) {
         return o << "proof{Puzzle: " << p.Puzzle << ", Solution: " << p.Solution << "}";
     }
     
@@ -274,16 +274,16 @@ namespace Gigamonkey::work {
         return Puzzle.valid ();
     }
     
-    inline proof::proof () : Puzzle{}, Solution{} {}
-    inline proof::proof (const puzzle& p, const solution& x) : Puzzle{p}, Solution{x} {}
+    inline proof::proof () : Puzzle {}, Solution {} {}
+    inline proof::proof (const puzzle &p, const solution &x) : Puzzle {p}, Solution {x} {}
     
     inline proof::proof (
-        const struct string& w, 
+        const struct string &w,
         Merkle::path mp, 
-        const bytes& h, 
-        const Stratum::session_id& n1, 
-        const bytes& n2, 
-        const bytes& b) : 
+        const bytes &h,
+        const Stratum::session_id &n1,
+        const bytes &n2,
+        const bytes &b) :
         Puzzle {w.Category, w.Digest, w.Target, {}, h, b},
         Solution {share {w.Timestamp, w.Nonce, n2}, n1} {
         if (w.MerkleRoot != merkle_root ()) *this = {};

@@ -8,26 +8,32 @@
 namespace Gigamonkey::Bitcoin {
 
     bytes append_checksum (bytes_view b) {
+
         bytes checked (b.size() + 4);
         bytes_writer w (checked.begin (), checked.end ());
         w << b << checksum (b);
         return checked;
+
     }
     
     Gigamonkey::checksum checksum (bytes_view b) {
+
         Gigamonkey::checksum x;
         digest256 digest = Hash256 (b);
         std::copy (digest.Value.begin (), digest.Value.begin () + 4, x.begin ());
         return x;
+
     }
     
     bytes_view remove_checksum (bytes_view b) {
+
         if (b.size () < 4) return {};
         Gigamonkey::checksum x;
         std::copy (b.end () - 4, b.end (), x.begin ());
         bytes_view without = b.substr (0, b.size () - 4);
         if (x != checksum (without)) return {};
         return without;
+
     }
     
 }
@@ -35,6 +41,7 @@ namespace Gigamonkey::Bitcoin {
 namespace Gigamonkey::base58 {
     
     string check::encode () const {
+
         bytes data = Bitcoin::append_checksum (static_cast<bytes> (*this));
         size_t leading_zeros = 0;
         while (leading_zeros < data.size () && data[leading_zeros] == 0) leading_zeros++;
@@ -43,15 +50,28 @@ namespace Gigamonkey::base58 {
         std::stringstream ss;
         ss << ones << b58;
         return ss.str ();
+
     }
     
     check check::decode (string_view s) {
+
         size_t leading_ones = 0;
-        while (leading_ones < s.size() && s[leading_ones] == '1') leading_ones++;
-        string_view body = s.substr (leading_ones);
-        if (!encoding::base58::valid (body)) return {};
-        bytes decoded = encoding::base58::read (body);
-        return {Bitcoin::remove_checksum (write (leading_ones + decoded.size (), bytes (leading_ones, 0x00), decoded))};
+        while (leading_ones < s.size () && s[leading_ones] == '1') leading_ones++;
+
+        maybe<bytes> decoded;
+
+        // this is a special case that is extremely unlikely in practice.
+        // The empty string is an invalid base 58 string, so if that's
+        // what we get then we act like we decoded it to an empty byte sequence.
+        if (leading_ones == s.size ()) decoded = {bytes {}};
+        else {
+            string_view body = s.substr (leading_ones);
+            decoded = encoding::base58::read (body);
+            if (!bool (decoded)) return {};
+        }
+
+        return {Bitcoin::remove_checksum (write (leading_ones + decoded->size (), bytes (leading_ones, 0x00), *decoded))};
+
     }
     
     // try all single letter replacements, insertions, and deletions
@@ -69,6 +89,7 @@ namespace Gigamonkey::base58 {
         
         // replacements
         for (int i = 0; i < test.size (); i++) {
+
             string replace = test;
             
             for (char c : characters) {
@@ -77,10 +98,12 @@ namespace Gigamonkey::base58 {
                 check x (replace);
                 if (x.valid ()) return x;
             }
+
         }
         
         // insertions
         for (int i = 0; i <= test.size(); i++) {
+
             string insert {};
             insert.resize (test.size () + 1);
             std::copy (test.begin (), test.begin () + i, insert.begin ());
@@ -91,10 +114,12 @@ namespace Gigamonkey::base58 {
                 check x (insert);
                 if (x.valid ()) return x;
             }
+
         }
         
         // deletions 
         for (int i = 0; i < test.size (); i++) {
+
             string deletions {};
             deletions.resize (test.size () - 1);
             

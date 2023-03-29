@@ -16,79 +16,79 @@ namespace Gigamonkey::Stratum::mining {
     struct authorize_request : request {
         struct parameters {
             string Username;
-            std::optional<string> Password;
+            maybe<string> Password;
         
-            bool valid() const;
-            bool operator==(const parameters& x) const;
-            bool operator!=(const parameters& x) const;
+            bool valid () const;
+            bool operator == (const parameters &x) const;
+            bool operator != (const parameters &x) const;
             
-            parameters();
-            explicit parameters(string u);
-            parameters(string u, string p);
+            parameters ();
+            explicit parameters (string u);
+            parameters (string u, string p);
         };
         
-        static Stratum::parameters serialize(const parameters&);
-        static parameters deserialize(const Stratum::parameters&);
+        static Stratum::parameters serialize (const parameters &);
+        static parameters deserialize (const Stratum::parameters &);
         
-        static parameters params(const request &);
-        parameters params() const;
+        static parameters params (const request &);
+        parameters params () const;
         
-        static bool valid(const JSON&);
+        static bool valid (const JSON &);
         
-        static string username(const JSON&);
-        static std::optional<string> password(const JSON&);
+        static string username (const JSON &);
+        static maybe<string> password (const JSON &);
         
         using request::request;
-        authorize_request(message_id id, string u);
-        authorize_request(message_id id, string u, string p);
+        authorize_request (message_id id, string u);
+        authorize_request (message_id id, string u, string p);
         
-        string username() const;
+        string username () const;
         
-        std::optional<string> password() const;
+        maybe<string> password () const;
         
-        bool valid() const;
+        bool valid () const;
     };
     
-    bool inline authorize_request::parameters::valid() const {
+    bool inline authorize_request::parameters::valid () const {
         return Username != "";
     }
     
-    bool inline authorize_request::parameters::operator==(const parameters& x) const {
+    bool inline authorize_request::parameters::operator == (const parameters &x) const {
         return Username == x.Username && Password == x.Password;
     }
     
-    bool inline authorize_request::parameters::operator!=(const parameters& x) const {
+    bool inline authorize_request::parameters::operator != (const parameters &x) const {
         return Username != x.Username || Password != x.Password;
     }
     
-    inline authorize_request::parameters::parameters() : Username{}, Password() {}
-    inline authorize_request::parameters::parameters(string u) : Username{u}, Password{} {}
-    inline authorize_request::parameters::parameters(string u, string p) : Username{u}, Password{p} {}
+    inline authorize_request::parameters::parameters () : Username {}, Password () {}
+    inline authorize_request::parameters::parameters (string u) : Username {u}, Password {} {}
+    inline authorize_request::parameters::parameters (string u, string p) : Username {u}, Password {p} {}
     
-    inline authorize_request::authorize_request(message_id id, string u) : 
+    inline authorize_request::authorize_request (message_id id, string u) :
         request{id, mining_authorize, {u}} {}
     
-    inline authorize_request::authorize_request(message_id id, string u, string p) : 
+    inline authorize_request::authorize_request (message_id id, string u, string p) :
         request{id, mining_authorize, {u, p}} {}
         
-    string inline authorize_request::username() const {
-        return username(*this);
+    string inline authorize_request::username () const {
+        return username (*this);
     }
     
-    std::optional<string> inline authorize_request::password() const {
-        return password(*this);
+    maybe<string> inline authorize_request::password () const {
+        return password (*this);
     }
     
-    bool inline authorize_request::valid() const {
-        return valid(*this);
+    bool inline authorize_request::valid () const {
+        return valid (*this);
     }
     
-    authorize_request::parameters inline authorize_request::params(const request &r) {
-        return deserialize(r.params());
+    authorize_request::parameters inline authorize_request::params (const request &r) {
+        return deserialize (r.params ());
     }
     
-    authorize_request::parameters inline authorize_request::params() const {
-        return params(*this);
+    authorize_request::parameters inline authorize_request::params () const {
+        return params (*this);
     }
     
 }

@@ -455,12 +455,12 @@ std::optional<bool> EvalScript(
                         valtype n1(data.begin(), data.begin() + position);
                         valtype n2(data.begin() + position, data.end());
                         
-                        stack.pop_back();
-                        stack.pop_back();
+                        stack.pop_back ();
+                        stack.pop_back ();
 
                         // Replace existing stack values by the new values.
-                        stack.push_back(n1);
-                        stack.push_back(n2);
+                        stack.push_back (n1);
+                        stack.push_back (n2);
                     } break;
 
                     //
@@ -468,17 +468,15 @@ std::optional<bool> EvalScript(
                     //
                     case OP_NUM2BIN: {
                         // (in size -- out)
-                        if (stack.size() < 2) {
-                            return set_error(
-                                serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-                        }
+                        if (stack.size() < 2)
+                            return set_error (serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
 
-                        const auto& arg_1 = stack.stacktop(-1).GetElement();
+                        const auto& arg_1 = stack.stacktop (-1).GetElement ();
                         const CScriptNum n{
                             arg_1, fRequireMinimal,
                             maxScriptNumLength,
                             utxo_after_genesis};
-                        if(n < 0 || n > std::numeric_limits<int32_t>::max())
+                        if(n < 0 || n > std::numeric_limits<int32_t>::max ())
                             return set_error(serror, SCRIPT_ERR_PUSH_SIZE);
 
                         const auto size{n.to_size_t_limited()};
@@ -547,16 +545,16 @@ std::optional<bool> EvalScript(
     return set_success(serror);
 }
 
-std::optional<bool> EvalScript(
-    const CScriptConfig& config,
+std::optional<bool> EvalScript (
+    const CScriptConfig &config,
     bool consensus,
-    LimitedStack& stack,
-    const CScript& script,
+    LimitedStack &stack,
+    const CScript &script,
     uint32_t flags,
-    ScriptError* serror)
+    ScriptError *serror)
 {
-    LimitedStack altstack {stack.makeChildStack()};
-    long ipc{0};
+    LimitedStack altstack {stack.makeChildStack ()};
+    long ipc {0};
     std::vector<bool> vfExec, vfElse;
-    return EvalScript(config, consensus, stack, script, flags, altstack, ipc, vfExec, vfElse, serror);
+    return EvalScript (config, consensus, stack, script, flags, altstack, ipc, vfExec, vfElse, serror);
 }

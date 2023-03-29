@@ -77,7 +77,7 @@ namespace Gigamonkey::BitcoinAssociation {
         JSON to_JSON (map<string, MAPI::fee> fees) {
             JSON j = JSON::array ();
             
-            for (const data::entry<string, MAPI::fee>& f : fees) 
+            for (const data::entry<string, MAPI::fee> &f : fees)
                 j.push_back (f.valid () ? JSON {
                     {"feeType", f.Key}, 
                     {"miningFee", to_JSON (f.Value.MiningFee)},
@@ -86,7 +86,7 @@ namespace Gigamonkey::BitcoinAssociation {
             return j;
         }
         
-        optional<list<net::IP::address>> read_ip_address_list (const JSON &j) {
+        maybe<list<net::IP::address>> read_ip_address_list (const JSON &j) {
             if (!j.is_array ()) return {};
             
             list<net::IP::address> ips;
@@ -200,7 +200,7 @@ namespace Gigamonkey::BitcoinAssociation {
         
     }
     
-    MAPI::transaction_submission::operator JSON() const {
+    MAPI::transaction_submission::operator JSON () const {
         JSON j{{"rawtx", encoding::hex::write (Transaction)}};
         
         if (this->Parameters.CallbackURL) j["callbackUrl"] = *this->Parameters.CallbackURL;
@@ -244,7 +244,7 @@ namespace Gigamonkey::BitcoinAssociation {
         };
     }
     
-    MAPI::conflicted_with::conflicted_with (const JSON& j) : conflicted_with {} {
+    MAPI::conflicted_with::conflicted_with (const JSON &j) : conflicted_with {} {
         
         if (!(j.is_object () &&
             j.contains ("txid") && j["txid"].is_string () &&
@@ -252,7 +252,7 @@ namespace Gigamonkey::BitcoinAssociation {
             j.contains ("hex") && j["hex"].is_string ())) return;
         
         auto tx = encoding::hex::read (string (j["hex"]));
-        if (tx == nullptr) return;
+        if (!bool (tx)) return;
         
         TXID = digest256 {string{"0x"} + string (j["txid"])};
         Size = uint64 (j["size"]);
@@ -292,7 +292,7 @@ namespace Gigamonkey::BitcoinAssociation {
         }
         
         auto pk_hex = encoding::hex::read (string (j["minerId"]));
-        if (pk_hex == nullptr) return;
+        if (!bool (pk_hex)) return;
         
         digest256 last_block {string{"0x"} + string (j["currentHighestBlockHash"])};
         if (!last_block.valid ()) return;
@@ -348,7 +348,7 @@ namespace Gigamonkey::BitcoinAssociation {
         return j;
     }
     
-    MAPI::submit_transaction_response::submit_transaction_response (const JSON& j) :
+    MAPI::submit_transaction_response::submit_transaction_response (const JSON &j) :
         submit_transaction_response {} {
         
         if (!(j.is_object () &&
@@ -364,7 +364,7 @@ namespace Gigamonkey::BitcoinAssociation {
         if (!sub.valid ()) return;
         
         auto pk_hex = encoding::hex::read (string (j["minerId"]));
-        if (pk_hex == nullptr) return;
+        if (! bool (pk_hex)) return;
         
         digest256 block_hash {string{"0x"} + string (j["currentHighestBlockHash"])};
         if (!block_hash.valid ()) return;
@@ -410,7 +410,7 @@ namespace Gigamonkey::BitcoinAssociation {
         return j;
     }
     
-    MAPI::transaction_status_response::transaction_status_response (const JSON& j) :
+    MAPI::transaction_status_response::transaction_status_response (const JSON &j) :
         transaction_status_response {} {
         
         if (!(j.is_object () &&
@@ -426,9 +426,9 @@ namespace Gigamonkey::BitcoinAssociation {
         if (!sub.valid ()) return;
         
         auto pk_hex = encoding::hex::read (string (j["minerId"]));
-        if (pk_hex == nullptr) return;
+        if (! bool (pk_hex)) return;
         
-        digest256 block_hash {string{"0x"} + string (j["blockHash"])};
+        digest256 block_hash {string {"0x"} + string (j["blockHash"])};
         if (!block_hash.valid ()) return;
         
         MinerID = secp256k1::pubkey {*pk_hex};
@@ -460,7 +460,7 @@ namespace Gigamonkey::BitcoinAssociation {
         return j;
     }
     
-    MAPI::submit_transactions_response::submit_transactions_response (const JSON& j) :
+    MAPI::submit_transactions_response::submit_transactions_response (const JSON &j) :
         submit_transactions_response {} {
         
         if (!(j.is_object () &&
@@ -475,12 +475,12 @@ namespace Gigamonkey::BitcoinAssociation {
         
         list<transaction_status> sr;
         for (const JSON& w : j["txs"]) {
-            sr = sr << read_transaction_status(w);
+            sr = sr << read_transaction_status (w);
             if (!sr.first ().valid ()) return;
         }
         
         auto pk_hex = encoding::hex::read (string (j["minerId"]));
-        if (pk_hex == nullptr) return;
+        if (!bool (pk_hex)) return;
         
         digest256 block_hash {string {"0x"} + string (j["blockHash"])};
         if (!block_hash.valid ()) return;

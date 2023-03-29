@@ -309,10 +309,10 @@ namespace Gigamonkey::Stratum::mining {
         
         work::compact d {work::difficulty (.0001)};
         digest256 prevHash {"0x0000000000000000000000000000000000000000000000000000000000000001"};
-        bytes gentx1 = bytes::from_hex ("abcdef");
-        bytes gentx2 = bytes::from_hex ("010203");
+        bytes gentx1 = *bytes::from_hex ("abcdef");
+        bytes gentx2 = *bytes::from_hex ("010203");
         
-        bytes extra_nonce_2 = bytes::from_hex ("abcdef0123456789");
+        bytes extra_nonce_2 = *bytes::from_hex ("abcdef0123456789");
         
         int32_little gpr = 0xffffffff;
         int32_little version_mask = work::ASICBoost::Mask;

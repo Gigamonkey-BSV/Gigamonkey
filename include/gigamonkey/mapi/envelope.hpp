@@ -11,7 +11,6 @@
 // https://github.com/bitcoin-sv-specs/brfc-misc/tree/master/jsonenvelope
 
 namespace Gigamonkey::BitcoinAssociation {
-    template <typename X> using optional = std::optional<X>;
         
     struct JSON_envelope {
         enum payload_encoding {
@@ -24,77 +23,77 @@ namespace Gigamonkey::BitcoinAssociation {
         payload_encoding Encoding;
         string Mimetype;
         
-        optional<secp256k1::pubkey> PublicKey;
-        optional<secp256k1::signature> Signature;
+        maybe<secp256k1::pubkey> PublicKey;
+        maybe<secp256k1::signature> Signature;
         
-        bool valid() const;
-        bool verify() const;
+        bool valid () const;
+        bool verify () const;
         
         // encode as base64, no signature.
-        JSON_envelope(const bytes &Payload, const string &Mimetype);
+        JSON_envelope (const bytes &Payload, const string &Mimetype);
         
         // encode as UTF_8, no signature.
-        JSON_envelope(const string &Payload, const string &Mimetype);
+        JSON_envelope (const string &Payload, const string &Mimetype);
         
         // encode as base64 with signature.
-        JSON_envelope(const bytes &Payload, const string &Mimetype, secp256k1::secret &secret);
+        JSON_envelope (const bytes &Payload, const string &Mimetype, secp256k1::secret &secret);
         
         // encode as UTF_8 with signature.
-        JSON_envelope(const string &Payload, const string &Mimetype, secp256k1::secret &secret);
+        JSON_envelope (const string &Payload, const string &Mimetype, secp256k1::secret &secret);
         
-        JSON_envelope(const JSON &);
-        operator JSON() const;
+        JSON_envelope (const JSON &);
+        operator JSON () const;
         
-        static bool valid(const JSON&);
-        static bool verify(const JSON&);
+        static bool valid (const JSON &);
+        static bool verify (const JSON &);
         
-        JSON_envelope() : Payload{}, Encoding{none}, Mimetype{}, PublicKey{}, Signature{} {}
+        JSON_envelope () : Payload {}, Encoding {none}, Mimetype {}, PublicKey {}, Signature {} {}
     };
     
     // A JSON_envelope that contains JSON data. 
     struct JSON_JSON_envelope : JSON_envelope {
-        bool valid() const;
+        bool valid () const;
         
-        static string de_escape(const string &);
+        static string de_escape (const string &);
         
-        JSON payload() const {
-            return JSON::parse(JSON_envelope::Payload);
+        JSON payload () const {
+            return JSON::parse (JSON_envelope::Payload);
         }
         
-        JSON_JSON_envelope(const JSON &payload): 
-            JSON_envelope{payload.dump(), "application/JSON"} {};
+        JSON_JSON_envelope (const JSON &payload):
+            JSON_envelope {payload.dump (), "application/JSON"} {};
         
-        JSON_JSON_envelope(const JSON &payload, secp256k1::secret &secret): 
-            JSON_envelope{payload.dump(), "application/JSON", secret} {}
+        JSON_JSON_envelope (const JSON &payload, secp256k1::secret &secret):
+            JSON_envelope {payload.dump (), "application/JSON", secret} {}
         
-        JSON_JSON_envelope(const JSON_envelope &j) : JSON_envelope{j} {}
+        JSON_JSON_envelope (const JSON_envelope &j) : JSON_envelope {j} {}
     };
         
-    bool inline JSON_envelope::valid() const {
-        return Encoding != none && ((bool(Signature) && bool(PublicKey)) || (!bool(Signature) && !bool(PublicKey)));
+    bool inline JSON_envelope::valid () const {
+        return Encoding != none && ((bool (Signature) && bool (PublicKey)) || (!bool (Signature) && !bool (PublicKey)));
     }
     
-    bool inline JSON_envelope::valid(const JSON &j) {
-        return JSON_envelope{j}.valid();
+    bool inline JSON_envelope::valid (const JSON &j) {
+        return JSON_envelope {j}.valid ();
     }
     
-    bool inline JSON_envelope::verify(const JSON &j) {
-        return JSON_envelope{j}.verify();
+    bool inline JSON_envelope::verify (const JSON &j) {
+        return JSON_envelope {j}.verify ();
     }
     
-    inline JSON_envelope::JSON_envelope(const bytes &pl, const string &mime) : 
-        Payload{encoding::base64::write(pl)}, Encoding{base64}, Mimetype{mime}, PublicKey{}, Signature{} {}
+    inline JSON_envelope::JSON_envelope (const bytes &pl, const string &mime) :
+        Payload {encoding::base64::write (pl)}, Encoding {base64}, Mimetype {mime}, PublicKey {}, Signature {} {}
     
-    inline JSON_envelope::JSON_envelope(const string &pl, const string &mime) :
-        Payload{pl}, Encoding{UTF_8}, Mimetype{mime}, PublicKey{}, Signature{} {}
+    inline JSON_envelope::JSON_envelope (const string &pl, const string &mime) :
+        Payload {pl}, Encoding {UTF_8}, Mimetype {mime}, PublicKey {}, Signature {} {}
     
-    inline JSON_envelope::JSON_envelope(const bytes &pl, const string &mime, secp256k1::secret &secret) :
-        Payload{encoding::base64::write(pl)}, Encoding{base64}, Mimetype{mime}, 
-        PublicKey{secret.to_public()}, Signature{secret.sign(Gigamonkey::SHA2_256(pl))} {}
+    inline JSON_envelope::JSON_envelope (const bytes &pl, const string &mime, secp256k1::secret &secret) :
+        Payload {encoding::base64::write (pl)}, Encoding {base64}, Mimetype {mime},
+        PublicKey {secret.to_public ()}, Signature {secret.sign (Gigamonkey::SHA2_256 (pl))} {}
     
-    inline JSON_envelope::JSON_envelope(const string &pl, const string &mime, secp256k1::secret &secret) :
-        Payload{pl}, Encoding{UTF_8}, Mimetype{mime}, PublicKey{secret.to_public()}, 
-        Signature{secret.sign(Gigamonkey::SHA2_256(encoding::unicode::utf8_encode(pl)))} {}
+    inline JSON_envelope::JSON_envelope (const string &pl, const string &mime, secp256k1::secret &secret) :
+        Payload {pl}, Encoding {UTF_8}, Mimetype {mime}, PublicKey{secret.to_public ()},
+        Signature {secret.sign (Gigamonkey::SHA2_256 (pl))} {}
 }
 
 #endif

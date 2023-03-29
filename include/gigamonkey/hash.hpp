@@ -239,7 +239,7 @@ namespace Gigamonkey {
             
             transform Hash;
             
-            hash_writer () : Hash{} {}
+            hash_writer () : Hash {} {}
             
             digest<size> finalize () {
                 digest<size> d;
@@ -254,7 +254,7 @@ namespace Gigamonkey {
                 return d;
             }
         
-            void write(const byte* b, size_t x) override {
+            void write (const byte* b, size_t x) override {
                 Hash.Update (b, x);
             }
             
@@ -301,7 +301,7 @@ namespace Gigamonkey {
     using SHA3_512_writer = SHA3_writer<64>;
     
     digest160 inline SHA1 (bytes_view b) {
-        return SHA1_writer{} (b);
+        return SHA1_writer {} (b);
     }
     
     digest224 inline SHA2_224 (bytes_view b) {
@@ -325,19 +325,19 @@ namespace Gigamonkey {
     }
     
     digest256 inline SHA3_256 (bytes_view b) {
-        return SHA3_256_writer{} (b);
+        return SHA3_256_writer {} (b);
     }
     
     digest384 inline SHA3_384 (bytes_view b) {
-        return SHA3_384_writer{} (b);
+        return SHA3_384_writer {} (b);
     }
     
     digest512 inline SHA3_512 (bytes_view b) {
-        return SHA3_512_writer{} (b);
+        return SHA3_512_writer {} (b);
     }
     
     digest128 inline RIPEMD_128 (bytes_view b) {
-        return RIPEMD_128_writer{} (b);
+        return RIPEMD_128_writer {} (b);
     }
     
     digest160 inline RIPEMD_160 (bytes_view b) {
@@ -385,10 +385,9 @@ namespace Gigamonkey {
     
     template <size_t size>
     digest<size>::digest (string_view s) {
-        ptr<bytes> b = data::encoding::hex::read (s);
-        if (b != nullptr) {
-            std::copy (b->begin (), b->end (), begin ());
-        } else *this = digest {uint<size> {string (s)}};
+        maybe<bytes> b = data::encoding::hex::read (s);
+        if (bool (b)) std::copy (b->begin (), b->end (), begin ());
+        else *this = digest {uint<size> {string (s)}};
     }
     
     template <size_t size>

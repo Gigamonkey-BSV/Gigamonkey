@@ -9,35 +9,35 @@
 namespace Gigamonkey::Stratum::mining {
     struct set_version_mask : notification {
         
-        static Stratum::parameters serialize(const extensions::version_mask& d);
+        static Stratum::parameters serialize (const extensions::version_mask &d);
         
-        static std::optional<extensions::version_mask> deserialize(const Stratum::parameters& p);
+        static maybe<extensions::version_mask> deserialize (const Stratum::parameters &p);
         
         using notification::notification;
-        set_version_mask(extensions::version_mask d) : notification{mining_set_version_mask, serialize(d)} {} 
+        set_version_mask (extensions::version_mask d) : notification {mining_set_version_mask, serialize (d)} {}
         
-        static bool valid(const notification &n) {
-            return n.valid() && n.method() == mining_set_version_mask && deserialize(n.params());
+        static bool valid (const notification &n) {
+            return n.valid () && n.method () == mining_set_version_mask && deserialize (n.params ());
         }
         
-        bool valid() const {
-            return notification::valid() && deserialize(notification::params());
+        bool valid () const {
+            return notification::valid () && deserialize (notification::params ());
         }
         
-        extensions::version_mask params() const {
-            return *deserialize(notification::params());
+        extensions::version_mask params () const {
+            return *deserialize (notification::params ());
         }
     };
     
-    Stratum::parameters inline set_version_mask::serialize(const extensions::version_mask& d) {
+    Stratum::parameters inline set_version_mask::serialize (const extensions::version_mask &d) {
         Stratum::parameters p;
-        p.push_back(extensions::write_version_mask(d));
+        p.push_back (extensions::write_version_mask (d));
         return p;
     }
         
-    std::optional<extensions::version_mask> inline set_version_mask::deserialize(const Stratum::parameters& p) {
-        if (p.size() != 1 || !p[0].is_string()) return {};
-        return extensions::read_version_mask(string(p[0]));
+    maybe<extensions::version_mask> inline set_version_mask::deserialize (const Stratum::parameters &p) {
+        if (p.size () != 1 || !p[0].is_string ()) return {};
+        return extensions::read_version_mask (string (p[0]));
     }
 }
 

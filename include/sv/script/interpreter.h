@@ -30,32 +30,32 @@ class CTransaction;
 * Consensus should be true when validating scripts of transactions that are part of block
 * and it should be false when validating scripts of transactions that are validated for acceptance to mempool
 */
-std::optional<bool> EvalScript(
-    const CScriptConfig& config,
+std::optional<bool> EvalScript (
+    const CScriptConfig &config,
     bool consensus,
-    LimitedStack& stack,
-    const CScript& script,
+    LimitedStack &stack,
+    const CScript &script,
     uint32_t flags,
-    LimitedStack& altstack,
+    LimitedStack &altstack,
     long& ipc,
-    std::vector<bool>& vfExec,
-    std::vector<bool>& vfElse,
-    ScriptError* error = nullptr);
+    std::vector<bool> &vfExec,
+    std::vector<bool> &vfElse,
+    ScriptError *error = nullptr);
 
-std::optional<bool> EvalScript(
-    const CScriptConfig& config,
+std::optional<bool> EvalScript (
+    const CScriptConfig &config,
     bool consensus,
-    LimitedStack& stack,
-    const CScript& script,
+    LimitedStack &stack,
+    const CScript &script,
     uint32_t flags,
-    ScriptError* error = nullptr);
+    ScriptError *error = nullptr);
 
-std::optional<bool> VerifyScript(
-    const CScriptConfig& config,
+std::optional<bool> VerifyScript (
+    const CScriptConfig &config,
     bool consensus,
-    const CScript& scriptSig,
-    const CScript& scriptPubKey,
+    const CScript &scriptSig,
+    const CScript &scriptPubKey,
     uint32_t flags,
-    ScriptError* serror = nullptr);
+    ScriptError *serror = nullptr);
 
 #endif // BITCOIN_SCRIPT_INTERPRETER_H

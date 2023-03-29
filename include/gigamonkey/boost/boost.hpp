@@ -73,21 +73,21 @@ namespace Gigamonkey {
             
             static output_script bounty (
                 int32_little category,
-                const uint256& content,
+                const uint256 &content,
                 work::compact target, 
-                const bytes& tag, 
+                const bytes &tag,
                 uint32_little user_nonce, 
-                const bytes& data,
+                const bytes &data,
                 bool use_general_purpose_bits = true);
             
             static output_script contract (
                 int32_little category,
-                const uint256& content,
+                const uint256 &content,
                 work::compact target, 
-                const bytes& tag, 
+                const bytes &tag,
                 uint32_little user_nonce, 
-                const bytes& data, 
-                const digest160& miner_pubkey_hash,
+                const bytes &data,
+                const digest160 &miner_pubkey_hash,
                 bool use_general_purpose_bits = true);
             
             bool valid () const;
@@ -122,32 +122,32 @@ namespace Gigamonkey {
         private:
             output_script (
                 int32_little category, 
-                const uint256& content,
+                const uint256 &content,
                 work::compact target, 
-                const bytes& tag, 
+                const bytes &tag,
                 uint32_little user_nonce, 
-                const bytes& data, 
+                const bytes &data,
                 bool use_general_purpose_bits = true);
             
             output_script (
                 int32_little category, 
-                const uint256& content,
+                const uint256 &content,
                 work::compact target, 
-                const bytes& tag, 
+                const bytes &tag,
                 uint32_little user_nonce, 
-                const bytes& data,
+                const bytes &data,
                 const digest160& miner_pubkey_hash,
                 bool use_general_purpose_bits = true);
             
             output_script (
                 Boost::type type, 
                 int32_little category, 
-                const uint256& content, 
+                const uint256 &content,
                 work::compact target, 
-                const bytes& tag, 
+                const bytes &tag,
                 uint32_little user_nonce, 
-                const bytes& data, 
-                const digest160& miner_pubkey_hash,
+                const bytes &data,
+                const digest160 &miner_pubkey_hash,
                 bool use_general_purpose_bits = true);
             
         };
@@ -161,47 +161,47 @@ namespace Gigamonkey {
             Bitcoin::timestamp Timestamp;
             bytes ExtraNonce2;
             Stratum::session_id ExtraNonce1;
-            std::optional<int32_little> GeneralPurposeBits;
+            maybe<int32_little> GeneralPurposeBits;
             digest160 MinerPubkeyHash;
             
         private:
             // bounty type, no ASICBoost
             input_script (
-                const Bitcoin::signature& signature, 
-                const Bitcoin::pubkey& pubkey, 
+                const Bitcoin::signature &signature,
+                const Bitcoin::pubkey &pubkey,
                 uint32_little nonce,
                 Bitcoin::timestamp timestamp,
-                const bytes& extra_nonce_2,
+                const bytes &extra_nonce_2,
                 Stratum::session_id extra_nonce_1,
-                const digest160& miner_pubkey_hash);
+                const digest160 &miner_pubkey_hash);
             
             // contract type, no ASICBoost
             input_script (
-                const Bitcoin::signature& signature, 
-                const Bitcoin::pubkey& pubkey, 
+                const Bitcoin::signature &signature,
+                const Bitcoin::pubkey &pubkey,
                 uint32_little nonce,
                 Bitcoin::timestamp timestamp,
-                const bytes& extra_nonce_2,
+                const bytes &extra_nonce_2,
                 Stratum::session_id extra_nonce_1);
             
             // bounty type compatible with ASICBoost
             input_script (
-                const Bitcoin::signature& signature, 
-                const Bitcoin::pubkey& pubkey, 
+                const Bitcoin::signature &signature,
+                const Bitcoin::pubkey &pubkey,
                 uint32_little nonce,
                 Bitcoin::timestamp timestamp,
-                const bytes& extra_nonce_2,
+                const bytes &extra_nonce_2,
                 Stratum::session_id extra_nonce_1,
                 int32_little general_purpose_bits, 
-                const digest160& miner_pubkey_hash);
+                const digest160 &miner_pubkey_hash);
             
             // contract type compatible with ASICBoost;
             input_script (
-                const Bitcoin::signature& signature, 
-                const Bitcoin::pubkey& pubkey, 
+                const Bitcoin::signature &signature,
+                const Bitcoin::pubkey &pubkey,
                 uint32_little nonce,
                 Bitcoin::timestamp timestamp,
-                const bytes& extra_nonce_2,
+                const bytes &extra_nonce_2,
                 Stratum::session_id extra_nonce_1,
                 int32_little general_purpose_bits);
                 
@@ -218,41 +218,41 @@ namespace Gigamonkey {
             
             // construct a Boost bounty input script. 
             static input_script bounty (
-                const Bitcoin::signature& signature, 
-                const Bitcoin::pubkey& pubkey,  
+                const Bitcoin::signature &signature,
+                const Bitcoin::pubkey &pubkey,
                 uint32_little nonce,
                 Bitcoin::timestamp timestamp,
-                const bytes& extra_nonce_2,
+                const bytes &extra_nonce_2,
                 Stratum::session_id extra_nonce_1, 
-                const digest160& miner_pubkey_hash);
+                const digest160 &miner_pubkey_hash);
             
             // construct a Boost contract input script.
             static input_script contract (
-                const Bitcoin::signature& signature, 
-                const Bitcoin::pubkey& pubkey,  
+                const Bitcoin::signature &signature,
+                const Bitcoin::pubkey &pubkey,
                 uint32_little nonce,
                 Bitcoin::timestamp timestamp,
-                const bytes& extra_nonce_2,
+                const bytes &extra_nonce_2,
                 Stratum::session_id extra_nonce_1);
             
             // construct a Boost bounty input script. 
             static input_script bounty (
-                const Bitcoin::signature& signature, 
-                const Bitcoin::pubkey& pubkey,  
+                const Bitcoin::signature &signature,
+                const Bitcoin::pubkey &pubkey,
                 uint32_little nonce,
                 Bitcoin::timestamp timestamp,
-                const bytes& extra_nonce_2,
+                const bytes &extra_nonce_2,
                 Stratum::session_id extra_nonce_1, 
                 int32_little category_bits, 
-                const digest160& miner_pubkey_hash);
+                const digest160 &miner_pubkey_hash);
             
             // construct a Boost contract input script.
             static input_script contract (
-                const Bitcoin::signature& signature, 
-                const Bitcoin::pubkey& pubkey,  
+                const Bitcoin::signature &signature,
+                const Bitcoin::pubkey &pubkey,
                 uint32_little nonce,
                 Bitcoin::timestamp timestamp,
-                const bytes& extra_nonce_2,
+                const bytes &extra_nonce_2,
                 Stratum::session_id extra_nonce_1, 
                 int32_little category_bits);
             
@@ -269,9 +269,9 @@ namespace Gigamonkey {
             static digest160 miner_pubkey_hash (script x);
             
             input_script (
-                const Bitcoin::signature& signature, 
-                const Bitcoin::pubkey& pubkey, 
-                const work::solution&, Boost::type, 
+                const Bitcoin::signature &signature,
+                const Bitcoin::pubkey &pubkey,
+                const work::solution &, Boost::type,
                 bool category_mask);
             
             static uint64 expected_size (Boost::type t, bool use_general_purpose_bits, bool compressed_pubkey = true);
@@ -475,7 +475,8 @@ namespace Gigamonkey {
             work::compact target, 
             const bytes &tag, 
             uint32_little user_nonce, 
-            const bytes &data, bool masked_category) {
+            const bytes &data,
+            bool masked_category) {
             if (tag.size() > 20) return output_script {};
             return output_script{category, content, target, tag, user_nonce, data, masked_category};
         }

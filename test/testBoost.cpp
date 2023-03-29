@@ -142,7 +142,7 @@ namespace Gigamonkey::Boost {
             return test_case (o, n1, extra_nonce_2, start, s);
         }
         
-        static test_case build(Boost::type type, 
+        static test_case build (Boost::type type,
             const uint256& content, 
             work::compact target, 
             const bytes& tag, 
@@ -172,7 +172,7 @@ namespace Gigamonkey::Boost {
         bytes ExtraNonce2;
         Bitcoin::timestamp Start;
         Bitcoin::secret Key;
-        std::optional<int32_little> Bits;
+        maybe<int32_little> Bits;
         
         test_case (
             output_script o, 
@@ -180,7 +180,7 @@ namespace Gigamonkey::Boost {
             Stratum::session_id n1, 
             uint64_big n2, 
             uint64 key) : 
-            test_case (build(o, start, n1, n2, key)) {}
+            test_case (build (o, start, n1, n2, key)) {}
         
         test_case (Boost::type type,
             uint256 content, 

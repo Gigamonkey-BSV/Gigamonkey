@@ -223,7 +223,7 @@ namespace Gigamonkey::Boost {
         if (Type == Boost::contract) 
             boost_output_script = boost_output_script.append (push_data (MinerPubkeyHash));
         
-        boost_output_script = UseGeneralPurposeBits ? boost_output_script.append(
+        boost_output_script = UseGeneralPurposeBits ? boost_output_script.append (
             push_data (Category),
             push_data (Content),
             push_data (Target),
