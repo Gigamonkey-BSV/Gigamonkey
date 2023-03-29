@@ -50,7 +50,7 @@ namespace Gigamonkey::Stratum {
     }
     
     inline session_id::operator encoding::hex::fixed<4>() const {
-        return encoding::hex::write(*this, encoding::hex::lower);
+        return encoding::hex::write(*this, hex_case::lower);
     }
 
 }

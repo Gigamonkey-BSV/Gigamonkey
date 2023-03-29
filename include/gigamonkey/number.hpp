@@ -342,7 +342,7 @@ namespace Gigamonkey {
     inline uint<X>::operator string () const {
         bytes r (X);
         std::copy (begin (), end (), r.rbegin ());
-        return string {"0x"} + data::encoding::hex::write (r, data::encoding::hex::lower);
+        return string {"0x"} + encoding::hex::write (r, hex_case::lower);
     }
 
     template <size_t X>
@@ -356,12 +356,12 @@ namespace data::encoding::hexidecimal {
     
     template <size_t size> 
     std::string inline write (const Gigamonkey::uint<size>& n) {
-        return write<hex::lower> ((data::N) (n));
+        return write<hex_case::lower> ((data::N) (n));
     }
     
     template <size_t size> 
     std::ostream inline &write (std::ostream& o, const Gigamonkey::uint<size>& n) {
-        return o << write<hex::lower> (data::N (n));
+        return o << write<hex_case::lower> (data::N (n));
     }
     
 }
@@ -411,7 +411,7 @@ namespace Gigamonkey {
     
     template <size_t X>
     uint<X>::uint(const N& n) : uint(0) {
-        ptr<bytes> b = encoding::hex::read (encoding::hexidecimal::write<encoding::hex::lower> (n).substr (2));
+        ptr<bytes> b = encoding::hex::read (encoding::hexidecimal::write<hex_case::lower> (n).substr (2));
         std::reverse(b->begin (), b->end ());
         if (b->size () > X) std::copy(b->begin (), b->begin () + X, begin ());
         else std::copy(b->begin (), b->end(), begin ());

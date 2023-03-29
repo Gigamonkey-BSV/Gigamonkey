@@ -155,7 +155,7 @@ namespace Gigamonkey::Stratum::extensions {
     };
     
     inline encoding::hex::fixed<4> write_version_mask(const version_mask& x) {
-        return encoding::hex::write(x, encoding::hex::lower);
+        return encoding::hex::write(x, hex_case::lower);
     }
     
     inline accepted::accepted() : std::variant<bool, string, std::monostate>{std::monostate{}} {}
