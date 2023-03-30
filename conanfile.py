@@ -2,10 +2,9 @@ from conan import ConanFile
 from conan.tools.cmake import CMakeToolchain, CMake, cmake_layout, CMakeDeps
 from os import environ
 
-
-class GigamonkeyConan(ConanFile):
+class GigamonkeyConan (ConanFile):
     name = "gigamonkey"
-    version = "v0.0.13"
+    version = "v0.0.14"
     license = "Open BSV"
     author = "Daniel Krawisz"
     url = "https://github.com/Gigamonkey-BSV/Gigamonkey"
@@ -15,7 +14,7 @@ class GigamonkeyConan(ConanFile):
     options = {"shared": [True, False], "fPIC": [True, False]}
     default_options = {"shared": False, "fPIC": True}
     exports_sources = "CMakeLists.txt", "include/*", "src/*", "test/*"
-    requires = "boost/1.80.0", "openssl/1.1.1t", "cryptopp/8.5.0", "nlohmann_json/3.10.0", "gmp/6.2.1", "secp256k1/0.3@proofofwork/stable", "data/v0.0.26@proofofwork/stable", "gtest/1.12.1"
+    requires = "boost/1.80.0", "openssl/1.1.1t", "cryptopp/8.5.0", "nlohmann_json/3.10.0", "gmp/6.2.1", "secp256k1/0.3@proofofwork/stable", "data/v0.0.24@proofofwork/stable", "gtest/1.12.1"
     
     def set_version (self):
         if "CIRCLE_TAG" in environ:
