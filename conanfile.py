@@ -1,9 +1,10 @@
-from conans import ConanFile, CMake
+from conan import ConanFile
+from conan.tools.cmake import CMakeToolchain, CMake, cmake_layout, CMakeDeps
 from os import environ
 
-class GigamonkeyConan(ConanFile):
+class GigamonkeyConan (ConanFile):
     name = "gigamonkey"
-    version = "v0.0.12"
+    version = "v0.0.14"
     license = "Open BSV"
     author = "Daniel Krawisz"
     url = "https://github.com/Gigamonkey-BSV/Gigamonkey"
@@ -12,44 +13,43 @@ class GigamonkeyConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False], "fPIC": [True, False]}
     default_options = {"shared": False, "fPIC": True}
-    generators = "cmake"
-    exports_sources = "*"
-    requires = "boost/1.76.0", "openssl/1.1.1k", "cryptopp/8.5.0", "nlohmann_json/3.10.0", "gmp/6.2.1", "SECP256K1/0.2.0@proofofwork/stable", "data/v0.0.23@proofofwork/stable", "gtest/1.12.1"
+    exports_sources = "CMakeLists.txt", "include/*", "src/*", "test/*"
+    requires = "boost/1.80.0", "openssl/1.1.1t", "cryptopp/8.5.0", "nlohmann_json/3.10.0", "gmp/6.2.1", "secp256k1/0.3@proofofwork/stable", "data/v0.0.24@proofofwork/stable", "gtest/1.12.1"
     
-    def set_version(self):
+    def set_version (self):
         if "CIRCLE_TAG" in environ:
-            self.version = environ.get("CIRCLE_TAG")[1:]
+            self.version = environ.get ("CIRCLE_TAG")[1:]
         if "CURRENT_VERSION" in environ:
             self.version = environ['CURRENT_VERSION']
         else:
-            self.version = "v0.0.12"
+            self.version = "v0.0.13"
 
-    def config_options(self):
+    def config_options (self):
         if self.settings.os == "Windows":
             del self.options.fPIC
 
-    def configure_cmake(self):
-        if "CMAKE_BUILD_CORES_COUNT" in environ:
-            cmake = CMake(self, parallel=False)
-        else:
-            cmake = CMake(self)
-        cmake.definitions["PACKAGE_TESTS"] = "Off"
-        cmake.configure()
+    def configure_cmake (self):
+        cmake = CMake (self)
+        cmake.configure(variables={"PACKAGE_TESTS":"Off"})
         return cmake
+    
+    def layout(self):
+        cmake_layout(self)
 
-    def build(self):
-        cmake = self.configure_cmake()
-        if "CMAKE_BUILD_CORES_COUNT" in environ:
-            cmake.build(args=["--", environ.get("CMAKE_BUILD_CORES_COUNT")])
-        else:
-            cmake.build()
+    def generate(self):
+        deps = CMakeDeps(self)
+        deps.generate()
+        tc = CMakeToolchain(self)
+        tc.generate()
 
-    def package(self):
-        self.copy("*.h", dst="include", src="include")
-        self.copy("*.hpp", dst="include", src="include")
-        self.copy("libgigamonkey.a", src="lib", dst="lib", keep_path=False)
+    def build (self):
+        cmake = self.configure_cmake ()
+        cmake.build ()
 
-    def package_info(self):
-        self.cpp_info.libdirs = ["lib"]  # Default value is 'lib'
-        self.cpp_info.libs = self.collect_libs()
-#        self.cpp_info.libs = ["gigamonkey"]
+    def package (self):
+        cmake = CMake(self)
+        cmake.install()
+
+    def package_info (self):
+#        self.cpp_info.libdirs = ["lib"]  # Default value is 'lib'
+        self.cpp_info.libs = ["gigamonkey"]

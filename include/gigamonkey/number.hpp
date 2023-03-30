@@ -342,7 +342,7 @@ namespace Gigamonkey {
     inline uint<X>::operator string () const {
         bytes r (X);
         std::copy (begin (), end (), r.rbegin ());
-        return string {"0x"} + data::encoding::hex::write (r, data::encoding::hex::lower);
+        return string {"0x"} + encoding::hex::write (r, hex_case::lower);
     }
 
     template <size_t X>
@@ -356,12 +356,12 @@ namespace data::encoding::hexidecimal {
     
     template <size_t size> 
     std::string inline write (const Gigamonkey::uint<size>& n) {
-        return write<hex::lower> ((data::N) (n));
+        return write<hex_case::lower> ((data::N) (n));
     }
     
     template <size_t size> 
-    std::ostream inline &write (std::ostream& o, const Gigamonkey::uint<size>& n) {
-        return o << write<hex::lower> (data::N (n));
+    std::ostream inline &write (std::ostream &o, const Gigamonkey::uint<size> &n) {
+        return o << write<hex_case::lower> (data::N (n));
     }
     
 }
@@ -374,11 +374,11 @@ namespace data::encoding::decimal {
     }
     
     template <size_t size, unsigned int bits> 
-    std::ostream inline &write (std::ostream& o, const Gigamonkey::uint<size>& n) {
+    std::ostream inline &write (std::ostream &o, const Gigamonkey::uint<size> &n) {
         return o << write (n);
     }
     
-}
+ }
 
 namespace Gigamonkey {
 
@@ -397,7 +397,7 @@ namespace Gigamonkey {
             n += step;
             n <<= 32;
         }
-        n += uint64(boost::endian::load_little_u32 (data ()));
+        n += uint64 (boost::endian::load_little_u32 (data ()));
         return n;
     }
     
@@ -405,16 +405,16 @@ namespace Gigamonkey {
     inline uint<X>::uint (const string &hex) : uint (0) {
         if (hex.size () != X * 2 + 2) return;
         if (!data::encoding::hexidecimal::valid (hex)) return;
-        ptr<bytes> read = encoding::hex::read (hex.substr (2));
-        std::reverse_copy(read->begin (), read->end (), begin ());
+        maybe<bytes> read = encoding::hex::read (hex.substr (2));
+        std::reverse_copy (read->begin (), read->end (), begin ());
     }
     
     template <size_t X>
     uint<X>::uint(const N& n) : uint(0) {
-        ptr<bytes> b = encoding::hex::read (encoding::hexidecimal::write<encoding::hex::lower> (n).substr (2));
-        std::reverse(b->begin (), b->end ());
-        if (b->size () > X) std::copy(b->begin (), b->begin () + X, begin ());
-        else std::copy(b->begin (), b->end(), begin ());
+        maybe<bytes> b = encoding::hex::read (encoding::hexidecimal::write<hex_case::lower> (n).substr (2));
+        std::reverse (b->begin (), b->end ());
+        if (b->size () > X) std::copy (b->begin (), b->begin () + X, begin ());
+        else std::copy (b->begin (), b->end(), begin ());
     }
     
     template <size_t X>
@@ -707,7 +707,7 @@ namespace Gigamonkey {
         return integer<r>::less (a, b);
     }
     
-    template <endian::order r> bool inline operator>(const integer<r> &a, const integer<r> &b) {
+    template <endian::order r> bool inline operator > (const integer<r> &a, const integer<r> &b) {
         return integer<r>::greater (a, b);
     }
     
@@ -896,12 +896,12 @@ namespace Gigamonkey {
         return *this = *this >> i;
     }
     
-    template <endian::order r> inline integer<r>::integer (const integer<endian::opposite (r)>& x) {
+    template <endian::order r> inline integer<r>::integer (const integer<endian::opposite (r)> &x) {
         this->resize (x.size ());
         std::copy (x.begin (), x.end (), this->rbegin ());
     }
     
-    template <endian::order r> inline natural<r>::natural (const natural<endian::opposite (r)>& x) {
+    template <endian::order r> inline natural<r>::natural (const natural<endian::opposite (r)> &x) {
         this->resize (x.size ());
         std::copy (x.begin(), x.end(), this->rbegin ());
     }
@@ -1096,15 +1096,15 @@ namespace Gigamonkey {
         template <endian::order r> static bytes from_string (string_view x) {
                         
             auto hex = data::encoding::hex::read (x);
-            if (hex != nullptr) {
+            if (bool (hex)) {
                 bytes b;
-                b.resize(hex->size ());
-                std::copy(hex->begin (), hex->end (), b.begin ());
+                b.resize (hex->size ());
+                std::copy (hex->begin (), hex->end (), b.begin ());
                 return b;
             } 
             
             auto hexidecimal = data::encoding::hexidecimal::read<r> (x);
-            if (hexidecimal != nullptr) {
+            if (bool (hexidecimal)) {
                 bytes b;
                 b.resize (hexidecimal->size ());
                 std::copy (hexidecimal->begin (), hexidecimal->end (), b.begin ());
@@ -1113,23 +1113,8 @@ namespace Gigamonkey {
             
             if (x == "-0") return bytes ({0x80});
             
-            if (data::encoding::integer::valid (x)) {
-                bool negative = data::encoding::integer::negative (x);
-                ptr<data::math::Z_bytes<r>> positive_number; 
-                positive_number = negative ? 
-                    data::encoding::integer::read<r> (x.substr (1)) :
-                    data::encoding::integer::read<r> (x);
-                
-                bool has_sign_bit = sign_bit (positive_number->words ());
-                
-                bytes b;
-                b.resize (positive_number->size () + (has_sign_bit ? 1 : 0));
-                auto n = numbers::digits<r> {data::slice<byte> {const_cast<byte*>(b.data ()), b.size ()}};
-                std::copy(positive_number->begin (), positive_number->end (), n.begin ());
-                if (has_sign_bit) *(n.begin () + positive_number->size ()) = negative ? 0x80 : 0x00;
-                else if (negative) *(n.begin () + positive_number->size () - 1) += 0x80;
-                return b;
-            }
+            if (data::encoding::integer::valid (x))
+                return static_cast<bytes> (*data::encoding::integer::read<r, data::math::number::complement::twos> (x));
             
             throw std::logic_error {"Invalid string representation"};
         }

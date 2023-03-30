@@ -16,11 +16,11 @@ namespace Gigamonkey {
         
         bytes data = bytes::write (b.size() + 2, version, byte(n), b);
         
-        ss << ':' << encoding::hex::write (data, encoding::hex::lower);
+        ss << ':' << encoding::hex::write (data, hex_case::lower);
         
-        auto checksum = Bitcoin::checksum (bytes::from_string(ss.str()));
+        auto checksum = Bitcoin::checksum (bytes::from_string (ss.str ()));
         
-        ss << encoding::hex::write (checksum, encoding::hex::lower);
+        ss << encoding::hex::write (checksum, hex_case::lower);
         
         return ss.str ();
     }
@@ -31,7 +31,7 @@ namespace Gigamonkey {
         
         if (!ctre::match<pattern> (z)) return {};
         
-        bytes last_4_bytes = *encoding::hex::read (z.substr (z.size() - 8));
+        bytes last_4_bytes = *encoding::hex::read (z.substr (z.size () - 8));
         
         uint32_little expected_checksum;
         std::copy (last_4_bytes.begin (), last_4_bytes.end (), expected_checksum.begin ());

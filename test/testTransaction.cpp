@@ -9,9 +9,9 @@
 namespace Gigamonkey::Bitcoin {
 
     // can result in stack smashing
-    TEST(TransactionTest, TestTransaction) {
+    TEST (TransactionTest, TestTransaction) {
 
-        string tx_hex = string{} + 
+        string tx_hex = string {} +
         "0100000001DB78AC273A4113615B5FC2D5BC24904884988201A7DB977FEEE56F73F5BF718CB00000006A4730440220295348C95DBAA2E0CF67F2EDA2A442AFF7D6D8DCA2" + 
         "765D0D5CD11D8D3F0B75800220711DA79E4BE13BDD54DBCD3C5CFAD5F4C9E4F709BDF6B93DB8E94E464BFAE8EC412102A97974AC47721DF4B4D34DAAF277E015B29D377A" + 
         "90E546C442F9A32E4438CF61FFFFFFFF6E0000000000000000FDDA0E006A0A22686D7779646122202D20686F77206D75636820776F756C6420796F7520646F6E61746520" + 
@@ -126,31 +126,31 @@ namespace Gigamonkey::Bitcoin {
         "BFF42E6E53F3031AED7A85E2C69D1B029969074A88AC23020000000000001976A914C08965F6944CAC349AA27F1125A6C2F5D9DA2A1588AC23020000000000001976A914" +
         "714B401DAD2D9D4F2D127A990A38962A9BC4FD5688AC17D7FC08000000001976A9145773F7E192A69985C4EFAEA268C1D27BD089D58B88AC00000000";
         
-        ptr<bytes> tx = encoding::hex::read(tx_hex);
+        maybe<bytes> tx = encoding::hex::read (tx_hex);
         
-        ASSERT_NE(tx, nullptr);
+        ASSERT_TRUE (bool (tx));
         
-        EXPECT_EQ(tx->size(), 7676);
+        EXPECT_EQ (tx->size (), 7676);
         
-        EXPECT_EQ(Hash256(*tx), digest256{"0x0473718d87e0bd19437d19da0454873c074d5c9698d9e6e41b0c5cae2dcbe202"});
+        EXPECT_EQ (Hash256 (*tx), digest256 {"0x0473718d87e0bd19437d19da0454873c074d5c9698d9e6e41b0c5cae2dcbe202"});
         
-        transaction t = transaction{*tx};
+        transaction t = transaction {*tx};
         
-        EXPECT_TRUE(t.valid());
+        EXPECT_TRUE (t.valid ());
         
-        EXPECT_EQ(t.Version, 1);
+        EXPECT_EQ (t.Version, 1);
         
-        EXPECT_EQ(t.Inputs.size(), 1);
+        EXPECT_EQ (t.Inputs.size (), 1);
         
-        EXPECT_EQ(t.Outputs.size(), 110);
+        EXPECT_EQ (t.Outputs.size (), 110);
         
-        EXPECT_EQ(t.Locktime, 0);
+        EXPECT_EQ (t.Locktime, 0);
         
-        EXPECT_EQ(t.serialized_size(), 7676);
+        EXPECT_EQ (t.serialized_size (), 7676);
         
-        EXPECT_FALSE(pay_to_address{t.Outputs.first().Script}.valid());
+        EXPECT_FALSE (pay_to_address {t.Outputs.first ().Script}.valid ());
         
-        EXPECT_EQ(bytes(t), *tx);
+        EXPECT_EQ (bytes (t), *tx);
         
     }
 }

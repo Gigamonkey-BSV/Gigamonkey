@@ -8,6 +8,7 @@
 namespace Gigamonkey::Bitcoin {
     
     secret WIF::decode (string_view s) {
+
         base58::check b58 (s);
         if (!b58.valid ()) return Bitcoin::secret {};
         Bitcoin::secret w {};
@@ -19,8 +20,8 @@ namespace Gigamonkey::Bitcoin {
         } else return {};
 
         bytes_reader r (b58.data (), b58.data () + b58.size ());
-        r >> (byte&) (w.Prefix);
-        r.read(w.Secret.Value.data (), secp256k1::secret::Size);
+        r >> (byte &) (w.Prefix);
+        r.read (w.Secret.Value.data (), secp256k1::secret::Size);
         
         if (w.Compressed) {
             byte suffix;
@@ -29,17 +30,20 @@ namespace Gigamonkey::Bitcoin {
         } 
         
         return w;
+
     }
     
     WIF WIF::encode (byte prefix, const secp256k1::secret& s, bool compressed) {
+
         bytes data (compressed ? CompressedSize - 1: UncompressedSize - 1);
         bytes_writer w (data.begin (), data.end ());
         w << bytes_view (s.Value);
         if (compressed) w << CompressedSuffix;
 
         WIF wif;
-        static_cast<string&> (wif) = base58::check {prefix, data}.encode ();
+        static_cast<string &> (wif) = base58::check {prefix, data}.encode ();
         return wif;
+
     }
     
 }

@@ -156,7 +156,7 @@ static const unsigned int STANDARD_NOT_MANDATORY_VERIFY_FLAGS =
     STANDARD_SCRIPT_VERIFY_FLAGS & ~MANDATORY_SCRIPT_VERIFY_FLAGS;
 
 /** returns flags for "standard" script*/
-inline unsigned int StandardScriptVerifyFlags(bool genesisEnabled,
+inline unsigned int StandardScriptVerifyFlags (bool genesisEnabled,
                                        bool utxoAfterGenesis) {
     unsigned int scriptFlags = STANDARD_SCRIPT_VERIFY_FLAGS;
     if (utxoAfterGenesis) {
@@ -170,7 +170,7 @@ inline unsigned int StandardScriptVerifyFlags(bool genesisEnabled,
 }
 
 /** Get the flags to use for non-final transaction checks */
-inline unsigned int StandardNonFinalVerifyFlags(bool genesisEnabled)
+inline unsigned int StandardNonFinalVerifyFlags (bool genesisEnabled)
 {
     unsigned int flags { LOCKTIME_MEDIAN_TIME_PAST };
     if(!genesisEnabled) {
@@ -191,7 +191,7 @@ bool IsStandard(const CScriptConfig &config, const CScript &scriptPubKey, int32_
  * @return True if all outputs (scriptPubKeys) use only standard transaction
  * forms
  */
-bool IsStandardTx(const CScriptConfig &config, const CTransaction &tx, int32_t nHeight, std::string &reason);
+bool IsStandardTx (const CScriptConfig &config, const CTransaction &tx, int32_t nHeight, std::string &reason);
 
 /**
  * Check for standard transaction types
@@ -199,10 +199,10 @@ bool IsStandardTx(const CScriptConfig &config, const CTransaction &tx, int32_t n
  * spending
  * @return True if all inputs (scriptSigs) use only standard transaction forms
  */
-std::optional<bool> AreInputsStandard(
-    const task::CCancellationToken& token,
-    const CScriptConfig& config,
-    const CTransaction& tx,
+std::optional<bool> AreInputsStandard (
+    const task::CCancellationToken &token,
+    const CScriptConfig &config,
+    const CTransaction &tx,
     const CCoinsViewCache &mapInputs,
     const int32_t mempoolHeight);
 

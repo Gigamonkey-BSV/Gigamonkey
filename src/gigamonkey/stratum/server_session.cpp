@@ -5,56 +5,56 @@
 
 namespace Gigamonkey::Stratum {
     
-    bool server_session::state::set_difficulty(const Stratum::difficulty& d) {
-        if (!subscribed()) throw exception{"Cannot set difficulty before client is subscribed"};
-        if (bool(MinimumDifficulty) && d < *MinimumDifficulty) return false;
+    bool server_session::state::set_difficulty (const Stratum::difficulty& d) {
+        if (!subscribed ()) throw exception {"Cannot set difficulty before client is subscribed"};
+        if (bool (MinimumDifficulty) && d < *MinimumDifficulty) return false;
         if (d == NextDifficulty) return false;
         NextDifficulty = d; 
         return true;
     }
     
-    bool server_session::state::set_extranonce(const Stratum::extranonce &n) {
-        if (!subscribed()) throw exception{"Cannot set extra nonce before client is subscribed"};
+    bool server_session::state::set_extranonce (const Stratum::extranonce &n) {
+        if (!subscribed ()) throw exception {"Cannot set extra nonce before client is subscribed"};
         if (NextExtranonce == n || (NextExtranonce == Stratum::extranonce{} && Extranonce == n)) return false;
         NextExtranonce = n;
         return true;
     }
     
     // return value is whether the version mask has changed. 
-    bool server_session::state::set_version_mask(const extensions::version_mask &x) {
-        auto current = version_mask();
+    bool server_session::state::set_version_mask (const extensions::version_mask &x) {
+        auto current = version_mask ();
         if (bool(current) && *current == x) return false;
-        VersionRollingMaskParameters.set(x);
+        VersionRollingMaskParameters.set (x);
         return true;
     }
     
-    void server_session::receive_response(method m, const Stratum::response &r) {
+    void server_session::receive_response (method m, const Stratum::response &r) {
         if (m != client_get_version) 
-            throw exception{} << "unknown response returned: " << method_to_string(m) << "; " << r.dump();
+            throw exception {} << "unknown response returned: " << method_to_string (m) << "; " << r.dump ();
         
-        if (!client::get_version_response::valid(r)) 
-            throw exception{} << "invalid get_version response received: " << r;
+        if (!client::get_version_response::valid (r))
+            throw exception {} << "invalid get_version response received: " << r;
         
-        string client_version = client::get_version_response{r}.result();
-        State.set_client_version(client_version);
-        receive_get_version(client_version);
+        string client_version = client::get_version_response {r}.result ();
+        State.set_client_version (client_version);
+        receive_get_version (client_version);
     }
     
     // authorize the client to the server. 
     // this is the original first method of the protocol. 
     mining::authorize_response server_session::authorize(const mining::authorize_request &r) {
-        if (!r.valid()) return response{r.id(), nullptr, error{ILLEGAL_PARAMS}};
+        if (!r.valid ()) return response {r.id (), nullptr, error {ILLEGAL_PARAMS}};
         
-        if (State.authorized()) return response{r.id(), false, error{ILLEGAL_METHOD}};
+        if (State.authorized ()) return response {r.id (), false, error {ILLEGAL_METHOD}};
         
-        auto authorization = authorize(r.params());
+        auto authorization = authorize (r.params ());
         
         if (authorization) {
-            State.set_name(r.params().Username);
-            return mining::authorize_response{r.id(), true};
+            State.set_name (r.params ().Username);
+            return mining::authorize_response {r.id (), true};
         }
         
-        return mining::authorize_response{r.id(), *authorization};
+        return mining::authorize_response {r.id (), *authorization};
     }
     /*
     // generate a configure response from a configure request message. 

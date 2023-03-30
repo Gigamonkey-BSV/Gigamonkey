@@ -44,7 +44,7 @@ namespace Gigamonkey::Boost {
             push_size {4, Nonce},
             push_size {4, Timestamp},
             push {x.ExtraNonce2},
-            push_size{4, ExtraNonce1}, 
+            push_size {4, ExtraNonce1},
             optional {push_size {4, GeneralPurposeBits}},
             optional {push_size {20, MinerPubkeyHash}}}.match (b)) return {};
         
@@ -62,22 +62,22 @@ namespace Gigamonkey::Boost {
             x.MinerPubkeyHash.begin ());
         
         x.Pubkey.resize (MinerPubkey.size ());
-        std::copy(
+        std::copy (
             MinerPubkey.begin (),
             MinerPubkey.end (),
             x.Pubkey.begin ());
         
-        std::copy(
+        std::copy (
             Timestamp.begin (),
             Timestamp.end (),
             x.Timestamp.data ());
         
-        std::copy(
+        std::copy (
             Nonce.begin (),
             Nonce.end (),
             x.Nonce.data ());
         
-        std::copy(
+        std::copy (
             ExtraNonce1.begin (),
             ExtraNonce1.end (),
             x.ExtraNonce1.data ());
@@ -126,14 +126,14 @@ namespace Gigamonkey::Boost {
             // check that the given address matches the pubkey and check signature.
             OP_DUP, OP_HASH160, OP_FROMALTSTACK, OP_EQUALVERIFY, OP_CHECKSIG};
             
-        pattern output_script_pattern = pattern{
+        pattern output_script_pattern = pattern {
             push {bytes {0x62, 0x6F, 0x6F, 0x73, 0x74, 0x70, 0x6F, 0x77}}, OP_DROP,
-            optional {push_size{20, MinerPubkeyHash}},
+            optional {push_size {20, MinerPubkeyHash}},
             push_size {4, Category},
             push_size {32, Content},
             push_size {4, Target},
             push {x.Tag},
-            push_size{4, UserNonce}, 
+            push_size {4, UserNonce},
             push {x.AdditionalData}, OP_CAT, OP_SWAP,
             // copy mining pool’s pubkey hash to alt stack. A copy remains on the stack.
             push {5}, OP_ROLL, OP_DUP, OP_TOALTSTACK, OP_CAT,
@@ -147,7 +147,7 @@ namespace Gigamonkey::Boost {
             OP_SWAP, OP_CAT, OP_HASH256, 
             // target and content + merkleroot to altstack. 
             OP_SWAP, OP_TOALTSTACK, OP_CAT, OP_TOALTSTACK, 
-            push_data(work::ASICBoost::Mask), OP_DUP, OP_INVERT, OP_TOALTSTACK, OP_AND, 
+            push_data (work::ASICBoost::Mask), OP_DUP, OP_INVERT, OP_TOALTSTACK, OP_AND,
             // check size of general purpose bits 
             OP_SWAP, OP_FROMALTSTACK, OP_AND, OP_OR, 
             OP_FROMALTSTACK, OP_CAT,                             // attach content + merkleroot
@@ -170,7 +170,7 @@ namespace Gigamonkey::Boost {
             x.UseGeneralPurposeBits = false;
         } else return {};
         
-        std::copy(
+        std::copy (
             Category.begin (),
             Category.end (),
             x.Category.data ());
@@ -223,7 +223,7 @@ namespace Gigamonkey::Boost {
         if (Type == Boost::contract) 
             boost_output_script = boost_output_script.append (push_data (MinerPubkeyHash));
         
-        boost_output_script = UseGeneralPurposeBits ? boost_output_script.append(
+        boost_output_script = UseGeneralPurposeBits ? boost_output_script.append (
             push_data (Category),
             push_data (Content),
             push_data (Target),
@@ -345,7 +345,7 @@ namespace Gigamonkey::Boost {
             ", Nonce : " << s.Nonce << 
             ", Timestamp : " << s.Timestamp << 
             ", ExtraNonce2 : " << s.ExtraNonce2 << 
-            ", ExtraNonce1 : " << s.ExtraNonce1;
+            ", ExtraNonce1 : " << static_cast<uint32_big>(s.ExtraNonce1);
         if (s.Type == bounty) o << ", MinerPubkeyHash: " << s.MinerPubkeyHash;
         return o << "}";
     }
@@ -355,13 +355,13 @@ namespace Gigamonkey::Boost {
         auto miner_pubkey_hash = out.Type == bounty ? in.MinerPubkeyHash : out.MinerPubkeyHash;
         if (out.UseGeneralPurposeBits && bool (in.GeneralPurposeBits)) {
             int32_little gpr = *in.GeneralPurposeBits;
-            *this = proof {work::job{work::puzzle{
-                        out.Category, out.Content, out.Target, Merkle::path{}, 
-                        puzzle::header(out.Tag, miner_pubkey_hash),
-                        puzzle::body(out.UserNonce, out.AdditionalData), 
+            *this = proof {work::job {work::puzzle{
+                        out.Category, out.Content, out.Target, Merkle::path {},
+                        puzzle::header (out.Tag, miner_pubkey_hash),
+                        puzzle::body (out.UserNonce, out.AdditionalData),
                         work::ASICBoost::Mask}, 
                     in.ExtraNonce1},
-                work::share{in.Timestamp, in.Nonce, in.ExtraNonce2, gpr}, out.Type, in.Signature, in.Pubkey};
+                work::share {in.Timestamp, in.Nonce, in.ExtraNonce2, gpr}, out.Type, in.Signature, in.Pubkey};
             return; 
         } else if (!out.UseGeneralPurposeBits && !bool (in.GeneralPurposeBits)) {
             *this = proof {work::job {work::puzzle{
@@ -382,7 +382,7 @@ namespace Gigamonkey::Boost {
         return {script.Category, script.Content, script.Target, Merkle::path {},
             puzzle::header (script.Tag, miner_pubkey_hash),
             puzzle::body (script.UserNonce, script.AdditionalData),
-            script.UseGeneralPurposeBits ? work::ASICBoost::Mask : int32_little{-1}};
+            script.UseGeneralPurposeBits ? work::ASICBoost::Mask : int32_little {-1}};
     }
     
     bool puzzle::valid () const {
