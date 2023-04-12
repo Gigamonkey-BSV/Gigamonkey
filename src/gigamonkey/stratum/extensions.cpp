@@ -34,7 +34,9 @@ namespace Gigamonkey::Stratum::extensions {
     maybe<configuration<minimum_difficulty>> configuration<minimum_difficulty>::read (const result_params &p) {
         auto x = p.contains ("value");
         if (!x) return {};
-        return {configuration {*x}};
+        if (x->is_number_unsigned ()) return {configuration {difficulty {uint64 (*x)}}};
+        if (x->is_number_float ()) return {configuration {difficulty {work::difficulty {double (*x)}}}};
+        return {};
     }
     
     maybe<configuration<info>> configuration<info>::read (const request &p) {

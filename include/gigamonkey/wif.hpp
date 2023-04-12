@@ -12,10 +12,10 @@ namespace Gigamonkey::Bitcoin {
     
     struct secret;
         
-    bool operator == (const secret&, const secret&);
-    bool operator != (const secret&, const secret&);
+    bool operator == (const secret &, const secret &);
+    bool operator != (const secret &, const secret &);
     
-    std::ostream& operator << (std::ostream&, const secret&);
+    std::ostream &operator << (std::ostream &, const secret &);
 
     // WIF stands for Wallet Import Format.
     struct WIF;

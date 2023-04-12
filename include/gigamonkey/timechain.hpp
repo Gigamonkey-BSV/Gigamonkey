@@ -17,67 +17,67 @@ namespace Gigamonkey::Bitcoin {
     
     struct outpoint;
     
-    bool operator == (const outpoint&, const outpoint&);
+    bool operator == (const outpoint &, const outpoint &);
     
-    bool operator > (const outpoint&, const outpoint&);
-    bool operator < (const outpoint&, const outpoint&);
-    bool operator >= (const outpoint&, const outpoint&);
-    bool operator <= (const outpoint&, const outpoint&);
+    bool operator > (const outpoint &, const outpoint &);
+    bool operator < (const outpoint &, const outpoint &);
+    bool operator >= (const outpoint &, const outpoint &);
+    bool operator <= (const outpoint &, const outpoint &);
     
-    writer &operator << (writer &w, const outpoint& h);
-    reader &operator >> (reader &r, outpoint& h);
+    writer &operator << (writer &w, const outpoint &h);
+    reader &operator >> (reader &r, outpoint &h);
 
-    std::ostream &operator << (std::ostream& o, const outpoint& p);
+    std::ostream &operator << (std::ostream &o, const outpoint &p);
     
     struct input;
     
-    bool operator == (const input&, const input&);
+    bool operator == (const input &, const input &);
     
-    writer &operator << (writer &w, const input& h);
-    reader &operator >> (reader &r, input& h);
+    writer &operator << (writer &w, const input &h);
+    reader &operator >> (reader &r, input &h);
 
-    std::ostream &operator << (std::ostream& o, const input& p);
+    std::ostream &operator << (std::ostream &o, const input &p);
     
     struct output;
     
-    bool operator == (const output&, const output&);
+    bool operator == (const output &, const output &);
     
-    writer &operator << (writer &w, const output& h);
-    reader &operator >> (reader &r, output& h);
+    writer &operator << (writer &w, const output &h);
+    reader &operator >> (reader &r, output &h);
 
-    std::ostream &operator << (std::ostream& o, const output& p);
+    std::ostream &operator << (std::ostream &o, const output &p);
     
     struct transaction;
     
-    bool operator == (const transaction&, const transaction&);
+    bool operator == (const transaction &, const transaction &);
     
-    writer &operator << (writer &w, const transaction& h);
-    reader &operator >> (reader &r, transaction& h);
+    writer &operator << (writer &w, const transaction &h);
+    reader &operator >> (reader &r, transaction &h);
 
-    std::ostream &operator << (std::ostream& o, const transaction& p);
+    std::ostream &operator << (std::ostream &o, const transaction &p);
     
     struct header;
     
-    bool operator == (const header& a, const header& b);
+    bool operator == (const header &a, const header &b);
     
-    bool operator > (const header&, const header&);
-    bool operator < (const header&, const header&);
-    bool operator >= (const header&, const header&);
-    bool operator <= (const header&, const header&);
+    bool operator > (const header &, const header &);
+    bool operator < (const header &, const header &);
+    bool operator >= (const header &, const header &);
+    bool operator <= (const header &, const header &);
     
-    writer &operator << (writer &w, const header& h);
-    reader &operator >> (reader &r, header& h);
+    writer &operator << (writer &w, const header &h);
+    reader &operator >> (reader &r, header &h);
 
-    std::ostream &operator << (std::ostream& o, const header& h);
+    std::ostream &operator << (std::ostream &o, const header &h);
     
     struct block;
     
-    bool operator == (const block&, const block&);
+    bool operator == (const block &, const block &);
     
-    writer &operator << (writer &w, const block& h);
-    reader &operator >> (reader &r, block& h);
+    writer &operator << (writer &w, const block &h);
+    reader &operator >> (reader &r, block &h);
 
-    std::ostream &operator << (std::ostream& o, const block& p);
+    std::ostream &operator << (std::ostream &o, const block &p);
 
     // The header is the first 80 bytes of a Bitcoin block. 
     struct header {
@@ -125,7 +125,7 @@ namespace Gigamonkey::Bitcoin {
         bool valid () const;
         
         int16 version () const;
-        const transaction& coinbase () const;
+        const transaction &coinbase () const;
     };
 
     // an outpoint is a reference to a previous output. 
@@ -182,7 +182,7 @@ namespace Gigamonkey::Bitcoin {
         Gigamonkey::script Script;
         
         output () : Value {-1}, Script {} {}
-        output (satoshi v, const Gigamonkey::script& x) : Value {v}, Script {x} {}
+        output (satoshi v, const Gigamonkey::script &x) : Value {v}, Script {x} {}
         
         explicit output (bytes_view);
         explicit operator bytes () const;
@@ -232,7 +232,7 @@ namespace Gigamonkey::Bitcoin {
         uint32 sigops () const;
         
         satoshi sent () const {
-            return fold ([] (satoshi x, const Bitcoin::output& o) -> satoshi {
+            return fold ([] (satoshi x, const Bitcoin::output &o) -> satoshi {
                 return x + o.Value;
             }, satoshi {0}, Outputs);
         }
@@ -283,32 +283,32 @@ namespace Gigamonkey::Bitcoin {
         uint64 serialized_size () const;
     };
     
-    bool inline operator == (const header& a, const header& b) {
+    bool inline operator == (const header &a, const header &b) {
         return a.Version == b.Version && a.Previous == b.Previous && a.MerkleRoot == b.MerkleRoot 
             && a.Timestamp == b.Timestamp && a.Target == b.Target && a.Nonce == b.Nonce;
     }
     
-    bool inline operator == (const outpoint& a, const outpoint& b) {
+    bool inline operator == (const outpoint &a, const outpoint &b) {
         return a.Digest == b.Digest && a.Index == b.Index;
     }
     
-    bool inline operator == (const input& a, const input& b) {
+    bool inline operator == (const input &a, const input &b) {
         return a.Reference == b.Reference && a.Script == b.Script && a.Sequence == b.Sequence;
     }
     
-    bool inline operator == (const output& a, const output& b) {
+    bool inline operator == (const output &a, const output &b) {
         return a.Value == b.Value && a.Script == b.Script;
     }
     
-    bool inline operator == (const transaction& a, const transaction& b) {
+    bool inline operator == (const transaction &a, const transaction &b) {
         return a.Version == b.Version && a.Inputs == b.Inputs && a.Outputs == b.Outputs && a.Locktime == b.Locktime;
     }
     
-    bool inline operator == (const block& a, const block& b) {
+    bool inline operator == (const block &a, const block &b) {
         return a.Header == b.Header && a.Transactions == b.Transactions;
     }
     
-    std::ostream inline &operator << (std::ostream& o, const header& h) {
+    std::ostream inline &operator << (std::ostream &o, const header &h) {
         return o << "header{Version : " << h.Version <<
             ", Previous : " << h.Previous << 
             ", MerkleRoot : " << h.MerkleRoot << 
@@ -317,20 +317,21 @@ namespace Gigamonkey::Bitcoin {
             ", Nonce : " << h.Nonce << "}";
     }
     
-    std::ostream inline &operator << (std::ostream& o, const outpoint& p) {
+    std::ostream inline &operator << (std::ostream &o, const outpoint &p) {
         return o << "outpoint{" << p.Digest << ":" << p.Index << "}";
     }
     
-    std::ostream inline &operator << (std::ostream& o, const input& p) {
+    std::ostream inline &operator << (std::ostream &o, const input &p) {
         return o << "input{Reference : " << p.Reference << ", Script : " << ASM (p.Script) << ", Sequence : " << p.Sequence << "}";
     }
 
-    std::ostream inline &operator << (std::ostream& o, const output& p) {
+    std::ostream inline &operator << (std::ostream &o, const output &p) {
         return o << "output{Value : " << p.Value << ", Script : " << ASM (p.Script) << "}";
     }
 
-    std::ostream inline &operator << (std::ostream& o, const transaction& p) {
-        return o << "transaction{Version : " << p.Version << ", Inputs : " << p.Inputs << ", Outputs: " << p.Outputs << ", " << p.Locktime << "}";
+    std::ostream inline &operator << (std::ostream &o, const transaction& p) {
+        return o << "transaction{Version : " << p.Version << ", Inputs : " 
+            << p.Inputs << ", Outputs: " << p.Outputs << ", " << p.Locktime << "}";
     }
     
     writer inline &operator << (writer &w, const header &h) {
@@ -397,35 +398,35 @@ namespace Gigamonkey::Bitcoin {
         return Bitcoin::id (*this);
     }
     
-    inline bool operator > (const outpoint& a, const outpoint& b) {
+    inline bool operator > (const outpoint &a, const outpoint &b) {
         return a.Digest == b.Digest ? a.Index > b.Index : a.Digest > b.Digest;
     }
     
-    inline bool operator < (const outpoint& a, const outpoint& b) {
+    inline bool operator < (const outpoint &a, const outpoint &b) {
         return a.Digest == b.Digest ? a.Index < b.Index : a.Digest < b.Digest;
     }
     
-    inline bool operator >= (const outpoint& a, const outpoint& b) {
+    inline bool operator >= (const outpoint &a, const outpoint &b) {
         return a.Digest == b.Digest ? a.Index >= b.Index : a.Digest >= b.Digest;
     }
     
-    inline bool operator <= (const outpoint& a, const outpoint& b) {
+    inline bool operator <= (const outpoint &a, const outpoint &b) {
         return a.Digest == b.Digest ? a.Index <= b.Index : a.Digest <= b.Digest;
     }
     
-    bool inline operator > (const header& a, const header& b) {
+    bool inline operator > (const header &a, const header &b) {
         return a.Timestamp > b.Timestamp;
     }
     
-    bool inline operator < (const header& a, const header& b) {
+    bool inline operator < (const header &a, const header &b) {
         return a.Timestamp < b.Timestamp;
     }
     
-    bool inline operator >= (const header& a, const header& b) {
+    bool inline operator >= (const header &a, const header &b) {
         return a.Timestamp >= b.Timestamp;
     }
     
-    bool inline operator <= (const header& a, const header& b) {
+    bool inline operator <= (const header &a, const header &b) {
         return a.Timestamp <= b.Timestamp;
     }
     

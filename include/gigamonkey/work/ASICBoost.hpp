@@ -27,24 +27,25 @@ namespace Gigamonkey::work::ASICBoost {
     static const int32_little Mask = 0xE0001FFFUL;
     static const int32_little Bits = ~Mask;
     
-    inline int32_little version(int32_little version_field) {
+    inline int32_little version (int32_little version_field) {
         return Mask & version_field;
     }
     
-    inline uint16_little bits(int32_little version_field) {
-        return int32(Bits & version_field) >> 13;
+    inline uint16_little bits (int32_little version_field) {
+        return int32 (Bits & version_field) >> 13;
     }
     
-    inline uint16_little magic_number(int32_little version_field) {
-        static const uint32_little MaskLeft{0xe0000000};
-        static const uint32_little MaskRight{0x00001fff};
+    inline uint16_little magic_number (int32_little version_field) {
+        static const uint32_little MaskLeft {0xe0000000};
+        static const uint32_little MaskRight {0x00001fff};
         return ((MaskLeft & version_field) >> 16) | (MaskRight & version_field);
     }
     
-    inline int32_little category(uint16_little magic_number, uint16_little bits) {
-        static const int32_little MaskLeft{0xe000};
-        static const int32_little MaskRight{0x1fff};
-        return int32_little{0} + (int32_little{bits} << 13) + (int32_little{magic_number & MaskRight}) + (int32_little{magic_number & MaskLeft} << 16);
+    inline int32_little category (uint16_little magic_number, uint16_little bits) {
+        static const int32_little MaskLeft {0xe000};
+        static const int32_little MaskRight {0x1fff};
+        return int32_little {0} + (int32_little {bits} << 13) + 
+            (int32_little {magic_number & MaskRight}) + (int32_little {magic_number & MaskLeft} << 16);
     }
     
 }

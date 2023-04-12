@@ -11,21 +11,21 @@ namespace Gigamonkey::Stratum {
     // Some responses in Stratum are just booleans, so we have a type for that. 
     struct boolean_response : response {
         
-        static bool valid(const response& j) {
-            return j.valid() && (j.result().is_boolean() || bool(j.error()));
+        static bool valid (const response& j) {
+            return j.valid () && (j.result ().is_boolean () || bool (j.error ()));
         }
         
-        bool valid() const {
-            return valid(*this);
+        bool valid () const {
+            return valid (*this);
         }
         
-        bool result() const {
-            return valid(*this) && !bool(response::error()) && bool(response::result());
+        bool result () const {
+            return valid (*this) && !bool (response::error ()) && bool (response::result ());
         }
         
         using response::response;
-        boolean_response(message_id id, bool r) : response{id, JSON(r)} {}
-        boolean_response(message_id id, const Stratum::error &e) : response{id, false, e} {}
+        boolean_response (message_id id, bool r) : response {id, JSON (r)} {}
+        boolean_response (message_id id, const Stratum::error &e) : response {id, false, e} {}
     };
 
 }

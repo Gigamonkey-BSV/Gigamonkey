@@ -9,19 +9,19 @@
 namespace Gigamonkey::work {
     
     struct evaluator {
-        virtual void solved(const solution &) = 0;
-        virtual ~evaluator() {};
+        virtual void solved (const solution &) = 0;
+        virtual ~evaluator () {};
     };
     
     struct solver : virtual evaluator {
-        virtual void pose(const puzzle &) = 0;
-        virtual ~solver() {}
+        virtual void pose (const puzzle &) = 0;
+        virtual ~solver () {}
     };
     
     struct selector : virtual evaluator {
         // get latest job. If there is no job yet, block.  
-        virtual puzzle select() = 0;
-        virtual ~selector() {}
+        virtual puzzle select () = 0;
+        virtual ~selector () {}
     };
 }
 
