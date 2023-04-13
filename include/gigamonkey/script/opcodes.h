@@ -162,6 +162,6 @@ enum opcodetype
     OP_INVALIDOPCODE = 0xff,
 };
 
-const char *GetOpName(opcodetype);
-std::ostream& operator<<(std::ostream&, const opcodetype&);
+const char *GetOpName (opcodetype);
+std::ostream& operator << (std::ostream &, const opcodetype &);
 

@@ -24,20 +24,20 @@ class script_config final : public CScriptConfig {
 public:
     script_config();
 
-    bool SetMaxOpsPerScriptPolicy(int64_t maxOpsPerScriptPolicyIn, std::string* error);
-    uint64_t GetMaxOpsPerScript(bool isGenesisEnabled, bool consensus) const override;
+    bool SetMaxOpsPerScriptPolicy (int64_t maxOpsPerScriptPolicyIn, std::string* error);
+    uint64_t GetMaxOpsPerScript (bool isGenesisEnabled, bool consensus) const override;
 
-    bool SetMaxPubKeysPerMultiSigPolicy(int64_t maxPubKeysPerMultiSigIn, std::string* error = nullptr);
-    uint64_t GetMaxPubKeysPerMultiSig(bool isGenesisEnabled, bool consensus) const override;
+    bool SetMaxPubKeysPerMultiSigPolicy (int64_t maxPubKeysPerMultiSigIn, std::string* error = nullptr);
+    uint64_t GetMaxPubKeysPerMultiSig (bool isGenesisEnabled, bool consensus) const override;
 
-    bool SetMaxStackMemoryUsage(int64_t maxStackMemoryUsageConsensusIn, int64_t maxStackMemoryUsagePolicyIn, std::string* err = nullptr);
-    uint64_t GetMaxStackMemoryUsage(bool isGenesisEnabled, bool consensus) const override;
+    bool SetMaxStackMemoryUsage (int64_t maxStackMemoryUsageConsensusIn, int64_t maxStackMemoryUsagePolicyIn, std::string* err = nullptr);
+    uint64_t GetMaxStackMemoryUsage (bool isGenesisEnabled, bool consensus) const override;
 
-    bool SetMaxScriptSizePolicy(int64_t maxScriptSizePolicyIn, std::string* err = nullptr);
-    uint64_t GetMaxScriptSize(bool isGenesisEnabled, bool isConsensus) const override;
+    bool SetMaxScriptSizePolicy (int64_t maxScriptSizePolicyIn, std::string* err = nullptr);
+    uint64_t GetMaxScriptSize (bool isGenesisEnabled, bool isConsensus) const override;
 
-    bool SetMaxScriptNumLengthPolicy(int64_t maxScriptNumLengthIn, std::string* err = nullptr);
-    uint64_t GetMaxScriptNumLength(bool isGenesisEnabled, bool isConsensus) const override;
+    bool SetMaxScriptNumLengthPolicy (int64_t maxScriptNumLengthIn, std::string* err = nullptr);
+    uint64_t GetMaxScriptNumLength (bool isGenesisEnabled, bool isConsensus) const override;
     
 private:
 

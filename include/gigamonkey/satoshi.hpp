@@ -13,31 +13,31 @@ namespace Gigamonkey::Bitcoin {
     // for accounting purposes. 
     struct satoshi : int64_little {
         using int64_little::int64_little;
-        explicit satoshi(uint64_little x);
+        explicit satoshi (uint64_little x);
         
-        bool valid() const {
+        bool valid () const {
             return *this >= 0 && *this < 2100000000000000;
         }
         
-        satoshi operator+(satoshi x) const;
-        satoshi operator-(satoshi x) const;
-        satoshi operator-() const;
+        satoshi operator + (satoshi x) const;
+        satoshi operator - (satoshi x) const;
+        satoshi operator - () const;
     };
     
-    inline satoshi::satoshi(uint64_little x) {
-        std::copy(x.begin(), x.end(), int64_little::begin());
+    inline satoshi::satoshi (uint64_little x) {
+        std::copy (x.begin (), x.end (), int64_little::begin ());
     }
         
-    satoshi inline satoshi::operator+(satoshi x) const {
-        return static_cast<int64_little>(*this) + static_cast<int64_little>(x);
+    satoshi inline satoshi::operator + (satoshi x) const {
+        return static_cast<int64_little>(*this) + static_cast<int64_little> (x);
     }
     
-    satoshi inline satoshi::operator-(satoshi x) const {
-        return static_cast<int64_little>(*this) - static_cast<int64_little>(x);
+    satoshi inline satoshi::operator - (satoshi x) const {
+        return static_cast<int64_little> (*this) - static_cast<int64_little> (x);
     }
     
-    satoshi inline satoshi::operator-() const {
-        return satoshi{-static_cast<int64_little>(*this)};
+    satoshi inline satoshi::operator - () const {
+        return satoshi {-static_cast<int64_little> (*this)};
     }
 
 }
@@ -45,13 +45,13 @@ namespace Gigamonkey::Bitcoin {
 namespace data::math {
     
     template <> struct identity<plus<Gigamonkey::Bitcoin::satoshi>, Gigamonkey::Bitcoin::satoshi> {
-        Gigamonkey::Bitcoin::satoshi operator()() {
+        Gigamonkey::Bitcoin::satoshi operator () () {
             return {0};
         }
     };
     
     template <> struct inverse<plus<Gigamonkey::Bitcoin::satoshi>, Gigamonkey::Bitcoin::satoshi> {
-        Gigamonkey::Bitcoin::satoshi operator()(const Gigamonkey::Bitcoin::satoshi &a, const Gigamonkey::Bitcoin::satoshi &b) {
+        Gigamonkey::Bitcoin::satoshi operator () (const Gigamonkey::Bitcoin::satoshi &a, const Gigamonkey::Bitcoin::satoshi &b) {
             return b - a;
         }
     };

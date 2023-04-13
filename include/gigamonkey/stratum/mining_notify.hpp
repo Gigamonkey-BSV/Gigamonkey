@@ -37,7 +37,7 @@ namespace Gigamonkey::Stratum::mining {
             bool Clean;
             
             bool valid() const {
-                return Digest != 0 && Path.valid() && Target.valid() && Now.valid();
+                return Digest != 0 && Path.valid () && Target.valid () && Now.valid ();
             } 
             
             parameters ();
@@ -134,7 +134,8 @@ namespace Gigamonkey::Stratum::mining {
     std::ostream inline &operator << (std::ostream &o, const notify::parameters &p) {
         return o << "{ID: " << p.JobID << ", Digest: " << p.Digest << ", GenerationTx1 " << p.GenerationTx1 
             << ", GenerationTx2: " << p.GenerationTx2 << ", Path: " << p.Path << ", Version: " << p.Version 
-            << ", Difficulty: " << work::difficulty(p.Target) << ", Now: " << p.Now << ", Clean: " << (p.Clean ? "true" : "false") << "}";
+            << ", Difficulty: " << work::difficulty(p.Target) << ", Now: " << p.Now << ", Clean: " 
+            << (p.Clean ? "true" : "false") << "}";
     }
     
 }

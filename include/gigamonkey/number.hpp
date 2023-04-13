@@ -81,10 +81,10 @@ namespace Gigamonkey {
     // a representation of uints of any size. 
     template <size_t X> struct uint : public base_uint<8 * X> {
         static const unsigned int bits = 8 * X;
-        uint(base_uint<bits> &&b) : base_uint<bits> {b} {}
-        uint(const base_uint<bits> &b) : base_uint<bits> {b} {}
-        uint(uint64 u) : base_uint<bits> (u) {}
-        uint() : uint(0) {}
+        uint (base_uint<bits> &&b) : base_uint<bits> {b} {}
+        uint (const base_uint<bits> &b) : base_uint<bits> {b} {}
+        uint (uint64 u) : base_uint<bits> (u) {}
+        uint () : uint (0) {}
         
         uint(const slice<X>);
         
@@ -389,7 +389,7 @@ namespace Gigamonkey {
     
     template <size_t X>
     uint<X>::operator N () const {
-        N n(0);
+        N n (0);
         int width = X / 4;
         int i;
         for (i = width - 1; i > 0; i--) {

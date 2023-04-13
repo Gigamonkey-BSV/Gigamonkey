@@ -128,7 +128,7 @@ namespace Gigamonkey::HD {
             secret derive (string_view l) const;
             
             explicit operator Bitcoin::secret () const {
-                return Bitcoin::secret {to_wif(Net), Secret, true};
+                return Bitcoin::secret {to_wif (Net), Secret, true};
             }
             
             explicit operator string () const {
@@ -136,17 +136,17 @@ namespace Gigamonkey::HD {
             }
         };
 
-        secret derive (const secret&, uint32);
-        pubkey derive (const pubkey&, uint32);
+        secret derive (const secret &, uint32);
+        pubkey derive (const pubkey &, uint32);
         
-        secret inline derive (const secret& s, path l) {
+        secret inline derive (const secret &s, path l) {
             if (l.empty ()) return s;
             return derive (derive (s, l.first ()), l.rest());
         }
         
-        pubkey inline derive (const pubkey& p, path l) {
+        pubkey inline derive (const pubkey &p, path l) {
             if (l.empty ()) return p;
-            return derive (derive(p, l.first ()), l.rest ());
+            return derive (derive (p, l.first ()), l.rest ());
         }
         
         pubkey inline pubkey::derive (path l) const {
@@ -187,8 +187,8 @@ namespace Gigamonkey::HD {
         uint32 Index;
         BIP_32::secret Key;
         
-        key_source (uint32 i, const BIP_32::secret& s) :
-            Index {i}, Key{s} {}
+        key_source (uint32 i, const BIP_32::secret &s) :
+            Index {i}, Key {s} {}
         
         key_source (const BIP_32::secret& s) : key_source {1, s} {}
         

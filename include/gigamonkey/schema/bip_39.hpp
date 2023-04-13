@@ -11,19 +11,20 @@
 // will be depricated but needs to be supported for 
 // older wallets. 
 namespace Gigamonkey::HD::BIP_39 {
+    
     enum language {
         english,
         japanese,
         electrum_sv_english
     };
     
-    seed read(std::string words, const string& passphrase="", language lang=language::english);
+    seed read (std::string words, const string &passphrase = "", language lang = language::english);
     
-    std::string generate(entropy, language lang=language::english);
-    bool valid(std::string words, language lang=language::english);
+    std::string generate (entropy, language lang = language::english);
+    bool valid (std::string words, language lang = language::english);
     
-    const cross<std::string> &english_words();
-    const cross<std::string> &japanese_words();
+    const cross<std::string> &english_words ();
+    const cross<std::string> &japanese_words ();
 }
 
 #endif
