@@ -396,10 +396,11 @@ namespace Gigamonkey::Boost {
     }
     
     bytes puzzle::redeem (const work::solution &solution, list<Bitcoin::output> outs) const {
+        
         // construct the incomplete inputs
         list<incomplete::input> incomplete_inputs = data::for_each (
-            [] (const Boost::prevout &prev) -> incomplete::input {
-                return {prev.outpoint (), Bitcoin::input::Finalized};
+            [] (const Boost::candidate::prevout &prev) -> incomplete::input {
+                return incomplete::input {static_cast<Bitcoin::outpoint> (prev), Bitcoin::input::Finalized};
             }, Prevouts);
         
         Boost::output_script boost_script = Script;

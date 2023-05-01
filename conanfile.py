@@ -14,7 +14,16 @@ class GigamonkeyConan (ConanFile):
     options = {"shared": [True, False], "fPIC": [True, False]}
     default_options = {"shared": False, "fPIC": True}
     exports_sources = "CMakeLists.txt", "include/*", "src/*", "test/*"
-    requires = "boost/1.80.0", "openssl/1.1.1t", "cryptopp/8.5.0", "nlohmann_json/3.11.2", "gmp/6.2.1", "secp256k1/0.3@proofofwork/stable", "data/v0.0.25@proofofwork/stable", "gtest/1.12.1"
+    requires = [
+        "boost/1.80.0", 
+        "openssl/1.1.1t", 
+        "cryptopp/8.5.0", 
+        "nlohmann_json/3.11.2", 
+        "gmp/6.2.1", 
+        "secp256k1/0.3@proofofwork/stable", 
+        "data/v0.0.25@proofofwork/unstable", 
+        "gtest/1.12.1"
+    ]
     
     def set_version (self):
         if "CIRCLE_TAG" in environ:
@@ -22,7 +31,7 @@ class GigamonkeyConan (ConanFile):
         if "CURRENT_VERSION" in environ:
             self.version = environ['CURRENT_VERSION']
         else:
-            self.version = "v0.0.13"
+            self.version = "v0.0.14"
 
     def config_options (self):
         if self.settings.os == "Windows":
