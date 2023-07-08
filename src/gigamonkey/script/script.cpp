@@ -10,7 +10,7 @@
 
 namespace Gigamonkey::Bitcoin {
     
-    bool redemption_document::check_locktime(const CScriptNum &nLockTime) const {
+    bool redemption_document::check_locktime (const CScriptNum &nLockTime) const {
         // There are two kinds of nLockTime: lock-by-blockheight and
         // lock-by-blocktime, distinguished by whether nLockTime <
         // LOCKTIME_THRESHOLD.
@@ -21,15 +21,11 @@ namespace Gigamonkey::Bitcoin {
         if (!((Transaction.Locktime < LOCKTIME_THRESHOLD &&
             nLockTime < LOCKTIME_THRESHOLD) ||
             (Transaction.Locktime >= LOCKTIME_THRESHOLD &&
-            nLockTime >= LOCKTIME_THRESHOLD))) {
-            return false;
-        }
+            nLockTime >= LOCKTIME_THRESHOLD))) return false;
 
         // Now that we know we're comparing apples-to-apples, the comparison is a
         // simple numeric one.
-        if (nLockTime > int64_t(Transaction.Locktime)) {
-            return false;
-        }
+        if (nLockTime > int64_t (Transaction.Locktime)) return false;
 
         // Finally the nLockTime feature can be disabled and thus
         // CHECKLOCKTIMEVERIFY bypassed if every txin has been finalized by setting
@@ -40,31 +36,25 @@ namespace Gigamonkey::Bitcoin {
         // Alternatively we could test all inputs, but testing just this input
         // minimizes the data required to prove correct CHECKLOCKTIMEVERIFY
         // execution.
-        if (CTxIn::SEQUENCE_FINAL == Transaction.Inputs[InputIndex].Sequence) {
-            return false;
-        }
+        if (CTxIn::SEQUENCE_FINAL == Transaction.Inputs[InputIndex].Sequence) return false;
 
         return true;
     }
 
-    bool redemption_document::check_sequence(const CScriptNum &nSequence) const {
+    bool redemption_document::check_sequence (const CScriptNum &nSequence) const {
         // Relative lock times are supported by comparing the passed in operand to
         // the sequence number of the input.
-        const int64_t txToSequence = int64_t(Transaction.Inputs[InputIndex].Sequence);
+        const int64_t txToSequence = int64_t (Transaction.Inputs[InputIndex].Sequence);
 
         // Fail if the transaction's version number is not set high enough to
         // trigger BIP 68 rules.
-        if (static_cast<uint32_t>(Transaction.Version) < 2) {
-            return false;
-        }
+        if (static_cast<uint32_t> (Transaction.Version) < 2) return false;
 
         // Sequence numbers with their most significant bit set are not consensus
         // constrained. Testing that the transaction's sequence number do not have
         // this bit set prevents using this property to get around a
         // CHECKSEQUENCEVERIFY check.
-        if (txToSequence & CTxIn::SEQUENCE_LOCKTIME_DISABLE_FLAG) {
-            return false;
-        }
+        if (txToSequence & CTxIn::SEQUENCE_LOCKTIME_DISABLE_FLAG) return false;
 
         // Mask off any bits that do not have consensus-enforced meaning before
         // doing the integer comparisons
@@ -83,15 +73,11 @@ namespace Gigamonkey::Bitcoin {
         if (!((txToSequenceMasked < CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG &&
             nSequenceMasked < CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG) ||
             (txToSequenceMasked >= CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG &&
-            nSequenceMasked >= CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG))) {
-            return false;
-        }
+            nSequenceMasked >= CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG))) return false;
 
         // Now that we know we're comparing apples-to-apples, the comparison is a
         // simple numeric one.
-        if (nSequenceMasked > txToSequenceMasked) {
-            return false;
-        }
+        if (nSequenceMasked > txToSequenceMasked) return false;
 
         return true;
     }

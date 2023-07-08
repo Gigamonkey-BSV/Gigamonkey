@@ -8,7 +8,6 @@
 #include <gigamonkey/script/stack.hpp>
 #include <gigamonkey/script/counter.hpp>
 #include <gigamonkey/script/config.hpp>
-#include <data/io/wait_for_enter.hpp>
 
 namespace Gigamonkey::Bitcoin::interpreter { 
     
@@ -68,7 +67,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
         
         program inline full (const program unlock, const program lock) {
             if (!isP2SH (lock) || data::empty (unlock)) return (unlock << OP_CODESEPARATOR) + lock;
-            return (unlock << OP_CODESEPARATOR) + (lock << OP_CODESEPARATOR) + decompile(data::reverse(unlock).first().data());
+            return (unlock << OP_CODESEPARATOR) + (lock << OP_CODESEPARATOR) + decompile (data::reverse (unlock).first ().data ());
         }
         
         ScriptError check_scripts (const program unlock, const program lock, uint32 flags) {
@@ -80,7 +79,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
             return verify (full (unlock, lock), flags);
         }
         
-        machine(maybe<redemption_document> doc, const program unlock, const program lock, uint32 flags);
+        machine (maybe<redemption_document> doc, const program unlock, const program lock, uint32 flags);
         
         static const element &script_false () {
             static element False (0);
