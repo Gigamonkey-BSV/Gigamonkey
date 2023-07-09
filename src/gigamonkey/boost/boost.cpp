@@ -92,7 +92,7 @@ namespace Gigamonkey::Boost {
         bytes Target {};
         bytes UserNonce {};
         bytes MinerPubkeyHash {};
-        
+
         pattern output_script_pattern_no_asicboost = pattern {
             push {bytes {0x62, 0x6F, 0x6F, 0x73, 0x74, 0x70, 0x6F, 0x77}}, OP_DROP,
             optional {push_size {20, MinerPubkeyHash}},
@@ -296,9 +296,9 @@ namespace Gigamonkey::Boost {
     }
     
     input_script from_solution (
-                const signature& signature, 
-                const pubkey& pubkey, 
-                const work::solution& x, Boost::type t, 
+                const signature &signature,
+                const pubkey &pubkey,
+                const work::solution &x, Boost::type t,
                 bool category_mask) {
         
         input_script in {};
@@ -315,12 +315,12 @@ namespace Gigamonkey::Boost {
     }
     
     input_script::input_script (
-        const Bitcoin::signature& signature, 
-        const Bitcoin::pubkey& pubkey, 
-        const work::solution& x, Boost::type t, 
+        const Bitcoin::signature &signature,
+        const Bitcoin::pubkey &pubkey,
+        const work::solution &x, Boost::type t,
         bool category_mask) : input_script {from_solution (signature, pubkey, x, t, category_mask)} {}
     
-    std::ostream& operator << (std::ostream& o, const Gigamonkey::Boost::output_script s) {
+    std::ostream &operator << (std::ostream &o, const Gigamonkey::Boost::output_script s) {
         using namespace Gigamonkey::Boost;
         if (s.Type == invalid) return o << "BoostOutputScript{Type : invalid}";
         o << "BoostOutputScript{Type : ";
@@ -336,7 +336,7 @@ namespace Gigamonkey::Boost {
             ", AdditionalData : " << s.AdditionalData << "}";
     }
 
-    std::ostream& operator << (std::ostream& o, const Gigamonkey::Boost::input_script s) {
+    std::ostream &operator << (std::ostream &o, const Gigamonkey::Boost::input_script s) {
         using namespace Gigamonkey::Boost;
         if (s.Type == invalid) return o << "BoostInputScript{Type : invalid}";
         o << "BoostInputScript{Type : " << (s.Type == contract ? "contract" : "bounty") << 
@@ -350,7 +350,7 @@ namespace Gigamonkey::Boost {
         return o << "}";
     }
 
-    proof::proof (const Boost::output_script& out, const Boost::input_script& in) : proof{} {
+    proof::proof (const Boost::output_script &out, const Boost::input_script &in) : proof{} {
         if (out.Type == invalid || in.Type != out.Type) return;
         auto miner_pubkey_hash = out.Type == bounty ? in.MinerPubkeyHash : out.MinerPubkeyHash;
         if (out.UseGeneralPurposeBits && bool (in.GeneralPurposeBits)) {
@@ -364,11 +364,11 @@ namespace Gigamonkey::Boost {
                 work::share {in.Timestamp, in.Nonce, in.ExtraNonce2, gpr}, out.Type, in.Signature, in.Pubkey};
             return; 
         } else if (!out.UseGeneralPurposeBits && !bool (in.GeneralPurposeBits)) {
-            *this = proof {work::job {work::puzzle{
+            *this = proof {work::job {work::puzzle {
                         out.Category, out.Content, out.Target, Merkle::path {},
-                        puzzle::header(out.Tag, miner_pubkey_hash),
-                        puzzle::body(out.UserNonce, out.AdditionalData), 
-                        int32_little{-1}}, 
+                        puzzle::header (out.Tag, miner_pubkey_hash),
+                        puzzle::body (out.UserNonce, out.AdditionalData),
+                        int32_little {-1}},
                     in.ExtraNonce1},
                 work::share {in.Timestamp, in.Nonce, in.ExtraNonce2}, out.Type, in.Signature, in.Pubkey};
             return;
@@ -388,11 +388,11 @@ namespace Gigamonkey::Boost {
     bool puzzle::valid () const {
         if (!candidate::valid () || !MinerKey.valid ()) return false;
     
-        digest160 address = this->miner_pubkey_hash ();
+        output_script x {this->Script};
         
         // If this is a contract script, we need to check that the key we have been given corresponds 
         // to the miner address in the script. 
-        return this->Script.Type == Boost::bounty || this->Script.MinerPubkeyHash == Bitcoin::Hash160 (this->MinerKey.to_public ());
+        return x.valid () && (x.Type == Boost::bounty || x.MinerPubkeyHash == Bitcoin::Hash160 (this->MinerKey.to_public ()));
     }
     
     bytes puzzle::redeem (const work::solution &solution, list<Bitcoin::output> outs) const {
@@ -403,11 +403,12 @@ namespace Gigamonkey::Boost {
                 return incomplete::input {static_cast<Bitcoin::outpoint> (prev), Bitcoin::input::Finalized};
             }, Prevouts);
         
-        Boost::output_script boost_script = Script;
+        bytes script = Script;
+        Boost::output_script boost_script {script};
         
         secret sk = MinerKey;
         Bitcoin::satoshi val = value ();
-        bytes script = boost_script.write ();
+
         incomplete::transaction incomplete {1, incomplete_inputs, outs, 0};
         pubkey pk = sk.to_public ();
         Boost::type boost_type = boost_script.Type;
@@ -420,14 +421,15 @@ namespace Gigamonkey::Boost {
                 const incomplete::input &i, 
                 const prevout &prev) -> input {
                 return input {i.Reference, input_script {
-                    sk.sign (sighash::document {prev.Value, script, incomplete, index++}),
+                    sk.sign (sighash::document {prev.Value, script, incomplete, index++}, directive (sighash::all)),
                 pk, solution, boost_type, category_mask}.write (), i.Sequence};
             }, incomplete_inputs, Prevouts.values ()), outs, 0});
         
     }
     
     size_t puzzle::expected_size () const {
-        size_t input_script_size = input_script::expected_size (Script.Type, Script.UseGeneralPurposeBits, MinerKey.Compressed);
+        output_script x {Script};
+        size_t input_script_size = input_script::expected_size (x.Type, x.UseGeneralPurposeBits, MinerKey.Compressed);
         return Bitcoin::var_int::size (Prevouts.size ()) +
             Prevouts.size () * (input_script_size + Bitcoin::var_int::size (input_script_size) + 40);
     }

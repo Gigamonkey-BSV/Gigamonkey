@@ -30,15 +30,15 @@ namespace Gigamonkey::Bitcoin::interpreter {
             LimitedStack<element> Stack;
             LimitedStack<element> AltStack;
             
-            std::vector<bool> Exec;
-            std::vector<bool> Else;
+            cross<bool> Exec;
+            cross<bool> Else;
             
             long OpCount;
             
             state (uint32 flags, bool consensus, maybe<redemption_document> doc, const bytes &script);
             
             program unread () const {
-                return decompile (bytes_view{Counter.Script}.substr(Counter.Counter));
+                return decompile (bytes_view {Counter.Script}.substr (Counter.Counter));
             }
             
             result step ();
@@ -72,10 +72,12 @@ namespace Gigamonkey::Bitcoin::interpreter {
         
         ScriptError check_scripts (const program unlock, const program lock, uint32 flags) {
             if (flags & SCRIPT_VERIFY_SIGPUSHONLY && !is_push(unlock)) return SCRIPT_ERR_SIG_PUSHONLY;
+
             if (isP2SH (lock)) {
                 if (unlock.empty ()) return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 if (!is_push (unlock)) return SCRIPT_ERR_SIG_PUSHONLY;
             }
+
             return verify (full (unlock, lock), flags);
         }
         

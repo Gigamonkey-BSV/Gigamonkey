@@ -23,7 +23,7 @@
 #include <data/encoding/hex.hpp>
 #include <data/math/nonnegative.hpp>
 
-inline bool implies(bool a, bool b) {
+inline bool implies (bool a, bool b) {
     return (!a) || b;
 }
 
@@ -55,27 +55,27 @@ namespace Gigamonkey {
     using bytes_reader = data::iterator_reader<const byte*, byte>;
     
     template <typename X> 
-    writer inline &write(writer &b, X x) {
+    writer inline &write (writer &b, X x) {
         return b << x;
     }
     
     template <typename X, typename ... P> 
-    writer inline &write(writer &b, X x, P... p) {
-        return write(write(b, x), p...);
+    writer inline &write (writer &b, X x, P... p) {
+        return write (write (b, x), p...);
     }
     
-    template <typename ... P> inline bytes write(size_t size, P... p) {
-        bytes x(size);
-        bytes_writer w{x.begin(), x.end()};
-        write(w, p...);
+    template <typename ... P> inline bytes write (size_t size, P... p) {
+        bytes x (size);
+        bytes_writer w {x.begin (), x.end ()};
+        write (w, p...);
         return x;
     }
     
     template <typename X>  
-    writer inline &write(writer &b, list<X> ls) {
-        while(!ls.empty()) {
-            b << ls.first();
-            ls = ls.rest();
+    writer inline &write (writer &b, list<X> ls) {
+        while(!ls.empty ()) {
+            b << ls.first ();
+            ls = ls.rest ();
         }
         return b;
     }
@@ -86,14 +86,14 @@ namespace Gigamonkey {
         list<bytes> Bytes;
         
         void write(const byte* b, size_t size) override {
-            Bytes = Bytes << bytes(bytes_view{b, size});
+            Bytes = Bytes << bytes (bytes_view {b, size});
         }
         
-        operator bytes() const {
+        operator bytes () const {
             size_t size = 0;
-            for (const bytes &b : Bytes) size += b.size();
-            bytes z(size);
-            bytes_writer w{z.begin(), z.end()};
+            for (const bytes &b : Bytes) size += b.size ();
+            bytes z (size);
+            bytes_writer w {z.begin (), z.end ()};
             for (const bytes &b : Bytes) w << b;
             return z;
         }

@@ -41,7 +41,7 @@ namespace Gigamonkey::Merkle {
             return Paths.contains (b);
         }
         
-        proof operator[] (const digest &b) const {
+        proof operator [] (const digest &b) const {
             auto e = Paths.contains (b);
             if (!e) return proof {};
             return proof {branch {b, *e}, Root};

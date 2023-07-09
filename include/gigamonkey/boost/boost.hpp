@@ -18,17 +18,11 @@ namespace Gigamonkey {
         struct output_script;
         struct input_script;
         
-        bool operator == (const output_script&, const output_script&);
-        bool operator == (const input_script&, const input_script&);
+        bool operator == (const output_script &, const output_script &);
+        bool operator == (const input_script &, const input_script &);
 
-        std::ostream& operator << (std::ostream& o, const output_script s);
-        std::ostream& operator << (std::ostream& o, const input_script s);
-        
-        struct output;
-        
-        bool operator == (const output&, const output&);
-        
-        std::ostream& operator << (std::ostream& o, const output s);
+        std::ostream& operator << (std::ostream &o, const output_script s);
+        std::ostream& operator << (std::ostream &o, const input_script s);
         
         // A candidate is a boost script and a set of of utxos that contain it. 
         struct candidate;
@@ -94,8 +88,6 @@ namespace Gigamonkey {
             
             script write () const;
             
-            digest256 hash () const;
-            
             static output_script read (bytes);
             
             explicit output_script (bytes b);
@@ -104,7 +96,6 @@ namespace Gigamonkey {
             
             static Boost::type type (script x);
             static bool valid (script x);
-            static uint256 hash (script x);
             
             // same as category
             static int32_little version (script x);
@@ -215,6 +206,8 @@ namespace Gigamonkey {
             script write () const;
             
             size_t serialized_size () const;
+
+            work::solution solution () const;
             
             // construct a Boost bounty input script. 
             static input_script bounty (
@@ -267,6 +260,7 @@ namespace Gigamonkey {
             static Bitcoin::timestamp timestamp (script x);
             static uint32_little nonce (script x);
             static digest160 miner_pubkey_hash (script x);
+            static work::solution solution (script x);
             
             input_script (
                 const Bitcoin::signature &signature,
@@ -276,39 +270,6 @@ namespace Gigamonkey {
             
             static uint64 expected_size (Boost::type t, bool use_general_purpose_bits, bool compressed_pubkey = true);
             
-        };
-        
-        struct output {
-            Bitcoin::satoshi Value;
-            output_script Script;
-            digest256 ID;
-            
-            output ();
-            output (Bitcoin::satoshi v, const output_script &x);
-            output (const Bitcoin::output &b);
-            output (Bitcoin::satoshi v, const output_script &x, const digest256 &id);
-            
-            bool valid () const;
-            
-            explicit operator Bitcoin::output () const;
-        };
-        
-        struct prevout : data::entry<Bitcoin::outpoint, output> {
-            using data::entry<Bitcoin::outpoint, output>::entry;
-            output_script script () const;
-            Bitcoin::outpoint outpoint () const;
-            Bitcoin::satoshi value () const;
-            digest256 id () const;
-
-            double difficulty () const {
-                return work::difficulty (this->Value.Script.Target);
-            }
-
-            double profitability () const {
-                return double (value ()) / difficulty ();
-            }
-
-            explicit operator Bitcoin::prevout () const;
         };
         
         // construct a work::puzzle from an output_script. 
@@ -366,14 +327,15 @@ namespace Gigamonkey {
                 
             };
             
-            output_script Script;
+            bytes Script;
             set<prevout> Prevouts;
             
             digest256 id () const;
             
             candidate (): Script {}, Prevouts {} {};
-            explicit candidate (const output_script &script) : Script {script} {}
-            explicit candidate (list<Boost::prevout> utxos);
+
+            // all prevouts must be valid boost outputs that correspond to the same puzzle.
+            candidate (list<Bitcoin::prevout> utxos);
             
             bool valid () const;
             double difficulty () const;
@@ -381,12 +343,12 @@ namespace Gigamonkey {
             
             Bitcoin::satoshi value () const;
             
-            candidate add (const Boost::prevout &p) const;
+            candidate add (const Bitcoin::prevout &p) const;
             
             explicit operator work::candidate () const;
             
         public:
-            candidate (const Boost::output_script &script, set<prevout> prevouts) :
+            candidate (const bytes &script, set<prevout> prevouts) :
                 Script {script}, Prevouts {prevouts} {}
         };
         
@@ -402,17 +364,17 @@ namespace Gigamonkey {
             digest160 miner_pubkey_hash () const;
             
             puzzle ();
-            puzzle (const candidate &c, const Bitcoin::secret& addr) :
+            puzzle (const candidate &c, const Bitcoin::secret &addr) :
                 candidate {c}, MinerKey {addr} {}
             
-            static bytes header (const bytes& tag, const digest160& miner_pubkey_hash);
-            static bytes body (uint32_little user_nonce, const bytes& data);
+            static bytes header (const bytes &tag, const digest160 &miner_pubkey_hash);
+            static bytes body (uint32_little user_nonce, const bytes &data);
             
             bytes header () const;
             bytes body () const;
             
             explicit operator work::puzzle () const {
-                return work_puzzle (this->Script, miner_pubkey_hash ());
+                return work_puzzle (output_script {this->Script}, miner_pubkey_hash ());
             }
             
             // construct a transaction out of a solution and outputs. 
@@ -499,10 +461,6 @@ namespace Gigamonkey {
             return Type != Boost::invalid;
         }
         
-        digest256 inline output_script::hash () const {
-            return valid () ? SHA2_256 (write ()) : digest256 {};
-        }
-        
         inline output_script::output_script (bytes b) : output_script {read (b)} {}
         
         size_t inline output_script::serialized_size () const {
@@ -520,10 +478,6 @@ namespace Gigamonkey {
         
         bool inline output_script::valid (script x) {
             return read (x).valid ();
-        }
-        
-        uint256 inline output_script::hash (script x) {
-            return read (x).hash ();
         }
         
         int32_little inline output_script::version (script x) {
@@ -759,6 +713,14 @@ namespace Gigamonkey {
                 (t == Boost::bounty ? 21 : 0) + 
                 (use_general_purpose_bits ? 5 : 0) + 24;
         }
+
+        work::solution inline input_script::solution (script x) {
+            return read (x).solution ();
+        }
+
+        work::solution inline input_script::solution () const {
+            return work::solution {Timestamp, Nonce, ExtraNonce2, ExtraNonce1};
+        }
         
         inline proof::proof () : work::proof {}, Type {invalid} {}
         
@@ -777,61 +739,19 @@ namespace Gigamonkey {
         input_script inline proof::input_script () const {
             return Boost::input_script {Signature, Pubkey, work::proof::Solution, Type, work::proof::Puzzle.Mask != 0};
         }
-        
-        bool inline operator == (const output &a, const output &b) {
-            return a.Script == b.Script && a.Value == b.Value && a.ID == b.ID;
-        }
-        
-        std::ostream inline &operator << (std::ostream &o, const output s) {
-            return o << "boost_output{Script: " << s.Script << ", Value: " << s.Value << "}";
-        }
-        
-        inline output::output () : Value {-1}, Script {}, ID {} {}
-        
-        inline output::output (Bitcoin::satoshi v, const output_script &x) : output {v, x, x.hash ()} {}
 
-        inline output::output (Bitcoin::satoshi v, const output_script &x, const digest256& script_hash) :
-            Value {v}, Script {x}, ID {script_hash} {}
-        
-        inline output::output (const Bitcoin::output &b) :
-            Value {b.Value}, Script {Boost::output_script::read (b.Script)}, ID {Script.hash ()} {}
-        
-        bool inline output::valid () const {
-            return Value >= 0 && ID != digest256 {};
+        bool inline proof::valid () const {
+            return (work::proof::Puzzle.Mask == -1 || work::proof::Puzzle.Mask == work::ASICBoost::Mask) && work::proof::valid ();
         }
         
-        inline output::operator Bitcoin::output () const {
-            return Bitcoin::output {Value, Script.write ()};
-        }
-        
-        output_script inline prevout::script () const {
-            return Value.Script;
-        }
-        
-        Bitcoin::outpoint inline prevout::outpoint () const {
-            return Key;
-        }
-        
-        Bitcoin::satoshi inline prevout::value () const {
-            return Value.Value;
-        }
-        
-        digest256 inline prevout::id () const {
-            return Value.ID;
-        }
-        
-        inline prevout::operator Bitcoin::prevout () const {
-            return Bitcoin::prevout {Key, Bitcoin::output {value (), script ().write ()}};
-        }
-        
-        inline candidate::candidate (list<Boost::prevout> utxos) :
+        inline candidate::candidate (list<Bitcoin::prevout> utxos) :
             Script {utxos.first ().script ()}, Prevouts {data::for_each (
-                [](const Boost::prevout &p) -> prevout {
+                [] (const Bitcoin::prevout &p) -> prevout {
                     return prevout {p.outpoint (), p.value ()};
                 }, utxos)} {}
         
         double inline candidate::difficulty () const {
-            return double (work::difficulty (Script.Target));
+            return double (work::difficulty (output_script {Script}.Target));
         }
         
         double inline candidate::profitability () const {
@@ -842,35 +762,13 @@ namespace Gigamonkey {
             return a.Script == b.Script && b.Prevouts == b.Prevouts;
         }
         
-        candidate inline candidate::add (const Boost::prevout &p) const {
+        candidate inline candidate::add (const Bitcoin::prevout &p) const {
             prevout pp {p.outpoint (), p.value ()};
             return Prevouts.contains (pp) ? *this : candidate {Script, Prevouts << pp};
         }
         
-        bytes inline puzzle::header (const bytes &tag, const digest160 &miner_pubkey_hash) {
-            return write (tag.size () + 20, tag, miner_pubkey_hash);
-        }
-        
-        bytes inline puzzle::body (uint32_little user_nonce, const bytes& data) {
-            return write (data.size () + 4, user_nonce, data);
-        }
-        
-        bytes inline puzzle::header () const {
-            return header (Script.Tag, miner_pubkey_hash ());
-        }
-        
-        bytes inline puzzle::body () const {
-            return body (Script.UserNonce, Script.AdditionalData);
-        }
-        
-        inline puzzle::puzzle (): candidate {}, MinerKey {} {}
-        
-        bool inline proof::valid () const {
-            return (work::proof::Puzzle.Mask == -1 || work::proof::Puzzle.Mask == work::ASICBoost::Mask) && work::proof::valid ();
-        }
-        
         digest256 inline candidate::id () const {
-            return Script.hash ();
+            return SHA2_256 (Script);
         }
         
         Bitcoin::satoshi inline candidate::value () const {
@@ -878,10 +776,28 @@ namespace Gigamonkey {
                     return so_far + u.Value;
                 }, Bitcoin::satoshi {0}, Prevouts.values ());
         }
-    
+
         bool inline candidate::valid () const {
-            return Prevouts.size () > 0 && Prevouts.valid () && Script.valid ();
+            return Prevouts.size () > 0 && Prevouts.valid () && output_script {Script}.valid ();
         }
+
+        bytes inline puzzle::header (const bytes &tag, const digest160 &miner_pubkey_hash) {
+            return write (tag.size () + 20, tag, miner_pubkey_hash);
+        }
+
+        bytes inline puzzle::body (uint32_little user_nonce, const bytes& data) {
+            return write (data.size () + 4, user_nonce, data);
+        }
+
+        bytes inline puzzle::header () const {
+            return header (output_script {Script}.Tag, miner_pubkey_hash ());
+        }
+
+        bytes inline puzzle::body () const {
+            return body (output_script {Script}.UserNonce, output_script {Script}.AdditionalData);
+        }
+
+        inline puzzle::puzzle (): candidate {}, MinerKey {} {}
         
     }
     

@@ -30,7 +30,7 @@ namespace Gigamonkey::Merkle {
         
         list<proof> proofs () const;
         
-        proof operator[] (const digest &d) const;
+        proof operator [] (const digest &d) const;
         
         bool operator == (const server &s) const;
     };

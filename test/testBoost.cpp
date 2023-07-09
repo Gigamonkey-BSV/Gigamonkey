@@ -417,7 +417,7 @@ namespace Gigamonkey::Boost {
         
     }
     
-    TEST(BoostTest, DoExtraPoW1) {
+    TEST (BoostTest, DoExtraPoW1) {
         
         Bitcoin::transaction tx = Bitcoin::transaction {*data::encoding::hex::read (encoding::hex::string {
             "010000000174d9f6dc235207fbbcdff7bdc412dcb375eb634da698ed164cc1e9aa1b88729a040000006b4830450221008596410738406e0e85892"
@@ -433,13 +433,11 @@ namespace Gigamonkey::Boost {
             "000000000000000000000000000007e6c539458959901007e819f6976a96c88acb"
             "461590e000000001976a914ba6e459a2b505dc78e44e8c5874776c00890e16088ac00000000"})};
         
-        list<Boost::output> boost_outputs; 
+        list<Bitcoin::output> boost_outputs;
         
-        for(const Bitcoin::output& o : tx.Outputs) {
+        for (const Bitcoin::output& o : tx.Outputs) {
             auto x = Boost::output_script::read (o.Script);
-            
-            Boost::output b {o};
-            if (b.valid ()) boost_outputs = boost_outputs << b;
+            if (x.valid ()) boost_outputs = boost_outputs << o;
         }
         
         EXPECT_EQ (boost_outputs.size (), 1);
@@ -501,11 +499,11 @@ namespace Gigamonkey::Boost {
             "07e816c825488537f7681530121a5696b768100a0691d000000000000000000000"
             "00000000000000000000000000000000000007e6c539458959901007e819f6976a96c88ac00000000"})};
         
-        list<Boost::output> boost_outputs; 
+        list<Bitcoin::output> boost_outputs;
         
         for (const Bitcoin::output& o : tx.Outputs) {
-            Boost::output b {o};
-            if (b.valid ()) boost_outputs = boost_outputs << b;
+            auto x = Boost::output_script::read (o.Script);
+            if (x.valid ()) boost_outputs = boost_outputs << o;
         }
         
         EXPECT_EQ (boost_outputs.size (), 1);
@@ -848,7 +846,7 @@ namespace Gigamonkey::Boost {
     }
     
     // this is used to test against the boostpow-js library. 
-    TEST(BoostTest, TestAgainstBoostPoWJSRedeem) {
+    TEST (BoostTest, TestAgainstBoostPoWJSRedeem) {
         
         Bitcoin::secret from_key {Bitcoin::secret::main,
             secp256k1::secret {uint256 {"0x0000000000000000000000000000000000000000000000000000000000000003"}}};

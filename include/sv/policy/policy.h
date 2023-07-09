@@ -8,7 +8,6 @@
 
 #include <sv/consensus/consensus.h>
 #include <sv/script/standard.h>
-#include <sv/amount.h>
 
 #include <optional>
 #include <string>
@@ -16,7 +15,7 @@
 class CScriptConfig;
 class CCoinsViewCache;
 
-namespace task{class CCancellationToken;}
+namespace task {class CCancellationToken;}
 
 /** Defaults for -excessiveblocksize and -blockmaxsize. The changed when we reach blocksize activation time.
  *
@@ -58,10 +57,6 @@ static const uint64_t STN_NEW_BLOCKSIZE_ACTIVATION_TIME = 1558360800;   // 2019-
 static const uint64_t STN_DEFAULT_MAX_GENERATED_BLOCK_SIZE_BEFORE = 32 * ONE_MEGABYTE;
 static const uint64_t STN_DEFAULT_MAX_GENERATED_BLOCK_SIZE_AFTER = 128 * ONE_MEGABYTE;
 
-
-/** Default for -blockmintxfee, which sets the minimum feerate for a transaction
- * in blocks created by mining code **/
-static const Amount DEFAULT_BLOCK_MIN_TX_FEE(500);
 /** The maximum size for transactions we're willing to relay/mine - before genesis*/
 static const uint64_t MAX_TX_SIZE_POLICY_BEFORE_GENESIS = 100000 - 1; // -1 because pre genesis policy validation was >=
 /** The default size for transactions we're willing to relay/mine */
@@ -88,25 +83,12 @@ static const unsigned int DEFAULT_TX_SIGOPS_COUNT_POLICY_AFTER_GENESIS = MAX_TX_
 static const unsigned int DEFAULT_MAX_MEMPOOL_SIZE = 1000;
 /** Default for -maxnonfinalmempool, maximum megabytes of non-final mempool memory usage */
 static const unsigned int DEFAULT_MAX_NONFINAL_MEMPOOL_SIZE = 50;
-/** Minimum feerate increase for mempool limiting **/
-static const CFeeRate MEMPOOL_FULL_FEE_INCREMENT(Amount(1000));
 /** Default for -maxscriptsizepolicy **/
 static const unsigned int DEFAULT_MAX_SCRIPT_SIZE_POLICY_AFTER_GENESIS = 10000;
 /** Default -maxmempoolsizedisk factor, maximum megabytes of total mempool disk usage as scaled -maxmempool */
 static const unsigned int DEFAULT_MAX_MEMPOOL_SIZE_DISK_FACTOR = 0;
 /** Default percentage of total mempool size (ram+disk) to use as max limit for CPFP transactions */
 static const unsigned int DEFAULT_MEMPOOL_MAX_PERCENT_CPFP = 10;
-
-/**
- * Min feerate for defining dust. Historically this has been the same as the
- * minRelayTxFee, however changing the dust limit changes which transactions are
- * standard and should be done with care and ideally rarely. It makes sense to
- * only increase the dust limit after prior releases were already not creating
- * outputs below the new threshold.
- * We will statically assert this to be the same value as DEFAULT_MIN_RELAY_TX_FEE
- * because of CORE-647
- */
-static constexpr Amount DUST_RELAY_TX_FEE(250);
 
 /*
 * Number of blocks around GENESIS activation (72 blocks before and 72 blocks after) when
@@ -156,33 +138,30 @@ static const unsigned int STANDARD_NOT_MANDATORY_VERIFY_FLAGS =
     STANDARD_SCRIPT_VERIFY_FLAGS & ~MANDATORY_SCRIPT_VERIFY_FLAGS;
 
 /** returns flags for "standard" script*/
-inline unsigned int StandardScriptVerifyFlags (bool genesisEnabled,
-                                       bool utxoAfterGenesis) {
+unsigned int inline StandardScriptVerifyFlags (bool genesisEnabled, bool utxoAfterGenesis) {
     unsigned int scriptFlags = STANDARD_SCRIPT_VERIFY_FLAGS;
-    if (utxoAfterGenesis) {
-        scriptFlags |= SCRIPT_UTXO_AFTER_GENESIS;
-    }
+    if (utxoAfterGenesis) scriptFlags |= SCRIPT_UTXO_AFTER_GENESIS;
+
     if (genesisEnabled) {
         scriptFlags |= SCRIPT_GENESIS;
         scriptFlags |= SCRIPT_VERIFY_SIGPUSHONLY;
     }
+
     return scriptFlags;
 }
 
 /** Get the flags to use for non-final transaction checks */
-inline unsigned int StandardNonFinalVerifyFlags (bool genesisEnabled)
-{
+unsigned int inline StandardNonFinalVerifyFlags (bool genesisEnabled) {
     unsigned int flags { LOCKTIME_MEDIAN_TIME_PAST };
-    if(!genesisEnabled) {
-        flags |= LOCKTIME_VERIFY_SEQUENCE;
-    }
+
+    if(!genesisEnabled) flags |= LOCKTIME_VERIFY_SEQUENCE;
     return flags;
 }
 
 /** Consolidation transactions are free */
-bool IsConsolidationTxn(const CScriptConfig &config, const CTransaction &tx, const CCoinsViewCache &inputs, int32_t tipHeight);
+bool IsConsolidationTxn (const CScriptConfig &config, const CTransaction &tx, const CCoinsViewCache &inputs, int32_t tipHeight);
 
-bool IsStandard(const CScriptConfig &config, const CScript &scriptPubKey, int32_t nScriptPubKeyHeight, txnouttype &whichType);
+bool IsStandard (const CScriptConfig &config, const CScript &scriptPubKey, int32_t nScriptPubKeyHeight, txnouttype &whichType);
 
 /**
  * Check for standard transaction types
@@ -199,13 +178,11 @@ bool IsStandardTx (const CScriptConfig &config, const CTransaction &tx, int32_t 
  * spending
  * @return True if all inputs (scriptSigs) use only standard transaction forms
  */
-std::optional<bool> AreInputsStandard (
+data::maybe<bool> AreInputsStandard (
     const task::CCancellationToken &token,
     const CScriptConfig &config,
     const CTransaction &tx,
     const CCoinsViewCache &mapInputs,
     const int32_t mempoolHeight);
-
-extern CFeeRate dustRelayFee;
 
 #endif // BITCOIN_POLICY_POLICY_H

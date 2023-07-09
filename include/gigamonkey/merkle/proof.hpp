@@ -98,12 +98,12 @@ namespace Gigamonkey::Merkle {
         bool valid () const;
         
         leaf next (const digest &d) const {
-            return {Index & 1 ? hash_concatinated(d, Digest) : hash_concatinated(Digest, d), Index >> 1};
+            return {Index & 1 ? hash_concatinated (d, Digest) : hash_concatinated (Digest, d), Index >> 1};
         }
     };
     
-    inline digest path::derive_root(const digest& l) const {
-        return root(leaf{l, Index}, Digests);
+    inline digest path::derive_root (const digest& l) const {
+        return root (leaf {l, Index}, Digests);
     }
     
     using entry = data::entry<digest, path>;

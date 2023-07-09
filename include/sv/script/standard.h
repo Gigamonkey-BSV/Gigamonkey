@@ -8,8 +8,6 @@
 
 #include <sv/script/interpreter.h>
 
-#include <boost/variant.hpp>
-
 #include <cstdint>
 
 static const bool DEFAULT_ACCEPT_DATACARRIER = true;
@@ -44,16 +42,16 @@ enum txnouttype {
     TX_NULL_DATA,
 };
 
-const char *GetTxnOutputType(txnouttype t);
+const char *GetTxnOutputType (txnouttype t);
 
 /**
  * Return public keys or hashes from scriptPubKey, for 'standard' transaction
  * types.
  */
-bool Solver(const CScript& scriptPubKey, bool genesisEnabled, txnouttype& typeRet,
-    std::vector<std::vector<uint8_t>>& vSolutionsRet);
+bool Solver (const CScript &scriptPubKey, bool genesisEnabled, txnouttype &typeRet,
+    std::vector<std::vector<uint8_t>> &vSolutionsRet);
     
-CScript GetScriptForRawPubKey(const CPubKey &pubkey);
-CScript GetScriptForMultisig(int nRequired, const std::vector<CPubKey> &keys);
+CScript GetScriptForRawPubKey (const CPubKey &pubkey);
+CScript GetScriptForMultisig (int nRequired, const std::vector<CPubKey> &keys);
 
 #endif // BITCOIN_SCRIPT_STANDARD_H

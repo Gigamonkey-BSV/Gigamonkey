@@ -13,28 +13,28 @@
 #include <cstdint>
 
 /* Seed OpenSSL PRNG with additional entropy data */
-void RandAddSeed();
+void RandAddSeed ();
 
 /**
  * Functions to gather random data via the OpenSSL PRNG
  */
-void GetRandBytes(uint8_t *buf, int num);
-uint64_t GetRand(uint64_t nMax);
-int GetRandInt(int nMax);
-uint256 GetRandHash();
+void GetRandBytes (uint8_t *buf, int num);
+uint64_t GetRand (uint64_t nMax);
+int GetRandInt (int nMax);
+uint256 GetRandHash ();
 
 /**
  * Add a little bit of randomness to the output of GetStrongRangBytes.
  * This sleeps for a millisecond, so should only be called when there is no
  * other work to be done.
  */
-void RandAddSeedSleep();
+void RandAddSeedSleep ();
 
 /**
  * Function to gather random data from multiple sources, failing whenever any of
  * those source fail to provide a result.
  */
-void GetStrongRandBytes(uint8_t *buf, int num);
+void GetStrongRandBytes (uint8_t *buf, int num);
 
 /**
  * Fast randomness source. This is seeded once with secure random data, but is
@@ -52,48 +52,42 @@ private:
     uint64_t bitbuf;
     int bitbuf_size;
 
-    void RandomSeed();
+    void RandomSeed ();
 
-    void FillByteBuffer() {
-        if (requires_seed) {
-            RandomSeed();
-        }
-        rng.Output(bytebuf, sizeof(bytebuf));
-        bytebuf_size = sizeof(bytebuf);
+    void FillByteBuffer () {
+        if (requires_seed) RandomSeed ();
+
+        rng.Output (bytebuf, sizeof (bytebuf));
+        bytebuf_size = sizeof (bytebuf);
     }
 
-    void FillBitBuffer() {
-        bitbuf = rand64();
+    void FillBitBuffer () {
+        bitbuf = rand64 ();
         bitbuf_size = 64;
     }
 
 public:
-    explicit FastRandomContext(bool fDeterministic = false);
+    explicit FastRandomContext (bool fDeterministic = false);
 
     /** Initialize with explicit seed (only for testing) */
-    explicit FastRandomContext(const uint256 &seed);
+    explicit FastRandomContext (const uint256 &seed);
 
     /** Generate a random 64-bit integer. */
-    uint64_t rand64() {
-        if (bytebuf_size < 8) {
-            FillByteBuffer();
-        }
-        uint64_t ret = ReadLE64(bytebuf + 64 - bytebuf_size);
+    uint64_t rand64 () {
+        if (bytebuf_size < 8) FillByteBuffer ();
+        uint64_t ret = ReadLE64 (bytebuf + 64 - bytebuf_size);
         bytebuf_size -= 8;
         return ret;
     }
 
     /** Generate a random (bits)-bit integer. */
-    uint64_t randbits(int bits) {
-        if (bits == 0) {
-            return 0;
-        } else if (bits > 32) {
-            return rand64() >> (64 - bits);
-        } else {
-            if (bitbuf_size < bits) {
-                FillBitBuffer();
-            }
-            uint64_t ret = bitbuf & (~uint64_t(0) >> (64 - bits));
+    uint64_t randbits (int bits) {
+        if (bits == 0) return 0;
+        else if (bits > 32) return rand64 () >> (64 - bits);
+        else {
+            if (bitbuf_size < bits) FillBitBuffer ();
+
+            uint64_t ret = bitbuf & (~uint64_t (0) >> (64 - bits));
             bitbuf >>= bits;
             bitbuf_size -= bits;
             return ret;
@@ -101,28 +95,26 @@ public:
     }
 
     /** Generate a random integer in the range [0..range). */
-    uint64_t randrange(uint64_t range) {
+    uint64_t randrange (uint64_t range) {
         --range;
-        int bits = CountBits(range);
+        int bits = CountBits (range);
         while (true) {
-            uint64_t ret = randbits(bits);
-            if (ret <= range) {
-                return ret;
-            }
+            uint64_t ret = randbits (bits);
+            if (ret <= range) return ret;
         }
     }
 
     /** Generate random bytes. */
-    std::vector<uint8_t> randbytes(size_t len);
+    std::vector<uint8_t> randbytes (size_t len);
 
     /** Generate a random 32-bit integer. */
-    uint32_t rand32() { return randbits(32); }
+    uint32_t rand32 () { return randbits (32); }
 
     /** generate a random uint256. */
-    uint256 rand256();
+    uint256 rand256 ();
 
     /** Generate a random boolean. */
-    bool randbool() { return randbits(1); }
+    bool randbool () { return randbits (1); }
 };
 
 /**
@@ -137,15 +129,15 @@ static const int NUM_OS_RANDOM_BYTES = 32;
  * Get 32 bytes of system entropy. Do not use this in application code: use
  * GetStrongRandBytes instead.
  */
-void GetOSRand(uint8_t *ent32);
+void GetOSRand (uint8_t *ent32);
 
 /**
  * Check that OS randomness is available and returning the requested number of
  * bytes.
  */
-bool Random_SanityCheck();
+bool Random_SanityCheck ();
 
 /** Initialize the RNG. */
-void RandomInit();
+void RandomInit ();
 
 #endif // BITCOIN_RANDOM_H

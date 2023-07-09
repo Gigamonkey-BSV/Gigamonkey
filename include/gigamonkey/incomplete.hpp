@@ -4,7 +4,7 @@
 #ifndef GIGAMONKEY_INCOMPLETE
 #define GIGAMONKEY_INCOMPLETE
 
-#include "timechain.hpp"
+#include <gigamonkey/timechain.hpp>
 
 // incomplete types are used to construct the signature hash in Bitcoin transactions. 
 // this is necessary because the input script is not known before it is created.

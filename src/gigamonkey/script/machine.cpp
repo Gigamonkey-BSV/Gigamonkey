@@ -16,27 +16,27 @@ bool fRequireStandard = true;
 
 namespace Gigamonkey::Bitcoin::interpreter { 
     
-    result inline verify_signature (bytes_view sig, bytes_view pub, const sighash::document &doc, uint32 flags) {
-        
+    result verify_signature (bytes_view sig, bytes_view pub, const sighash::document &doc, uint32 flags) {
+
         if (flags & SCRIPT_VERIFY_COMPRESSED_PUBKEYTYPE && !secp256k1::pubkey::compressed (pub)) return SCRIPT_ERR_NONCOMPRESSED_PUBKEY;
         else if (flags & SCRIPT_VERIFY_STRICTENC && !secp256k1::pubkey::valid (pub)) return SCRIPT_ERR_PUBKEYTYPE;
-        
+
         auto d = signature::directive (sig);
         auto raw = signature::raw (sig);
-        
+
         if (!sighash::valid (d)) return SCRIPT_ERR_SIG_HASHTYPE;
         if (sighash::has_fork_id (d) && !(flags & SCRIPT_ENABLE_SIGHASH_FORKID)) return SCRIPT_ERR_ILLEGAL_FORKID;
         if (!sighash::has_fork_id (d) && (flags & SCRIPT_ENABLE_SIGHASH_FORKID)) return SCRIPT_ERR_MUST_USE_FORKID;
-        
+
         if ((flags & (SCRIPT_VERIFY_DERSIG | SCRIPT_VERIFY_LOW_S | SCRIPT_VERIFY_STRICTENC)) && !signature::DER (sig))
             return SCRIPT_ERR_SIG_DER;
-        
+
         if ((flags & SCRIPT_VERIFY_LOW_S) && !secp256k1::signature::normalized (raw)) return SCRIPT_ERR_SIG_HIGH_S;
-        
+
         if (signature::verify (sig, pub, doc)) return true;
-        
+
         if (flags & SCRIPT_VERIFY_NULLFAIL && sig.size () != 0) return SCRIPT_ERR_SIG_NULLFAIL;
-        
+
         return false;
     }
     
@@ -66,18 +66,18 @@ namespace Gigamonkey::Bitcoin::interpreter {
     }
     
     machine::state::state (uint32 flags, bool consensus, maybe<redemption_document> doc, const bytes &script) :
-        Flags {flags}, Consensus {consensus}, Config {}, Document {doc}, Script {script}, Counter{program_counter{Script}},
+        Flags {flags}, Consensus {consensus}, Config {}, Document {doc}, Script {script}, Counter {program_counter {Script}},
         Stack {Config.GetMaxStackMemoryUsage (Flags & SCRIPT_UTXO_AFTER_GENESIS, consensus)},
         AltStack {Stack.makeChildStack ()}, Exec {}, Else {}, OpCount {0} {}
     
-    machine::machine(const script &unlock, const script &lock, const redemption_document &doc, uint32 flags) : 
-        machine{{doc}, decompile (unlock), decompile (lock), flags} {}
+    machine::machine (const script &unlock, const script &lock, const redemption_document &doc, uint32 flags) :
+        machine {{doc}, decompile (unlock), decompile (lock), flags} {}
     
-    machine::machine(const script &unlock, const script &lock, uint32 flags) : 
-        machine{{}, decompile (unlock), decompile (lock), flags} {}
+    machine::machine (const script &unlock, const script &lock, uint32 flags) :
+        machine {{}, decompile (unlock), decompile (lock), flags} {}
     
     machine::machine (maybe<redemption_document> doc, const program unlock, const program lock, uint32 flags) :
-        Halt{false}, Result {false}, State {flags, false, doc, compile (full (unlock, lock))} {
+        Halt {false}, Result {false}, State {flags, false, doc, compile (full (unlock, lock))} {
         if (auto err = check_scripts (unlock, lock, flags); err) {
             Halt = true;
             Result = err;
@@ -128,9 +128,8 @@ namespace Gigamonkey::Bitcoin::interpreter {
         return Result;
     }
     
-    inline bool IsValidMaxOpsPerScript
-        (uint64_t nOpCount, const CScriptConfig &config, bool isGenesisEnabled, bool consensus)
-    {
+    bool inline IsValidMaxOpsPerScript
+        (uint64_t nOpCount, const script_config &config, bool isGenesisEnabled, bool consensus) {
         return (nOpCount <= config.GetMaxOpsPerScript (isGenesisEnabled, consensus));
     }
 
@@ -804,11 +803,13 @@ namespace Gigamonkey::Bitcoin::interpreter {
                     return SCRIPT_ERR_INVALID_STACK_OPERATION;
 
                 LimitedVector<element> &vch = Stack.stacktop (-1);
+
                 valtype vchHash ((Op == OP_RIPEMD160 ||
                                     Op == OP_SHA1 ||
                                     Op == OP_HASH160)
                                     ? 20
                                     : 32);
+
                 if (Op == OP_RIPEMD160) {
                     CRIPEMD160 ()
                         .Write (vch.GetElement ().data (), vch.size ())
@@ -830,6 +831,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
                         .Write (vch.GetElement ().data (), vch.size ())
                         .Finalize (vchHash.data ());
                 }
+
                 Stack.pop_back ();
                 Stack.push_back (vchHash);
             } break;

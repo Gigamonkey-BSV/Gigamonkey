@@ -44,10 +44,10 @@ namespace Gigamonkey {
             
             bool operator == (const confirmation &t) const;
             bool operator != (const confirmation &t) const;
-            bool operator <= (const confirmation& t) const;
-            bool operator >= (const confirmation& t) const;
-            bool operator < (const confirmation& t) const;
-            bool operator > (const confirmation& t) const;
+            bool operator <= (const confirmation &t) const;
+            bool operator >= (const confirmation &t) const;
+            bool operator < (const confirmation &t) const;
+            bool operator > (const confirmation &t) const;
             
             Bitcoin::txid id () const {
                 return Proof.Branch.Leaf.Digest;

@@ -29,33 +29,33 @@ namespace Gigamonkey {
     template <endian::order> struct natural;
     template <endian::order> struct integer;
     
-    template <endian::order r> bool operator == (const integer<r>&, const integer<r>&);
-    template <endian::order r> bool operator != (const integer<r>&, const integer<r>&);
-    template <endian::order r> bool operator <= (const integer<r>&, const integer<r>&);
-    template <endian::order r> bool operator >= (const integer<r>&, const integer<r>&);
-    template <endian::order r> bool operator < (const integer<r>&, const integer<r>&);
-    template <endian::order r> bool operator > (const integer<r>&, const integer<r>&);
+    template <endian::order r> bool operator == (const integer<r> &, const integer<r> &);
+    template <endian::order r> bool operator != (const integer<r> &, const integer<r> &);
+    template <endian::order r> bool operator <= (const integer<r> &, const integer<r> &);
+    template <endian::order r> bool operator >= (const integer<r> &, const integer<r> &);
+    template <endian::order r> bool operator < (const integer<r> &, const integer<r> &);
+    template <endian::order r> bool operator > (const integer<r> &, const integer<r> &);
     
-    template <endian::order r> bool operator == (const natural<r>&, const natural<r>&);
-    template <endian::order r> bool operator != (const natural<r>&, const natural<r>&);
-    template <endian::order r> bool operator <= (const natural<r>&, const natural<r>&);
-    template <endian::order r> bool operator >= (const natural<r>&, const natural<r>&);
-    template <endian::order r> bool operator < (const natural<r>&, const natural<r>&);
-    template <endian::order r> bool operator > (const natural<r>&, const natural<r>&);
+    template <endian::order r> bool operator == (const natural<r> &, const natural<r> &);
+    template <endian::order r> bool operator != (const natural<r> &, const natural<r> &);
+    template <endian::order r> bool operator <= (const natural<r> &, const natural<r> &);
+    template <endian::order r> bool operator >= (const natural<r> &, const natural<r> &);
+    template <endian::order r> bool operator < (const natural<r> &, const natural<r> &);
+    template <endian::order r> bool operator > (const natural<r> &, const natural<r> &);
     
-    template <endian::order r> bool operator == (const natural<r>&, int);
-    template <endian::order r> bool operator != (const natural<r>&, int);
-    template <endian::order r> bool operator <= (const natural<r>&, int);
-    template <endian::order r> bool operator >= (const natural<r>&, int);
-    template <endian::order r> bool operator < (const natural<r>&, int);
-    template <endian::order r> bool operator > (const natural<r>&, int);
+    template <endian::order r> bool operator == (const natural<r> &, int);
+    template <endian::order r> bool operator != (const natural<r> &, int);
+    template <endian::order r> bool operator <= (const natural<r> &, int);
+    template <endian::order r> bool operator >= (const natural<r> &, int);
+    template <endian::order r> bool operator < (const natural<r> &, int);
+    template <endian::order r> bool operator > (const natural<r> &, int);
     
-    template <endian::order r> bool operator == (int, const natural<r>&);
-    template <endian::order r> bool operator != (int, const natural<r>&);
-    template <endian::order r> bool operator <= (int, const natural<r>&);
-    template <endian::order r> bool operator >= (int, const natural<r>&);
-    template <endian::order r> bool operator < (int, const natural<r>&);
-    template <endian::order r> bool operator > (int, const natural<r>&);
+    template <endian::order r> bool operator == (int, const natural<r> &);
+    template <endian::order r> bool operator != (int, const natural<r> &);
+    template <endian::order r> bool operator <= (int, const natural<r> &);
+    template <endian::order r> bool operator >= (int, const natural<r> &);
+    template <endian::order r> bool operator < (int, const natural<r> &);
+    template <endian::order r> bool operator > (int, const natural<r> &);
     /*
     template <size_t size_a, size_t size_b> bool operator==(const uint<size_a>&, uint<size_b>&);
     template <size_t size_a, size_t size_b> bool operator!=(const uint<size_a>&, uint<size_b>&);
@@ -94,7 +94,7 @@ namespace Gigamonkey {
         // written to the digest as given, without reversing. 
         explicit uint (const string &hex);
         
-        explicit uint (const N& n);
+        explicit uint (const N &n);
         
         explicit operator N () const;
         explicit operator float64 () const;
@@ -143,23 +143,23 @@ namespace Gigamonkey {
         uint& operator -- ();
         const uint operator -- (int);
         
-        byte* begin ();
-        byte* end ();
+        byte *begin ();
+        byte *end ();
         
-        const byte* begin () const;
-        const byte* end () const;
+        const byte *begin () const;
+        const byte *end () const;
         
-        byte* data ();
-        const byte* data () const;
+        byte *data ();
+        const byte *data () const;
         
         explicit operator string () const;
         
-        const byte& operator [] (int i) const {
+        const byte &operator [] (int i) const {
             if (i < 0) return operator [] (X + i);
             return data ()[i];
         }
         
-        byte& operator [] (int i) {
+        byte &operator [] (int i) {
             if (i < 0) return operator [] (X + i);
             return data ()[i];
         }
@@ -231,23 +231,23 @@ namespace Gigamonkey {
         static bytes minus (bytes_view a, bytes_view b);
         static bytes times (bytes_view a, bytes_view b);
         
-        integer operator & (const integer&) const;
-        integer operator | (const integer&) const;
-        integer operator ^ (const integer&) const;
+        integer operator & (const integer &) const;
+        integer operator | (const integer &) const;
+        integer operator ^ (const integer &) const;
         
         integer operator - () const;
         
-        integer operator + (const integer&) const;
-        integer operator - (const integer&) const;
-        integer operator * (const integer&) const;
+        integer operator + (const integer &) const;
+        integer operator - (const integer &) const;
+        integer operator * (const integer &) const;
         
-        integer &operator += (const integer&);
-        integer &operator -= (const integer&);
-        integer &operator *= (const integer&);
+        integer &operator += (const integer &);
+        integer &operator -= (const integer &);
+        integer &operator *= (const integer &);
         
-        integer &operator ^= (const integer&);
-        integer &operator |= (const integer&);
-        integer &operator &= (const integer&);
+        integer &operator ^= (const integer &);
+        integer &operator |= (const integer &);
+        integer &operator &= (const integer &);
         
         static bytes shift (bytes_view a, int);
         
@@ -257,17 +257,17 @@ namespace Gigamonkey {
         integer &operator <<= (int);
         integer &operator >>= (int);
         
-        math::division<integer> divide (const integer&) const;
+        math::division<integer> divide (const integer &) const;
         
-        integer operator / (const integer&) const;
-        integer operator % (const integer&) const;
+        integer operator / (const integer &) const;
+        integer operator % (const integer &) const;
         
         integer () : bytes {} {}
         integer (int64 z);
         template <size_t size> integer (const uint<size> &);
         explicit integer (bytes_view b) : bytes {b} {}
         explicit integer (string_view x);
-        explicit integer (const integer<endian::opposite (r)>&);
+        explicit integer (const integer<endian::opposite (r)> &);
         
         using words_type = data::encoding::words<endian::little, byte>;
         
@@ -276,7 +276,7 @@ namespace Gigamonkey {
         }
         
     protected:
-        explicit integer (bytes&& b) : bytes {b} {}
+        explicit integer (bytes &&b) : bytes {b} {}
     };
     
     template <endian::order r> 
@@ -284,24 +284,24 @@ namespace Gigamonkey {
         
         natural () : integer<r> {} {}
         
-        natural operator & (const natural&) const;
-        natural operator | (const natural&) const;
+        natural operator & (const natural &) const;
+        natural operator | (const natural &) const;
         
-        natural operator + (const natural&) const;
-        natural operator - (const natural&) const;
-        natural operator * (const natural&) const;
+        natural operator + (const natural &) const;
+        natural operator - (const natural &) const;
+        natural operator * (const natural &) const;
         
-        natural &operator += (const natural&);
-        natural &operator -= (const natural&);
-        natural &operator *= (const natural&);
+        natural &operator += (const natural &);
+        natural &operator -= (const natural &);
+        natural &operator *= (const natural &);
         
-        natural &operator |= (const natural&);
-        natural &operator &= (const natural&);
+        natural &operator |= (const natural &);
+        natural &operator &= (const natural &);
         
         math::division<natural> divide (const natural&) const;
         
-        natural operator / (const natural&) const;
-        natural operator % (const natural&) const;
+        natural operator / (const natural &) const;
+        natural operator % (const natural &) const;
         
         natural operator << (int) const;
         natural operator >> (int) const;
@@ -311,7 +311,7 @@ namespace Gigamonkey {
         
         natural (uint64 z);
         explicit natural (string_view x);
-        explicit natural (const natural<endian::opposite (r)>&);
+        explicit natural (const natural<endian::opposite (r)> &);
         template <size_t size> explicit natural (const uint<size> &);
         
         template <size_t size> operator uint<size> () const;
@@ -321,7 +321,7 @@ namespace Gigamonkey {
         }
         
     private:
-        explicit natural (bytes&& b) : integer<r> {b} {}
+        explicit natural (bytes &&b) : integer<r> {b} {}
         friend struct integer<r>;
     };
     
@@ -346,7 +346,7 @@ namespace Gigamonkey {
     }
 
     template <size_t X>
-    std::ostream inline &operator << (std::ostream& o, const uint<X>& s) {
+    std::ostream inline &operator << (std::ostream &o, const uint<X> &s) {
         return o << string (s);
     }
     
@@ -355,7 +355,7 @@ namespace Gigamonkey {
 namespace data::encoding::hexidecimal { 
     
     template <size_t size> 
-    std::string inline write (const Gigamonkey::uint<size>& n) {
+    std::string inline write (const Gigamonkey::uint<size> &n) {
         return write<hex_case::lower> ((data::N) (n));
     }
     
@@ -369,7 +369,7 @@ namespace data::encoding::hexidecimal {
 namespace data::encoding::decimal {
     
     template <size_t size, unsigned int bits> 
-    std::string inline write (const Gigamonkey::uint<size>& n) {
+    std::string inline write (const Gigamonkey::uint<size> &n) {
         return write ((data::N) (n));
     }
     
@@ -478,25 +478,25 @@ namespace Gigamonkey {
     }
     
     template <size_t X>
-    inline uint<X>& uint<X>::operator = (const base_uint<bits>& b) {
+    inline uint<X>& uint<X>::operator = (const base_uint<bits> &b) {
         base_uint<bits>::operator = (b);
         return *this;
     }
     
     template <size_t X>
-    inline uint<X>& uint<X>::operator ^= (const uint& b) {
+    inline uint<X>& uint<X>::operator ^= (const uint &b) {
         base_uint<bits>::operator ^= (b);
         return *this;
     }
 
     template <size_t X>
-    inline uint<X>& uint<X>::operator &= (const uint& b) {
+    inline uint<X>& uint<X>::operator &= (const uint &b) {
         base_uint<bits>::operator &= (b);
         return *this;
     }
 
     template <size_t X>
-    inline uint<X>& uint<X>::operator |= (const uint& b) {
+    inline uint<X>& uint<X>::operator |= (const uint &b) {
         base_uint<bits>::operator |= (b);
         return *this;
     }
@@ -524,19 +524,19 @@ namespace Gigamonkey {
     }
     
     template <size_t X>
-    inline uint<X>& uint<X>::operator += (const uint& b) {
+    inline uint<X>& uint<X>::operator += (const uint &b) {
         base_uint<bits>::operator += (b);
         return *this;
     }
     
     template <size_t X>
-    inline uint<X>& uint<X>::operator -= (const uint& b) {
+    inline uint<X>& uint<X>::operator -= (const uint &b) {
         base_uint<bits>::operator -= (b);
         return *this;
     }
     
     template <size_t X>
-    inline uint<X>& uint<X>::operator *= (const uint& b) {
+    inline uint<X>& uint<X>::operator *= (const uint &b) {
         base_uint<bits>::operator *= (b);
         return *this;
     }
@@ -618,32 +618,32 @@ namespace Gigamonkey {
     }
     
     template <size_t X>
-    inline byte* uint<X>::begin () {
+    inline byte *uint<X>::begin () {
         return (byte*) base_uint<bits>::pn;
     }
     
     template <size_t X>
-    inline byte* uint<X>::end () {
+    inline byte *uint<X>::end () {
         return begin () + X;
     }
     
     template <size_t X>
-    inline const byte* uint<X>::begin () const {
+    inline const byte *uint<X>::begin () const {
         return (byte*) this->pn;
     }
     
     template <size_t X>
-    inline const byte* uint<X>::end () const {
+    inline const byte *uint<X>::end () const {
         return begin () + X;
     }
     
     template <size_t X>
-    inline byte* uint<X>::data () {
+    inline byte *uint<X>::data () {
         return begin ();
     }
     
     template <size_t X>
-    inline const byte* uint<X>::data () const {
+    inline const byte *uint<X>::data () const {
         return begin ();
     }
     
@@ -654,7 +654,7 @@ namespace Gigamonkey {
     }
     
     template <size_t X> writer inline &operator << (writer &w, const uint<X> &u) {
-        return w << byte(0x02) << Bitcoin::var_string {natural<endian::big> (u)};
+        return w << byte (0x02) << Bitcoin::var_string {natural<endian::big> (u)};
     }
     
     template <size_t X> reader &operator >> (reader &re, uint<X> &u) {
@@ -875,7 +875,7 @@ namespace Gigamonkey {
         return natural {integer<r>::shift (this->trim (), i)};
     }
     
-    template <endian::order r> natural<r> inline natural<r>::operator>>(int i) const {
+    template <endian::order r> natural<r> inline natural<r>::operator >> (int i) const {
         if (i == 0) return *this;
         return natural {integer<r>::shift (this->trim (), -i)};
     }
@@ -1074,20 +1074,20 @@ namespace Gigamonkey {
         }
         
         template <endian::order r> static bytes from_uint (uint64 z) {
-            if (z == 0) return bytes{};
+            if (z == 0) return bytes {};
         
             uint64_little lil = z;
             
             int last_nonzero_digit = -1;
-            for (int i = 0; i < lil.size(); i++) if (lil[i] != 0) last_nonzero_digit = i;
+            for (int i = 0; i < lil.size (); i++) if (lil[i] != 0) last_nonzero_digit = i;
             
             bool last_digit_sign_bit = last_nonzero_digit >= 0 && lil[last_nonzero_digit] & 0x80;
             size_t new_size = last_nonzero_digit + (last_digit_sign_bit ? 2 : 1);
             
             bytes new_number (new_size);
-            digits<r> n{data::slice<byte>{new_number.data (), new_number.size ()}};
+            digits<r> n{data::slice<byte> {new_number.data (), new_number.size ()}};
             
-            std::copy (lil.begin (), lil.begin() + last_nonzero_digit + 1, n.begin ());
+            std::copy (lil.begin (), lil.begin () + last_nonzero_digit + 1, n.begin ());
             if (last_digit_sign_bit) n[last_nonzero_digit + 1] = 0x00;
             
             return new_number;
@@ -1120,7 +1120,7 @@ namespace Gigamonkey {
         }
         
         template <endian::order r, size_t size>
-        static bytes from_uint (const uint<size>& u) {
+        static bytes from_uint (const uint<size> &u) {
             size_t serialized_size = u.serialized_size ();
             size_t min_size = std::min (size, serialized_size);
             bytes b (serialized_size);
@@ -1200,7 +1200,7 @@ namespace Gigamonkey {
     }
     
     template <endian::order r> bool inline integer<r>::is_zero (const bytes_view b) {
-        return numbers::is_zero (numbers::digits<r> {data::slice<byte> {const_cast<byte*>(b.data ()), b.size ()}});
+        return numbers::is_zero (numbers::digits<r> {data::slice<byte> {const_cast<byte*> (b.data ()), b.size ()}});
     }
     
     template <endian::order r> bool inline integer<r>::is_positive_zero (const bytes_view b) {
@@ -1211,7 +1211,7 @@ namespace Gigamonkey {
         return numbers::is_negative_zero (numbers::digits<r> {data::slice<byte> {const_cast<byte*> (b.data ()), b.size ()}});
     }
     
-    template <endian::order r> bool inline integer<r>::sign_bit(bytes_view b) {
+    template <endian::order r> bool inline integer<r>::sign_bit (bytes_view b) {
         return numbers::sign_bit (numbers::digits<r> {data::slice<byte> {const_cast<byte*> (b.data ()), b.size ()}});
     }
     
@@ -1251,20 +1251,20 @@ namespace Gigamonkey {
     
     template <endian::order r> bool inline integer<r>::less (bytes_view a, bytes_view b) {
         return numbers::less
-            (numbers::digits<r> {data::slice<byte> {const_cast<byte*> (a.data()), a.size()}},
-            numbers::digits<r> {data::slice<byte> {const_cast<byte*> (b.data()), b.size()}});
+            (numbers::digits<r> {data::slice<byte> {const_cast<byte*> (a.data ()), a.size ()}},
+            numbers::digits<r> {data::slice<byte> {const_cast<byte*> (b.data ()), b.size ()}});
     }
     
     template <endian::order r> bool inline integer<r>::greater_equal (bytes_view a, bytes_view b) {
         return numbers::greater_equal
-            (numbers::digits<r> {data::slice<byte> {const_cast<byte*> (a.data()), a.size()}},
-            numbers::digits<r> {data::slice<byte> {const_cast<byte*> (b.data()), b.size()}});
+            (numbers::digits<r> {data::slice<byte> {const_cast<byte*> (a.data ()), a.size ()}},
+            numbers::digits<r> {data::slice<byte> {const_cast<byte*> (b.data ()), b.size ()}});
     }
     
     template <endian::order r> bool inline integer<r>::less_equal (bytes_view a, bytes_view b) {
         return numbers::less_equal
-            (numbers::digits<r> {data::slice<byte> {const_cast<byte*> (a.data()), a.size()}},
-            numbers::digits<r> {data::slice<byte> {const_cast<byte*> (b.data()), b.size()}});
+            (numbers::digits<r> {data::slice<byte> {const_cast<byte*> (a.data ()), a.size ()}},
+            numbers::digits<r> {data::slice<byte> {const_cast<byte*> (b.data ()), b.size ()}});
     }
     
     template <endian::order r> bytes inline integer<r>::plus (bytes_view a, bytes_view b) {
@@ -1306,7 +1306,7 @@ namespace Gigamonkey {
         if (d.Data.size () > size + 1 || (d.Data.size () == size + 1 && d[-1] != 0x00))
             throw std::logic_error{"natural too big to cast to uint"};
         uint<size> u {};
-        std::copy(d.begin (), d.begin() + std::min (size, d.Data.size ()), u.begin());
+        std::copy (d.begin (), d.begin () + std::min (size, d.Data.size ()), u.begin ());
         return u;
     }
     

@@ -13,9 +13,9 @@ namespace Gigamonkey {
         
         digest () : nonzero<uint<size>> {} {}
         
-        explicit digest (const uint<size>& u) : nonzero<uint<size>> {u} {}
+        explicit digest (const uint<size> &u) : nonzero<uint<size>> {u} {}
         explicit digest (string_view s);
-        explicit digest (const slice<size>& x) : digest {uint<size> (x)} {}
+        explicit digest (const slice<size> &x) : digest {uint<size> (x)} {}
         
         operator bytes_view () const;
         
@@ -27,13 +27,13 @@ namespace Gigamonkey {
         const byte *begin () const;
         const byte *end () const;
         
-        bool operator == (const digest& d) const;
-        bool operator != (const digest& d) const;
+        bool operator == (const digest &d) const;
+        bool operator != (const digest &d) const;
         
-        bool operator > (const digest& d) const;
-        bool operator < (const digest& d) const;
-        bool operator <= (const digest& d) const;
-        bool operator >= (const digest& d) const;
+        bool operator > (const digest &d) const;
+        bool operator < (const digest &d) const;
+        bool operator <= (const digest &d) const;
+        bool operator >= (const digest &d) const;
     };
     
     using digest128 = digest<16>;
@@ -46,7 +46,7 @@ namespace Gigamonkey {
     using digest512 = digest<64>;
 
     template <size_t size> 
-    inline std::ostream& operator << (std::ostream &o, const digest<size> &s) {
+    inline std::ostream &operator << (std::ostream &o, const digest<size> &s) {
         return o << "digest{" << s.Value << "}";
     }
 
@@ -57,7 +57,7 @@ namespace Gigamonkey {
 
     template <size_t size> 
     inline reader &operator >> (reader &r, digest<size> &s) {
-        r.read(s.Value.data (), size);
+        r.read (s.Value.data (), size);
         return r;
     }
     

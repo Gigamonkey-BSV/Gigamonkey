@@ -15,9 +15,6 @@
 #endif
 
 #include "compat.h"
-#include <sv/fs.h>
-//#include "logging.h"
-#include "sync.h"
 #include "utiltime.h"
 
 #include <atomic>
@@ -33,59 +30,46 @@
 #include <boost/thread/exceptions.hpp>
 
 // Application startup time (used for uptime calculation)
-int64_t GetStartupTime();
+int64_t GetStartupTime ();
 
 extern const char *const BITCOIN_CONF_FILENAME;
 extern const char *const BITCOIN_PID_FILENAME;
 
-void SetupEnvironment();
-bool SetupNetworking();
+void SetupEnvironment ();
+bool SetupNetworking ();
 
-void PrintExceptionContinue(const std::exception *pex, const char *pszThread);
-void FileCommit(FILE *file);
-bool TruncateFile(FILE *file, uint64_t length);
-int RaiseFileDescriptorLimit(int nMinFD);
-void AllocateFileRange(FILE *file, unsigned int offset, uint64_t length);
-bool RenameOver(fs::path src, fs::path dest);
-bool TryCreateDirectories(const fs::path &p);
-fs::path GetDefaultDataDir();
-const fs::path &GetDataDir(bool fNetSpecific = true);
-void ClearDatadirCache();
-fs::path GetConfigFile(const std::string &confPath);
-#ifndef WIN32
-fs::path GetPidFile();
-void CreatePidFile(const fs::path &path, pid_t pid);
-#endif
-#ifdef WIN32
-fs::path GetSpecialFolderPath(int nFolder, bool fCreate = true);
-#endif
-void runCommand(const std::string &strCommand);
+void PrintExceptionContinue (const std::exception *pex, const char *pszThread);
+void FileCommit (FILE *file);
+bool TruncateFile (FILE *file, uint64_t length);
+int RaiseFileDescriptorLimit (int nMinFD);
+void AllocateFileRange (FILE *file, unsigned int offset, uint64_t length);
+
+void ClearDatadirCache ();
+void runCommand (const std::string &strCommand);
 
 template <typename ITER>
-std::string StringJoin(const std::string& separator, ITER begin, ITER end)
-{
+std::string StringJoin (const std::string &separator, ITER begin, ITER end) {
     std::ostringstream result;
-    if (begin != end)
-    {
+
+    if (begin != end) {
         result << *begin;
         begin++;
 
-        while (begin != end)
-        {
+        while (begin != end) {
             result << separator << *begin;
             begin++;
         }
     }
-    return result.str();
+
+    return result.str ();
 }
 
 template <typename CONTAINER>
-std::string StringJoin(const std::string& separator, const CONTAINER& cont)
-{
-    return StringJoin(separator, cont.cbegin(), cont.cend());
+std::string StringJoin (const std::string &separator, const CONTAINER &cont) {
+    return StringJoin (separator, cont.cbegin (), cont.cend ());
 }
 
-inline bool IsSwitchChar(char c) {
+inline bool IsSwitchChar (char c) {
 #ifdef WIN32
     return c == '-' || c == '/';
 #else
@@ -93,113 +77,13 @@ inline bool IsSwitchChar(char c) {
 #endif
 }
 
-class ArgsManager {
-private:
-    int64_t parseUnit(std::string argValue, int64_t nMultiples);
-
-protected:
-    CCriticalSection cs_args;
-    std::map<std::string, std::string> mapArgs;
-    std::map<std::string, std::vector<std::string>> mapMultiArgs;
-
-public:
-    static inline const std::array<std::string, 3> sensitiveArgs{"-rpcuser", "-rpcpassword", "-rpcauth"};
-
-    void ParseParameters(int argc, const char *const argv[]);
-    void ReadConfigFile(const std::string &confPath);
-    std::vector<std::string> GetArgs(const std::string &strArg);
-    bool IsSensitiveArg(const std::string& argName);
-    std::vector<std::string> GetNonSensitiveParameters();
-    void LogSetParameters();
-
-    /**
-     * Return true if the given argument has been manually set.
-     *
-     * @param strArg Argument to get (e.g. "-foo")
-     * @return true if the argument has been set
-     */
-    bool IsArgSet(const std::string &strArg);
-
-    /**
-     * Return string argument or default value.
-     *
-     * @param strArg Argument to get (e.g. "-foo")
-     * @param default (e.g. "1")
-     * @return command-line argument or default value
-     */
-    std::string GetArg(const std::string &strArg,
-                       const std::string &strDefault);
-
-    /**
-     * Return integer argument or default value.
-     *
-     * @param strArg Argument to get (e.g. "-foo")
-     * @param default (e.g. 1)
-     * @return command-line argument or default value
-     */
-    int64_t GetArg(const std::string &strArg, int64_t nDefault);
-
-    /**
-     * Return integer argument or default value in bytes. It's used only for byte sized arguments.
-     *
-     * @param strArg Argument to get (e.g. "-foo"). 
-     * @param default (e.g. 1)
-     * @param multiples units (e.g. 1000). If argument without a unit represents a multiple of the unit byte 
-     * (for e.g. MB), nMultiples is used to get proper value in bytes.
-     * @return command-line argument or default value representing bytes.
-     */
-    int64_t GetArgAsBytes(const std::string& strArg, int64_t nDefault, int64_t nMultiples = 1);
-
-    /**
-     * Return boolean argument or default value.
-     *
-     * @param strArg Argument to get (e.g. "-foo")
-     * @param default (true or false)
-     * @return command-line argument or default value
-     */
-    bool GetBoolArg(const std::string &strArg, bool fDefault);
-
-    /**
-     * Set an argument if it doesn't already have a value.
-     *
-     * @param strArg Argument to set (e.g. "-foo")
-     * @param strValue Value (e.g. "1")
-     * @return true if argument gets set, false if it already had a value
-     */
-    bool SoftSetArg(const std::string &strArg, const std::string &strValue);
-
-    /**
-     * Set a boolean argument if it doesn't already have a value.
-     *
-     * @param strArg Argument to set (e.g. "-foo")
-     * @param fValue Value (e.g. false)
-     * @return true if argument gets set, false if it already had a value
-     */
-    bool SoftSetBoolArg(const std::string &strArg, bool fValue);
-
-    // Forces a arg setting, used only in testing
-    void ForceSetArg(const std::string &strArg, const std::string &strValue);
-
-    // Forces a boolean arg setting, used only in testing
-    void ForceSetBoolArg(const std::string &strArg, bool fValue);
-
-    // Forces a multi arg setting, used only in testing
-    void ForceSetMultiArg(const std::string &strArg,
-                          const std::string &strValue);
-
-    // Remove an arg setting, used only in testing
-    void ClearArg(const std::string &strArg);
-};
-
-extern ArgsManager gArgs;
-
 /**
  * Format a string to be used as group of options in help messages.
  *
  * @param message Group name (e.g. "RPC server options:")
  * @return the formatted string
  */
-std::string HelpMessageGroup(const std::string &message);
+std::string HelpMessageGroup (const std::string &message);
 
 /**
  * Format a string to be used as option description in help messages.
@@ -208,36 +92,32 @@ std::string HelpMessageGroup(const std::string &message);
  * @param message Option description (e.g. "Username for JSON-RPC connections")
  * @return the formatted string
  */
-std::string HelpMessageOpt(const std::string &option,
-                           const std::string &message);
+std::string HelpMessageOpt (const std::string &option, const std::string &message);
 
 /**
  * Return the number of physical cores available on the current system.
  * @note This does not count virtual cores, such as those provided by
  * HyperThreading when boost is newer than 1.56.
  */
-int GetNumCores();
+int GetNumCores ();
 
-void RenameThread(const char *name);
-std::string GetThreadName();
+void RenameThread (const char *name);
+std::string GetThreadName ();
 
-std::string CopyrightHolders(const std::string &strPrefix);
+std::string CopyrightHolders (const std::string &strPrefix);
 
 /**
  * A reusable average function.
  * Pre-condition: [first, last) is non-empty.
  */
 template<typename InputIterator>
-auto Average(InputIterator first, InputIterator last)
-{
-    auto rangeSize { std::distance(first, last) };
-    if(rangeSize == 0)
-    {
-        throw std::runtime_error("0 elements for Average");
-    }
+auto Average (InputIterator first, InputIterator last) {
+    auto rangeSize { std::distance (first, last) };
+    if (rangeSize == 0)
+        throw std::runtime_error ("0 elements for Average");
 
     using T = typename InputIterator::value_type;
-    T sum = std::accumulate(first, last, T{});
+    T sum = std::accumulate (first, last, T {});
     return sum / rangeSize;
 }
 

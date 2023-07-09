@@ -18,7 +18,7 @@ namespace Gigamonkey::Merkle {
         static tree make (leaf_digests);
         
         tree ();
-        explicit tree (const digest& root);
+        explicit tree (const digest &root);
         explicit tree (leaf_digests h) : tree {make (h)} {}
         
         bool valid () const;

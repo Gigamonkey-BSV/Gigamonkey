@@ -9,7 +9,7 @@
 
 namespace Gigamonkey {
     
-    Bitcoin::block genesis();
+    Bitcoin::block genesis ();
     
     // interface for the headers and merkle paths database. 
     struct headers {
@@ -20,34 +20,34 @@ namespace Gigamonkey {
             N Height;
             work::difficulty Cumulative;
             
-            bool operator==(const header& h) const {
+            bool operator == (const header& h) const {
                 return Header == h.Header;
             }
             
-            bool operator!=(const header& h) const {
-                return !operator==(h);
+            bool operator != (const header& h) const {
+                return !operator == (h);
             }
             
-            bool valid() const {
-                return Hash.valid() && Header.valid();
+            bool valid () const {
+                return Hash.valid () && Header.valid ();
             }
             
-            header();
-            header(digest256 s, Bitcoin::header h, N n, work::difficulty d) : Hash{s}, Header{h}, Height{n}, Cumulative{d} {}
+            header ();
+            header (digest256 s, Bitcoin::header h, N n, work::difficulty d) : Hash {s}, Header {h}, Height {n}, Cumulative {d} {}
         };
         
-        virtual header latest() const = 0;
+        virtual header latest () const = 0;
         
-        virtual header operator[](const N&) const = 0;
-        virtual header operator[](const digest256&) const = 0;
+        virtual header operator [] (const N&) const = 0;
+        virtual header operator [] (const digest256&) const = 0;
         
-        virtual Merkle::dual dual_tree(const digest256&) const = 0;
+        virtual Merkle::dual dual_tree (const digest256&) const = 0;
         
-        virtual Merkle::proof proof(const Bitcoin::txid&) const = 0;
+        virtual Merkle::proof proof (const Bitcoin::txid&) const = 0;
         
-        virtual bool insert(const header&) = 0;
+        virtual bool insert (const header&) = 0;
         
-        virtual bool insert(const Merkle::proof&) = 0;
+        virtual bool insert (const Merkle::proof&) = 0;
         
         // an in-memory version of headers.
         class memory;

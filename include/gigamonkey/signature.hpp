@@ -4,8 +4,8 @@
 #ifndef GIGAMONKEY_SIGNATURE
 #define GIGAMONKEY_SIGNATURE
 
-#include "secp256k1.hpp"
-#include "sighash.hpp"
+#include <gigamonkey/secp256k1.hpp>
+#include <gigamonkey/sighash.hpp>
 
 namespace Gigamonkey::Bitcoin {
     
@@ -28,9 +28,9 @@ namespace Gigamonkey::Bitcoin {
         
         signature (const secp256k1::signature raw, sighash::directive d);
         
-        static signature sign (const secp256k1::secret& s, sighash::directive d, const sighash::document&);
+        static signature sign (const secp256k1::secret &s, sighash::directive d, const sighash::document &);
         
-        static bool verify (const bytes_view sig, const bytes_view pub, const sighash::document& doc);
+        static bool verify (const bytes_view sig, const bytes_view pub, const sighash::document &doc);
         static bool DER (bytes_view x);
         
         // the hash that gets signed. 
@@ -38,9 +38,9 @@ namespace Gigamonkey::Bitcoin {
         
     };
 
-    std::ostream &operator << (std::ostream& o, const signature& x);
+    std::ostream &operator << (std::ostream &o, const signature &x);
     
-    signature inline signature::sign (const secp256k1::secret& s, sighash::directive d, const sighash::document& doc) {
+    signature inline signature::sign (const secp256k1::secret &s, sighash::directive d, const sighash::document &doc) {
         return signature {s.sign (hash (doc, d)), d};
     }
 
@@ -82,11 +82,11 @@ namespace Gigamonkey::Bitcoin {
         return x.size () > 0 && secp256k1::signature::minimal (raw (x));
     }
 
-    bool inline signature::verify (const bytes_view sig, const bytes_view pub, const sighash::document& doc) {
+    bool inline signature::verify (const bytes_view sig, const bytes_view pub, const sighash::document &doc) {
         return secp256k1::pubkey::verify (pub, hash (doc, directive (sig)), raw (sig));
     }
 
-    std::ostream inline &operator << (std::ostream& o, const signature& x) {
+    std::ostream inline &operator << (std::ostream &o, const signature &x) {
         return o << "signature{" << data::encoding::hex::write (bytes_view (x)) << "}";
     }
     
