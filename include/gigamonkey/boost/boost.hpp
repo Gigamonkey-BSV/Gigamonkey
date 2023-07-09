@@ -764,7 +764,8 @@ namespace Gigamonkey {
         
         candidate inline candidate::add (const Bitcoin::prevout &p) const {
             prevout pp {p.outpoint (), p.value ()};
-            return Prevouts.contains (pp) ? *this : candidate {Script, Prevouts << pp};
+            return Prevouts.size () == 0 ? candidate {p.script (), {pp}} :
+                Prevouts.contains (pp) ? *this : candidate {Script, Prevouts << pp};
         }
         
         digest256 inline candidate::id () const {
