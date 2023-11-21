@@ -160,11 +160,11 @@ namespace Gigamonkey::Bitcoin {
         return instruction {OP_PUSHDATA4, data};
     }
     
-    bytes instruction::data () const {
+    Z instruction::data () const {
         if (is_push_data (Op) || Op == OP_RETURN) return Data;
         if (!is_push (Op)) return {};
         if (Op == OP_1NEGATE) return {0x81};
-        return bytes {static_cast<byte> (Op - 0x50)};
+        return Z {int64 (Op - 0x50)};
     }
     
     uint32 instruction::serialized_size () const {
@@ -202,7 +202,7 @@ namespace Gigamonkey::Bitcoin {
         return true;
     }
 
-    std::ostream& write_op_code (std::ostream& o, op x) {
+    std::ostream &write_op_code (std::ostream& o, op x) {
         if (x == OP_FALSE) return o << "push_empty";
         if (is_push (x)) {
             switch (x) {
@@ -292,7 +292,7 @@ namespace Gigamonkey::Bitcoin {
         }
     }
 
-    std::ostream& operator << (std::ostream& o, const instruction& i) {
+    std::ostream &operator << (std::ostream& o, const instruction& i) {
         if (!is_push_data (i.Op)) return write_op_code (o, i.Op);
         return write_op_code (o, i.Op) << "{" << data::encoding::hex::write (i.Data) << "}";
     }
@@ -322,7 +322,7 @@ namespace Gigamonkey::Bitcoin {
             instruction i {};
             r = r >> i;
             
-            if (i.verify(0) != SCRIPT_ERR_OK) return {};
+            if (i.verify (0) != SCRIPT_ERR_OK) return {};
         
             if (i.Op == OP_RETURN) {
                 if (data::empty (Control)) {

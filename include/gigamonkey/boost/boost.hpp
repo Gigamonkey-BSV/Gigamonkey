@@ -86,7 +86,7 @@ namespace Gigamonkey {
             
             bool valid () const;
             
-            script write () const;
+            Bitcoin::script write () const;
             
             static output_script read (bytes);
             
@@ -94,21 +94,21 @@ namespace Gigamonkey {
             
             size_t serialized_size () const;
             
-            static Boost::type type (script x);
-            static bool valid (script x);
+            static Boost::type type (Bitcoin::script x);
+            static bool valid (Bitcoin::script x);
             
             // same as category
-            static int32_little version (script x);
+            static int32_little version (Bitcoin::script x);
             
             // We can use the remaining 16 bits of category as a magic number. 
-            static uint16_little magic_number (script x);
+            static uint16_little magic_number (Bitcoin::script x);
             
-            static uint256 content (script x);
-            static work::compact target (script x);
-            static bytes tag (script x);
-            static uint32_little user_nonce (script x);
-            static bytes additional_data (script x);
-            static digest160 miner_pubkey_hash (script x);
+            static uint256 content (Bitcoin::script x);
+            static work::compact target (Bitcoin::script x);
+            static bytes tag (Bitcoin::script x);
+            static uint32_little user_nonce (Bitcoin::script x);
+            static bytes additional_data (Bitcoin::script x);
+            static digest160 miner_pubkey_hash (Bitcoin::script x);
             
         private:
             output_script (
@@ -203,7 +203,7 @@ namespace Gigamonkey {
             
             Bitcoin::program program () const;
             
-            script write () const;
+            Bitcoin::script write () const;
             
             size_t serialized_size () const;
 
@@ -253,14 +253,14 @@ namespace Gigamonkey {
             
             explicit input_script (bytes b);
             
-            static Boost::type type (script x);
-            static bool valid (script x);
-            static Bitcoin::signature signature (script x);
-            static Bitcoin::pubkey pubkey (script x);
-            static Bitcoin::timestamp timestamp (script x);
-            static uint32_little nonce (script x);
-            static digest160 miner_pubkey_hash (script x);
-            static work::solution solution (script x);
+            static Boost::type type (Bitcoin::script x);
+            static bool valid (Bitcoin::script x);
+            static Bitcoin::signature signature (Bitcoin::script x);
+            static Bitcoin::pubkey pubkey (Bitcoin::script x);
+            static Bitcoin::timestamp timestamp (Bitcoin::script x);
+            static uint32_little nonce (Bitcoin::script x);
+            static digest160 miner_pubkey_hash (Bitcoin::script x);
+            static work::solution solution (Bitcoin::script x);
             
             input_script (
                 const Bitcoin::signature &signature,
@@ -472,39 +472,39 @@ namespace Gigamonkey {
                 (UseGeneralPurposeBits ? 76 : 59);
         }
         
-        Boost::type inline output_script::type (script x) {
+        Boost::type inline output_script::type (Bitcoin::script x) {
             return read (x).Type;
         }
         
-        bool inline output_script::valid (script x) {
+        bool inline output_script::valid (Bitcoin::script x) {
             return read (x).valid ();
         }
         
-        int32_little inline output_script::version (script x) {
+        int32_little inline output_script::version (Bitcoin::script x) {
             return read (x).Type;
         }
         
-        uint256 inline output_script::content (script x) {
+        uint256 inline output_script::content (Bitcoin::script x) {
             return read (x).Content;
         }
         
-        work::compact inline output_script::target (script x) {
+        work::compact inline output_script::target (Bitcoin::script x) {
             return read (x).Target;
         }
         
-        bytes inline output_script::tag (script x) {
+        bytes inline output_script::tag (Bitcoin::script x) {
             return read (x).Tag;
         }
         
-        uint32_little inline output_script::user_nonce (script x) {
+        uint32_little inline output_script::user_nonce (Bitcoin::script x) {
             return read (x).UserNonce;
         }
         
-        bytes inline output_script::additional_data (script x) {
+        bytes inline output_script::additional_data (Bitcoin::script x) {
             return read (x).AdditionalData;
         }
         
-        digest160 inline output_script::miner_pubkey_hash (script x) {
+        digest160 inline output_script::miner_pubkey_hash (Bitcoin::script x) {
             return read (x).MinerPubkeyHash;
         }
         
@@ -612,10 +612,10 @@ namespace Gigamonkey {
         
         bool inline input_script::valid () const {
             return Type != Boost::invalid && 
-                (ExtraNonce2.size () == 8 || (bool (GeneralPurposeBits) && ExtraNonce2.size() <= 32));
+                (ExtraNonce2.size () == 8 || (bool (GeneralPurposeBits) && ExtraNonce2.size () <= 32));
         }
         
-        script inline input_script::write () const {
+        Bitcoin::script inline input_script::write () const {
             return Bitcoin::compile (program ());
         }
         
@@ -678,31 +678,31 @@ namespace Gigamonkey {
         
         inline input_script::input_script (bytes b) : input_script {read (b)} {}
         
-        Boost::type inline input_script::type (script x) {
+        Boost::type inline input_script::type (Bitcoin::script x) {
             return read (x).Type;
         }
         
-        bool inline input_script::valid (script x) {
+        bool inline input_script::valid (Bitcoin::script x) {
             return read (x).valid ();
         }
         
-        Bitcoin::signature inline input_script::signature (script x) {
+        Bitcoin::signature inline input_script::signature (Bitcoin::script x) {
             return read (x).Signature;
         }
         
-        Bitcoin::pubkey inline input_script::pubkey (script x) {
+        Bitcoin::pubkey inline input_script::pubkey (Bitcoin::script x) {
             return read (x).Pubkey;
         }
         
-        Bitcoin::timestamp inline input_script::timestamp (script x) {
+        Bitcoin::timestamp inline input_script::timestamp (Bitcoin::script x) {
             return read (x).Timestamp;
         }
         
-        uint32_little inline input_script::nonce (script x) {
+        uint32_little inline input_script::nonce (Bitcoin::script x) {
             return read (x).Nonce;
         }
         
-        digest160 inline input_script::miner_pubkey_hash (script x) {
+        digest160 inline input_script::miner_pubkey_hash (Bitcoin::script x) {
             return read (x).MinerPubkeyHash;
         }
             
@@ -714,7 +714,7 @@ namespace Gigamonkey {
                 (use_general_purpose_bits ? 5 : 0) + 24;
         }
 
-        work::solution inline input_script::solution (script x) {
+        work::solution inline input_script::solution (Bitcoin::script x) {
             return read (x).solution ();
         }
 

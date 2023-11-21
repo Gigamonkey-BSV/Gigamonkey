@@ -110,7 +110,7 @@ namespace Gigamonkey {
                 Bitcoin::transaction {d}, Previous {p} {}
             vertex () : Bitcoin::transaction {}, Previous {} {}
             
-            edge operator [] (index i) {
+            edge operator [] (Bitcoin::index i) {
                 struct Bitcoin::input in = this->Inputs [i];
                 
                 return {Previous[in.Reference], in};

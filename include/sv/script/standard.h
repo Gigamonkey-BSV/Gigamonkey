@@ -19,19 +19,6 @@ class CScript;
 static const uint64_t DEFAULT_DATA_CARRIER_SIZE = UINT32_MAX;
 extern bool fAcceptDatacarrier;
 
-/**
- * Mandatory script verification flags that all new blocks must comply with for
- * them to be valid. (but old blocks may not comply with) Currently just P2SH,
- * but in the future other flags may be added, such as a soft-fork to enforce
- * strict DER encoding.
- *
- * Failing one of these tests may trigger a DoS ban - see CheckInputs() for
- * details.
- */
-static const uint32_t MANDATORY_SCRIPT_VERIFY_FLAGS =
-    SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_STRICTENC |
-    SCRIPT_ENABLE_SIGHASH_FORKID | SCRIPT_VERIFY_LOW_S | SCRIPT_VERIFY_NULLFAIL;
-
 enum txnouttype {
     TX_NONSTANDARD,
     // 'standard' transaction types:

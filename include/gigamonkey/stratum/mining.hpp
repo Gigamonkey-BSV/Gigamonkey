@@ -66,7 +66,7 @@ namespace Gigamonkey::Stratum {
         
         share ();
         share (worker_name name, job_id jid, const work::share &x);
-        share (worker_name name, job_id jid, bytes en2, Bitcoin::timestamp t, nonce n);
+        share (worker_name name, job_id jid, bytes en2, Bitcoin::timestamp t, Bitcoin::nonce n);
         
         bool valid () const;
     };
@@ -99,7 +99,7 @@ namespace Gigamonkey::Stratum {
     inline share::share (worker_name name, job_id jid, const work::share &x) :
         Name {name}, JobID {jid}, Share {x} {}
     
-    inline share::share (worker_name name, job_id jid, bytes en2, Bitcoin::timestamp t, nonce n) :
+    inline share::share (worker_name name, job_id jid, bytes en2, Bitcoin::timestamp t, Bitcoin::nonce n) :
         Name {name}, JobID {jid}, Share {t, n, en2} {}
     
     inline bool share::valid () const {

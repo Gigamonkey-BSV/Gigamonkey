@@ -2,14 +2,12 @@
 
 namespace Gigamonkey::BitcoinAssociation {
     
-    digest256 read_digest (const string &x) {
+    digest256 inline read_digest (const string &x) {
         return digest256 {string {"0x"} + x};
     }
-    
-    string write_digest (const digest256 &x) {
-        std::stringstream ss;
-        ss << x.Value;
-        return ss.str ().substr (2);
+
+    string inline write_digest (const digest256 &x) {
+        return drop (string (x), 2);
     }
     
     Bitcoin::header read_header (const string &x) {
@@ -18,7 +16,7 @@ namespace Gigamonkey::BitcoinAssociation {
         return Bitcoin::header {slice<80> {b->data ()}};
     }
     
-    string write_header (const Bitcoin::header &h) {
+    string inline write_header (const Bitcoin::header &h) {
         return encoding::hex::write (h.write ());
     }
     
@@ -137,6 +135,7 @@ namespace Gigamonkey::BitcoinAssociation {
     }
     
     proofs_serialization_standard proofs_serialization_standard::read_JSON (const JSON &j) {
+
         proofs_serialization_standard x;
         if (!proofs_serialization_standard::valid (j)) return {};
         
@@ -145,7 +144,9 @@ namespace Gigamonkey::BitcoinAssociation {
         else x.Transaction = *encoding::hex::read (string (j["txOrId"]));
         
         x.Path.Index = j["index"];
+        std::cout << " reading path " << j["nodes"] << std::endl;
         x.Path.Digests = read_path (j["nodes"], x.leaf ());
+        std::cout << " read paths as " << x.Path.Digests << std::endl;
         
         if (!j.contains ("targetType")) {
             x.BlockHash = read_digest (j["target"]);
@@ -179,6 +180,7 @@ namespace Gigamonkey::BitcoinAssociation {
     }
     
     reader &read_path (reader &r, digest256 leaf, Merkle::path &p) {
+        std::cout << " about to read paths..." << std::endl;
         Bitcoin::var_int size; 
         r >> size;
         Merkle::digests d;
@@ -243,11 +245,11 @@ namespace Gigamonkey::BitcoinAssociation {
         return {};
     }
     
-    writer &write_duplicate (writer &w) {
+    writer inline &write_duplicate (writer &w) {
         return w << byte (1);
     }
     
-    writer &write_node (writer &w, const digest256 &d) {
+    writer inline &write_node (writer &w, const digest256 &d) {
         return w << byte (0) << d;
     }
     
@@ -260,11 +262,11 @@ namespace Gigamonkey::BitcoinAssociation {
         return w;
     }
     
-    writer &write_txid (writer &w, const Bitcoin::txid &t) {
+    writer inline &write_txid (writer &w, const Bitcoin::txid &t) {
         return w << t;
     }
     
-    writer &write_transaction (writer &w, const bytes& t) {
+    writer inline &write_transaction (writer &w, const bytes& t) {
         return w << Bitcoin::var_int {t.size ()} << t;
     }
     
@@ -327,7 +329,7 @@ namespace Gigamonkey::BitcoinAssociation {
     }
     
     maybe<digest256> inline proofs_serialization_standard::Merkle_root(const JSON& j) {
-        target_type_value target = target_type(j);
+        target_type_value target = target_type (j);
         if (target == target_type_Merkle_root) return {read_digest (j["target"])};
         if (target == target_type_block_header) return block_header (j)->MerkleRoot;
         return {};

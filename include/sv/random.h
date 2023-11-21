@@ -12,6 +12,8 @@
 
 #include <cstdint>
 
+namespace Satoshi {
+
 /* Seed OpenSSL PRNG with additional entropy data */
 void RandAddSeed ();
 
@@ -139,5 +141,6 @@ bool Random_SanityCheck ();
 
 /** Initialize the RNG. */
 void RandomInit ();
+}
 
 #endif // BITCOIN_RANDOM_H

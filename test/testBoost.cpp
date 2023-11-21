@@ -242,7 +242,7 @@ namespace Gigamonkey::Boost {
         
         const digest160 Tag = Bitcoin::Hash160 (std::string {"kangaroos"});
         
-        const bytes AdditionalData = bytes::from_string ("contextual information aka metadata");
+        const bytes AdditionalData = bytes (string ("contextual information aka metadata"));
         
         Bitcoin::signature Signature {}; // Don't need a real signature.
         
@@ -381,25 +381,25 @@ namespace Gigamonkey::Boost {
         // Phase 3: check scripts valid. 
         
         // serialized forms of the output and input scripts. 
-        list<script> serialized_output_scripts = data::for_each ([] (const output_script o) -> script {
+        list<Bitcoin::script> serialized_output_scripts = data::for_each ([] (const output_script o) -> Bitcoin::script {
             auto script = o.write ();
             EXPECT_EQ (script.size (), o.serialized_size ());
             return script;
         }, output_scripts);
         
-        auto unserialized_output_scripts = data::for_each ([] (const script o) -> output_script {
+        auto unserialized_output_scripts = data::for_each ([] (const Bitcoin::script o) -> output_script {
             return output_script (o);
         }, serialized_output_scripts);
         
         EXPECT_TRUE (test_orthogonal (output_scripts, unserialized_output_scripts)) << "could not serialize and deserialize output scripts.";
         
-        list<script> serialized_input_scripts = data::for_each ([] (const input_script i) -> script {
+        list<Bitcoin::script> serialized_input_scripts = data::for_each ([] (const input_script i) -> Bitcoin::script {
             auto script = i.write ();
             EXPECT_EQ (script.size (), i.serialized_size ());
             return script;
         }, input_scripts);
         
-        auto unserialized_input_scripts = data::for_each ([] (const script o) -> input_script {
+        auto unserialized_input_scripts = data::for_each ([] (const Bitcoin::script o) -> input_script {
             return input_script (o);
         }, serialized_input_scripts);
         
@@ -554,9 +554,9 @@ namespace Gigamonkey::Boost {
     
     // this is used to test against the boostpow-js library. 
     TEST (BoostTest, TestAgainstBoostPoWJS) {
-        bytes content_string = bytes::from_string("hello animal");
-        bytes tag_string = bytes::from_string ("this is a tag");
-        bytes data_string = bytes::from_string("this is more additionalData");
+        bytes content_string = bytes (string ("hello animal"));
+        bytes tag_string = bytes (string ("this is a tag"));
+        bytes data_string = bytes (string ("this is more additionalData"));
         
         digest256 content {};
         std::copy (content_string.begin (), content_string.end (), content.begin ());
@@ -851,9 +851,9 @@ namespace Gigamonkey::Boost {
         Bitcoin::secret from_key {Bitcoin::secret::main,
             secp256k1::secret {uint256 {"0x0000000000000000000000000000000000000000000000000000000000000003"}}};
         
-        bytes content_string = bytes::from_string ("hello animal");
-        bytes tag_string = bytes::from_string ("this is a tag");
-        bytes data_string = bytes::from_string ("this is more additionalData");
+        bytes content_string = bytes (string ("hello animal"));
+        bytes tag_string = bytes (string ("this is a tag"));
+        bytes data_string = bytes (string ("this is more additionalData"));
         
         digest256 content {};
         std::copy (content_string.begin (), content_string.end (), content.begin ());

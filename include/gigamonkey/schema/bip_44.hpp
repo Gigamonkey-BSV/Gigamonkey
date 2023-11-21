@@ -27,7 +27,7 @@ namespace Gigamonkey::HD::BIP_44 {
     constexpr uint32 change_index = 1; 
     
     list<uint32> inline derivation_path (uint32 account, bool change, uint32 index, uint32 coin_type = coin_type_Bitcoin) {
-        return list<uint32> {purpose, coin_type, BIP_32::harden(account), uint32(change), index};
+        return list<uint32> {purpose, coin_type, BIP_32::harden (account), uint32 (change), index};
     }
     
     struct master_pubkey {
@@ -35,12 +35,12 @@ namespace Gigamonkey::HD::BIP_44 {
         
         master_pubkey (const BIP_32::pubkey& p) : Pubkey{p} {}
         
-        Bitcoin::address receive (uint32 index) const {
-            return Bitcoin::address (Pubkey.derive({receive_index, index}));
+        Bitcoin::address::decoded receive (uint32 index) const {
+            return Bitcoin::address::decoded (Pubkey.derive ({receive_index, index}));
         }
         
-        Bitcoin::address change (uint32 index) const {
-            return Bitcoin::address (Pubkey.derive({change_index, index}));
+        Bitcoin::address::decoded change (uint32 index) const {
+            return Bitcoin::address::decoded (Pubkey.derive ({change_index, index}));
         }
         
         BIP_32::pubkey account (uint32 a) const {

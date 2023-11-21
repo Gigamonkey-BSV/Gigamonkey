@@ -128,6 +128,8 @@ static bool GetHWRand(uint8_t *ent32) {
     return false;
 }
 
+namespace Satoshi {
+
 void RandAddSeed() {
     // Seed with CPU performance counter
     int64_t nCounter = GetPerformanceCounter();
@@ -370,19 +372,19 @@ int GetRandInt(int nMax) {
     return GetRand(nMax);
 }
 
-uint256 GetRandHash() {
+uint256 GetRandHash () {
     uint256 hash;
-    GetRandBytes((uint8_t *)&hash, sizeof(hash));
+    GetRandBytes ((uint8_t *)&hash, sizeof(hash));
     return hash;
 }
 
-void FastRandomContext::RandomSeed() {
-    uint256 seed = GetRandHash();
-    rng.SetKey(seed.begin(), 32);
+void FastRandomContext::RandomSeed () {
+    uint256 seed = GetRandHash ();
+    rng.SetKey (seed.begin (), 32) ;
     requires_seed = false;
 }
 
-uint256 FastRandomContext::rand256() {
+uint256 FastRandomContext::rand256 () {
     if (bytebuf_size < 32) {
         FillByteBuffer();
     }
@@ -465,4 +467,6 @@ FastRandomContext::FastRandomContext(bool fDeterministic)
 
 void RandomInit() {
     RDRandInit();
+}
+
 }

@@ -8,10 +8,9 @@
 #define GIGAMONKEY_SCRIPT_SCRIPT
 
 #include <gigamonkey/script/error.h>
-
+#include <gigamonkey/script/flags.h>
 #include <gigamonkey/sighash.hpp>
 #include <gigamonkey/satoshi.hpp>
-#include <sv/script/script_num.h>
 
 namespace Gigamonkey::Bitcoin { 
     
@@ -70,6 +69,11 @@ namespace Gigamonkey::Bitcoin {
         bool check_locktime (const CScriptNum &) const;
         bool check_sequence (const CScriptNum &) const;
     };
+
+    // delete the script up to and including the last instance of OP_CODESEPARATOR.
+    // if no OP_CODESEPARATOR is found, nothing is removed.
+    // this function is needed for correctly checking and generating signatures.
+    bytes_view remove_until_last_code_separator (bytes_view);
     
     bool inline operator == (const result &a, const result &b) {
         return a.Success == b.Success && a.Error == b.Error;

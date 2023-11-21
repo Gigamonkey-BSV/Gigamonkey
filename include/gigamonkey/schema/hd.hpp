@@ -132,7 +132,7 @@ namespace Gigamonkey::HD {
             }
             
             explicit operator string () const {
-                return write();
+                return write ();
             }
         };
 

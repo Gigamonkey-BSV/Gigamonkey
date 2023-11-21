@@ -67,7 +67,7 @@ namespace Gigamonkey::Bitcoin {
         
             // the script code contains the previous output script with the 
             // latest instance of OP_CODESEPARATOR before the signature operation 
-            // being evaluated and everything earlier removed. 
+            // being evaluated and everything earlier removed.
             script ScriptCode; 
             
             // the incomplete transaction that will contain this signature 
@@ -127,7 +127,7 @@ namespace Gigamonkey::Bitcoin {
         }
         
         namespace Amaury {
-            bytes write (const document&, sighash::directive);
+            bytes write (const document &, sighash::directive);
             writer &write (writer &w, const document &doc, sighash::directive d);
             digest256 hash_prevouts (const incomplete::transaction &);
             digest256 hash_sequence (const incomplete::transaction &);
@@ -146,7 +146,6 @@ namespace Gigamonkey::Bitcoin {
                 return w;
             }
             
-            writer &write (writer &w, const document &doc, sighash::directive d);
         }
         
     }

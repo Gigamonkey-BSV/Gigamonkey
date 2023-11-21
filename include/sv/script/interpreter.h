@@ -15,14 +15,16 @@
 #include <gigamonkey/script/error.h>
 #include <gigamonkey/script/config.hpp>
 
-typedef Gigamonkey::Bitcoin::interpreter::element valtype;
-
-typedef Gigamonkey::Bitcoin::interpreter::LimitedStack<valtype> LimitedStack;
-typedef Gigamonkey::Bitcoin::interpreter::LimitedVector<valtype> LimitedVector;
-
 class CPubKey;
 class CScript;
 class CTransaction;
+
+namespace Satoshi {
+
+typedef Gigamonkey::Bitcoin::Z valtype;
+
+typedef Gigamonkey::Bitcoin::interpreter::LimitedStack<valtype> LimitedStack;
+typedef Gigamonkey::Bitcoin::interpreter::LimitedVector<valtype> LimitedVector;
 
 /**
 * EvalScript function evaluates scripts against predefined limits that are
@@ -58,5 +60,7 @@ data::maybe<bool> VerifyScript (
     const CScript &scriptPubKey,
     uint32_t flags,
     ScriptError *serror = nullptr);
+
+}
 
 #endif // BITCOIN_SCRIPT_INTERPRETER_H

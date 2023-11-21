@@ -124,7 +124,7 @@ namespace Gigamonkey::Bitcoin {
     
     size_t size (const instruction &o);
     
-    std::ostream &operator << (std::ostream&, const instruction &);
+    std::ostream &operator << (std::ostream &, const instruction &);
     
     instruction push_data (int z);
     instruction push_data (bytes_view);
@@ -138,13 +138,13 @@ namespace Gigamonkey::Bitcoin {
     // by itself or an op code for pushing data to the stack along with data. 
     struct instruction {
         op Op;
-        bytes Data;
+        Z Data;
         
         instruction ();
         instruction (op p);
         instruction (bytes_view d) : instruction {push (d)} {}
         
-        bytes data () const;
+        Z data () const;
         
         ScriptError verify (uint32 flags = 0) const;
         
@@ -209,7 +209,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     bool inline operator == (const instruction &a, const instruction &b) {
-        return a.Op == b.Op && a.Data == b.Data;
+        return a.Op == b.Op && static_cast<bytes> (a.Data) == static_cast<bytes> (b.Data);
     }
     
     bool inline operator != (const instruction &a, const instruction &b) {
@@ -224,7 +224,7 @@ namespace Gigamonkey::Bitcoin {
         return !operator == (o);
     }
     
-    inline instruction::instruction () : Op{OP_INVALIDOPCODE}, Data {} {}
+    inline instruction::instruction () : Op {OP_INVALIDOPCODE}, Data {} {}
     
     inline instruction::instruction (op p, bytes d) : Op {p}, Data {d} {}
     

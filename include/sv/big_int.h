@@ -10,6 +10,8 @@
 
 #include <span>
 
+#include <gigamonkey/number.hpp>
+
 struct bignum_st;
 
 namespace bsv {
@@ -66,7 +68,7 @@ namespace bsv {
         friend long to_long (const bint &);
         friend std::size_t to_size_t_limited (const bint &);
 
-        std::vector<uint8_t> serialize () const;
+        Gigamonkey::Bitcoin::Z serialize () const;
         static bint deserialize (std::span<const uint8_t>);
 
     private:

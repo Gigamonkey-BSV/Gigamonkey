@@ -19,7 +19,7 @@ namespace Gigamonkey {
     struct repeated;
     
     struct pattern {
-        bool match(bytes_view b) const {
+        bool match (bytes_view b) const {
             try {
                 bytes_view rest = scan (b); 
                 return rest.size () == 0;
@@ -70,7 +70,7 @@ namespace Gigamonkey {
     // A pattern that represents a single instruction. 
     struct pattern::atom final : pattern {
         Bitcoin::instruction Instruction;
-        atom(Bitcoin::instruction i) : Instruction {i} {}
+        atom (Bitcoin::instruction i) : Instruction {i} {}
         
         virtual bytes_view scan (bytes_view p) const final override;
     };
@@ -90,25 +90,27 @@ namespace Gigamonkey {
     class push final : public pattern {
         enum type : byte {any, value, data, read};
         type Type;
-        Bitcoin::Z Value;
+        Z Value;
         bytes Data;
         bytes& Read;
         
     public:
         // match any push data.
-        push() : Type {any}, Value {0}, Data {}, Read {Data} {}
+        push () : Type {any}, Value {0}, Data {}, Read {Data} {}
         // match any push data of the given value
-        push (const Bitcoin::Z &v) : Type {value}, Value {v}, Data{}, Read {Data} {}
+        push (const Z &v) : Type {value}, Value {v}, Data {}, Read {Data} {}
         // match a push of the given data. 
         push (bytes_view b) : Type {data}, Value {0}, Data {b}, Read {Data} {}
         // match any push data and save the result.
         push (bytes &r) : Type {read}, Value {0}, Data {}, Read {r} {}
         
-        bool match (const Bitcoin::instruction& i) const;
+        bool match (const Bitcoin::instruction &i) const;
         
         virtual bytes_view scan (bytes_view p) const final override;
         
     };
+
+    class push_number final : public pattern {};
     
     class push_size final : public pattern {
         bool Reader;
@@ -260,7 +262,7 @@ namespace Gigamonkey {
         : pattern {x}, First {first}, Second {static_cast<int> (second)}, Directive {exactly} {}
     
     inline ptr<pattern> pattern::sequence::construct (Bitcoin::op p) {
-        return std::make_shared<atom>(p);
+        return std::make_shared<atom> (p);
     }
     
     inline ptr<pattern> pattern::sequence::construct (Bitcoin::instruction p) {

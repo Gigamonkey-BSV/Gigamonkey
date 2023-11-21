@@ -122,42 +122,6 @@ static const uint64_t DEFAULT_SCRIPT_NUM_LENGTH_POLICY_AFTER_GENESIS = 250 * ONE
 static const uint64_t MIN_COINS_PROVIDER_CACHE_SIZE = ONE_MEGABYTE;
 static const uint64_t DEFAULT_COINS_PROVIDER_CACHE_SIZE = ONE_GIGABYTE;
 
-/**
- * Standard script verification flags that standard transactions will comply
- * with. However scripts violating these flags may still be present in valid
- * blocks and we must accept those blocks.
- */
-static const unsigned int STANDARD_SCRIPT_VERIFY_FLAGS =
-    MANDATORY_SCRIPT_VERIFY_FLAGS | SCRIPT_VERIFY_DERSIG |
-    SCRIPT_VERIFY_MINIMALDATA | SCRIPT_VERIFY_NULLDUMMY |
-    SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS | SCRIPT_VERIFY_CLEANSTACK |
-    SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY | SCRIPT_VERIFY_CHECKSEQUENCEVERIFY;
-
-/** For convenience, standard but not mandatory verify flags. */
-static const unsigned int STANDARD_NOT_MANDATORY_VERIFY_FLAGS =
-    STANDARD_SCRIPT_VERIFY_FLAGS & ~MANDATORY_SCRIPT_VERIFY_FLAGS;
-
-/** returns flags for "standard" script*/
-unsigned int inline StandardScriptVerifyFlags (bool genesisEnabled, bool utxoAfterGenesis) {
-    unsigned int scriptFlags = STANDARD_SCRIPT_VERIFY_FLAGS;
-    if (utxoAfterGenesis) scriptFlags |= SCRIPT_UTXO_AFTER_GENESIS;
-
-    if (genesisEnabled) {
-        scriptFlags |= SCRIPT_GENESIS;
-        scriptFlags |= SCRIPT_VERIFY_SIGPUSHONLY;
-    }
-
-    return scriptFlags;
-}
-
-/** Get the flags to use for non-final transaction checks */
-unsigned int inline StandardNonFinalVerifyFlags (bool genesisEnabled) {
-    unsigned int flags { LOCKTIME_MEDIAN_TIME_PAST };
-
-    if(!genesisEnabled) flags |= LOCKTIME_VERIFY_SEQUENCE;
-    return flags;
-}
-
 /** Consolidation transactions are free */
 bool IsConsolidationTxn (const CScriptConfig &config, const CTransaction &tx, const CCoinsViewCache &inputs, int32_t tipHeight);
 

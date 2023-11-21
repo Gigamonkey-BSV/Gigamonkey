@@ -12,7 +12,6 @@
 #include <vector>
 
 #include <sv/big_int.h>
-#include <data/types.hpp>
 
 class scriptnum_overflow_error : public std::overflow_error {
 public:
@@ -72,7 +71,7 @@ public:
     friend std::ostream &operator << (std::ostream &, const CScriptNum &);
 
     int getint() const;
-    std::vector<uint8_t> getvch () const;
+    Gigamonkey::Bitcoin::Z getvch () const;
 
     // Precondition: n <= numeric_limit<int32_t>::max() and n>=0
     size_t to_size_t_limited () const;

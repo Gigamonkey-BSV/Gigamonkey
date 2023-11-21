@@ -8,40 +8,14 @@
 #include <gigamonkey/number.hpp>
 #include <sv/script/int_serialization.h>
 
-class stack_overflow_error : public std::overflow_error {
-public:
-    explicit stack_overflow_error (const std::string &str)
-        : std::overflow_error (str) {}
-};
-
 namespace Gigamonkey::Bitcoin::interpreter {
-    
-    struct element : bytes {
-        using bytes::bytes;
-        
-        element (std::vector<byte> &&v) {
-            std::vector<byte>::operator = (v);
-        }
-        
-        element (const std::vector<byte>& v) : element(v.begin(), v.end()) {}
-        
-        explicit operator bool () const;
-        explicit operator Z () const;
-        
-        bool minimal_bool () const;
-        bool minimal_true () const;
-        bool minimal_false () const;
-        
-        bool minimal_number () const {
-            return Z::minimal (*this);
-        }
-        
-        element (vector<byte>::const_iterator a, vector<byte>::const_iterator b) {
-            resize (b - a);
-            std::copy(a, b, this->begin ());
-        }
+
+    class stack_overflow_error : public std::overflow_error {
+    public:
+        explicit stack_overflow_error (const std::string &str)
+            : std::overflow_error (str) {}
     };
-    
+
     template <typename valtype> class LimitedStack;
 
     template <typename valtype>
@@ -167,6 +141,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
     
     template <typename valtype> std::ostream &operator << (std::ostream &o, const LimitedStack<valtype> &stack) {
         o << "{";
+
         if (stack.size () > 0) {
             auto i = stack.begin ();
             auto e = stack.end ();
@@ -177,11 +152,13 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 o << ", ";
             }
         }
+
         return o << "}";
     }
     
     template <typename valtype>
-    LimitedVector<valtype>::LimitedVector (const valtype &stackElementIn, LimitedStack<valtype> &stackIn) : stackElement (stackElementIn), stack (stackIn) {}
+    LimitedVector<valtype>::LimitedVector (const valtype &stackElementIn, LimitedStack<valtype> &stackIn) :
+        stackElement (stackElementIn), stack (stackIn) {}
     
     template <typename valtype>
     const valtype& LimitedVector<valtype>::GetElement () const {
@@ -228,13 +205,12 @@ namespace Gigamonkey::Bitcoin::interpreter {
     
     template <typename valtype>
     void LimitedVector<valtype>::padRight (size_t size, uint8_t signbit) {
-        if (size > stackElement.size ())
-        {
+        if (size > stackElement.size ()) {
             size_t sizeDifference = size - stackElement.size ();
 
             stack.get ().increaseCombinedStackSize (sizeDifference);
 
-            stackElement.resize (size, 0x00);
+            static_cast<bytes> (stackElement).resize (size, 0x00);
             stackElement.back () = signbit;
         }
     }

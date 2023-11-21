@@ -14,8 +14,7 @@ class Bip32Test :
 
 namespace Gigamonkey::HD {
 
-TEST(Bip32,Basic)
-{
+TEST (Bip32,Basic) {
     BIP_32::secret secret = 
         BIP_32::secret::read("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi");
 }

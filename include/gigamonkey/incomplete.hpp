@@ -18,7 +18,7 @@ namespace Gigamonkey::Bitcoin::incomplete {
         
         input () : Reference {}, Sequence {} {}
         input (outpoint r, uint32_little x = Bitcoin::input::Finalized) : 
-            Reference{r}, Sequence {x} {}
+            Reference {r}, Sequence {x} {}
         input (const Bitcoin::input &in) : Reference {in.Reference}, Sequence {in.Sequence} {}
         
         Bitcoin::input complete (bytes_view script) const {

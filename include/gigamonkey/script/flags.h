@@ -7,6 +7,8 @@
 #ifndef BITCOIN_SCRIPT_SCRIPTFLAGS_H
 #define BITCOIN_SCRIPT_SCRIPTFLAGS_H
 
+#include <cstdint>
+
 /** Script verification flags */
 enum {
     SCRIPT_VERIFY_NONE = 0,
@@ -104,5 +106,63 @@ enum {
     // Not actual flag. Used for marking largest flag value.
     SCRIPT_FLAG_LAST = (1U << 20)
 };
+
+/**
+ * Mandatory script verification flags that all new blocks must comply with for
+ * them to be valid. (but old blocks may not comply with) Currently just P2SH,
+ * but in the future other flags may be added, such as a soft-fork to enforce
+ * strict DER encoding.
+ *
+ * Failing one of these tests may trigger a DoS ban - see CheckInputs() for
+ * details.
+ */
+static const uint32_t MANDATORY_SCRIPT_VERIFY_FLAGS =
+    SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_STRICTENC |
+    SCRIPT_ENABLE_SIGHASH_FORKID | SCRIPT_VERIFY_LOW_S | SCRIPT_VERIFY_NULLFAIL;
+
+/**
+ * Standard script verification flags that standard transactions will comply
+ * with. However scripts violating these flags may still be present in valid
+ * blocks and we must accept those blocks.
+ */
+static const unsigned int STANDARD_SCRIPT_VERIFY_FLAGS =
+    MANDATORY_SCRIPT_VERIFY_FLAGS | SCRIPT_VERIFY_DERSIG |
+    SCRIPT_VERIFY_MINIMALDATA | SCRIPT_VERIFY_NULLDUMMY |
+    SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS | SCRIPT_VERIFY_CLEANSTACK |
+    SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY | SCRIPT_VERIFY_CHECKSEQUENCEVERIFY;
+
+/** For convenience, standard but not mandatory verify flags. */
+static const unsigned int STANDARD_NOT_MANDATORY_VERIFY_FLAGS =
+    STANDARD_SCRIPT_VERIFY_FLAGS & ~MANDATORY_SCRIPT_VERIFY_FLAGS;
+
+/** returns flags for "standard" script*/
+unsigned int inline StandardScriptVerifyFlags (bool genesisEnabled, bool utxoAfterGenesis) {
+    unsigned int scriptFlags = STANDARD_SCRIPT_VERIFY_FLAGS;
+    if (utxoAfterGenesis) scriptFlags |= SCRIPT_UTXO_AFTER_GENESIS;
+
+    if (genesisEnabled) {
+        scriptFlags |= SCRIPT_GENESIS;
+        scriptFlags |= SCRIPT_VERIFY_SIGPUSHONLY;
+    }
+
+    return scriptFlags;
+}
+
+/** Flags for nSequence and nLockTime locks */
+enum {
+    /* Interpret sequence numbers as relative lock-time constraints. */
+    LOCKTIME_VERIFY_SEQUENCE = (1U << 0),
+
+    /* Use GetMedianTimePast() instead of nTime for end point timestamp. */
+    LOCKTIME_MEDIAN_TIME_PAST = (1U << 1),
+};
+
+/** Get the flags to use for non-final transaction checks */
+unsigned int inline StandardNonFinalVerifyFlags (bool genesisEnabled) {
+    unsigned int flags { LOCKTIME_MEDIAN_TIME_PAST };
+
+    if (!genesisEnabled) flags |= LOCKTIME_VERIFY_SEQUENCE;
+    return flags;
+}
 
 #endif // BITCOIN_SCRIPT_SCRIPTFLAGS_H

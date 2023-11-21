@@ -7,8 +7,15 @@
 #include <sv/script/script.h>
 #include <gigamonkey/script/script.hpp>
 #include <gigamonkey/script/bitcoin_core.hpp>
+#include <gigamonkey/script/counter.hpp>
 
 namespace Gigamonkey::Bitcoin {
+
+    bytes_view remove_until_last_code_separator (bytes_view b) {
+        interpreter::program_counter counter {b};
+        while (counter.Next.size () > 0) counter = counter.next ();
+        return counter.script_code ();
+    }
     
     bool redemption_document::check_locktime (const CScriptNum &nLockTime) const {
         // There are two kinds of nLockTime: lock-by-blockheight and

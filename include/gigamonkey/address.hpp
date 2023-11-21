@@ -85,7 +85,7 @@ namespace Gigamonkey::Bitcoin {
         
         explicit operator string () const;
         
-        bool verify (const signature &x, const sighash::document& document) const {
+        bool verify (const signature &x, const sighash::document &document) const {
             return signature::verify (x, *this, document);
         }
     };

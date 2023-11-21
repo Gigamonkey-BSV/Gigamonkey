@@ -4,14 +4,14 @@
 
 namespace Gigamonkey {
     
-    void bitcoind_random::get(byte* x, size_t size) {
+    void bitcoind_random::get (byte* x, size_t size) {
         static bool initialized = false;
         if (!initialized) {
-            void RandomInit();
+            void RandomInit ();
             initialized = true;
         }
         
-        GetStrongRandBytes(x, size);
+        Satoshi::GetStrongRandBytes (x, size);
     } 
 
 }

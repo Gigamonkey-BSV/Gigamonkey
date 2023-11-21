@@ -31,15 +31,18 @@ namespace Gigamonkey {
     
     using namespace data;
     
-    using checksum = uint32_little;
-    
-    using index = uint32_little;
-    
-    using script = bytes;
-    
-    using nonce = uint32_little;
-    
-    enum chain : byte {test, main};
+    namespace Bitcoin {
+
+        using index = uint32_little;
+
+        using script = bytes;
+
+        using nonce = uint32_little;
+
+        enum chain : byte {test, main};
+
+        using check = bytes_array<byte, 4>;
+    }
     
     using JSON = nlohmann::json;
     
@@ -53,6 +56,12 @@ namespace Gigamonkey {
     
     using bytes_writer = data::iterator_writer<bytes::iterator, byte>;
     using bytes_reader = data::iterator_reader<const byte*, byte>;
+
+    // Natural numbers
+    using N = data::N;
+
+    // Integers
+    using Z = data::Z;
     
     template <typename X> 
     writer inline &write (writer &b, X x) {
@@ -63,7 +72,7 @@ namespace Gigamonkey {
     writer inline &write (writer &b, X x, P... p) {
         return write (write (b, x), p...);
     }
-    
+
     template <typename ... P> inline bytes write (size_t size, P... p) {
         bytes x (size);
         bytes_writer w {x.begin (), x.end ()};
@@ -73,7 +82,7 @@ namespace Gigamonkey {
     
     template <typename X>  
     writer inline &write (writer &b, list<X> ls) {
-        while(!ls.empty ()) {
+        while (!ls.empty ()) {
             b << ls.first ();
             ls = ls.rest ();
         }
@@ -81,14 +90,14 @@ namespace Gigamonkey {
     }
     
     // lazy bytes writer can be used without knowing the size
-    // of the data to be written beforehand. 
+    // of the data to be written beforehand.
     struct lazy_bytes_writer : data::writer<byte> {
         list<bytes> Bytes;
-        
-        void write(const byte* b, size_t size) override {
+
+        void write (const byte* b, size_t size) override {
             Bytes = Bytes << bytes (bytes_view {b, size});
         }
-        
+
         operator bytes () const {
             size_t size = 0;
             for (const bytes &b : Bytes) size += b.size ();

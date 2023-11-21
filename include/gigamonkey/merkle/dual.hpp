@@ -31,7 +31,7 @@ namespace Gigamonkey::Merkle {
         dual (map m, digest root) : Paths {m}, Root {root} {}
         explicit dual (digest root) : dual {{}, root} {}
         
-        dual (const proof &p) : Paths {entry (p.Branch)}, Root {p.Root} {}
+        dual (const proof &p) : Paths {{entry (p.Branch)}}, Root {p.Root} {}
         
         dual (const tree &t);
         

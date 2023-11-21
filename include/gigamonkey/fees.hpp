@@ -13,32 +13,32 @@ namespace Gigamonkey {
         Bitcoin::satoshi Satoshis;
         uint64 Bytes;
         
-        operator double() {
-            if (Bytes == 0) throw data::math::division_by_zero{};
-            return double(Satoshis) / double(Bytes);
+        operator double () {
+            if (Bytes == 0) throw data::math::division_by_zero {};
+            return double (Satoshis) / double (Bytes);
         } 
         
-        std::partial_ordering operator<=>(satoshi_per_byte x) {
-            return operator double() <=> double(x);
+        std::partial_ordering operator <=> (satoshi_per_byte x) {
+            return operator double () <=> double (x);
         }
         
-        bool valid() const {
+        bool valid () const {
             return Bytes != 0;
         }
     };
     /*
-    std::weak_ordering inline operator<=>(const satoshi_per_byte &a, const satoshi_per_byte &b) {
+    std::weak_ordering inline operator <=> (const satoshi_per_byte &a, const satoshi_per_byte &b) {
         return math::fraction<Bitcoin::satoshi, uint64>{a.Satoshis, a.Bytes} <=> math::fraction<Bitcoin::satoshi, uint64>{b.Satoshis, b.Bytes}
     }*/
     
-    bool inline operator==(const satoshi_per_byte &a, const satoshi_per_byte &b) {
-        return math::fraction<int64, uint64>(int64(a.Satoshis), a.Bytes) == math::fraction<int64, uint64>(int64(b.Satoshis), b.Bytes);
+    bool inline operator == (const satoshi_per_byte &a, const satoshi_per_byte &b) {
+        return math::fraction<int64, uint64> (int64 (a.Satoshis), a.Bytes) == math::fraction<int64, uint64>(int64(b.Satoshis), b.Bytes);
     }
     
     // given a tx size, what fee should we pay? 
-    Bitcoin::satoshi inline calculate_fee(satoshi_per_byte v, uint64 size) {
-        if (v.Bytes == 0) throw data::math::division_by_zero{};
-        return std::ceil(double(v.Satoshis) * double(size) / double(v.Bytes));
+    Bitcoin::satoshi inline calculate_fee (satoshi_per_byte v, uint64 size) {
+        if (v.Bytes == 0) throw data::math::division_by_zero {};
+        return std::ceil (double (v.Satoshis) * double (size) / double (v.Bytes));
     }
     
     // Bitcoin signatures within a transaction sign part of the transaction. Thus, 
@@ -66,19 +66,19 @@ namespace Gigamonkey {
             // a part of the input script that has been previously generated. 
             bytes InputScriptSoFar; 
             
-            input(Bitcoin::prevout p, uint64 x, uint32_little q = Bitcoin::input::Finalized, bytes z = {}): 
-                Prevout{p}, ExpectedScriptSize{x}, Sequence{q}, InputScriptSoFar{z} {}
+            input (Bitcoin::prevout p, uint64 x, uint32_little q = Bitcoin::input::Finalized, bytes z = {}):
+                Prevout{p}, ExpectedScriptSize {x}, Sequence {q}, InputScriptSoFar {z} {}
             
-            operator Bitcoin::incomplete::input() const {
+            operator Bitcoin::incomplete::input () const {
                 return {Prevout.Key, Sequence};
             }
             
-            uint64 serialized_size() const {
-                return 40 + Bitcoin::var_int::size(ExpectedScriptSize) + ExpectedScriptSize;
+            uint64 serialized_size () const {
+                return 40 + Bitcoin::var_int::size (ExpectedScriptSize) + ExpectedScriptSize;
             }
             
-            bytes script_code() const {
-                return bytes::write(Prevout.script().size() + InputScriptSoFar.size(), Prevout.script(), InputScriptSoFar);
+            bytes script_code () const {
+                return write_bytes (Prevout.script ().size () + InputScriptSoFar.size (), Prevout.script (), InputScriptSoFar);
             }
         };
         
@@ -88,60 +88,59 @@ namespace Gigamonkey {
         uint32_little Locktime; 
         
         // compare this to a satoshi_per_byte value to see if the fee is good enough. 
-        uint64 expected_size() const {
-            return 8u + Bitcoin::var_int::size(Inputs.size()) + Bitcoin::var_int::size(Inputs.size()) + 
-                data::fold([](uint64 size, const input &i) -> uint64 {
-                    return size + i.serialized_size();
+        uint64 expected_size () const {
+            return 8u + Bitcoin::var_int::size (Inputs.size ()) + Bitcoin::var_int::size (Inputs.size ()) +
+                data::fold ([] (uint64 size, const input &i) -> uint64 {
+                    return size + i.serialized_size ();
                 }, 0u, Inputs) + 
-                data::fold([](uint64 size, const Bitcoin::output &o) -> uint64 {
-                    return size + o.serialized_size();
+                data::fold ([] (uint64 size, const Bitcoin::output &o) -> uint64 {
+                    return size + o.serialized_size ();
                 }, 0u, Outputs);
         }
         
-        Bitcoin::satoshi spent() const {
-            return data::fold([](Bitcoin::satoshi x, const input &in) -> Bitcoin::satoshi {
-                return in.Prevout.value() + x;
-            }, Bitcoin::satoshi{0}, Inputs);
+        Bitcoin::satoshi spent () const {
+            return data::fold ([] (Bitcoin::satoshi x, const input &in) -> Bitcoin::satoshi {
+                return in.Prevout.value () + x;
+            }, Bitcoin::satoshi {0}, Inputs);
         }
         
-        Bitcoin::satoshi sent() const {
-            return data::fold([](Bitcoin::satoshi x, const Bitcoin::output &out) -> Bitcoin::satoshi {
+        Bitcoin::satoshi sent () const {
+            return data::fold ([] (Bitcoin::satoshi x, const Bitcoin::output &out) -> Bitcoin::satoshi {
                 return out.Value + x;
-            }, Bitcoin::satoshi{0}, Outputs);
+            }, Bitcoin::satoshi {0}, Outputs);
         }
         
-        Bitcoin::satoshi fee() const {
-            return spent() - sent();
+        Bitcoin::satoshi fee () const {
+            return spent () - sent ();
         }
         
-        double fee_rate() const {
-            return double(int64(fee())) / double(expected_size());
+        satoshi_per_byte fee_rate () const {
+            return satoshi_per_byte {fee () / expected_size ()};
         }
         
         // convert to an incomplete tx for signing. 
-        explicit operator Bitcoin::incomplete::transaction() const {
-            return Bitcoin::incomplete::transaction {Version, data::for_each([](const input &in) -> Bitcoin::incomplete::input {
+        explicit operator Bitcoin::incomplete::transaction () const {
+            return Bitcoin::incomplete::transaction {Version, data::for_each ([](const input &in) -> Bitcoin::incomplete::input {
                 return in;
             }, Inputs), Outputs, Locktime};
         }
         
         // construct the signature documents for each input. 
-        list<Bitcoin::sighash::document> documents() const {
-            Bitcoin::incomplete::transaction incomplete(*this);
+        list<Bitcoin::sighash::document> documents () const {
+            Bitcoin::incomplete::transaction incomplete (*this);
             uint32 index = 0;
-            return data::for_each([&incomplete, &index](const input &in) -> Bitcoin::sighash::document {
-                return Bitcoin::sighash::document{in.Prevout.value(), in.script_code(), incomplete, index++};
+            return data::for_each ([&incomplete, &index] (const input &in) -> Bitcoin::sighash::document {
+                return Bitcoin::sighash::document {in.Prevout.value (), in.script_code (), incomplete, index++};
             }, Inputs);
         }
         
-        ledger::vertex complete(list<script> redeem) {
-            return ledger::vertex {Bitcoin::incomplete::transaction(*this).complete(redeem), 
-                data::fold(
-                    [](data::map<Bitcoin::outpoint, Bitcoin::output> m, 
+        ledger::vertex complete (list<Bitcoin::script> redeem) {
+            return ledger::vertex
+                {Bitcoin::incomplete::transaction (*this).complete (redeem),
+                    data::fold ([] (data::map<Bitcoin::outpoint, Bitcoin::output> m,
                         const input &i) -> data::map<Bitcoin::outpoint, Bitcoin::output> {
-                        return m.insert(i.Prevout);
-                    }, 
-                    data::map<Bitcoin::outpoint, Bitcoin::output>{}, 
+                        return m.insert (i.Prevout);
+                    }, data::map<Bitcoin::outpoint, Bitcoin::output> {},
                     Inputs)};
         }
         

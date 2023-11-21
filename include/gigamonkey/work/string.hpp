@@ -15,25 +15,25 @@ namespace Gigamonkey::work {
         uint256 MerkleRoot;
         Bitcoin::timestamp Timestamp;
         compact Target;
-        nonce Nonce;
+        Bitcoin::nonce Nonce;
         
         string () : Category (0), Digest (0), MerkleRoot (0), Timestamp (), Target (0), Nonce (0) {}
-        string (int32_little v, uint256 d, uint256 mp, Bitcoin::timestamp ts, compact tg, nonce n) : 
+        string (int32_little v, uint256 d, uint256 mp, Bitcoin::timestamp ts, compact tg, Bitcoin::nonce n) :
             Category {v}, Digest {d}, MerkleRoot {mp}, Timestamp {ts}, Target {tg}, Nonce {n} {}
-        string (uint16_little m, uint16_little b, uint256 d, uint256 mp, Bitcoin::timestamp ts, compact tg, nonce n) : 
+        string (uint16_little m, uint16_little b, uint256 d, uint256 mp, Bitcoin::timestamp ts, compact tg, Bitcoin::nonce n) :
             Category {ASICBoost::category (m, b)}, Digest {d}, MerkleRoot {mp}, Timestamp {ts}, Target {tg}, Nonce {n} {}
         
         static string read (const slice<80> x) {
             return string {
                 Bitcoin::header::version (x), 
-                uint<32> {Bitcoin::header::previous (x)}, 
-                uint<32> {Bitcoin::header::merkle_root (x)}, 
+                uint_little<32> {Bitcoin::header::previous (x)},
+                uint_little<32> {Bitcoin::header::merkle_root (x)},
                 Bitcoin::timestamp {Bitcoin::header::timestamp (x)}, 
                 compact {Bitcoin::header::target (x)}, 
                 Bitcoin::header::nonce (x)};
         }
         
-        explicit string(const slice<80> &x) : string (read (x)) {}
+        explicit string (const slice<80> &x) : string (read (x)) {}
         
         byte_array<80> write () const {
             return operator Bitcoin::header ().write ();
@@ -44,21 +44,21 @@ namespace Gigamonkey::work {
         }
         
         static bool valid (const slice<80> x) {
-            return Bitcoin::Hash256 (x).Value < Bitcoin::header::target (x).expand ();
+            return Bitcoin::Hash256 (x) < Bitcoin::header::target (x).expand ();
         }
         
         bool valid () const;
         
         explicit string (const Bitcoin::header &h) : 
             Category (h.Version), Digest (h.Previous), MerkleRoot (h.MerkleRoot), 
-            Timestamp (h.Timestamp), Target(h.Target), Nonce(h.Nonce) {}
+            Timestamp (h.Timestamp), Target (h.Target), Nonce (h.Nonce) {}
         
         work::difficulty difficulty () const {
             return Target.difficulty ();
         }
         
         explicit operator Bitcoin::header () const {
-            return {Category, digest256 {Digest}, digest256{MerkleRoot}, Timestamp, Target, Nonce};
+            return {Category, digest256 {Digest}, digest256 {MerkleRoot}, Timestamp, Target, Nonce};
         }
         
         int32_little version () const {

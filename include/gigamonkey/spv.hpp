@@ -38,16 +38,16 @@ namespace Gigamonkey {
         
         virtual header latest () const = 0;
         
-        virtual header operator [] (const N&) const = 0;
-        virtual header operator [] (const digest256&) const = 0;
+        virtual header operator [] (const N &) const = 0;
+        virtual header operator [] (const digest256 &) const = 0;
         
-        virtual Merkle::dual dual_tree (const digest256&) const = 0;
+        virtual Merkle::dual dual_tree (const digest256 &) const = 0;
         
-        virtual Merkle::proof proof (const Bitcoin::txid&) const = 0;
+        virtual Merkle::proof proof (const Bitcoin::txid &) const = 0;
         
-        virtual bool insert (const header&) = 0;
+        virtual bool insert (const header &) = 0;
         
-        virtual bool insert (const Merkle::proof&) = 0;
+        virtual bool insert (const Merkle::proof &) = 0;
         
         // an in-memory version of headers.
         class memory;

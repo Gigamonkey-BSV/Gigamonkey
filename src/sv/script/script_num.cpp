@@ -220,14 +220,14 @@ size_t CScriptNum::to_size_t_limited () const {
 }
 
 
-vector<uint8_t> CScriptNum::getvch () const {
+Gigamonkey::Bitcoin::Z CScriptNum::getvch () const {
     static_assert (variant_size_v<CScriptNum::value_type> == 2);
 
     // clang-format off
     return std::visit (overload {[] (const bsv::bint &n) {
                 return n.serialize ();
             }, [](const auto &n) {
-                vector<uint8_t> v;
+                Gigamonkey::Bitcoin::Z v;
                 v.reserve (sizeof (n));
                 bsv::serialize (n, back_inserter (v));
                 return v;

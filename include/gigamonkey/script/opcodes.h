@@ -87,6 +87,7 @@ enum opcodetype
     OP_AND = 0x84,
     OP_OR = 0x85,
     OP_XOR = 0x86,
+
     OP_EQUAL = 0x87,
     OP_EQUALVERIFY = 0x88,
     OP_RESERVED1 = 0x89,

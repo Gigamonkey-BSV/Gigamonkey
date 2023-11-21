@@ -20,7 +20,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
         static bytes_view read_instruction (bytes_view subscript);
         
         program_counter (bytes_view s): 
-            Next {read_instruction (s)}, Script {s}, Counter {0}, LastCodeSeparator{0} {}
+            Next {read_instruction (s)}, Script {s}, Counter {0}, LastCodeSeparator {0} {}
         
         program_counter next () const {
             size_t next_counter = Counter + Next.size ();

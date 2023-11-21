@@ -10,6 +10,9 @@
 #include <gigamonkey/script/config.hpp>
 
 namespace Gigamonkey::Bitcoin::interpreter { 
+
+    using stack = LimitedStack<Z>;
+    using vector = LimitedVector<Z>;
     
     // a Bitcoin script interpreter that can be advanced step-by-step.
     struct machine {
@@ -27,8 +30,8 @@ namespace Gigamonkey::Bitcoin::interpreter {
             bytes Script;
             program_counter Counter;
             
-            LimitedStack<element> Stack;
-            LimitedStack<element> AltStack;
+            stack Stack;
+            stack AltStack;
             
             cross<bool> Exec;
             cross<bool> Else;
@@ -71,7 +74,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
         }
         
         ScriptError check_scripts (const program unlock, const program lock, uint32 flags) {
-            if (flags & SCRIPT_VERIFY_SIGPUSHONLY && !is_push(unlock)) return SCRIPT_ERR_SIG_PUSHONLY;
+            if (flags & SCRIPT_VERIFY_SIGPUSHONLY && !is_push (unlock)) return SCRIPT_ERR_SIG_PUSHONLY;
 
             if (isP2SH (lock)) {
                 if (unlock.empty ()) return SCRIPT_ERR_INVALID_STACK_OPERATION;
@@ -82,20 +85,6 @@ namespace Gigamonkey::Bitcoin::interpreter {
         }
         
         machine (maybe<redemption_document> doc, const program unlock, const program lock, uint32 flags);
-        
-        static const element &script_false () {
-            static element False (0);
-            return False;
-        }
-    
-        static const element &script_true () {
-            static element True (1, 1);
-            return True;
-        }
-    
-        static const element &script_bool (bool b) {
-            return b ? script_true () : script_false ();
-        }
         
         static const CScriptNum &script_zero () {
             static CScriptNum Zero (0);
@@ -125,6 +114,10 @@ namespace Gigamonkey::Bitcoin {
         return interpreter::machine (unlock, lock, doc, flags).run ();
     }
     
+}
+
+namespace Gigamonkey::Bitcoin::interpreter {
+
 }
 
 #endif

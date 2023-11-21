@@ -4,7 +4,7 @@ from os import environ
 
 class GigamonkeyConan (ConanFile):
     name = "gigamonkey"
-    version = "v0.0.14"
+    version = "v0.0.15"
     license = "Open BSV"
     author = "Daniel Krawisz"
     url = "https://github.com/Gigamonkey-BSV/Gigamonkey"
@@ -21,7 +21,7 @@ class GigamonkeyConan (ConanFile):
         "nlohmann_json/3.11.2", 
         "gmp/6.2.1", 
         "secp256k1/0.3@proofofwork/stable", 
-        "data/v0.0.25@proofofwork/unstable", 
+        "data/v0.0.26@proofofwork/unstable",
         "gtest/1.12.1"
     ]
     

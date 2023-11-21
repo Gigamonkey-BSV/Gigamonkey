@@ -133,13 +133,13 @@ namespace Gigamonkey::Bitcoin {
         
         static bool valid (slice<36>);
         static Bitcoin::txid digest (slice<36>);
-        static Gigamonkey::index index (slice<36>);
+        static Bitcoin::index index (slice<36>);
         
         // the hash of a previous transaction. 
         txid Digest; 
         
         // Index of the previous output in the tx. 
-        Gigamonkey::index Index;
+        Bitcoin::index Index;
         
         static outpoint coinbase () {
             static outpoint Coinbase {txid {}, 0xffffffff};
@@ -155,7 +155,7 @@ namespace Gigamonkey::Bitcoin {
         static uint32_little sequence (bytes_view);
         
         outpoint Reference; 
-        Gigamonkey::script Script;
+        Bitcoin::script Script;
         uint32_little Sequence;
         
         static constexpr uint32 Finalized {0xFFFFFFFF};
@@ -163,7 +163,7 @@ namespace Gigamonkey::Bitcoin {
         bool valid () const;
         
         input () : Reference {}, Script {}, Sequence {} {}
-        input (const outpoint& o, const Gigamonkey::script& x, const uint32_little& z = Finalized) :
+        input (const outpoint& o, const Bitcoin::script& x, const uint32_little& z = Finalized) :
             Reference {o}, Script {x}, Sequence {z} {}
         
         uint64 serialized_size () const;
@@ -179,10 +179,10 @@ namespace Gigamonkey::Bitcoin {
         static bytes_view script (bytes_view);
     
         satoshi Value; 
-        Gigamonkey::script Script;
+        Bitcoin::script Script;
         
         output () : Value {-1}, Script {} {}
-        output (satoshi v, const Gigamonkey::script &x) : Value {v}, Script {x} {}
+        output (satoshi v, const Bitcoin::script &x) : Value {v}, Script {x} {}
         
         explicit output (bytes_view);
         explicit operator bytes () const;
