@@ -176,7 +176,7 @@ namespace Gigamonkey::BitcoinAssociation {
             if (!tst.valid ()) return {};
         
             JSON j {
-                {"txid", string (tst.TXID)},
+                {"txid", write_backwards_hex (tst.TXID)},
                 {"returnResult", to_JSON (tst.ReturnResult)},
                 {"resultDescription", tst.ResultDescription}};
         

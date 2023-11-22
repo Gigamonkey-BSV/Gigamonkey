@@ -7,7 +7,7 @@ namespace Gigamonkey::BitcoinAssociation {
     }
 
     string inline write_digest (const digest256 &x) {
-        return drop (string (x), 2);
+        return write_backwards_hex (x);
     }
     
     Bitcoin::header read_header (const string &x) {

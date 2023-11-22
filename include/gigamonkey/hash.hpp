@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Daniel Krawisz
+// Copyright (c) 2019-2023 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #ifndef GIGAMONKEY_HASH
@@ -11,6 +11,13 @@ namespace Gigamonkey {
 
     template<size_t size>
     using digest = crypto::hash::digest<size>;
+
+    // because of a bug in bitcoind long ago, many bitcoin
+    // applications expect hashes to be provided backwards.
+    template<size_t size>
+    string inline write_backwards_hex (const digest<size> &x) {
+        return drop (encoding::hex::write (x), 2);
+    }
 
     template <size_t size>
     writer &operator << (writer &w, const digest<size> &s);
@@ -107,6 +114,10 @@ namespace Gigamonkey {
 
     digest256 inline SHA2_256 (bytes_view b) {
         return crypto::SHA2_256 (b);
+    }
+
+    digest160 inline SHA1 (bytes_view b) {
+        return crypto::SHA1 (b);
     }
     
 }

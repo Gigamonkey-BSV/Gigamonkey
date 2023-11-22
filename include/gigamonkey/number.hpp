@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Daniel Krawisz
+// Copyright (c) 2021-2023 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #ifndef GIGAMONKEY_NUMBER
@@ -444,7 +444,11 @@ namespace Gigamonkey {
         return sign_bit (*this);
     }
 
-    template <endian::order r> integer<r> &boolean (bool b) {
+    template <endian::order r> integer<r> inline integer<r>::zero (size_t size, bool negative) {
+        return Z_bytes_twos_little::zero (size, negative);
+    }
+
+    template <endian::order r> const integer<r> &integer<r>::boolean (bool b) {
         static integer<r> True {bytes (1, 1)};
         static integer<r> False {bytes (0)};
         return b ? True : False;
