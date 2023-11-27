@@ -69,7 +69,7 @@ namespace Gigamonkey::Bitcoin {
         return {doc.RedeemedValue + satoshi {1}, doc.ScriptCode, doc.Transaction, doc.InputIndex};
     }
     
-    TEST(SignatureTest, TestSighash) {
+    TEST (SignatureTest, TestSighash) {
         
         sighash::document doc{
             satoshi{0xfeee}, 
@@ -127,7 +127,7 @@ namespace Gigamonkey::Bitcoin {
             EXPECT_EQ (mutate_different_output, sighash::write (doc_mutate_different_output, directive));
             EXPECT_EQ (changed_value, sighash::write (doc_changed_value, directive));
             EXPECT_EQ (added_input, sighash::write (doc_added_input, directive));
-            
+
             EXPECT_EQ (Hash256 (written), signature::hash (doc, directive));
             EXPECT_EQ (Hash256 (mutate_same_output), signature::hash (doc_mutate_same_output, directive));
             EXPECT_EQ (Hash256 (mutate_different_output), signature::hash (doc_mutate_different_output, directive));
@@ -138,7 +138,7 @@ namespace Gigamonkey::Bitcoin {
         
     }
     
-    TEST(SignatureTest, TestFindAndDelete) {
+    TEST (SignatureTest, TestFindAndDelete) {
         
         auto p1 = secp256k1::point (uint256 {123}, uint256 {456});
         auto p2 = secp256k1::point (uint256 {789}, uint256 {101});

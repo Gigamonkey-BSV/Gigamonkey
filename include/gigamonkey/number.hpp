@@ -7,6 +7,7 @@
 #include <data/numbers.hpp>
 #include <gigamonkey/p2p/var_int.hpp>
 #include "hash.hpp"
+#include <data/io/wait_for_enter.hpp>
 
 namespace Gigamonkey {
 
@@ -196,7 +197,7 @@ namespace Gigamonkey {
         static integer zero (size_t size = 0, bool negative = false);
 
         integer () : bytes {} {}
-        integer (int64 z): integer (math::Z_bytes_twos<r> (z)) {}
+        integer (int64 z): bytes (math::Z_bytes_twos<r> (z)) {}
         integer (bytes_view b) : bytes {b} {}
         explicit integer (string_view x): integer (math::Z_bytes_twos<r>::read (x)) {}
         explicit operator integer<endian::opposite (r)> () const;
@@ -483,13 +484,14 @@ namespace Gigamonkey {
     }
 
     template <endian::order r> inline
-    natural<r>::natural (uint64 z): natural {uint_little<8> {z}} {
+    natural<r>::natural (uint64 z): integer<r> {bytes_view (uint_little<9> {z})} {
         *this = integer<r>::trim (*this);
     }
 
     template <endian::order r> inline
     natural<r>::natural (string_view x): integer<r> (x) {
-        if (integer<r>::is_negative (*this)) throw exception {} << "invalid string representation " << string {x};
+        if (integer<r>::is_negative (*this))
+            throw std::logic_error {std::string {"invalid string representation \""} + std::string {x} + "\""};
     }
 
     template <endian::order r> inline
@@ -508,8 +510,8 @@ namespace Gigamonkey {
         return integer<r>::negate (z);
     }
 
-    template <endian::order r> natural<r> inline abs (const natural<r> &z) {
-        return trim (z);
+    template <endian::order r> natural<r> inline &abs (const natural<r> &z) {
+        return z;
     }
 
     template <endian::order r> natural<r> inline abs (const integer<r> &z) {
@@ -616,7 +618,7 @@ namespace Gigamonkey {
     }
 
     template <endian::order r> bytes inline integer<r>::abs (bytes_view b) {
-        return integer<r>::trim (is_positive (b) ? bytes {b} : arithmetic::twos::negate<r, byte> (b));
+        return is_negative (b) ? integer<r>::negate (b) : bytes {b};
     }
 
     template <endian::order r> std::weak_ordering inline integer<r>::compare (bytes_view a, bytes_view b) {

@@ -5,7 +5,7 @@
 
 namespace Gigamonkey::Bitcoin {
 
-    using Hash256_writer = crypto::hash::SHA2<32>;
+    using Hash256_writer = crypto::hash::Bitcoin<32>;
     
     digest256 signature::hash (const sighash::document &doc, sighash::directive d) {
         if (!doc.valid () || (sighash::base (d) == sighash::single && doc.InputIndex >= doc.Transaction.Outputs.size ())) return {};

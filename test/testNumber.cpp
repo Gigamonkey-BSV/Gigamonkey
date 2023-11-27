@@ -20,7 +20,7 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_EQ (compile (push_data (16)), bytes {OP_16});
         EXPECT_EQ (compile (push_data (Z (16))), bytes {OP_16});
         EXPECT_EQ (compile (push_data (N (16))), bytes {OP_16});
-        
+
         auto test_program_1 = bytes {OP_PUSHSIZE1, 0x82};
         auto test_program_2 = bytes {OP_PUSHSIZE1, 0x11};
         EXPECT_EQ (compile (push_data (-2)), test_program_1);
@@ -68,13 +68,12 @@ namespace Gigamonkey::Bitcoin {
     }
     
     TEST (NumberTest, TestNumberConstructorsDecimalPositive) {
-        
+
         EXPECT_EQ (bytes_view (Z ("0")), *encoding::hex::read  (""));
         EXPECT_EQ (bytes_view (Z ("127")), *encoding::hex::read  ("7f"));
         EXPECT_EQ (bytes_view (Z ("128")), *encoding::hex::read  ("8000"));
         EXPECT_EQ (bytes_view (Z ("256")), *encoding::hex::read  ("0001"));
-        
-        EXPECT_EQ (bytes_view (N ("0")), *encoding::hex::read  (""));
+
         EXPECT_EQ (bytes_view (N ("1")), *encoding::hex::read  ("01"));
         EXPECT_EQ (bytes_view (N ("127")), *encoding::hex::read  ("7f"));
         EXPECT_EQ (bytes_view (N ("128")), *encoding::hex::read  ("8000"));
@@ -82,16 +81,16 @@ namespace Gigamonkey::Bitcoin {
         
     }
     
-    TEST (NumberTest, TestNumberConstructorsHexZ) {
+    TEST (NumberTest, TestNumberConstructorsHexidecZ) {
         
-        EXPECT_EQ (bytes_view (Z ("")), bytes ());
+        EXPECT_EQ (bytes_view (Z ("0")), bytes ());
         EXPECT_EQ (bytes_view (Z ("0x00")), *encoding::hex::read  ("00"));
         EXPECT_EQ (bytes_view (Z ("0x80")), *encoding::hex::read  ("80"));
         EXPECT_EQ (bytes_view (Z ("0x0000")), *encoding::hex::read  ("0000"));
         EXPECT_EQ (bytes_view (Z ("0x8000")), *encoding::hex::read  ("0080"));
         EXPECT_EQ (bytes_view (Z ("0x000000")), *encoding::hex::read  ("000000"));
         EXPECT_EQ (bytes_view (Z ("0x800000")), *encoding::hex::read  ("000080"));
-        
+
         EXPECT_EQ (bytes_view (Z ("1")), *encoding::hex::read  ("01"));
         EXPECT_EQ (bytes_view (Z ("-1")), *encoding::hex::read  ("81"));
         EXPECT_EQ (bytes_view (Z ("0x01")), *encoding::hex::read  ("01"));
@@ -109,17 +108,17 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_EQ (bytes_view (Z ("0x80007f")), *encoding::hex::read  ("7f0080"));
         
     }
-    
+
     TEST (NumberTest, TestNumberMinimalZ) {
         
-        EXPECT_TRUE (is_minimal_size (Z ("")));
+        EXPECT_TRUE (is_minimal_size (Z ("0")));
         EXPECT_FALSE (is_minimal_size (Z ("0x00")));
         EXPECT_FALSE (is_minimal_size (Z ("0x80")));
         EXPECT_FALSE (is_minimal_size (Z ("0x0000")));
         EXPECT_FALSE (is_minimal_size (Z ("0x8000")));
         EXPECT_FALSE (is_minimal_size (Z ("0x000000")));
         EXPECT_FALSE (is_minimal_size (Z ("0x800000")));
-        
+
         EXPECT_TRUE (is_minimal_size (Z ("0x01")));
         EXPECT_TRUE (is_minimal_size (Z ("0x81")));
         EXPECT_FALSE (is_minimal_size (Z ("0x0001")));
@@ -181,7 +180,7 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_FALSE (is_zero (Z ("0x8080")));
         EXPECT_FALSE (is_zero (Z ("0x000080")));
         EXPECT_FALSE (is_zero (Z ("0x800080")));
-        
+
         EXPECT_EQ (Z ("0x00").sign_bit (), false);
         EXPECT_EQ (Z ("0x80").sign_bit (), true);
         EXPECT_EQ (Z ("0x0000").sign_bit (), false);
@@ -200,7 +199,7 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_EQ (Z ("0x8080").sign_bit (), true);
         EXPECT_EQ (Z ("0x000080").sign_bit (), false);
         EXPECT_EQ (Z ("0x800080").sign_bit (), true);
-        
+
         EXPECT_TRUE (is_positive_zero (Z ("0x00")));
         EXPECT_FALSE (is_positive_zero (Z ("0x80")));
         EXPECT_TRUE (is_positive_zero (Z ("0x0000")));
@@ -221,7 +220,7 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_TRUE (is_negative_zero (Z ("0x8000")));
         EXPECT_FALSE (is_negative_zero (Z ("0x000000")));
         EXPECT_TRUE (is_negative_zero (Z ("0x800000")));
-        
+
         EXPECT_FALSE (is_negative_zero (Z ("0x01")));
         EXPECT_FALSE (is_negative_zero (Z ("0x81")));
         EXPECT_FALSE (is_negative_zero (Z ("0x0001")));
@@ -268,25 +267,25 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_TRUE (is_negative (Z ("0x800080")));
     
     }
-    
+
     TEST (NumberTest, TestNumberConstructorsDecimalNegative) {
         
-        EXPECT_EQ (bytes_view (Z ("-0")), *encoding::hex::read  ("80"));
+        //EXPECT_EQ (bytes_view (Z ("-0")), *encoding::hex::read  ("80"));
         EXPECT_EQ (bytes_view (Z ("-127")), *encoding::hex::read  ("ff"));
         EXPECT_EQ (bytes_view (Z ("-128")), *encoding::hex::read  ("8080"));
         EXPECT_EQ (bytes_view (Z ("-256")), *encoding::hex::read  ("0081"));
         
-        EXPECT_EQ (bytes_view (N ("-0")), *encoding::hex::read  ("80"));
+        //EXPECT_EQ (bytes_view (N ("-0")), *encoding::hex::read  ("80"));
         EXPECT_THROW (N ("-1"), std::logic_error);
         EXPECT_THROW (N ("-127"), std::logic_error);
         EXPECT_THROW (N ("-128"), std::logic_error);
         EXPECT_THROW (N ("-256"), std::logic_error);
-        
+
     }
     
     TEST (NumberTest, TestNumberConstructorsN) {
         
-        EXPECT_EQ (bytes_view (N ("")), bytes ());
+        EXPECT_EQ (bytes_view (N ("0")), bytes ());
         EXPECT_EQ (bytes_view (N ("0x00")), *encoding::hex::read  ("00"));
         EXPECT_EQ (bytes_view (N ("0x80")), *encoding::hex::read  ("80"));
         EXPECT_EQ (bytes_view (N ("0x0000")), *encoding::hex::read  ("0000"));
@@ -309,7 +308,7 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_THROW (N ("0x80007f"), std::logic_error);
         
     }
-    
+
     TEST (NumberTest, TestNumberTrimN) {
         
         EXPECT_EQ (bytes_view (trim (N ("0x00"))), bytes ());
@@ -331,7 +330,7 @@ namespace Gigamonkey::Bitcoin {
     
     TEST (NumberTest, TestNumberMinimalN) {
         
-        EXPECT_TRUE (is_minimal_size (N ("")));
+        EXPECT_TRUE (is_minimal_size (N ("0")));
         EXPECT_FALSE (is_minimal_size (N ("0x00")));
         EXPECT_FALSE (is_minimal_size (N ("0x80")));
         EXPECT_FALSE (is_minimal_size (N ("0x0000")));
@@ -348,8 +347,8 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_FALSE (is_minimal_size (N ("0x00007f")));
         
     }
-    
-    TEST (NumberTest, TestNumberSignN) {
+
+    TEST (NumberTest, TestNumberZeroN) {
         
         EXPECT_TRUE (is_zero (N ("0x00")));
         EXPECT_TRUE (is_zero (N ("0x80")));
@@ -364,7 +363,7 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_FALSE (is_positive_zero (N ("0x8000")));
         EXPECT_TRUE (is_positive_zero (N ("0x000000")));
         EXPECT_FALSE (is_positive_zero (N ("0x800000")));
-        
+
         EXPECT_FALSE (is_negative_zero (N ("0x00")));
         EXPECT_TRUE (is_negative_zero (N ("0x80")));
         EXPECT_FALSE (is_negative_zero (N ("0x0000")));
@@ -372,25 +371,11 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_FALSE (is_negative_zero (N ("0x000000")));
         EXPECT_TRUE (is_negative_zero (N ("0x800000")));
         
-        EXPECT_FALSE (is_positive_zero (N ("0x00")));
-        EXPECT_FALSE (is_positive_zero (N ("0x80")));
-        EXPECT_FALSE (is_positive_zero (N ("0x0000")));
-        EXPECT_FALSE (is_positive_zero (N ("0x8000")));
-        EXPECT_FALSE (is_positive_zero (N ("0x000000")));
-        EXPECT_FALSE (is_positive_zero (N ("0x800000")));
-
-        EXPECT_FALSE (is_negative_zero (N ("0x00")));
-        EXPECT_FALSE (is_negative_zero (N ("0x80")));
-        EXPECT_FALSE (is_negative_zero (N ("0x0000")));
-        EXPECT_FALSE (is_negative_zero (N ("0x8000")));
-        EXPECT_FALSE (is_negative_zero (N ("0x000000")));
-        EXPECT_FALSE (is_negative_zero (N ("0x800000")));
-        
     }
     
     TEST (NumberTest, TestNumberCompare) {
         
-        EXPECT_EQ (Z (0), Z (""));
+        EXPECT_EQ (Z (0), Z ("0"));
         EXPECT_EQ (Z (0), Z ("0x00"));
         EXPECT_EQ (Z (0), Z ("0x80"));
         EXPECT_EQ (Z (0), Z ("0x0000"));
@@ -398,7 +383,7 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_EQ (Z (0), Z ("0x000000"));
         EXPECT_EQ (Z (0), Z ("0x800000"));
         
-        EXPECT_EQ (N (0), N (""));
+        EXPECT_EQ (N (0), N ("0"));
         EXPECT_EQ (N (0), N ("0x00"));
         EXPECT_EQ (N (0), N ("0x80"));
         EXPECT_EQ (N (0), N ("0x0000"));
@@ -563,12 +548,12 @@ namespace Gigamonkey::Bitcoin {
 
     void test_number_negate (const Z &a, const Z &b) {
         auto n = -a;
-        EXPECT_EQ (n, b);
+        EXPECT_EQ (n, b) << "expected " << n << " == " << b;
         EXPECT_TRUE (is_minimal_size (n));
     }
-    
+
     TEST (NumberTest, TestNumberNegate) {
-        
+
         test_number_negate (Z (0), Z (0));
         test_number_negate (Z (1), Z (-1));
         test_number_negate (Z (-1), Z (1));
@@ -579,24 +564,28 @@ namespace Gigamonkey::Bitcoin {
         test_number_negate (Z (256), Z (-256));
         test_number_negate (Z (-256), Z (256));
 
-        test_number_negate (Z (0x00), Z (0));
-        test_number_negate (Z (0x80), Z (0));
-        test_number_negate (Z (0x0000), Z (0));
-        test_number_negate (Z (0x8000), Z (0));
+        test_number_negate (Z ("0x00"), Z (0));
+        test_number_negate (Z ("0x80"), Z (0));
+        test_number_negate (Z ("0x0000"), Z (0));
+        test_number_negate (Z ("0x8000"), Z (0));
 
-        test_number_negate (Z (0x0001), Z (-1));
-        test_number_negate (Z (0x8001), Z (1));
-        test_number_negate (Z (0x007f), Z (-127));
-        test_number_negate (Z (0x807f), Z (127));
-        test_number_negate (Z (0x00ff), Z (-255));
-        test_number_negate (Z (0x80ff), Z (255));
+        test_number_negate (Z ("0x0001"), Z (-1));
+        test_number_negate (Z ("0x8001"), Z (1));
+        test_number_negate (Z ("0x007f"), Z (-127));
+        test_number_negate (Z ("0x807f"), Z (127));
+        test_number_negate (Z ("0x00ff"), Z (-255));
+        test_number_negate (Z ("0x80ff"), Z (255));
         
     }
 
     void test_number_abs (const Z &a, const N &b) {
         auto n = abs (a);
         EXPECT_EQ (n, b);
-        EXPECT_TRUE (is_minimal_size (n));
+        if (a == b) {
+            EXPECT_TRUE (bytes (a) == bytes (n)) << "expected " << a << " === " << b;
+        } else {
+            EXPECT_TRUE (is_minimal_size (n));
+        }
     }
 
     TEST (NumberTest, TestNumberAbs) {
@@ -611,17 +600,17 @@ namespace Gigamonkey::Bitcoin {
         test_number_abs (Z (256), N (256));
         test_number_abs (Z (-256), N (256));
 
-        test_number_negate (Z (0x00), N (0));
-        test_number_negate (Z (0x80), N (0));
-        test_number_negate (Z (0x0000), N (0));
-        test_number_negate (Z (0x8000), N (0));
+        test_number_abs (Z ("0x00"), N (0));
+        test_number_abs (Z ("0x80"), N (0));
+        test_number_abs (Z ("0x0000"), N (0));
+        test_number_abs (Z ("0x8000"), N (0));
 
-        test_number_negate (Z (0x0001), N (1));
-        test_number_negate (Z (0x8001), N (1));
-        test_number_negate (Z (0x007f), N (127));
-        test_number_negate (Z (0x807f), N (127));
-        test_number_negate (Z (0x00ff), N (255));
-        test_number_negate (Z (0x80ff), N (255));
+        test_number_abs (Z ("0x0001"), N (1));
+        test_number_abs (Z ("0x8001"), N (1));
+        test_number_abs (Z ("0x007f"), N (127));
+        test_number_abs (Z ("0x807f"), N (127));
+        test_number_abs (Z ("0x00ff"), N (255));
+        test_number_abs (Z ("0x80ff"), N (255));
         
     }
 

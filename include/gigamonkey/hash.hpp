@@ -16,7 +16,7 @@ namespace Gigamonkey {
     // applications expect hashes to be provided backwards.
     template<size_t size>
     string inline write_backwards_hex (const digest<size> &x) {
-        return drop (encoding::hex::write (x), 2);
+        return drop (encoding::hexidecimal::write (x), 2);
     }
 
     template <size_t size>

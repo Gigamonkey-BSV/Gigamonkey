@@ -17,6 +17,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     check checksum (bytes_view b) {
+
         check x;
         digest256 digest = Hash256 (b);
         std::copy (digest.begin (), digest.begin () + 4, x.begin ());
@@ -25,6 +26,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     bytes_view remove_checksum (bytes_view b) {
+
         if (b.size () < 4) return {};
         check x;
         std::copy (b.end () - 4, b.end (), x.begin ());
@@ -58,7 +60,7 @@ namespace Gigamonkey::base58 {
 
         maybe<bytes> decoded;
 
-        // this is a special case that is unlikely in practice.
+        // this is a special case that is extremely unlikely in practice.
         // The empty string is an invalid base 58 string, so if that's
         // what we get then we act like we decoded it to an empty byte sequence.
         if (leading_ones == s.size ()) decoded = {bytes {}};

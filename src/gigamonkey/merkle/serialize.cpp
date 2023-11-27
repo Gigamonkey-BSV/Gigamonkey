@@ -144,9 +144,8 @@ namespace Gigamonkey::BitcoinAssociation {
         else x.Transaction = *encoding::hex::read (string (j["txOrId"]));
         
         x.Path.Index = j["index"];
-        std::cout << " reading path " << j["nodes"] << std::endl;
+
         x.Path.Digests = read_path (j["nodes"], x.leaf ());
-        std::cout << " read paths as " << x.Path.Digests << std::endl;
         
         if (!j.contains ("targetType")) {
             x.BlockHash = read_digest (j["target"]);
@@ -180,7 +179,7 @@ namespace Gigamonkey::BitcoinAssociation {
     }
     
     reader &read_path (reader &r, digest256 leaf, Merkle::path &p) {
-        std::cout << " about to read paths..." << std::endl;
+
         Bitcoin::var_int size; 
         r >> size;
         Merkle::digests d;
