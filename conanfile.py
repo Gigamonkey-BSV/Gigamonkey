@@ -39,25 +39,25 @@ class GigamonkeyConan (ConanFile):
 
     def configure_cmake (self):
         cmake = CMake (self)
-        cmake.configure(variables={"PACKAGE_TESTS":"Off"})
+        cmake.configure (variables={"PACKAGE_TESTS":"Off"})
         return cmake
     
-    def layout(self):
+    def layout (self):
         cmake_layout(self)
 
-    def generate(self):
-        deps = CMakeDeps(self)
-        deps.generate()
-        tc = CMakeToolchain(self)
-        tc.generate()
+    def generate (self):
+        deps = CMakeDeps (self)
+        deps.generate ()
+        tc = CMakeToolchain (self)
+        tc.generate ()
 
     def build (self):
         cmake = self.configure_cmake ()
         cmake.build ()
 
     def package (self):
-        cmake = CMake(self)
-        cmake.install()
+        cmake = CMake (self)
+        cmake.install ()
 
     def package_info (self):
 #        self.cpp_info.libdirs = ["lib"]  # Default value is 'lib'
