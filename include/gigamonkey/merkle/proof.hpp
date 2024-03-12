@@ -76,11 +76,11 @@ namespace Gigamonkey::Merkle {
     // path is an index and a sequence of hashes not 
     // including the leaf hash or root. 
     struct path final {
-        uint32 Index;
+        uint64 Index;
         digests Digests;
         
         path ();
-        path (uint32 i, const digests p);
+        path (uint64 i, const digests p);
         
         bool valid () const;
         
@@ -89,10 +89,10 @@ namespace Gigamonkey::Merkle {
     
     struct leaf final {
         digest Digest;
-        uint32 Index;
+        uint64 Index;
         
         leaf ();
-        leaf (digest d, uint32 i);
+        leaf (digest d, uint64 i);
         explicit leaf (const digest &d) : leaf(d, 0) {}
         
         bool valid () const;
@@ -158,125 +158,125 @@ namespace Gigamonkey::Merkle {
         
     };
     
-    inline digest root (const proof &p) {
+    digest inline root (const proof &p) {
         return p.Root;
     }
     
-    inline std::ostream &operator << (std::ostream &o, const path &p) {
+    std::ostream inline &operator << (std::ostream &o, const path &p) {
         return o << "path{" << p.Index << ", " << p.Digests << "}";
     }
     
-    inline std::ostream &operator << (std::ostream &o, const leaf &p) {
+    std::ostream inline &operator << (std::ostream &o, const leaf &p) {
         return o << "leaf{" << p.Index << ", " << p.Digest << "}";
     }
     
-    inline std::ostream &operator << (std::ostream &o, const branch &b) {
+    std::ostream inline &operator << (std::ostream &o, const branch &b) {
         return o << "branch{" << b.Leaf << ", " << b.Digests << "}";
     }
     
-    inline std::ostream &operator << (std::ostream &o, const proof &p) {
+    std::ostream inline &operator << (std::ostream &o, const proof &p) {
         return o << "proof{" << p.Branch << ", " << p.Root << "}";
     }
     
-    inline bool operator == (const path &a, const path &b) {
+    bool inline operator == (const path &a, const path &b) {
         return a.Index == b.Index && a.Digests == b.Digests;
     }
     
-    inline bool operator != (const path &a, const path &b) {
+    bool inline operator != (const path &a, const path &b) {
         return a.Index != b.Index || a.Digests == b.Digests;
     }
     
-    inline bool operator == (const leaf &a, const leaf &b) {
+    bool inline operator == (const leaf &a, const leaf &b) {
         return a.Digest == b.Digest && a.Index == b.Index;
     }
     
-    inline bool operator != (const leaf &a, const leaf &b) {
+    bool inline operator != (const leaf &a, const leaf &b) {
         return a.Digest != b.Digest || a.Index != b.Index;
     }
     
-    inline bool operator <=(const leaf &a, const leaf &b) {
+    bool inline operator <= (const leaf &a, const leaf &b) {
         if (a.Index == b.Index) return a.Digest <= b.Digest;
         return a.Index <= b.Index;
     }
     
-    inline bool operator >=(const leaf &a, const leaf &b) {
+    bool inline operator >= (const leaf &a, const leaf &b) {
         if (a.Index == b.Index) return a.Digest >= b.Digest;
         return a.Index >= b.Index;
     }
     
-    inline bool operator < (const leaf &a, const leaf &b) {
+    bool inline operator < (const leaf &a, const leaf &b) {
         if (a.Index == b.Index) return a.Digest < b.Digest;
         return a.Index < b.Index;
     }
     
-    inline bool operator > (const leaf &a, const leaf &b) {
+    bool inline operator > (const leaf &a, const leaf &b) {
         if (a.Index == b.Index) return a.Digest > b.Digest;
         return a.Index > b.Index;
     }
     
-    inline bool operator == (const branch &a, const branch &b) {
+    bool inline operator == (const branch &a, const branch &b) {
         return a.Leaf == b.Leaf && a.Digests == b.Digests;
     }
     
-    inline bool operator != (const branch &a, const branch &b) {
+    bool inline operator != (const branch &a, const branch &b) {
         return a.Leaf != b.Leaf || a.Digests != b.Digests;
     }
     
-    inline bool operator <= (const branch &a, const branch &b) {
+    bool inline operator <= (const branch &a, const branch &b) {
         return a.Leaf <= b.Leaf;
     }
     
-    inline bool operator >= (const branch &a, const branch &b) {
+    bool inline operator >= (const branch &a, const branch &b) {
         return a.Leaf >= b.Leaf;
     }
     
-    inline bool operator < (const branch &a, const branch &b) {
+    bool inline operator < (const branch &a, const branch &b) {
         return a.Leaf < b.Leaf;
     }
     
-    inline bool operator > (const branch &a, const branch &b) {
+    bool inline operator > (const branch &a, const branch &b) {
         return a.Leaf > b.Leaf;
     }
     
-    inline bool operator == (const proof &a, const proof &b) {
+    bool inline operator == (const proof &a, const proof &b) {
         return a.Root == b.Root && a.Branch == b.Branch;
     }
     
-    inline bool operator != (const proof &a, const proof &b) {
+    bool inline operator != (const proof &a, const proof &b) {
         return a.Root != b.Root || a.Branch != b.Branch;
     }
     
-    inline bool operator <= (const proof &a, const proof &b) {
+    bool inline operator <= (const proof &a, const proof &b) {
         if (a.Branch == b.Branch) return a.Root <= b.Root;
         return a.Branch <= b.Branch;
     }
     
-    inline bool operator >= (const proof &a, const proof &b) {
+    bool inline operator >= (const proof &a, const proof &b) {
         if (a.Branch == b.Branch) return a.Root >= b.Root;
         return a.Branch >= b.Branch;
     }
     
-    inline bool operator < (const proof &a, const proof &b) {
+    bool inline operator < (const proof &a, const proof &b) {
         if (a.Branch == b.Branch) return a.Root < b.Root;
         return a.Branch < b.Branch;
     }
     
-    inline bool operator > (const proof &a, const proof &b) {
+    bool inline operator > (const proof &a, const proof &b) {
         if (a.Branch == b.Branch) return a.Root > b.Root;
         return a.Branch > b.Branch;
     }
     
     inline path::path () : Index {0}, Digests {} {}
     
-    inline path::path (uint32 i, const digests p) : Index {i}, Digests {p} {}
+    inline path::path (uint64 i, const digests p) : Index {i}, Digests {p} {}
     
     inline bool path::valid () const {
-        return Digests.valid();
+        return Digests.valid ();
     }
     
     inline leaf::leaf () : Digest {}, Index {0} {}
     
-    inline leaf::leaf (digest d, uint32 i) : Digest {d}, Index {i} {}
+    inline leaf::leaf (digest d, uint64 i) : Digest {d}, Index {i} {}
     
     inline bool leaf::valid () const {
         return Digest.valid ();
@@ -288,15 +288,15 @@ namespace Gigamonkey::Merkle {
     
     inline branch::branch (leaf l) : Leaf {l}, Digests {} {}
     
-    inline bool branch::valid () const {
+    bool inline branch::valid () const {
         return Leaf.valid () && Digests.valid ();
     }
     
-    inline bool branch::empty () const {
+    bool inline branch::empty () const {
         return Digests.empty ();
     }
     
-    inline leaf branch::first () const {
+    leaf inline branch::first () const {
         return Leaf;
     }
     
@@ -318,7 +318,7 @@ namespace Gigamonkey::Merkle {
     
     inline proof::proof (const digest &root) : Branch {leaf {root, 0}}, Root {root} {}
     
-    inline bool proof::valid () const {
+    bool inline proof::valid () const {
         return Root.valid () && Branch.valid () && Root == Branch.root ();
     }
 }

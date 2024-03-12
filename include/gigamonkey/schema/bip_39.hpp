@@ -6,16 +6,12 @@
 
 #include <gigamonkey/schema/hd.hpp>
 
-// HD is a format for infinite sequences of keys that 
-// can be derived from a single master. This key format
-// will be depricated but needs to be supported for 
-// older wallets. 
+// BIP 39 defines a way of generating a BIP 32 master key from a seed phrase.
 namespace Gigamonkey::HD::BIP_39 {
     
     enum language {
         english,
-        japanese,
-        electrum_sv_english
+        japanese
     };
     
     seed read (std::string words, const string &passphrase = "", language lang = language::english);
@@ -25,6 +21,16 @@ namespace Gigamonkey::HD::BIP_39 {
     
     const cross<std::string> &english_words ();
     const cross<std::string> &japanese_words ();
+}
+
+// electrum SV uses a different method of working with a seed phrase with the same interface as BIP_39
+namespace Gigamonkey::HD::Electrum_SV {
+
+    seed read (std::string words, const string &passphrase = "", BIP_39::language lang = BIP_39::language::english);
+    std::string generate (entropy, BIP_39::language lang = BIP_39::language::english);
+    bool valid (std::string words, BIP_39::language lang = BIP_39::language::english);
+
+    const cross<std::string> &english_words ();
 }
 
 #endif

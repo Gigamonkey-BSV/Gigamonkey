@@ -6,12 +6,12 @@
 
 namespace Gigamonkey::Bitcoin {
 
-    TEST(TimestampTest, TestTimestamp) {
+    TEST (TimestampTest, TestTimestamp) {
         time_t t = 1601529910;
-        timestamp tb = timestamp::convert(t);
-        uint32 ut = uint32(tb);
-        EXPECT_EQ(tb, timestamp{ut});
-        EXPECT_EQ(t, static_cast<time_t>(ut));
+        timestamp tb {t};
+        uint32 ut = uint32 (tb);
+        EXPECT_EQ (tb, timestamp {ut});
+        EXPECT_EQ (t, static_cast<time_t> (ut));
     }
 
 }

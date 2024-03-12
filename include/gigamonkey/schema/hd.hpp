@@ -68,7 +68,7 @@ namespace Gigamonkey::HD {
                 return Pubkey.valid () && Pubkey.size () == secp256k1::pubkey::CompressedSize && (Net == main || Net == test);
             }
             
-            pubkey (const secp256k1::pubkey& p, const chain_code& cc) : Pubkey {p}, ChainCode {cc} {}
+            pubkey (const secp256k1::pubkey &p, const chain_code &cc) : Pubkey {p}, ChainCode {cc} {}
             pubkey (string_view s) : pubkey {read (s)} {}
             pubkey () = default;
             
@@ -105,7 +105,7 @@ namespace Gigamonkey::HD {
             uint32_t Parent;
             uint32_t Sequence;
 
-            secret (const secp256k1::secret& s, const chain_code& cc, type network) : Secret {s}, ChainCode {cc}, Net {network} {}
+            secret (const secp256k1::secret &s, const chain_code &cc, type network) : Secret {s}, ChainCode {cc}, Net {network} {}
             secret (string_view s) : secret {read (s)} {}
             secret () = default;
 

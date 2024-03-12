@@ -145,6 +145,9 @@ namespace Gigamonkey::Bitcoin {
             static outpoint Coinbase {txid {}, 0xffffffff};
             return Coinbase;
         }
+
+        outpoint () : Digest {}, Index {} {}
+        outpoint (const txid &id, const Bitcoin::index &i) : Digest {id}, Index {i} {}
     };
 
     struct input {
@@ -165,6 +168,7 @@ namespace Gigamonkey::Bitcoin {
         input () : Reference {}, Script {}, Sequence {} {}
         input (const outpoint& o, const Bitcoin::script& x, const uint32_little& z = Finalized) :
             Reference {o}, Script {x}, Sequence {z} {}
+        explicit input (bytes_view);
         
         uint64 serialized_size () const;
     };
@@ -197,7 +201,7 @@ namespace Gigamonkey::Bitcoin {
         static bool valid (bytes_view);
         static int32_little version (bytes_view);
         static cross<bytes_view> outputs (bytes_view);
-        static cross<bytes_view> inputs(bytes_view);
+        static cross<bytes_view> inputs (bytes_view);
         static bytes_view output (bytes_view, index);
         static bytes_view input (bytes_view, index);
         static int32_little locktime (bytes_view);

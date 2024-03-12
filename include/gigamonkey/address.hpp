@@ -57,7 +57,7 @@ namespace Gigamonkey::Bitcoin {
             address encode () const;
 
             std::strong_ordering operator <=> (const decoded &) const;
-            operator string () const;
+            explicit operator string () const;
         };
 
         static decoded decode (string_view);

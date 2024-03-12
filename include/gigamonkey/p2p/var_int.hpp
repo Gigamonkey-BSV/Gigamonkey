@@ -42,7 +42,7 @@ namespace Gigamonkey::Bitcoin {
     };
     
     writer inline &operator << (writer &w, const var_int &x) {
-        return var_int::write(w, x.Value);
+        return var_int::write (w, x.Value);
     }
     
     reader inline &operator >> (reader &r, var_int &x) {

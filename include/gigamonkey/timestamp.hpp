@@ -4,7 +4,9 @@
 #ifndef GIGAMONKEY_TIMESTAMP
 #define GIGAMONKEY_TIMESTAMP
 
+#include <chrono>
 #include <sstream>
+#include <ctime>
 #include <gigamonkey/types.hpp>
 
 namespace Gigamonkey::Bitcoin {
@@ -23,8 +25,6 @@ namespace Gigamonkey::Bitcoin {
         explicit timestamp (const nonzero<uint32_little> n);
         explicit timestamp (const uint32_big x);
         
-        static timestamp convert (time_t);
-        
         static timestamp now ();
         
         byte* data ();
@@ -37,24 +37,24 @@ namespace Gigamonkey::Bitcoin {
         explicit operator string () const;
         
         bool operator == (const timestamp &d) const;
-        bool operator != (const timestamp &d) const;
-        
-        bool operator > (const timestamp &t) const;
-        bool operator < (const timestamp &t) const;
-        bool operator >= (const timestamp &t) const;
-        bool operator <= (const timestamp &t) const;
+
+        std::strong_ordering operator <=> (const timestamp &d) const;
         
         duration operator - (const timestamp &t) const;
+
+        explicit operator std::chrono::system_clock::time_point () const;
+
+        explicit operator ptr<std::tm> () const;
         
     };
 
     std::ostream &operator << (std::ostream &o, const timestamp &s);
 
-    inline writer &operator << (writer &w, const timestamp &s) {
+    writer inline &operator << (writer &w, const timestamp &s) {
         return w << s.Value;
     }
 
-    inline reader &operator >> (reader &r, timestamp &s) {
+    reader inline &operator >> (reader &r, timestamp &s) {
         return r >> s.Value;
     }
 
@@ -65,21 +65,21 @@ namespace Gigamonkey::Bitcoin {
     inline timestamp::timestamp (const uint32_little t) : nonzero<uint32_little> {t} {}
     inline timestamp::timestamp (const nonzero<uint32_little> n) : nonzero<uint32_little> {n} {}
     inline timestamp::timestamp (const uint32_big x) : nonzero<uint32_little> {uint32_little {x}} {}
-    
-    inline timestamp timestamp::convert (const time_t t) {
-        if (t < 0) throw std::invalid_argument {"negative time"};
-        return timestamp {static_cast<uint32> (t)};
+
+    inline timestamp::operator std::chrono::system_clock::time_point () const {
+        return std::chrono::system_clock::from_time_t (static_cast<time_t> (uint32 (this->Value)));
     }
     
-    inline timestamp timestamp::now () {
-        return timestamp {uint32_little{static_cast<uint32> (time (nullptr))}};
+    timestamp inline timestamp::now () {
+        return timestamp {uint32_little {static_cast<uint32> (duration_cast<std::chrono::seconds> (
+            std::chrono::system_clock::now ().time_since_epoch ()).count ())}};
     };
     
-    inline byte* timestamp::data () {
+    byte inline *timestamp::data () {
         return nonzero<uint32_little>::Value.data ();
     }
     
-    inline const byte* timestamp::data () const {
+    const byte inline *timestamp::data () const {
         return nonzero<uint32_little>::Value.data ();
     }
     
@@ -103,33 +103,18 @@ namespace Gigamonkey::Bitcoin {
         return bytes_view {data (), 4};
     }
         
-    inline bool timestamp::operator == (const timestamp& d) const {
+    bool inline timestamp::operator == (const timestamp& d) const {
         return nonzero<uint32_little>::Value == d.Value;
     }
     
-    inline bool timestamp::operator != (const timestamp& d) const {
-        return nonzero<uint32_little>::Value != d.Value;
+    std::strong_ordering inline timestamp::operator <=> (const timestamp& d) const {
+        return nonzero<uint32_little>::Value <=> d.Value;
     }
     
-    inline bool timestamp::operator > (const timestamp& t) const {
-        return nonzero<uint32_little>::Value > t.Value;
-    }
-    
-    inline bool timestamp::operator < (const timestamp& t) const {
-        return nonzero<uint32_little>::Value < t.Value;
-    }
-    
-    inline bool timestamp::operator >= (const timestamp& t) const {
-        return nonzero<uint32_little>::Value >= t.Value;
-    }
-    
-    inline bool timestamp::operator <= (const timestamp& t) const {
-        return nonzero<uint32_little>::Value <= t.Value;
-    }
-    
-    inline duration timestamp::operator - (const timestamp& t) const {
+    duration inline timestamp::operator - (const timestamp& t) const {
         return double (uint32 (nonzero<uint32_little>::Value)) - double (uint32 (t.Value));
     }
+
 }
 
 #endif 

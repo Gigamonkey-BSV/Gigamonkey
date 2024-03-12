@@ -33,7 +33,7 @@ namespace Gigamonkey::HD::BIP_44 {
     struct master_pubkey {
         BIP_32::pubkey Pubkey;
         
-        master_pubkey (const BIP_32::pubkey& p) : Pubkey{p} {}
+        master_pubkey (const BIP_32::pubkey& p) : Pubkey {p} {}
         
         Bitcoin::address::decoded receive (uint32 index) const {
             return Bitcoin::address::decoded (Pubkey.derive ({receive_index, index}));
@@ -98,7 +98,7 @@ namespace Gigamonkey::HD::BIP_44 {
     
     // Note: electrum sv has its own set of words. It is able to load wallets that were
     // made with the standard set of words, but we do not load electrum words here yet. 
-    master_secret electrum_sv_wallet(const string &words, BIP_32::type net = BIP_32::main); // TODO
+    master_secret electrum_sv_wallet (const string &words, BIP_32::type net = BIP_32::main); // TODO
     
     master_secret relay_x_wallet (const string &words); // TODO
     
