@@ -12,6 +12,7 @@
 namespace Gigamonkey::Stratum {
     
     TEST (StratumTest, TestStratumSessionID) {
+        
         uint32 a = 303829;
         uint32 b = 773822929;
         session_id id_a (a);
@@ -32,6 +33,7 @@ namespace Gigamonkey::Stratum {
         EXPECT_NE (*j_id_a, *j_id_b);
         EXPECT_EQ (id_a, *j_id_a);
         EXPECT_EQ (id_b, *j_id_b);
+        
     }
     
     // taken from https://braiins.com/stratum-v1/docs
@@ -76,6 +78,7 @@ namespace Gigamonkey::Stratum {
 
 namespace Gigamonkey::Stratum::mining { 
     TEST (StratumTest, TestBooleanResponse) {
+        
         struct response_test_case {
             message_id ID;
             bool Result;
@@ -85,12 +88,14 @@ namespace Gigamonkey::Stratum::mining {
             }
         };
         
-        std::vector<response_test_case> test_cases {{64, true}, {94, false}};
+        list<response_test_case> test_cases {{64, true}, {94, false}};
         
         for (const auto& i : test_cases) for (const auto& j : test_cases) {
             auto response_i = boolean_response (i);
             auto response_j = boolean_response (j);
+            
             EXPECT_EQ (i.Result, response_i.result ());
+            
             if (i.ID == j.ID) {
                 EXPECT_EQ (i.ID, response_j.id ());
                 EXPECT_EQ (response_i, response_j);
@@ -127,6 +132,7 @@ namespace Gigamonkey::Stratum::mining {
     }
 
     TEST (StratumTest, TestMiningAuthorize) {
+        
         struct request_test_case {
             message_id ID;
             authorize_request::parameters Params;
@@ -137,16 +143,20 @@ namespace Gigamonkey::Stratum::mining {
             }
         };
         
-        std::vector<request_test_case> test_cases {
+        list<request_test_case> test_cases {
             {64, authorize_request::parameters {"dk", "meep"}},
             {94, authorize_request::parameters {"dk"}}};
         
         for (const auto& i : test_cases) for (const auto& j : test_cases) {
+            
             auto request_i = authorize_request (i);
             auto request_j = authorize_request (j);
+            
             auto deserialized_i = authorize_request::deserialize (static_cast<request> (request_i).params ());
             auto deserialized_j = authorize_request::deserialize (static_cast<request> (request_j).params ());
+            
             EXPECT_EQ (request_i.valid (), deserialized_i.valid ());
+            
             if (i.ID == j.ID) {
                 EXPECT_EQ (i.ID, request_j.id ());
                 EXPECT_EQ (request_i, request_j);
@@ -163,6 +173,7 @@ namespace Gigamonkey::Stratum::mining {
     }
     
     TEST (StratumTest, TestMiningSubscribe) {
+        
         struct request_test_case {
             message_id ID;
             subscribe_request::parameters Params;
@@ -189,11 +200,15 @@ namespace Gigamonkey::Stratum::mining {
             {45, {{subscription {mining_notify, "3"}}, {30, 8}}}};
         
         for (const auto& i : request_test_cases) for (const auto& j : request_test_cases) {
+            
             auto request_i = subscribe_request (i);
             auto request_j = subscribe_request (j);
+            
             auto deserialized_i = subscribe_request::deserialize (request_i.params ());
             auto deserialized_j = subscribe_request::deserialize (request_j.params ());
+            
             EXPECT_EQ (request_i.valid (), deserialized_i.valid ());
+            
             if (i.ID == j.ID) {
                 EXPECT_EQ (i.ID, request_j.id ());
                 EXPECT_EQ (request_i, request_j);
@@ -208,11 +223,14 @@ namespace Gigamonkey::Stratum::mining {
         }
         
         for (const auto& i : response_test_cases) for (const auto& j : response_test_cases) {
+            
             auto response_i = subscribe_response (i);
             auto response_j = subscribe_response (j);
             auto deserialized_i = subscribe_response::deserialize(static_cast<response> (response_i).result ());
             auto deserialized_j = subscribe_response::deserialize(static_cast<response> (response_j).result ());
+            
             EXPECT_EQ (response_i.valid (), deserialized_i.valid ());
+            
             if (i.ID == j.ID) {
                 EXPECT_EQ (i.ID, response_j.id ());
                 EXPECT_EQ (response_i, response_j);
@@ -229,6 +247,7 @@ namespace Gigamonkey::Stratum::mining {
     }
     
     TEST (StratumTest, TestMiningSubmit) {
+        
         struct notification_test_case {
             message_id ID;
             notify::parameters Params;
@@ -241,11 +260,14 @@ namespace Gigamonkey::Stratum::mining {
         std::vector<notification_test_case> notify_test_cases {};
         
         for (const auto& i : notify_test_cases) for (const auto& j : notify_test_cases) {
+            
             auto notify_i = notify (i);
             auto notify_j = notify (j);
             auto deserialized_i = notify::deserialize (static_cast<notification> (notify_i).params ());
             auto deserialized_j = notify::deserialize (static_cast<notification> (notify_j).params ());
+            
             EXPECT_EQ (notify_i.valid (), deserialized_i.valid ());
+            
             if (i.ID == j.ID) {
                 EXPECT_EQ (notify_i, notify_j);
                 EXPECT_EQ (deserialized_i, deserialized_j);
@@ -259,6 +281,7 @@ namespace Gigamonkey::Stratum::mining {
     }
     
     TEST (StratumTest, TestMiningNotify) {
+        
         struct request_test_case {
             message_id ID;
             share Params;
@@ -275,7 +298,9 @@ namespace Gigamonkey::Stratum::mining {
             auto request_j = submit_request (j);
             auto deserialized_i = submit_request::deserialize (static_cast<request> (request_i).params ());
             auto deserialized_j = submit_request::deserialize (static_cast<request> (request_j).params ());
+            
             EXPECT_EQ (request_i.valid (), deserialized_i.valid ());
+            
             if (i.ID == j.ID) {
                 EXPECT_EQ (i.ID, request_j.id ());
                 EXPECT_EQ (request_i, request_j);
@@ -291,6 +316,7 @@ namespace Gigamonkey::Stratum::mining {
     }
     
     TEST (StratumTest, TestStratumDifficulty) {
+        
         difficulty d1 {work::difficulty {.0001}};
         difficulty d2 {555};
         EXPECT_TRUE (d1.valid ());
@@ -299,9 +325,11 @@ namespace Gigamonkey::Stratum::mining {
         work::compact t2 {work::difficulty (d2)};
         EXPECT_EQ (t1, work::compact {work::difficulty (difficulty {t1})});
         EXPECT_EQ (t2, work::compact {work::difficulty (difficulty {t2})});
+        
     }
     
     TEST (StratumTest, TestStratumProof) {
+        
         job_id jid = "2333";
         extranonce en {1, 8};
         int32_little version = 2;
@@ -309,10 +337,10 @@ namespace Gigamonkey::Stratum::mining {
         
         work::compact d {work::difficulty (.0001)};
         digest256 prevHash {"0x0000000000000000000000000000000000000000000000000000000000000001"};
-        bytes gentx1 = *bytes::from_hex ("abcdef");
-        bytes gentx2 = *bytes::from_hex ("010203");
+        bytes gentx1 = *encoding::hex::read ("abcdef");
+        bytes gentx2 = *encoding::hex::read ("010203");
         
-        bytes extra_nonce_2 = *bytes::from_hex ("abcdef0123456789");
+        bytes extra_nonce_2 = *encoding::hex::read ("abcdef0123456789");
         
         int32_little gpr = 0xffffffff;
         int32_little version_mask = work::ASICBoost::Mask;

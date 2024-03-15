@@ -32,6 +32,7 @@ namespace Gigamonkey::Stratum {
         notification ();
         notification (Stratum::method m, const parameters &p);
         explicit notification (const JSON &j) : JSON (j) {}
+        
     };
     
     struct request : JSON {
@@ -49,13 +50,14 @@ namespace Gigamonkey::Stratum {
         parameters params () const;
         
         request ();
-        request (message_id id, Stratum::method m, const parameters &p);
+        request (const message_id &id, Stratum::method m, const parameters &p);
         explicit request (const JSON &j) : JSON (j) {}
+        
     };
     
     struct response : JSON {
         
-        static bool valid(const JSON &);
+        static bool valid (const JSON &);
         
         static message_id id (const JSON &);
         static JSON result (const JSON &);
@@ -70,8 +72,8 @@ namespace Gigamonkey::Stratum {
         optional<Stratum::error> error () const;
         
         response ();
-        response (message_id id, const JSON &p);
-        response (message_id id, const JSON &p, const Stratum::error &e);
+        response (const message_id &id, const JSON &p);
+        response (const message_id &id, const JSON &p, const Stratum::error &e);
         explicit response (const JSON &j) : JSON (j) {}
         
         bool is_error () const {
@@ -82,8 +84,11 @@ namespace Gigamonkey::Stratum {
     
     inline request::request () : JSON {} {}
     
-    inline request::request (message_id id, Stratum::method m, const parameters &p) :
-        JSON {{"id", id}, {"method", method_to_string (m)}, {"params", p}} {}
+    inline request::request (const message_id &id, Stratum::method m, const parameters &p) : JSON (JSON::object_t {}) {
+        (*this)["id"] = static_cast<const JSON &>(id);
+        (*this)["method"] = method_to_string (m);
+        (*this)["params"] = p;
+    }
     
     bool inline request::valid (const JSON &j) {
         return request::method (j) != unset && j.contains ("params") &&
@@ -130,11 +135,17 @@ namespace Gigamonkey::Stratum {
     
     inline response::response () : JSON {} {}
     
-    inline response::response (message_id id, const JSON &p) :
-        JSON {{"id", id}, {"result", p}, {"error", nullptr}} {}
+    inline response::response (const message_id &id, const JSON &p) : JSON (JSON::object_t {}) {
+        (*this)["id"] = static_cast<const JSON &>(id);
+        (*this)["result"] = p;
+        (*this)["error"] = nullptr;
+    }
     
-    inline response::response (message_id id, const JSON &p, const Stratum::error &e) :
-        JSON {{"id", id}, {"result", p}, {"error", JSON (e)}} {}
+    inline response::response (const message_id &id, const JSON &p, const Stratum::error &e) : JSON (JSON::object_t {}) {
+        (*this)["id"] = static_cast<const JSON &>(id);
+        (*this)["result"] = p;
+        (*this)["error"] = JSON (e);
+    }
     
     message_id inline response::id () const {
         return id (*this);

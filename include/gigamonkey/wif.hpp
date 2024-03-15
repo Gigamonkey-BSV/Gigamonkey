@@ -12,10 +12,10 @@ namespace Gigamonkey::Bitcoin {
     
     struct secret;
         
-    bool operator == (const secret&, const secret&);
-    bool operator != (const secret&, const secret&);
+    bool operator == (const secret &, const secret &);
+    bool operator != (const secret &, const secret &);
     
-    std::ostream& operator << (std::ostream&, const secret&);
+    std::ostream &operator << (std::ostream &, const secret &);
 
     // WIF stands for Wallet Import Format.
     struct WIF;
@@ -53,12 +53,12 @@ namespace Gigamonkey::Bitcoin {
         
         Bitcoin::address::decoded address () const;
         
-        secp256k1::signature sign (const digest256& d) const;
+        secp256k1::signature sign (const digest256 &d) const;
         
-        signature sign (const sighash::document& document, sighash::directive d = directive (sighash::all)) const;
+        signature sign (const sighash::document &document, sighash::directive d = directive (sighash::all)) const;
         
-        bytes encrypt (const bytes& message) const;
-        bytes decrypt (const bytes& message) const;
+        bytes encrypt (const bytes &message) const;
+        bytes decrypt (const bytes &message) const;
 
         WIF encode () const;
 
@@ -84,7 +84,7 @@ namespace Gigamonkey::Bitcoin {
         static secp256k1::secret secret (string_view);
         static bool compressed (string_view);
 
-        static WIF encode (byte, const secp256k1::secret&, bool compressed = true);
+        static WIF encode (byte, const secp256k1::secret &, bool compressed = true);
         static Bitcoin::secret decode (string_view);
 
         bool valid () const;
@@ -97,15 +97,15 @@ namespace Gigamonkey::Bitcoin {
         WIF (): string {} {}
     };
     
-    bool inline operator == (const secret& a, const secret& b) {
+    bool inline operator == (const secret &a, const secret &b) {
         return a.Prefix == b.Prefix && a.Secret == b.Secret && a.Compressed == b.Compressed;
     }
     
-    bool inline operator != (const secret& a, const secret& b) {
+    bool inline operator != (const secret &a, const secret &b) {
         return !(a == b);
     }
     
-    std::ostream inline &operator << (std::ostream& o, const secret& s) {
+    std::ostream inline &operator << (std::ostream &o, const secret &s) {
         return o << s.encode ();
     }
         
@@ -143,19 +143,19 @@ namespace Gigamonkey::Bitcoin {
         return {to_address_type (Prefix), to_public ().address_hash ()};
     }
     
-    secp256k1::signature inline secret::sign (const digest256& d) const {
+    secp256k1::signature inline secret::sign (const digest256 &d) const {
         return Secret.sign (d);
     }
     
-    signature inline secret::sign (const sighash::document& document, sighash::directive d) const {
+    signature inline secret::sign (const sighash::document &document, sighash::directive d) const {
         return signature::sign (Secret, d, document);
     }
         
-    bytes inline secret::encrypt (const bytes& message) const {
+    bytes inline secret::encrypt (const bytes &message) const {
         return ECIES::electrum::encrypt (message, to_public ());
     }
     
-    bytes inline secret::decrypt (const bytes& message) const {
+    bytes inline secret::decrypt (const bytes &message) const {
         return ECIES::electrum::decrypt (message, Secret);
     }
 

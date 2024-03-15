@@ -9,18 +9,18 @@ namespace Gigamonkey::Bitcoin {
 
     bytes append_checksum (bytes_view b) {
 
-        bytes checked (b.size() + 4);
+        bytes checked (b.size () + 4);
         bytes_writer w (checked.begin (), checked.end ());
         w << b << checksum (b);
         return checked;
 
     }
     
-    Gigamonkey::checksum checksum (bytes_view b) {
+    check checksum (bytes_view b) {
 
-        Gigamonkey::checksum x;
+        check x;
         digest256 digest = Hash256 (b);
-        std::copy (digest.Value.begin (), digest.Value.begin () + 4, x.begin ());
+        std::copy (digest.begin (), digest.begin () + 4, x.begin ());
         return x;
 
     }
@@ -28,7 +28,7 @@ namespace Gigamonkey::Bitcoin {
     bytes_view remove_checksum (bytes_view b) {
 
         if (b.size () < 4) return {};
-        Gigamonkey::checksum x;
+        check x;
         std::copy (b.end () - 4, b.end (), x.begin ());
         bytes_view without = b.substr (0, b.size () - 4);
         if (x != checksum (without)) return {};
@@ -40,13 +40,13 @@ namespace Gigamonkey::Bitcoin {
 
 namespace Gigamonkey::base58 {
     
-    string check::encode () const {
+    std::string check::encode () const {
 
         bytes data = Bitcoin::append_checksum (static_cast<bytes> (*this));
         size_t leading_zeros = 0;
         while (leading_zeros < data.size () && data[leading_zeros] == 0) leading_zeros++;
-        string b58 = data::encoding::base58::write (bytes_view (data).substr (leading_zeros));
-        string ones (leading_zeros, '1');
+        std::string b58 = data::encoding::base58::write (bytes_view (data).substr (leading_zeros));
+        std::string ones (leading_zeros, '1');
         std::stringstream ss;
         ss << ones << b58;
         return ss.str ();
@@ -102,7 +102,7 @@ namespace Gigamonkey::base58 {
         }
         
         // insertions
-        for (int i = 0; i <= test.size(); i++) {
+        for (int i = 0; i <= test.size (); i++) {
 
             string insert {};
             insert.resize (test.size () + 1);

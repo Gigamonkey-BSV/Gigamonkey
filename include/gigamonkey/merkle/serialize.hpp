@@ -203,7 +203,7 @@ namespace Gigamonkey::BitcoinAssociation {
     }
     
     proofs_serialization_standard::target_type_value inline proofs_serialization_standard::target_type (bytes_view b) {
-        return target_type (flags(b));
+        return target_type (flags (b));
     }
         
     proofs_serialization_standard::proof_type_value inline proofs_serialization_standard::proof_type (byte flags) {

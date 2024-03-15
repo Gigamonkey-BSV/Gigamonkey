@@ -37,50 +37,49 @@ namespace Gigamonkey::Stratum::mining {
             bool Clean;
             
             bool valid() const {
-                return Digest != 0 && Path.valid() && Target.valid() && Now.valid();
+                return Digest != 0 && Path.valid () && Target.valid () && Now.valid ();
             } 
             
-            parameters();
-            parameters(job_id id, const uint256& u, const bytes& t1, const bytes& t2, 
+            parameters ();
+            parameters (job_id id, const uint256 &u, const bytes &t1, const bytes &t2, 
                 Merkle::digests p, int32_little v, work::compact c, Bitcoin::timestamp t, bool b);
-            parameters(job_id id, const work::puzzle& p, Bitcoin::timestamp t, bool b) : 
-                parameters{id, p.Candidate.Digest, p.Header, p.Body, p.Candidate.Path.Digests, p.Candidate.Category, p.Candidate.Target, t, b} {}
+            parameters (job_id id, const work::puzzle &p, Bitcoin::timestamp t, bool b) : 
+                parameters {id, p.Candidate.Digest, p.Header, p.Body, p.Candidate.Path.Digests, 
+                    p.Candidate.Category, p.Candidate.Target, t, b} {}
     
-            bool operator==(const parameters& b) const;
-            bool operator!=(const parameters& b) const;
+            bool operator == (const parameters &b) const;
+            bool operator != (const parameters &b) const;
             
-            explicit operator work::puzzle() const {
-                return work::puzzle{Version, Digest, Target, Merkle::path{0, Path}, GenerationTx1, GenerationTx2};
+            explicit operator work::puzzle () const {
+                return work::puzzle {Version, Digest, Target, Merkle::path {0, Path}, GenerationTx1, GenerationTx2};
             }
             
         };
         
-        static Stratum::parameters serialize(const parameters&);
-        static parameters deserialize(const Stratum::parameters&);
+        static Stratum::parameters serialize (const parameters &);
+        static parameters deserialize (const Stratum::parameters &);
         
-        parameters params() const {
-            return deserialize(notification::params());
+        parameters params () const {
+            return deserialize (notification::params ());
         }
         
         using notification::notification;
-        notify(const parameters& p) : notification{mining_notify, serialize(p)} {}
-        notify(
-            job_id id, const uint256& u, const bytes& t1, const bytes& t2, 
+        notify (const parameters &p) : notification {mining_notify, serialize (p)} {}
+        notify (job_id id, const uint256 &u, const bytes &t1, const bytes &t2, 
             Merkle::digests p, int32_little v, work::compact c, Bitcoin::timestamp t, bool b) :
-            notify{parameters{id, u, t1, t2, p, v, c, t, b}} {}
-        notify(
-            job_id id, const work::puzzle& p, Bitcoin::timestamp t, bool b) :
-            notify{parameters{id, p, t, b}} {}
+            notify {parameters {id, u, t1, t2, p, v, c, t, b}} {}
+        notify (job_id id, const work::puzzle& p, Bitcoin::timestamp t, bool b) :
+            notify {parameters {id, p, t, b}} {}
             
-        static bool valid(const notification& n) {
-            return n.valid() && n.method() == mining_notify && deserialize(n.params()).valid();
+        static bool valid (const notification& n) {
+            return n.valid () && n.method () == mining_notify && deserialize (n.params ()).valid ();
         }
         
-        bool valid() const {
-            return valid(*this);
+        bool valid () const {
+            return valid (*this);
         }
         
-        friend std::ostream& operator<<(std::ostream&, const parameters &);
+        friend std::ostream &operator << (std::ostream &, const parameters &);
     };
 }
 
@@ -91,52 +90,52 @@ namespace Gigamonkey::Stratum {
         mining::notify::parameters Notify;
         share Share;
         
-        explicit operator work::proof() const {
-            return work::proof{ bool(Worker.Mask) ? 
+        explicit operator work::proof () const {
+            return work::proof {bool (Worker.Mask) ? 
+                work::puzzle {Notify.Version, Notify.Digest, Notify.Target, 
+                    Merkle::path {0, Notify.Path}, Notify.GenerationTx1, Notify.GenerationTx2, *Worker.Mask} : 
                 work::puzzle{Notify.Version, Notify.Digest, Notify.Target, 
-                    Merkle::path{0, Notify.Path}, Notify.GenerationTx1, Notify.GenerationTx2, *Worker.Mask} : 
-                work::puzzle{Notify.Version, Notify.Digest, Notify.Target, 
-                    Merkle::path{0, Notify.Path}, Notify.GenerationTx1, Notify.GenerationTx2}, 
-                work::solution{Share.Share, Worker.ExtraNonce.ExtraNonce1}};
+                    Merkle::path {0, Notify.Path}, Notify.GenerationTx1, Notify.GenerationTx2}, 
+                work::solution {Share.Share, Worker.ExtraNonce.ExtraNonce1}};
         }
         
-        bool valid() const {
+        bool valid () const {
             return valid(Notify.Target);
         }
         
-        bool valid(const work::compact &t) const {
+        bool valid (const work::compact &t) const {
             return (Share.JobID == Notify.JobID) && 
-                (bool(Worker.Mask) == bool(Share.Share.Bits)) && 
-                (work::proof(*this).string().hash() < t.expand());
+                (bool (Worker.Mask) == bool (Share.Share.Bits)) && 
+                (work::proof(*this).string ().hash () < t.expand ());
         }
     };
 }
 
 namespace Gigamonkey::Stratum::mining {
     
-    inline notify::parameters::parameters() : 
-        JobID{}, Digest{}, GenerationTx1{}, GenerationTx2{}, Path{}, Version{}, Target{}, Now{}, Clean{} {}
+    inline notify::parameters::parameters () : 
+        JobID {}, Digest {}, GenerationTx1 {}, GenerationTx2 {}, Path {}, Version {}, Target {}, Now {}, Clean {} {}
     
-    inline notify::parameters::parameters(
-        job_id id, const uint256& u, const bytes& t1, const bytes& t2, 
+    inline notify::parameters::parameters (job_id id, const uint256 &u, const bytes &t1, const bytes &t2, 
         Merkle::digests p, int32_little v, work::compact c, Bitcoin::timestamp t, bool b) : 
-        JobID{id}, Digest{u}, GenerationTx1{t1}, GenerationTx2{t2}, Path{p}, Version{v}, Target{c}, Now{t}, Clean{b} {};
+        JobID {id}, Digest {u}, GenerationTx1 {t1}, GenerationTx2 {t2}, Path {p}, Version {v}, Target {c}, Now {t}, Clean {b} {};
 
-    bool inline notify::parameters::operator==(const parameters& b) const {
+    bool inline notify::parameters::operator == (const parameters &b) const {
         return JobID == b.JobID && Digest == b.Digest && 
             GenerationTx1 == b.GenerationTx1 && GenerationTx2 == b.GenerationTx2 && 
             Path == b.Path && Version == b.Version && Target == b.Target && 
             Now == b.Now && Clean == b.Clean;
     }
     
-    bool inline notify::parameters::operator!=(const parameters& b) const {
+    bool inline notify::parameters::operator != (const parameters &b) const {
         return !(*this == b);
     }
     
-    std::ostream inline &operator<<(std::ostream &o, const notify::parameters &p) {
+    std::ostream inline &operator << (std::ostream &o, const notify::parameters &p) {
         return o << "{ID: " << p.JobID << ", Digest: " << p.Digest << ", GenerationTx1 " << p.GenerationTx1 
             << ", GenerationTx2: " << p.GenerationTx2 << ", Path: " << p.Path << ", Version: " << p.Version 
-            << ", Difficulty: " << work::difficulty(p.Target) << ", Now: " << p.Now << ", Clean: " << (p.Clean ? "true" : "false") << "}";
+            << ", Difficulty: " << work::difficulty(p.Target) << ", Now: " << p.Now << ", Clean: " 
+            << (p.Clean ? "true" : "false") << "}";
     }
     
 }

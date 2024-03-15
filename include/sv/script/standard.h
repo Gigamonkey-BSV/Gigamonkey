@@ -8,8 +8,6 @@
 
 #include <sv/script/interpreter.h>
 
-#include <boost/variant.hpp>
-
 #include <cstdint>
 
 static const bool DEFAULT_ACCEPT_DATACARRIER = true;
@@ -21,19 +19,6 @@ class CScript;
 static const uint64_t DEFAULT_DATA_CARRIER_SIZE = UINT32_MAX;
 extern bool fAcceptDatacarrier;
 
-/**
- * Mandatory script verification flags that all new blocks must comply with for
- * them to be valid. (but old blocks may not comply with) Currently just P2SH,
- * but in the future other flags may be added, such as a soft-fork to enforce
- * strict DER encoding.
- *
- * Failing one of these tests may trigger a DoS ban - see CheckInputs() for
- * details.
- */
-static const uint32_t MANDATORY_SCRIPT_VERIFY_FLAGS =
-    SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_STRICTENC |
-    SCRIPT_ENABLE_SIGHASH_FORKID | SCRIPT_VERIFY_LOW_S | SCRIPT_VERIFY_NULLFAIL;
-
 enum txnouttype {
     TX_NONSTANDARD,
     // 'standard' transaction types:
@@ -44,16 +29,16 @@ enum txnouttype {
     TX_NULL_DATA,
 };
 
-const char *GetTxnOutputType(txnouttype t);
+const char *GetTxnOutputType (txnouttype t);
 
 /**
  * Return public keys or hashes from scriptPubKey, for 'standard' transaction
  * types.
  */
-bool Solver(const CScript& scriptPubKey, bool genesisEnabled, txnouttype& typeRet,
-    std::vector<std::vector<uint8_t>>& vSolutionsRet);
+bool Solver (const CScript &scriptPubKey, bool genesisEnabled, txnouttype &typeRet,
+    std::vector<std::vector<uint8_t>> &vSolutionsRet);
     
-CScript GetScriptForRawPubKey(const CPubKey &pubkey);
-CScript GetScriptForMultisig(int nRequired, const std::vector<CPubKey> &keys);
+CScript GetScriptForRawPubKey (const CPubKey &pubkey);
+CScript GetScriptForMultisig (int nRequired, const std::vector<CPubKey> &keys);
 
 #endif // BITCOIN_SCRIPT_STANDARD_H

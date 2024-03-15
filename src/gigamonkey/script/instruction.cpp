@@ -154,17 +154,17 @@ namespace Gigamonkey::Bitcoin {
             if (data[0] >= 0x01 && data[0] <= 0x10) return instruction {static_cast<op> (data[0] + 0x50)};
         }
         
-        if (size <= OP_PUSHSIZE75) return instruction {static_cast<op> (size), data};
-        if (size <= 0xffff) return instruction {OP_PUSHDATA1, data};
-        if (size <= 0xffffffff) return instruction {OP_PUSHDATA2, data};
+        if (size <= 0x4b) return instruction {static_cast<op> (size), data};
+        if (size <= 0xff) return instruction {OP_PUSHDATA1, data};
+        if (size <= 0xffff) return instruction {OP_PUSHDATA2, data};
         return instruction {OP_PUSHDATA4, data};
     }
     
-    bytes instruction::data() const {
+    Z instruction::data () const {
         if (is_push_data (Op) || Op == OP_RETURN) return Data;
         if (!is_push (Op)) return {};
         if (Op == OP_1NEGATE) return {0x81};
-        return bytes {static_cast<byte> (Op - 0x50)};
+        return Z {int64 (Op - 0x50)};
     }
     
     uint32 instruction::serialized_size () const {
@@ -202,7 +202,7 @@ namespace Gigamonkey::Bitcoin {
         return true;
     }
 
-    std::ostream& write_op_code (std::ostream& o, op x) {
+    std::ostream &write_op_code (std::ostream& o, op x) {
         if (x == OP_FALSE) return o << "push_empty";
         if (is_push (x)) {
             switch (x) {
@@ -292,7 +292,7 @@ namespace Gigamonkey::Bitcoin {
         }
     }
 
-    std::ostream& operator << (std::ostream& o, const instruction& i) {
+    std::ostream &operator << (std::ostream& o, const instruction& i) {
         if (!is_push_data (i.Op)) return write_op_code (o, i.Op);
         return write_op_code (o, i.Op) << "{" << data::encoding::hex::write (i.Data) << "}";
     }
@@ -322,7 +322,7 @@ namespace Gigamonkey::Bitcoin {
             instruction i {};
             r = r >> i;
             
-            if (i.verify(0) != SCRIPT_ERR_OK) return {};
+            if (i.verify (0) != SCRIPT_ERR_OK) return {};
         
             if (i.Op == OP_RETURN) {
                 if (data::empty (Control)) {
@@ -397,10 +397,8 @@ namespace Gigamonkey::Bitcoin {
         bool utxo_after_genesis = (flags & SCRIPT_UTXO_AFTER_GENESIS) != 0;
         
         if (utxo_after_genesis && !script_genesis) return SCRIPT_ERR_IMPOSSIBLE_ENCODING;
-        
-        if (flags & SCRIPT_VERIFY_CLEANSTACK || !(flags & SCRIPT_VERIFY_P2SH)) return SCRIPT_ERR_CLEANSTACK; 
-        
-        if (data::empty(p)) return SCRIPT_ERR_OK;
+
+        if (data::empty (p)) return SCRIPT_ERR_OK;
         
         // first we check for OP_RETURN data. 
         if (script_genesis && utxo_after_genesis) {

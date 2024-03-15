@@ -68,7 +68,7 @@ namespace Gigamonkey::HD {
                 return Pubkey.valid () && Pubkey.size () == secp256k1::pubkey::CompressedSize && (Net == main || Net == test);
             }
             
-            pubkey (const secp256k1::pubkey& p, const chain_code& cc) : Pubkey {p}, ChainCode {cc} {}
+            pubkey (const secp256k1::pubkey &p, const chain_code &cc) : Pubkey {p}, ChainCode {cc} {}
             pubkey (string_view s) : pubkey {read (s)} {}
             pubkey () = default;
             
@@ -105,7 +105,7 @@ namespace Gigamonkey::HD {
             uint32_t Parent;
             uint32_t Sequence;
 
-            secret (const secp256k1::secret& s, const chain_code& cc, type network) : Secret {s}, ChainCode {cc}, Net {network} {}
+            secret (const secp256k1::secret &s, const chain_code &cc, type network) : Secret {s}, ChainCode {cc}, Net {network} {}
             secret (string_view s) : secret {read (s)} {}
             secret () = default;
 
@@ -128,25 +128,25 @@ namespace Gigamonkey::HD {
             secret derive (string_view l) const;
             
             explicit operator Bitcoin::secret () const {
-                return Bitcoin::secret {to_wif(Net), Secret, true};
+                return Bitcoin::secret {to_wif (Net), Secret, true};
             }
             
             explicit operator string () const {
-                return write();
+                return write ();
             }
         };
 
-        secret derive (const secret&, uint32);
-        pubkey derive (const pubkey&, uint32);
+        secret derive (const secret &, uint32);
+        pubkey derive (const pubkey &, uint32);
         
-        secret inline derive (const secret& s, path l) {
+        secret inline derive (const secret &s, path l) {
             if (l.empty ()) return s;
             return derive (derive (s, l.first ()), l.rest());
         }
         
-        pubkey inline derive (const pubkey& p, path l) {
+        pubkey inline derive (const pubkey &p, path l) {
             if (l.empty ()) return p;
-            return derive (derive(p, l.first ()), l.rest ());
+            return derive (derive (p, l.first ()), l.rest ());
         }
         
         pubkey inline pubkey::derive (path l) const {
@@ -187,8 +187,8 @@ namespace Gigamonkey::HD {
         uint32 Index;
         BIP_32::secret Key;
         
-        key_source (uint32 i, const BIP_32::secret& s) :
-            Index {i}, Key{s} {}
+        key_source (uint32 i, const BIP_32::secret &s) :
+            Index {i}, Key {s} {}
         
         key_source (const BIP_32::secret& s) : key_source {1, s} {}
         

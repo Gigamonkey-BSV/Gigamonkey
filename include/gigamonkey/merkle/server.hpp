@@ -15,31 +15,31 @@ namespace Gigamonkey::Merkle {
         cross<digest> Digests;
         data::map<digest, uint32> Indices;
         
-        server() : Digests{}, Indices{}, Width{0}, Height{0} {}
+        server () : Digests {}, Indices {}, Width {0}, Height {0} {}
         
     public:
         uint32 Width;
         uint32 Height;
         
-        server(leaf_digests);
-        server(const tree&);
+        server (leaf_digests);
+        server (const tree &);
         
-        operator tree() const;
+        operator tree () const;
         
-        digest root() const;
+        digest root () const;
         
-        list<proof> proofs() const;
+        list<proof> proofs () const;
         
-        proof operator[](const digest& d) const;
+        proof operator [] (const digest &d) const;
         
-        bool operator==(const server& s) const;
+        bool operator == (const server &s) const;
     };
     
-    inline digest server::root() const {
+    inline digest server::root () const {
         return Digests[-1];
     }
         
-    inline bool server::operator==(const server& s) const {
+    inline bool server::operator == (const server &s) const {
         return Width == s.Width && Height == s.Height && Digests == s.Digests;
     }
 }

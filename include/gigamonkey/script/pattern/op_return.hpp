@@ -16,10 +16,10 @@ namespace Gigamonkey {
             either
         };
         
-        static Gigamonkey::pattern pattern(type t = either) {
-            static Gigamonkey::pattern Either{optional{OP_FALSE}, op_return_data{}};
-            static Gigamonkey::pattern Unsafe{op_return_data{}};
-            static Gigamonkey::pattern Safe{OP_FALSE, op_return_data{}};
+        static Gigamonkey::pattern pattern (type t = either) {
+            static Gigamonkey::pattern Either {optional {OP_FALSE}, op_return_data {}};
+            static Gigamonkey::pattern Unsafe {op_return_data {}};
+            static Gigamonkey::pattern Safe {OP_FALSE, op_return_data {}};
             switch (t) {
                 case unsafe: return Unsafe;
                 case safe: return Safe;
@@ -27,29 +27,29 @@ namespace Gigamonkey {
             }
         }
         
-        static Gigamonkey::script script(const bytes_view data, bool safe_script = true) {
+        static Gigamonkey::script script (const bytes_view data, bool safe_script = true) {
             using namespace Bitcoin;
-            return compile(safe_script ? 
-                program{OP_FALSE, instruction::op_return_data(data)} : 
-                program{instruction::op_return_data(data)});
+            return compile (safe_script ? 
+                program {OP_FALSE, instruction::op_return_data (data)} : 
+                program {instruction::op_return_data (data)});
         }
         
-        static bool match(const bytes_view p) {
-            return (p.size() > 1 && p[0] == 0x6a) || (p.size() > 2 && p[0] == 0x00 && p[1] == 0x6a);
+        static bool match (const bytes_view p) {
+            return (p.size () > 1 && p[0] == 0x6a) || (p.size () > 2 && p[0] == 0x00 && p[1] == 0x6a);
         }
         
         bytes Data;
         bool Safe; // whether op_false is pushed before op_return
         
-        bytes script() const {
-            return script(Data, Safe);
+        bytes script () const {
+            return script (Data, Safe);
         };
         
-        Bitcoin::output output() const {
-            return Bitcoin::output{0, script(Data, Safe)};
+        Bitcoin::output output () const {
+            return Bitcoin::output {0, script (Data, Safe)};
         }
         
-        op_return(bytes_view b, bool safe_script = true) : Data{b}, Safe{safe} {}
+        op_return (bytes_view b, bool safe_script = true) : Data {b}, Safe {safe} {}
     };
 } 
 

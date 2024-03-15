@@ -176,7 +176,7 @@ namespace Gigamonkey::BitcoinAssociation {
             if (!tst.valid ()) return {};
         
             JSON j {
-                {"txid", string (tst.TXID.Value)},
+                {"txid", write_backwards_hex (tst.TXID)},
                 {"returnResult", to_JSON (tst.ReturnResult)},
                 {"resultDescription", tst.ResultDescription}};
         
@@ -185,15 +185,15 @@ namespace Gigamonkey::BitcoinAssociation {
             return j;
         }
         
-        list<data::entry<string, string>> to_url_params (const MAPI::submit_transaction_parameters &ts) {
-            list<data::entry<string, string>> params;
+        list<data::entry<UTF8, UTF8>> to_url_params (const MAPI::submit_transaction_parameters &ts) {
+            list<data::entry<UTF8, UTF8>> params;
             
-            if (ts.CallbackURL) params = params << data::entry<string, string> {"callbackUrl", *ts.CallbackURL};
-            if (ts.CallbackToken) params = params << data::entry<string, string> {"callbackToken", *ts.CallbackToken};
-            if (ts.MerkleProof) params = params << data::entry<string, string> {"merkleProof", std::to_string (*ts.MerkleProof)};
-            if (ts.MerkleFormat) params = params << data::entry<string, string> {"merkleFormat", *ts.MerkleFormat};
-            if (ts.DSCheck) params = params << data::entry<string, string> {"dsCheck", std::to_string (*ts.DSCheck)};
-            if (ts.CallbackEncryption) params = params << data::entry<string, string> {"callbackEncryption", *ts.CallbackEncryption};
+            if (ts.CallbackURL) params = params << data::entry<UTF8, UTF8> {"callbackUrl", *ts.CallbackURL};
+            if (ts.CallbackToken) params = params << data::entry<UTF8, UTF8> {"callbackToken", *ts.CallbackToken};
+            if (ts.MerkleProof) params = params << data::entry<UTF8, UTF8> {"merkleProof", std::to_string (*ts.MerkleProof)};
+            if (ts.MerkleFormat) params = params << data::entry<UTF8, UTF8> {"merkleFormat", *ts.MerkleFormat};
+            if (ts.DSCheck) params = params << data::entry<UTF8, UTF8> {"dsCheck", std::to_string (*ts.DSCheck)};
+            if (ts.CallbackEncryption) params = params << data::entry<UTF8, UTF8> {"callbackEncryption", *ts.CallbackEncryption};
             
             return params;
         }

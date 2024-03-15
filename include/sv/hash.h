@@ -14,6 +14,8 @@
 
 #include <vector>
 
+namespace Satoshi {
+
 typedef uint256 ChainCode;
 
 /** A hasher class for Bitcoin's 256-bit hash (double SHA-256). */
@@ -24,19 +26,19 @@ private:
 public:
     static const size_t OUTPUT_SIZE = CSHA256::OUTPUT_SIZE;
 
-    void Finalize(uint8_t hash[OUTPUT_SIZE]) {
+    void Finalize (uint8_t hash[OUTPUT_SIZE]) {
         uint8_t buf[CSHA256::OUTPUT_SIZE];
-        sha.Finalize(buf);
-        sha.Reset().Write(buf, CSHA256::OUTPUT_SIZE).Finalize(hash);
+        sha.Finalize (buf);
+        sha.Reset ().Write (buf, CSHA256::OUTPUT_SIZE).Finalize (hash);
     }
 
-    CHash256 &Write(const uint8_t *data, size_t len) {
-        sha.Write(data, len);
+    CHash256 &Write (const uint8_t *data, size_t len) {
+        sha.Write (data, len);
         return *this;
     }
 
-    CHash256 &Reset() {
-        sha.Reset();
+    CHash256 &Reset () {
+        sha.Reset ();
         return *this;
     }
 };
@@ -49,19 +51,19 @@ private:
 public:
     static const size_t OUTPUT_SIZE = CRIPEMD160::OUTPUT_SIZE;
 
-    void Finalize(uint8_t hash[OUTPUT_SIZE]) {
+    void Finalize (uint8_t hash[OUTPUT_SIZE]) {
         uint8_t buf[CSHA256::OUTPUT_SIZE];
-        sha.Finalize(buf);
-        CRIPEMD160().Write(buf, CSHA256::OUTPUT_SIZE).Finalize(hash);
+        sha.Finalize (buf);
+        CRIPEMD160 ().Write (buf, CSHA256::OUTPUT_SIZE).Finalize (hash);
     }
 
-    CHash160 &Write(const uint8_t *data, size_t len) {
-        sha.Write(data, len);
+    CHash160 &Write (const uint8_t *data, size_t len) {
+        sha.Write (data, len);
         return *this;
     }
 
-    CHash160 &Reset() {
-        sha.Reset();
+    CHash160 &Reset () {
+        sha.Reset ();
         return *this;
     }
 };
@@ -71,70 +73,70 @@ template <typename T1> inline uint256 Hash(const T1 pbegin, const T1 pend) {
     static const uint8_t pblank[1] = {};
     uint256 result;
     CHash256()
-        .Write(pbegin == pend ? pblank : (const uint8_t *)&pbegin[0],
-               (pend - pbegin) * sizeof(pbegin[0]))
-        .Finalize((uint8_t *)&result);
+        .Write(pbegin == pend ? pblank : (const uint8_t *) &pbegin[0],
+               (pend - pbegin) * sizeof (pbegin[0]))
+        .Finalize ((uint8_t *) &result);
     return result;
 }
 
 /** Compute the 256-bit hash of the concatenation of two objects. */
 template <typename T1, typename T2>
-inline uint256 Hash(const T1 p1begin, const T1 p1end, const T2 p2begin,
+inline uint256 Hash (const T1 p1begin, const T1 p1end, const T2 p2begin,
                     const T2 p2end) {
     static const uint8_t pblank[1] = {};
     uint256 result;
-    CHash256()
-        .Write(p1begin == p1end ? pblank : (const uint8_t *)&p1begin[0],
-               (p1end - p1begin) * sizeof(p1begin[0]))
-        .Write(p2begin == p2end ? pblank : (const uint8_t *)&p2begin[0],
-               (p2end - p2begin) * sizeof(p2begin[0]))
-        .Finalize((uint8_t *)&result);
+    CHash256 ()
+        .Write (p1begin == p1end ? pblank : (const uint8_t *) &p1begin[0],
+               (p1end - p1begin) * sizeof (p1begin[0]))
+        .Write (p2begin == p2end ? pblank : (const uint8_t *) &p2begin[0],
+               (p2end - p2begin) * sizeof (p2begin[0]))
+        .Finalize ((uint8_t *)&result);
     return result;
 }
 
 /** Compute the 256-bit hash of the concatenation of three objects. */
 template <typename T1, typename T2, typename T3>
-inline uint256 Hash(const T1 p1begin, const T1 p1end, const T2 p2begin,
+inline uint256 Hash (const T1 p1begin, const T1 p1end, const T2 p2begin,
                     const T2 p2end, const T3 p3begin, const T3 p3end) {
     static const uint8_t pblank[1] = {};
     uint256 result;
-    CHash256()
-        .Write(p1begin == p1end ? pblank : (const uint8_t *)&p1begin[0],
-               (p1end - p1begin) * sizeof(p1begin[0]))
-        .Write(p2begin == p2end ? pblank : (const uint8_t *)&p2begin[0],
-               (p2end - p2begin) * sizeof(p2begin[0]))
-        .Write(p3begin == p3end ? pblank : (const uint8_t *)&p3begin[0],
-               (p3end - p3begin) * sizeof(p3begin[0]))
-        .Finalize((uint8_t *)&result);
+    CHash256 ()
+        .Write (p1begin == p1end ? pblank : (const uint8_t *)&p1begin[0],
+               (p1end - p1begin) * sizeof (p1begin[0]))
+        .Write (p2begin == p2end ? pblank : (const uint8_t *)&p2begin[0],
+               (p2end - p2begin) * sizeof (p2begin[0]))
+        .Write (p3begin == p3end ? pblank : (const uint8_t *)&p3begin[0],
+               (p3end - p3begin) * sizeof (p3begin[0]))
+        .Finalize ((uint8_t *) &result);
     return result;
 }
 
 /** Compute the 160-bit hash an object. */
-template <typename T1> inline uint160 Hash160(const T1 pbegin, const T1 pend) {
+template <typename T1> inline uint160 Hash160 (const T1 pbegin, const T1 pend) {
     static uint8_t pblank[1] = {};
     uint160 result;
-    CHash160()
-        .Write(pbegin == pend ? pblank : (const uint8_t *)&pbegin[0],
-               (pend - pbegin) * sizeof(pbegin[0]))
-        .Finalize((uint8_t *)&result);
+    CHash160 ()
+        .Write (pbegin == pend ? pblank : (const uint8_t *) &pbegin[0],
+               (pend - pbegin) * sizeof (pbegin[0]))
+        .Finalize ((uint8_t *)&result);
     return result;
 }
 
 /** Compute the 160-bit hash of a vector. */
-inline uint160 Hash160(const std::vector<uint8_t> &vch) {
-    return Hash160(vch.begin(), vch.end());
+inline uint160 Hash160 (const std::vector<uint8_t> &vch) {
+    return Hash160 (vch.begin (), vch.end ());
 }
 
 /** Compute the 160-bit hash of a vector. */
 template <unsigned int N>
 inline uint160 Hash160(const prevector<N, uint8_t> &vch) {
-    return Hash160(vch.begin(), vch.end());
+    return Hash160 (vch.begin (), vch.end ());
 }
 
-unsigned int MurmurHash3(unsigned int nHashSeed,
+unsigned int MurmurHash3 (unsigned int nHashSeed,
                          const std::vector<uint8_t> &vDataToHash);
 
-void BIP32Hash(const ChainCode &chainCode, unsigned int nChild, uint8_t header,
+void BIP32Hash (const ChainCode &chainCode, unsigned int nChild, uint8_t header,
                const uint8_t data[32], uint8_t output[64]);
 
 /** SipHash-2-4 */
@@ -146,19 +148,22 @@ private:
 
 public:
     /** Construct a SipHash calculator initialized with 128-bit key (k0, k1) */
-    CSipHasher(uint64_t k0, uint64_t k1);
+    CSipHasher (uint64_t k0, uint64_t k1);
+
     /**
      * Hash a 64-bit integer worth of data.
      * It is treated as if this was the little-endian interpretation of 8 bytes.
      * This function can only be used when a multiple of 8 bytes have been
      * written so far.
      */
-    CSipHasher &Write(uint64_t data);
+    CSipHasher &Write (uint64_t data);
+
     /** Hash arbitrary bytes. */
-    CSipHasher &Write(const uint8_t *data, size_t size);
+    CSipHasher &Write (const uint8_t *data, size_t size);
+
     /** Compute the 64-bit SipHash-2-4 of the data written so far. The object
      * remains untouched. */
-    uint64_t Finalize() const;
+    uint64_t Finalize () const;
 };
 
 /** Optimized SipHash-2-4 implementation for uint256.
@@ -171,8 +176,8 @@ public:
  *      .Write(val.GetUint64(3))
  *      .Finalize()
  */
-uint64_t SipHashUint256(uint64_t k0, uint64_t k1, const uint256 &val);
-uint64_t SipHashUint256Extra(uint64_t k0, uint64_t k1, const uint256 &val,
-                             uint32_t extra);
+uint64_t SipHashUint256 (uint64_t k0, uint64_t k1, const uint256 &val);
+uint64_t SipHashUint256Extra (uint64_t k0, uint64_t k1, const uint256 &val, uint32_t extra);
+}
 
 #endif // BITCOIN_HASH_H

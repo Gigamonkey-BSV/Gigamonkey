@@ -8,10 +8,9 @@
 #define GIGAMONKEY_SCRIPT_SCRIPT
 
 #include <gigamonkey/script/error.h>
-
+#include <gigamonkey/script/flags.h>
 #include <gigamonkey/sighash.hpp>
 #include <gigamonkey/satoshi.hpp>
-#include <sv/script/script_num.h>
 
 namespace Gigamonkey::Bitcoin { 
     
@@ -20,38 +19,38 @@ namespace Gigamonkey::Bitcoin {
     struct result; 
     
     // Test validity of a script. All signature operations succeed. 
-    result evaluate(const script& unlock, const script& lock, uint32 flags = StandardScriptVerifyFlags(true, true));
+    result evaluate (const script &unlock, const script &lock, uint32 flags = StandardScriptVerifyFlags (true, true));
     
     struct redemption_document;
     
     // Evaluate script with real signature operations. 
-    result evaluate(
-        const script& unlock, 
-        const script& lock, 
+    result evaluate (
+        const script &unlock,
+        const script &lock,
         const redemption_document &doc, 
-        uint32 flags = StandardScriptVerifyFlags(true, true));
+        uint32 flags = StandardScriptVerifyFlags (true, true));
     
-    bool operator==(const result &, const result &);
-    bool operator!=(const result &, const result &);
+    bool operator == (const result &, const result &);
+    bool operator != (const result &, const result &);
     
     struct result {
         ScriptError Error;
         bool Success;
         
-        result() : result{false} {}
-        result(bool b) : Error{SCRIPT_ERR_OK}, Success{b} {}
-        result(ScriptError err) : Error{err}, Success{false} {}
+        result () : result {false} {}
+        result (bool b) : Error {SCRIPT_ERR_OK}, Success {b} {}
+        result (ScriptError err) : Error {err}, Success {false} {}
         
-        bool valid() const {
+        bool valid () const {
             return !Error;
         }
         
-        bool verify() const {
+        bool verify () const {
             return !Error && Success;
         }
         
-        operator bool() const {
-            return verify();
+        operator bool () const {
+            return verify ();
         }
     };
     
@@ -62,24 +61,29 @@ namespace Gigamonkey::Bitcoin {
         
         index InputIndex;
         
-        sighash::document add_script_code(bytes_view script_code) const {
-            return sighash::document{RedeemedValue, script_code, Transaction, InputIndex};
+        sighash::document add_script_code (bytes_view script_code) const {
+            return sighash::document {RedeemedValue, script_code, Transaction, InputIndex};
         }
         
         // holdovers from Bitcoin Core. 
-        bool check_locktime(const CScriptNum &) const;
-        bool check_sequence(const CScriptNum &) const;
+        bool check_locktime (const CScriptNum &) const;
+        bool check_sequence (const CScriptNum &) const;
     };
+
+    // delete the script up to and including the last instance of OP_CODESEPARATOR.
+    // if no OP_CODESEPARATOR is found, nothing is removed.
+    // this function is needed for correctly checking and generating signatures.
+    bytes_view remove_until_last_code_separator (bytes_view);
     
-    bool inline operator==(const result &a, const result &b) {
+    bool inline operator == (const result &a, const result &b) {
         return a.Success == b.Success && a.Error == b.Error;
     }
     
-    bool inline operator!=(const result &a, const result &b) {
+    bool inline operator != (const result &a, const result &b) {
         return !(a == b);
     }
     
-    std::ostream inline &operator<<(std::ostream &o, const result &r) {
+    std::ostream inline &operator << (std::ostream &o, const result &r) {
         if (r.Error) return o << r.Error;
         return o << (r.Success ? "success" : "failure");
     }

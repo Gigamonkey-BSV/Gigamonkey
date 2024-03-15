@@ -77,13 +77,4 @@ static const int64_t P2SH_ACTIVATION_TIME = 1333234914;
 /** Maximum stack memory usage (used instead of MAX_SCRIPT_ELEMENT_SIZE and MAX_STACK_ELEMENTS) after Genesis. **/
 static const uint64_t DEFAULT_STACK_MEMORY_USAGE_CONSENSUS_AFTER_GENESIS = INT64_MAX;
 
-/** Flags for nSequence and nLockTime locks */
-enum {
-    /* Interpret sequence numbers as relative lock-time constraints. */
-    LOCKTIME_VERIFY_SEQUENCE = (1 << 0),
-
-    /* Use GetMedianTimePast() instead of nTime for end point timestamp. */
-    LOCKTIME_MEDIAN_TIME_PAST = (1 << 1),
-};
-
 #endif // BITCOIN_CONSENSUS_CONSENSUS_H

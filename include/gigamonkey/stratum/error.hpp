@@ -36,27 +36,27 @@ namespace Gigamonkey::Stratum {
         UNKNOWN = 2147483647 // bin(01111111 11111111 11111111 11111111)
     };
     
-    std::string error_message_from_code(error_code);
+    std::string error_message_from_code (error_code);
     
     struct error {
         error_code Code;
         string Message;
         
-        error() : Code{}, Message{} {}
-        error(error_code e, string m) : Code{e}, Message{m} {}
-        explicit error(error_code e) : Code{e}, Message{error_message_from_code(e)} {}
-        explicit error(const JSON &);
+        error () : Code {}, Message {} {}
+        error (error_code e, string m) : Code {e}, Message {m} {}
+        explicit error (error_code e) : Code {e}, Message {error_message_from_code (e)} {}
+        explicit error (const JSON &);
         
-        static bool valid(const JSON& j) {
-            return j.is_array() && j.size() == 2 && j[0].is_number_unsigned() && j[1].is_string();
+        static bool valid (const JSON &j) {
+            return j.is_array () && j.size () == 2 && j[0].is_number_unsigned () && j[1].is_string ();
         }
         
-        explicit operator JSON() const {
-            return {uint32(Code), Message};
+        explicit operator JSON () const {
+            return {uint32 (Code), Message};
         }
     };
     
-    std::ostream inline &operator<<(std::ostream &o, const error &e) {
+    std::ostream inline &operator << (std::ostream &o, const error &e) {
         return o << "Stratum error " << e.Code << ": " << e.Message;
     }
     

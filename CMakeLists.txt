@@ -16,12 +16,12 @@ option (PACKAGE_TESTS "Build the tests" ON)
 
 ## Enable testing
 
-find_package(data CONFIG REQUIRED)
-find_package(Boost CONFIG REQUIRED)
-find_package(OpenSSL CONFIG REQUIRED)
-find_package(cryptopp CONFIG REQUIRED)
-find_package(nlohmann_json CONFIG REQUIRED)
-find_package(gmp CONFIG REQUIRED)
+find_package (data CONFIG REQUIRED)
+find_package (Boost CONFIG REQUIRED)
+find_package (OpenSSL CONFIG REQUIRED)
+find_package (cryptopp CONFIG REQUIRED)
+find_package (nlohmann_json CONFIG REQUIRED)
+find_package (gmp CONFIG REQUIRED)
 
 
 if (PACKAGE_TESTS)
@@ -44,7 +44,6 @@ add_library (gigamonkey STATIC
     
     src/gigamonkey/p2p/var_int.cpp
     src/gigamonkey/p2p/checksum.cpp
-    src/gigamonkey/number.cpp
     src/gigamonkey/secp256k1.cpp
     src/gigamonkey/timestamp.cpp
     src/gigamonkey/incomplete.cpp

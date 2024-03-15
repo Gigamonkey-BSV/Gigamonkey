@@ -11,28 +11,28 @@ namespace Gigamonkey::Stratum::client {
     struct get_version_request : request {
         
         using request::request;
-        get_version_request(message_id id) : request{id, client_get_version, {}} {} 
+        get_version_request (message_id id) : request {id, client_get_version, {}} {} 
         
-        static bool valid(const request &r) {
-            return r.valid() && r.method() == client_get_version && r.params().size() == 0;
+        static bool valid (const request &r) {
+            return r.valid () && r.method () == client_get_version && r.params ().size () == 0;
         }
         
-        bool valid() const {
-            return valid(*this);
+        bool valid () const {
+            return valid (*this);
         }
     };
     
     struct get_version_response : response {
         
         using response::response;
-        get_version_response(message_id id, string version) : response{id, JSON::string_t(version)} {} 
+        get_version_response (message_id id, string version) : response {id, JSON::string_t (version)} {} 
         
-        static bool valid(const response &r) {
-            return r.valid() && r.result().is_string();
+        static bool valid (const response &r) {
+            return r.valid () && r.result ().is_string ();
         }
         
-        bool valid() const {
-            return valid(*this);
+        bool valid () const {
+            return valid (*this);
         }
     };
 }

@@ -5,7 +5,6 @@
 #define GIGAMONKEY_SECP256K1
 
 #include "number.hpp"
-#include "hash.hpp"
 #include <data/encoding/integer.hpp>
 #include <data/crypto/encrypted.hpp>
 
@@ -17,7 +16,7 @@ namespace Gigamonkey::secp256k1 {
         coordinate R;
         coordinate S;
         
-        point(const coordinate &r, const coordinate &s) : R{r}, S{s} {}
+        point (const coordinate &r, const coordinate &s) : R{r}, S{s} {}
     };
     
     writer &operator << (writer &, const point &);
@@ -48,13 +47,13 @@ namespace Gigamonkey::secp256k1 {
         static bytes_view R (bytes_view);
         static bytes_view S (bytes_view);
         
-        explicit signature (bytes_view b) : bytes{b} {}
+        explicit signature (bytes_view b) : bytes {b} {}
         
         explicit operator point () const;
         explicit signature (const point&);
         signature normalize () const;
         
-        static size_t serialized_size (const point& p) {
+        static size_t serialized_size (const point &p) {
             return p.S.size () + p.R.size () + 6;
         }
         
@@ -173,7 +172,8 @@ namespace Gigamonkey::secp256k1 {
     reader &operator >> (reader& r, point& p);
     
     writer inline &operator << (writer &w, const point& p) {
-        return w << byte (0x30) << Bitcoin::var_int {p.R.serialized_size () + p.S.serialized_size () + 4} << p.R << p.S;
+        return w << byte (0x30) <<
+            Bitcoin::var_int {Bitcoin::serialized_size (p.R) + Bitcoin::serialized_size (p.S) + 4} << p.R << p.S;
     }
     
     std::ostream inline &operator << (std::ostream &o, const secret &s) {

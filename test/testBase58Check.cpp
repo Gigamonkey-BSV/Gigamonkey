@@ -11,11 +11,13 @@ namespace Gigamonkey::base58 {
         std::string hex {"010203fdfeff"};
         std::string encoded_0 {"14HV44ipwoaqfg"};
         std::string encoded_3 {"kCr8KebD6cWdVj"};
-        
+
         bytes decoded_hex = *encoding::hex::read (hex);
-        
-        EXPECT_EQ (check (0, decoded_hex), check (encoded_0));
-        EXPECT_EQ (check (3, decoded_hex), check (encoded_3));
+
+        check check_0 {0, decoded_hex};
+        check check_3 {3, decoded_hex};
+        EXPECT_EQ (check_0, check {encoded_0});
+        EXPECT_EQ (check_3, check {encoded_3});
         
     }
 

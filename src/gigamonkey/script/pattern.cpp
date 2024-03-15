@@ -83,9 +83,9 @@ namespace Gigamonkey {
             case any : 
                 return Bitcoin::is_push (i.Op);
             case value : 
-                return Bitcoin::is_push (i.Op) && Value == Bitcoin::Z {bytes_view (i.data ())};
+                return Bitcoin::is_push (i.Op) && Value == Z (i.data ());
             case data : 
-                return Bitcoin::is_push (i.Op) && Data == i.data ();
+                return Bitcoin::is_push (i.Op) && Data == static_cast<bytes> (i.data ());
             case read : 
                 if (!Bitcoin::is_push (i.Op)) return false;
                 Read = i.data ();

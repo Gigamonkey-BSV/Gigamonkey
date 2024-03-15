@@ -4,7 +4,7 @@
 #ifndef GIGAMONKEY_INCOMPLETE
 #define GIGAMONKEY_INCOMPLETE
 
-#include "timechain.hpp"
+#include <gigamonkey/timechain.hpp>
 
 // incomplete types are used to construct the signature hash in Bitcoin transactions. 
 // this is necessary because the input script is not known before it is created.
@@ -16,13 +16,13 @@ namespace Gigamonkey::Bitcoin::incomplete {
         outpoint Reference;
         uint32_little Sequence;
         
-        input() : Reference{}, Sequence{} {}
-        input(outpoint r, uint32_little x = Bitcoin::input::Finalized) : 
-            Reference{r}, Sequence{x} {}
-        input(const Bitcoin::input &in) : Reference{in.Reference}, Sequence{in.Sequence} {}
+        input () : Reference {}, Sequence {} {}
+        input (outpoint r, uint32_little x = Bitcoin::input::Finalized) : 
+            Reference {r}, Sequence {x} {}
+        input (const Bitcoin::input &in) : Reference {in.Reference}, Sequence {in.Sequence} {}
         
-        Bitcoin::input complete(bytes_view script) const {
-            return Bitcoin::input{Reference, script, Sequence};
+        Bitcoin::input complete (bytes_view script) const {
+            return Bitcoin::input {Reference, script, Sequence};
         }
     };
     
@@ -33,29 +33,29 @@ namespace Gigamonkey::Bitcoin::incomplete {
         list<output> Outputs;
         uint32_little Locktime;
         
-        transaction(int32_little v, list<input> i, list<output> o, uint32_little l = 0) : 
-            Version{v}, Inputs{i}, Outputs{o}, Locktime{l} {}
+        transaction (int32_little v, list<input> i, list<output> o, uint32_little l = 0) : 
+            Version {v}, Inputs {i}, Outputs {o}, Locktime {l} {}
         
-        transaction(list<input> i, list<output> o, uint32_little l = 0) : 
-            transaction{int32_little{Bitcoin::transaction::LatestVersion}, i, o, l} {}
+        transaction (list<input> i, list<output> o, uint32_little l = 0) : 
+            transaction {int32_little {Bitcoin::transaction::LatestVersion}, i, o, l} {}
         
-        transaction(const Bitcoin::transaction& tx) : 
-            Version{tx.Version}, Outputs{tx.Outputs}, Inputs{
-                data::for_each([](const Bitcoin::input& i) -> input {
-                    return input{i};
-                }, tx.Inputs)}, Locktime{tx.Locktime} {}
+        transaction (const Bitcoin::transaction &tx) : 
+            Version {tx.Version}, Outputs {tx.Outputs}, Inputs {
+                data::for_each ([] (const Bitcoin::input& i) -> input {
+                    return input {i};
+                }, tx.Inputs)}, Locktime {tx.Locktime} {}
         
-        explicit operator bytes() const;
-        explicit transaction(bytes_view);
+        explicit operator bytes () const;
+        explicit transaction (bytes_view);
         
-        Bitcoin::transaction complete(list<bytes> scripts) const;
+        Bitcoin::transaction complete (list<bytes> scripts) const;
         
     };
     
-    std::ostream &operator<<(std::ostream &, const input &);
-    std::ostream &operator<<(std::ostream &, const transaction &);
+    std::ostream &operator << (std::ostream &, const input &);
+    std::ostream &operator << (std::ostream &, const transaction &);
     
-    std::ostream inline &operator<<(std::ostream &o, const input &i) {
+    std::ostream inline &operator << (std::ostream &o, const input &i) {
         return o << "input{" << i.Reference << ", ___, " << i.Sequence << "}";
     }
 }

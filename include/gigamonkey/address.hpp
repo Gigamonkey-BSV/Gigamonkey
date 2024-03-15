@@ -11,8 +11,8 @@ namespace Gigamonkey::Bitcoin {
     struct pubkey;
     struct address;
 
-    std::ostream &operator << (std::ostream& o, const address& a);
-    std::ostream &operator << (std::ostream& o, const pubkey& a);
+    std::ostream &operator << (std::ostream &o, const address &a);
+    std::ostream &operator << (std::ostream &o, const pubkey &a);
     
     // A Bitcoin address is a Hash160 digest of a public key 
     // with a human-readable format in base58 check encoding.
@@ -34,11 +34,11 @@ namespace Gigamonkey::Bitcoin {
         digest160 digest () const;
 
         address ();
-        address (type p, const digest160& d);
+        address (type p, const digest160 &d);
 
         explicit address (string_view s);
 
-        static address encode (char prefix, const digest160& d);
+        static address encode (char prefix, const digest160 &d);
 
         static bool valid_prefix (type p);
 
@@ -57,7 +57,7 @@ namespace Gigamonkey::Bitcoin {
             address encode () const;
 
             std::strong_ordering operator <=> (const decoded &) const;
-            operator string () const;
+            explicit operator string () const;
         };
 
         static decoded decode (string_view);
@@ -74,7 +74,7 @@ namespace Gigamonkey::Bitcoin {
         pubkey (const secp256k1::pubkey &p) : secp256k1::pubkey {p} {}
         
         explicit pubkey (string_view s) : secp256k1::pubkey {} {
-            maybe<bytes> hex = encoding::hex::read(s);
+            maybe<bytes> hex = encoding::hex::read (s);
             if (bool (hex)) {
                 this->resize (hex->size ());
                 std::copy (hex->begin (), hex->end (), this->begin ());
@@ -85,16 +85,16 @@ namespace Gigamonkey::Bitcoin {
         
         explicit operator string () const;
         
-        bool verify (const signature &x, const sighash::document& document) const {
+        bool verify (const signature &x, const sighash::document &document) const {
             return signature::verify (x, *this, document);
         }
     };
 
-    std::ostream inline &operator << (std::ostream& o, const address& a) {
+    std::ostream inline &operator << (std::ostream& o, const address &a) {
         return o << static_cast<string> (a);
     }
 
-    std::ostream inline &operator << (std::ostream& o, const pubkey& a) {
+    std::ostream inline &operator << (std::ostream& o, const pubkey &a) {
         return o << string (a);
     }
 
@@ -123,7 +123,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     inline address::decoded::decoded () : Prefix {}, Digest {} {}
-    inline address::decoded::decoded (type p, const digest160& d) : Prefix {p}, Digest {d} {}
+    inline address::decoded::decoded (type p, const digest160 &d) : Prefix {p}, Digest {d} {}
 
     inline address::address () : string {} {}
     inline address::address (type p, const digest160& d) : address {encode (p, d)} {}

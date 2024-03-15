@@ -47,7 +47,7 @@ namespace Gigamonkey::Stratum::mining {
             Merkle::digests n;
             p.resize (x.size ());
             for (auto it = p.rbegin (); it != p.rend (); ++it) {
-                *it = write (n.first ().Value);
+                *it = write (n.first ());
                 n = n.rest ();
             }
             return p;
@@ -97,7 +97,7 @@ namespace Gigamonkey::Stratum::mining {
         }
         
         encoding::hex::fixed<4> inline write (const Bitcoin::timestamp& x) {
-            return encoding::hex::write (uint32_big {x.Value}, hex_case::lower);
+            return encoding::hex::write (uint32_big {x}, hex_case::lower);
         }
         
         bool read(const JSON &j, Bitcoin::timestamp &x) {
@@ -125,11 +125,11 @@ namespace Gigamonkey::Stratum::mining {
             return true;
         }
         
-        encoding::hex::fixed<4> inline write (const nonce &x) {
+        encoding::hex::fixed<4> inline write (const Bitcoin::nonce &x) {
             return encoding::hex::write (uint32_big {x}, hex_case::lower);
         }
         
-        bool read (const JSON &j, nonce &x) {
+        bool read (const JSON &j, Bitcoin::nonce &x) {
             if (!j.is_string ()) return false;
             string str (j);
             if (str.size () != 8) return false;
@@ -167,10 +167,10 @@ namespace Gigamonkey::Stratum::mining {
     }
         
     parameters submit_request::serialize (const share &Share) {
-        if (Share.Share.Bits) return parameters {Share.Name, Share.JobID, write(Share.Share.ExtraNonce2),
+        if (Share.Share.Bits) return parameters {Share.Name, Share.JobID, write (Share.Share.ExtraNonce2),
             write (Share.Share.Timestamp), write (Share.Share.Nonce), write (*Share.Share.Bits)};
         
-        return parameters {Share.Name, Share.JobID, write(Share.Share.ExtraNonce2),
+        return parameters {Share.Name, Share.JobID, write (Share.Share.ExtraNonce2),
             write (Share.Share.Timestamp), write (Share.Share.Nonce)};
     }
     

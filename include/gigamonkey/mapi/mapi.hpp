@@ -71,11 +71,11 @@ namespace Gigamonkey::BitcoinAssociation {
             bool valid () const;
             
             get_fee_quote_response(
-                const string& apiVersion, 
-                const string& timestamp, 
-                const string& expiryTime, 
-                const secp256k1::pubkey& minerId, 
-                const digest256& currentHighestBlockHash,
+                const string &apiVersion, 
+                const string &timestamp, 
+                const string &expiryTime, 
+                const secp256k1::pubkey &minerId, 
+                const digest256 &currentHighestBlockHash,
                 uint64 currentHighestBlockHeight, 
                 map<string, fee> fees);
             
@@ -90,15 +90,15 @@ namespace Gigamonkey::BitcoinAssociation {
             JSON Policies;
             
             get_policy_quote_response (
-                const string& apiVersion, 
-                const string& timestamp, 
-                const string& expiryTime, 
-                const secp256k1::pubkey& minerId, 
-                const digest256& currentHighestBlockHash,
+                const string &apiVersion, 
+                const string &timestamp, 
+                const string &expiryTime, 
+                const secp256k1::pubkey &minerId, 
+                const digest256 &currentHighestBlockHash,
                 uint64 currentHighestBlockHeight, 
                 map<string, fee> fees, 
                 list<net::IP::address> callbacks,
-                const JSON& policies);
+                const JSON &policies);
             
             bool valid ();
             
@@ -140,9 +140,9 @@ namespace Gigamonkey::BitcoinAssociation {
             bool valid () const;
             
             transaction_status (
-                const digest256& txid, 
+                const digest256 &txid, 
                 return_result returnResult,
-                const string& resultDescription,
+                const string &resultDescription,
                 list<conflicted_with> conflicted = {}) :
                 TXID {txid}, ReturnResult {returnResult},
                 ResultDescription {resultDescription}, ConflictedWith {conflicted} {}
@@ -167,21 +167,21 @@ namespace Gigamonkey::BitcoinAssociation {
             bool valid () const;
             
             transaction_status_response (
-                const string& apiVersion, 
-                const string& timestamp, 
-                const digest256& txid, 
+                const string &apiVersion, 
+                const string &timestamp, 
+                const digest256 &txid, 
                 return_result returnResult, 
-                const string& resultDescription, 
-                const secp256k1::pubkey& minerId, 
+                const string &resultDescription, 
+                const secp256k1::pubkey &minerId, 
                 uint32 txSecondMempoolExpiry);
             
             transaction_status_response (
-                const string& apiVersion, 
-                const string& timestamp, 
-                const digest256& txid, 
+                const string &apiVersion, 
+                const string &timestamp, 
+                const digest256 &txid, 
                 return_result returnResult, 
-                const string& resultDescription, 
-                const secp256k1::pubkey& minerId, 
+                const string &resultDescription, 
+                const secp256k1::pubkey &minerId, 
                 uint32 txSecondMempoolExpiry, 
                 const digest256 blockHash, 
                 uint32 blockHeight, 
@@ -374,12 +374,12 @@ namespace Gigamonkey::BitcoinAssociation {
             CurrentHighestBlockHash.valid () && CurrentHighestBlockHeight != 0 && data::valid(Fees);
     }
     
-    inline MAPI::get_fee_quote_response::get_fee_quote_response(
-        const string& v, 
-        const string& t, 
-        const string& ex, 
-        const secp256k1::pubkey& id, 
-        const digest256& hx,
+    inline MAPI::get_fee_quote_response::get_fee_quote_response (
+        const string &v, 
+        const string &t, 
+        const string &ex, 
+        const secp256k1::pubkey &id, 
+        const digest256 &hx,
         uint64 cx, 
         map<string, fee> f) : 
         APIVersion {v}, Timestamp {t}, ExpiryTime {ex}, MinerID {id},
@@ -390,15 +390,15 @@ namespace Gigamonkey::BitcoinAssociation {
         CurrentHighestBlockHash {}, CurrentHighestBlockHeight {0}, Fees {} {}
             
     inline MAPI::get_policy_quote_response::get_policy_quote_response(
-        const string& apiVersion, 
-        const string& timestamp, 
-        const string& expiryTime, 
-        const secp256k1::pubkey& minerId, 
-        const digest256& currentHighestBlockHash,
+        const string &apiVersion, 
+        const string &timestamp, 
+        const string &expiryTime, 
+        const secp256k1::pubkey &minerId, 
+        const digest256 &currentHighestBlockHash,
         uint64 currentHighestBlockHeight, 
         map<string, fee> fees, 
         list<net::IP::address> callbacks,
-        const JSON& policies) : 
+        const JSON &policies) : 
         get_fee_quote_response{
             apiVersion, timestamp, expiryTime, minerId, 
             currentHighestBlockHash, currentHighestBlockHeight, fees}, 

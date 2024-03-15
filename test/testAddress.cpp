@@ -100,13 +100,13 @@ namespace Gigamonkey::Bitcoin {
     TEST(AddressTest, TestRecoverBase58) {
         
         ptr<crypto::entropy> entropy = std::static_pointer_cast<crypto::entropy> (std::make_shared<crypto::fixed_entropy> (
-            bytes_view (bytes::from_string ("atehu=eSRCjt.r83085[934[498[35"))));
+            bytes_view (bytes (string ("atehu=eSRCjt.r83085[934[498[35")))));
         
-        crypto::NIST::DRBG random {crypto::NIST::DRBG::HMAC_DRBG, entropy, bytes {}, 305};
+        crypto::NIST::DRBG random {crypto::NIST::DRBG::HMAC, *entropy, bytes {}, 305};
         
         digest160 pubkey_hash;
         
-        random >> pubkey_hash.Value;
+        random >> pubkey_hash;
         
         Bitcoin::address address {Bitcoin::address::main, pubkey_hash};
         
@@ -117,7 +117,7 @@ namespace Gigamonkey::Bitcoin {
         string replaced;
 
         {
-            int replace_at = std::uniform_int_distribution<int>(0, address.size() - 1) (random);
+            int replace_at = std::uniform_int_distribution<int> (0, address.size () - 1) (random);
             
             char replace_with;
             do {
@@ -154,9 +154,9 @@ namespace Gigamonkey::Bitcoin {
             std::copy (address.begin () + delete_at + 1, address.end (), deleted.begin () + delete_at);
         }
         
-        EXPECT_EQ (address_check, base58::check::recover(replaced));
-        EXPECT_EQ (address_check, base58::check::recover(inserted));
-        EXPECT_EQ (address_check, base58::check::recover(deleted));
+        EXPECT_EQ (address_check, base58::check::recover (replaced));
+        EXPECT_EQ (address_check, base58::check::recover (inserted));
+        EXPECT_EQ (address_check, base58::check::recover (deleted));
         
     }
     

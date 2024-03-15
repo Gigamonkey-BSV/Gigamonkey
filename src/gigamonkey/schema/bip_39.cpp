@@ -15,26 +15,26 @@
 
 
 namespace Gigamonkey::HD::BIP_39 {
-    char getBit(int index,bytes bitarray) {
+    char getBit (int index,bytes bitarray) {
         return (bitarray[index/8] >> 7-(index & 0x7)) & 0x1;
     }
 
-    void setBit(int index, int value,bytes& bitarray) {
+    void setBit (int index, int value,bytes& bitarray) {
         bitarray[index/8] = bitarray[index/8] | (value  << 7-(index & 0x7));
     }
     
-    const cross<std::string>& getWordList(language lang) {
-        switch(lang) {
+    const cross<std::string> &getWordList (language lang) {
+        switch (lang) {
             case english:
-                return english_words();
+                return english_words ();
             case japanese:
-                return japanese_words();
+                return japanese_words ();
             default:
-                return english_words();
+                return english_words ();
         }
     }
     
-    std::string getLangSplit(language lang) {
+    std::string getLangSplit (language lang) {
         switch(lang) {
             case japanese:
                 return "\u3000";
@@ -43,110 +43,107 @@ namespace Gigamonkey::HD::BIP_39 {
         }
     }
 
-    seed read(std::string words, const string& passphrase, language lang) {
-        if(lang!=english)
-            throw data::method::unimplemented("Non English Language");
+    seed read (std::string words, const string &passphrase, language lang) {
+        if (lang != english)
+            throw data::method::unimplemented ("Non English Language");
         /*if(!valid(passphrase,lang)) {
             throw "Invalid Words";
         }*/
         std::string passcode;
-        char wordsBA2[words.length()];
-        for(int i=0;i<words.length();i++)
-        {
-            wordsBA2[i]=words[i];
-        }
-        std::string salt="mnemonic"+passphrase;
+        char wordsBA2[words.length ()];
+        for (int i = 0; i < words.length (); i++) wordsBA2[i] = words[i];
+        std::string salt = "mnemonic" + passphrase;
         CryptoPP::PKCS5_PBKDF2_HMAC<CryptoPP::SHA512> pbkdf2;
         byte key[64];
 
-        pbkdf2.DeriveKey(key,sizeof(key),0,(const byte *)wordsBA2,words.length(),(const byte *)salt.data(),salt.length(),2048);
-        seed seedObj(64);
-        std::copy(std::begin(key),std::end(key),seedObj.begin());
+        pbkdf2.DeriveKey (key, sizeof (key), 0, (const byte *) wordsBA2, words.length (), (const byte *) salt.data (), salt.length (), 2048);
+        seed seedObj (64);
+        std::copy (std::begin (key), std::end (key), seedObj.begin ());
         return seedObj;
     }
 
-    std::string generate(entropy ent, language lang) {
-        if(lang!=english)
-            throw data::method::unimplemented("Non English Language");
-        assert(ent.size()%4==0);
-        assert(ent.size() >= 16 && ent.size() <= 32);
+    std::string generate (entropy ent, language lang) {
+        if (lang != english)
+            throw data::method::unimplemented ("Non English Language");
+        assert (ent.size () % 4 == 0);
+        assert (ent.size () >= 16 && ent.size () <= 32);
         byte abDigest[CryptoPP::SHA256::DIGESTSIZE];
-        CryptoPP::SHA256().CalculateDigest(abDigest, ent.data(), ent.size());
-        int checksumLength=(ent.size()*8) /32;
-        byte checkByte=abDigest[0];
-        byte mask=1;
+        CryptoPP::SHA256 ().CalculateDigest (abDigest, ent.data (), ent.size ());
+        int checksumLength = (ent.size () * 8) /32;
+        byte checkByte = abDigest[0];
+        byte mask = 1;
         mask = (1 << checksumLength) - 1;
         mask = mask << 8-checksumLength;
-        checkByte&=mask;
-        ent.emplace_back(checkByte);
-        std::vector<int16> word_indices((((ent.size()-1)*8)+checksumLength)/11);
-        std::fill(word_indices.begin(), word_indices.end(), 0);
-        for(int i=0;i<word_indices.size()*11;i++)
-        {
-            word_indices[i /11]+=getBit(i,ent) << (10 - (i%11));
-        }
+        checkByte &= mask;
+        ent.emplace_back (checkByte);
+        std::vector<int16> word_indices ((((ent.size () - 1) * 8) + checksumLength) / 11);
+        std::fill (word_indices.begin (), word_indices.end (), 0);
+
+        for (int i = 0; i < word_indices.size () * 11; i++)
+            word_indices[i /11]+=getBit (i,ent) << (10 - (i % 11));
+
         cross<std::string> words_ret;
-        const cross<std::string>& wordList=getWordList(lang);
+        const cross<std::string>& wordList = getWordList (lang);
 
         for(short word_indice : word_indices)
         {
-            words_ret.emplace_back(wordList[word_indice]);
+            words_ret.emplace_back (wordList[word_indice]);
         }
-        std::string output="";
-        for(std::string str : words_ret)
-            output+=str+getLangSplit(lang);
-        switch(lang)
-        {
+
+        std::string output = "";
+        for (std::string str : words_ret) output += str + getLangSplit (lang);
+
+        switch (lang) {
             case japanese:
-                boost::trim_right_if(output,boost::is_any_of(getLangSplit(lang)));
+                boost::trim_right_if (output, boost::is_any_of (getLangSplit (lang)));
             case english:
-                boost::trim_right(output);
+                boost::trim_right (output);
         }
 
         return output;
     }
 
-    bool valid(std::string words_text,language lang) {
+    bool valid (std::string words_text, language lang) {
         std::vector<std::string> wordsList;
-        boost::split(wordsList, words_text, boost::is_any_of(getLangSplit(lang)));
-        std::vector<int> wordIndices(wordsList.size());
-        const cross<std::string>& refWordList=getWordList(lang);
-        for(int i=0;i<wordsList.size();i++) {
-            bool found=false;
-            for(int j=0;j<refWordList.size();j++) {
-                if(refWordList[j]==wordsList[i]) {
+        boost::split (wordsList, words_text, boost::is_any_of (getLangSplit (lang)));
+        std::vector<int> wordIndices (wordsList.size ());
+        const cross<std::string> &refWordList = getWordList (lang);
+
+        for (int i = 0; i < wordsList.size (); i++) {
+            bool found = false;
+            for (int j = 0; j < refWordList.size (); j++) {
+                if (refWordList[j] == wordsList[i]) {
                     wordIndices[i] = j;
-                    found=true;
+                    found = true;
                 }
             }
-            if(!found)
-                return false;
 
-
+            if (!found) return false;
         }
-        int wordIndicesSize=wordIndices.size();
-        double numBits=((wordIndices.size())*11);
-        bytes byteArray(std::ceil(numBits/8));
-        for(int i=0;i<numBits;i++ )
+
+        int wordIndicesSize = wordIndices.size ();
+        double numBits = ((wordIndices.size ()) * 11);
+        bytes byteArray (std::ceil (numBits / 8));
+        for (int i = 0; i < numBits; i++)
         {
-            bool bit=((wordIndices[i/11]) & (1<<(10-(i%11))));
-            setBit(i,bit,byteArray);
+            bool bit = ((wordIndices[i/11]) & (1 << (10 - (i % 11))));
+            setBit (i, bit, byteArray);
         }
-        byte check=byteArray[byteArray.size()-1];
+        byte check = byteArray[byteArray.size () - 1];
         byte abDigest[CryptoPP::SHA256::DIGESTSIZE];
-        CryptoPP::SHA256().CalculateDigest(abDigest, byteArray.data(), byteArray.size()-1);
-        int checksumLength=((byteArray.size()-1)*8) /32;
-        byte checkByte=abDigest[0];
-        byte mask=1;
+        CryptoPP::SHA256 ().CalculateDigest (abDigest, byteArray.data (), byteArray.size () - 1);
+        int checksumLength = ((byteArray.size () - 1) * 8) / 32;
+        byte checkByte = abDigest[0];
+        byte mask = 1;
         mask = (1 << checksumLength) - 1;
-        mask = mask << 8-checksumLength;
-        checkByte&=mask;
+        mask = mask << 8 - checksumLength;
+        checkByte &= mask;
 
-        return checkByte==check;
+        return checkByte == check;
     }
     
-    const cross<std::string> &english_words() {
-        static cross<std::string> Words{
+    const cross<std::string> &english_words () {
+        static cross<std::string> Words {
             "abandon", "ability", "able", "about", "above", "absent", "absorb", "abstract", "absurd", "abuse",
             "access", "accident", "account", "accuse", "achieve", "acid", "acoustic", "acquire", "across", "act",
             "action", "actor", "actress", "actual", "adapt", "add", "addict", "address", "adjust", "admit", "adult",
@@ -342,8 +339,8 @@ namespace Gigamonkey::HD::BIP_39 {
         return Words;
     };
     
-    const cross<std::string> &japanese_words() {
-        static cross<std::string> Words{
+    const cross<std::string> &japanese_words () {
+        static cross<std::string> Words {
                 "あいこくしん", "あいさつ", "あいだ", "あおぞら", "あかちゃん", "あきる", "あけがた", "あける", "あこがれる",
                 "あさい", "あさひ", "あしあと", "あじわう", "あずかる", "あずき", "あそぶ", "あたえる", "あたためる",
                 "あたりまえ", "あたる", "あつい", "あつかう", "あっしゅく", "あつまり", "あつめる", "あてな", "あてはまる", "あひる",

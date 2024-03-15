@@ -44,7 +44,7 @@ namespace Gigamonkey::Bitcoin {
 
     // A Bitcoin checksum takes the hash256 value of a string
     // and appends the last 4 bytes of the result. 
-    Gigamonkey::checksum checksum (bytes_view b);
+    check checksum (bytes_view b);
 
     bytes append_checksum (bytes_view b);
 
@@ -54,16 +54,16 @@ namespace Gigamonkey::Bitcoin {
 
 namespace Gigamonkey::base58 {
 
-    inline bool check::valid () const {
+    bool inline check::valid () const {
         return size() > 0;
     }
 
-    inline byte check::version () const {
+    byte inline check::version () const {
         if (!valid ()) return 0;
-        return operator[] (0);
+        return operator [] (0);
     }
 
-    inline bytes_view check::payload () const {
+    bytes_view inline check::payload () const {
         if (!valid ()) return {};
         return bytes_view (*this).substr (1);
     }

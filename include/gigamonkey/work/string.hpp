@@ -15,65 +15,66 @@ namespace Gigamonkey::work {
         uint256 MerkleRoot;
         Bitcoin::timestamp Timestamp;
         compact Target;
-        nonce Nonce;
+        Bitcoin::nonce Nonce;
         
-        string() : Category(0), Digest(0), MerkleRoot(0), Timestamp(), Target(0), Nonce(0) {}
-        string(int32_little v, uint256 d, uint256 mp, Bitcoin::timestamp ts, compact tg, nonce n) : 
-            Category{v}, Digest{d}, MerkleRoot{mp}, Timestamp{ts}, Target{tg}, Nonce{n} {}
-        string(uint16_little m, uint16_little b, uint256 d, uint256 mp, Bitcoin::timestamp ts, compact tg, nonce n) : 
-            Category{ASICBoost::category(m, b)}, Digest{d}, MerkleRoot{mp}, Timestamp{ts}, Target{tg}, Nonce{n} {}
+        string () : Category (0), Digest (0), MerkleRoot (0), Timestamp (), Target (0), Nonce (0) {}
+        string (int32_little v, uint256 d, uint256 mp, Bitcoin::timestamp ts, compact tg, Bitcoin::nonce n) :
+            Category {v}, Digest {d}, MerkleRoot {mp}, Timestamp {ts}, Target {tg}, Nonce {n} {}
+        string (uint16_little m, uint16_little b, uint256 d, uint256 mp, Bitcoin::timestamp ts, compact tg, Bitcoin::nonce n) :
+            Category {ASICBoost::category (m, b)}, Digest {d}, MerkleRoot {mp}, Timestamp {ts}, Target {tg}, Nonce {n} {}
         
-        static string read(const slice<80> x) {
-            return string{
-                Bitcoin::header::version(x), 
-                uint<32>{Bitcoin::header::previous(x)}, 
-                uint<32>{Bitcoin::header::merkle_root(x)}, 
-                Bitcoin::timestamp{Bitcoin::header::timestamp(x)}, 
-                compact{Bitcoin::header::target(x)}, 
-                Bitcoin::header::nonce(x)};
+        static string read (const slice<80> x) {
+            return string {
+                Bitcoin::header::version (x), 
+                uint_little<32> {Bitcoin::header::previous (x)},
+                uint_little<32> {Bitcoin::header::merkle_root (x)},
+                Bitcoin::timestamp {Bitcoin::header::timestamp (x)}, 
+                compact {Bitcoin::header::target (x)}, 
+                Bitcoin::header::nonce (x)};
         }
         
-        explicit string(const slice<80>& x) : string(read(x)) {}
+        explicit string (const slice<80> &x) : string (read (x)) {}
         
-        byte_array<80> write() const {
-            return operator Bitcoin::header().write();
+        byte_array<80> write () const {
+            return operator Bitcoin::header ().write ();
         }
         
-        uint256 hash() const {
-            return Bitcoin::Hash256(write());
+        uint256 hash () const {
+            return Bitcoin::Hash256 (write ());
         }
         
-        static bool valid(const slice<80> x) {
-            return Bitcoin::Hash256(x).Value < Bitcoin::header::target(x).expand();
+        static bool valid (const slice<80> x) {
+            return Bitcoin::Hash256 (x) < Bitcoin::header::target (x).expand ();
         }
         
-        bool valid() const;
+        bool valid () const;
         
-        explicit string(const Bitcoin::header& h) : 
-            Category(h.Version), Digest(h.Previous), MerkleRoot(h.MerkleRoot), Timestamp(h.Timestamp), Target(h.Target), Nonce(h.Nonce) {}
+        explicit string (const Bitcoin::header &h) : 
+            Category (h.Version), Digest (h.Previous), MerkleRoot (h.MerkleRoot), 
+            Timestamp (h.Timestamp), Target (h.Target), Nonce (h.Nonce) {}
         
-        work::difficulty difficulty() const {
-            return Target.difficulty();
+        work::difficulty difficulty () const {
+            return Target.difficulty ();
         }
         
-        explicit operator Bitcoin::header() const {
-            return {Category, digest256{Digest}, digest256{MerkleRoot}, Timestamp, Target, Nonce};
+        explicit operator Bitcoin::header () const {
+            return {Category, digest256 {Digest}, digest256 {MerkleRoot}, Timestamp, Target, Nonce};
         }
         
-        int32_little version() const {
-            return ASICBoost::version(Category);
+        int32_little version () const {
+            return ASICBoost::version (Category);
         }
         
-        uint16_little magic_number() const {
-            return ASICBoost::magic_number(Category);
+        uint16_little magic_number () const {
+            return ASICBoost::magic_number (Category);
         }
         
-        uint16_little general_purpose_bits() const {
+        uint16_little general_purpose_bits () const {
             return ASICBoost::bits(Category);
         }
     };
         
-    bool inline operator==(const string& x, const string& y) {
+    bool inline operator == (const string &x, const string &y) {
         return y.Category == x.Category && 
             y.Digest == x.Digest && 
             y.MerkleRoot == x.MerkleRoot && 
@@ -82,16 +83,16 @@ namespace Gigamonkey::work {
             y.Nonce == x.Nonce;
     }
     
-    bool inline operator!=(const string& x, const string& y) {
+    bool inline operator != (const string &x, const string &y) {
         return !(x == y);
     }
     
-    inline std::ostream& operator<<(std::ostream& o, const string& work_string) {
-        return o << "work_string{" << data::encoding::hex::write(work_string.write()) << "}";
+    std::ostream inline &operator << (std::ostream &o, const string &work_string) {
+        return o << "work_string{" << data::encoding::hex::write (work_string.write ()) << "}";
     }
 
-    bool inline string::valid() const {
-        return hash() < Target.expand();
+    bool inline string::valid () const {
+        return hash () < Target.expand ();
     }
 }
 

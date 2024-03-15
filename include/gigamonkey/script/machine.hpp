@@ -8,9 +8,11 @@
 #include <gigamonkey/script/stack.hpp>
 #include <gigamonkey/script/counter.hpp>
 #include <gigamonkey/script/config.hpp>
-#include <data/io/wait_for_enter.hpp>
 
 namespace Gigamonkey::Bitcoin::interpreter { 
+
+    using stack = LimitedStack<Z>;
+    using vector = LimitedVector<Z>;
     
     // a Bitcoin script interpreter that can be advanced step-by-step.
     struct machine {
@@ -28,18 +30,18 @@ namespace Gigamonkey::Bitcoin::interpreter {
             bytes Script;
             program_counter Counter;
             
-            LimitedStack<element> Stack;
-            LimitedStack<element> AltStack;
+            stack Stack;
+            stack AltStack;
             
-            std::vector<bool> Exec;
-            std::vector<bool> Else;
+            cross<bool> Exec;
+            cross<bool> Else;
             
             long OpCount;
             
             state (uint32 flags, bool consensus, maybe<redemption_document> doc, const bytes &script);
             
             program unread () const {
-                return decompile (bytes_view{Counter.Script}.substr(Counter.Counter));
+                return decompile (bytes_view {Counter.Script}.substr (Counter.Counter));
             }
             
             result step ();
@@ -68,33 +70,21 @@ namespace Gigamonkey::Bitcoin::interpreter {
         
         program inline full (const program unlock, const program lock) {
             if (!isP2SH (lock) || data::empty (unlock)) return (unlock << OP_CODESEPARATOR) + lock;
-            return (unlock << OP_CODESEPARATOR) + (lock << OP_CODESEPARATOR) + decompile(data::reverse(unlock).first().data());
+            return (unlock << OP_CODESEPARATOR) + (lock << OP_CODESEPARATOR) + decompile (data::reverse (unlock).first ().data ());
         }
         
         ScriptError check_scripts (const program unlock, const program lock, uint32 flags) {
-            if (flags & SCRIPT_VERIFY_SIGPUSHONLY && !is_push(unlock)) return SCRIPT_ERR_SIG_PUSHONLY;
+            if (flags & SCRIPT_VERIFY_SIGPUSHONLY && !is_push (unlock)) return SCRIPT_ERR_SIG_PUSHONLY;
+
             if (isP2SH (lock)) {
                 if (unlock.empty ()) return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 if (!is_push (unlock)) return SCRIPT_ERR_SIG_PUSHONLY;
             }
+
             return verify (full (unlock, lock), flags);
         }
         
-        machine(maybe<redemption_document> doc, const program unlock, const program lock, uint32 flags);
-        
-        static const element &script_false () {
-            static element False (0);
-            return False;
-        }
-    
-        static const element &script_true () {
-            static element True (1, 1);
-            return True;
-        }
-    
-        static const element &script_bool (bool b) {
-            return b ? script_true () : script_false ();
-        }
+        machine (maybe<redemption_document> doc, const program unlock, const program lock, uint32 flags);
         
         static const CScriptNum &script_zero () {
             static CScriptNum Zero (0);
@@ -107,7 +97,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
         }
     };
     
-    std::ostream& operator << (std::ostream &, const machine &);
+    std::ostream &operator << (std::ostream &, const machine &);
     
     void step_through (machine &m);
     
@@ -124,6 +114,10 @@ namespace Gigamonkey::Bitcoin {
         return interpreter::machine (unlock, lock, doc, flags).run ();
     }
     
+}
+
+namespace Gigamonkey::Bitcoin::interpreter {
+
 }
 
 #endif

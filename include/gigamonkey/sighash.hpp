@@ -4,8 +4,8 @@
 #ifndef GIGAMONKEY_SIGHASH
 #define GIGAMONKEY_SIGHASH
 
-#include "hash.hpp"
-#include "incomplete.hpp"
+#include <gigamonkey/hash.hpp>
+#include <gigamonkey/incomplete.hpp>
 
 namespace Gigamonkey::Bitcoin {
     namespace sighash {
@@ -67,7 +67,7 @@ namespace Gigamonkey::Bitcoin {
         
             // the script code contains the previous output script with the 
             // latest instance of OP_CODESEPARATOR before the signature operation 
-            // being evaluated and everything earlier removed. 
+            // being evaluated and everything earlier removed.
             script ScriptCode; 
             
             // the incomplete transaction that will contain this signature 
@@ -97,11 +97,11 @@ namespace Gigamonkey::Bitcoin {
         }
         
         // two different functions are in use, due to the bitcoin Cash hard fork. 
-        bytes write_original (const document&, sighash::directive);
-        bytes write_Bitcoin_Cash (const document&, sighash::directive);
+        bytes write_original (const document &, sighash::directive);
+        bytes write_Bitcoin_Cash (const document &, sighash::directive);
         
-        writer &write_original (writer&, const document&, sighash::directive);
-        writer &write_Bitcoin_Cash (writer&, const document&, sighash::directive);
+        writer &write_original (writer &, const document &, sighash::directive);
+        writer &write_Bitcoin_Cash (writer &, const document &, sighash::directive);
         
         bytes inline write_original (const document &doc, sighash::directive d) {
             lazy_bytes_writer w;
@@ -127,7 +127,7 @@ namespace Gigamonkey::Bitcoin {
         }
         
         namespace Amaury {
-            bytes write (const document&, sighash::directive);
+            bytes write (const document &, sighash::directive);
             writer &write (writer &w, const document &doc, sighash::directive d);
             digest256 hash_prevouts (const incomplete::transaction &);
             digest256 hash_sequence (const incomplete::transaction &);
@@ -135,7 +135,7 @@ namespace Gigamonkey::Bitcoin {
         }
         
         writer inline &write_Bitcoin_Cash (writer &w, const document &doc, sighash::directive d) {
-            return sighash::has_fork_id (d) ? Amaury::write(w, doc, d) : write_original(w, doc, d & ~sighash::fork_id);
+            return sighash::has_fork_id (d) ? Amaury::write (w, doc, d) : write_original (w, doc, d & ~sighash::fork_id);
         }
         
         namespace Amaury {
@@ -146,7 +146,6 @@ namespace Gigamonkey::Bitcoin {
                 return w;
             }
             
-            writer &write (writer &w, const document &doc, sighash::directive d);
         }
         
     }

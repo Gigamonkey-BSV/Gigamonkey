@@ -9,7 +9,7 @@
 namespace Gigamonkey {
     
     struct pay_to_address {
-        static Gigamonkey::pattern pattern (bytes& address) {
+        static Gigamonkey::pattern pattern (bytes &address) {
             using namespace Bitcoin;
             return {OP_DUP, OP_HASH160, push_size {20, address}, OP_EQUALVERIFY, OP_CHECKSIG};
         }
@@ -33,12 +33,17 @@ namespace Gigamonkey {
             using namespace Bitcoin;
             bytes addr {20};
             if (!pattern (addr).match (script)) return;
-            std::copy (addr.begin (), addr.end (), Address.Value.begin ());
+            std::copy (addr.begin (), addr.end (), Address.begin ());
         }
         
         static bytes redeem (const Bitcoin::signature& s, const Bitcoin::pubkey& p) {
             using namespace Bitcoin;
             return compile (program {} << push_data (s) << push_data (p));
+        }
+
+        static uint64 redeem_expected_size (bool compressed_pubkey) {
+            return 2 + Bitcoin::signature::MaxSize +
+                (compressed_pubkey ? secp256k1::pubkey::CompressedSize : secp256k1::pubkey::UncompressedSize);
         }
     };
     

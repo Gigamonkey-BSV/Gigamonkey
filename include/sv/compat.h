@@ -92,10 +92,10 @@ using ssize_t = int32_t;
 #endif
 
 #if HAVE_DECL_STRNLEN == 0
-size_t strnlen(const char *start, size_t max_len);
+size_t strnlen (const char *start, size_t max_len);
 #endif // HAVE_DECL_STRNLEN
 
-static bool inline IsSelectableSocket(SOCKET s) {
+static bool inline IsSelectableSocket (SOCKET s) {
 #ifdef WIN32
     return true;
 #else

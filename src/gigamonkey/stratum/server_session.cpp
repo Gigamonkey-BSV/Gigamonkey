@@ -43,9 +43,9 @@ namespace Gigamonkey::Stratum {
     // authorize the client to the server. 
     // this is the original first method of the protocol. 
     mining::authorize_response server_session::authorize(const mining::authorize_request &r) {
-        if (!r.valid ()) return response {r.id (), nullptr, error {ILLEGAL_PARAMS}};
+        if (!r.valid ()) return mining::authorize_response {r.id (), error {ILLEGAL_PARAMS}};
         
-        if (State.authorized ()) return response {r.id (), false, error {ILLEGAL_METHOD}};
+        if (State.authorized ()) return mining::authorize_response {r.id (), error {ILLEGAL_METHOD}};
         
         auto authorization = authorize (r.params ());
         

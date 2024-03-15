@@ -3,7 +3,7 @@
 
 namespace Gigamonkey {
     
-    string typed_data::write (type t, byte version, network n, const bytes& b) {
+    string typed_data::write (type t, byte version, network n, const bytes &b) {
         std::stringstream ss;
         
         switch (t) {
@@ -14,11 +14,11 @@ namespace Gigamonkey {
             default: throw "invalid data type";
         }
         
-        bytes data = bytes::write (b.size() + 2, version, byte(n), b);
+        bytes data = write_bytes (b.size () + 2, version, byte (n), b);
         
         ss << ':' << encoding::hex::write (data, hex_case::lower);
         
-        auto checksum = Bitcoin::checksum (bytes::from_string (ss.str ()));
+        auto checksum = Bitcoin::checksum (bytes (string (ss.str ())));
         
         ss << encoding::hex::write (checksum, hex_case::lower);
         
@@ -33,9 +33,9 @@ namespace Gigamonkey {
         
         bytes last_4_bytes = *encoding::hex::read (z.substr (z.size () - 8));
         
-        uint32_little expected_checksum;
+        Bitcoin::check expected_checksum;
         std::copy (last_4_bytes.begin (), last_4_bytes.end (), expected_checksum.begin ());
-        uint32_little real_checksum = Bitcoin::checksum (bytes::from_string (z.substr (0, z.size () - 8)));
+        Bitcoin::check real_checksum = Bitcoin::checksum (bytes (string (z.substr (0, z.size () - 8))));
         
         // does the checksum match? 
         if (expected_checksum != real_checksum) return {};

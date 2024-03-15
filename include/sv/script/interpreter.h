@@ -7,21 +7,24 @@
 #ifndef BITCOIN_SCRIPT_INTERPRETER_H
 #define BITCOIN_SCRIPT_INTERPRETER_H
 
+#include <cstdint>
 #include <sv/script/script_num.h>
+#include <data/cross.hpp>
+#include <gigamonkey/script/stack.hpp>
 #include <gigamonkey/script/flags.h>
 #include <gigamonkey/script/error.h>
-#include "limitedstack.h"
-#include <data/cross.hpp>
-
-#include <cstdint>
-#include <optional>
-#include <string>
-#include <vector>
+#include <gigamonkey/script/config.hpp>
 
 class CPubKey;
 class CScript;
-class CScriptConfig;
 class CTransaction;
+
+namespace Satoshi {
+
+typedef Gigamonkey::Bitcoin::Z valtype;
+
+typedef Gigamonkey::Bitcoin::interpreter::LimitedStack<valtype> LimitedStack;
+typedef Gigamonkey::Bitcoin::interpreter::LimitedVector<valtype> LimitedVector;
 
 /**
 * EvalScript function evaluates scripts against predefined limits that are
@@ -30,32 +33,34 @@ class CTransaction;
 * Consensus should be true when validating scripts of transactions that are part of block
 * and it should be false when validating scripts of transactions that are validated for acceptance to mempool
 */
-std::optional<bool> EvalScript (
-    const CScriptConfig &config,
+data::maybe<bool> EvalScript (
+    const script_config &config,
     bool consensus,
     LimitedStack &stack,
     const CScript &script,
     uint32_t flags,
     LimitedStack &altstack,
-    long& ipc,
-    std::vector<bool> &vfExec,
-    std::vector<bool> &vfElse,
+    long &ipc,
+    data::cross<bool> &vfExec,
+    data::cross<bool> &vfElse,
     ScriptError *error = nullptr);
 
-std::optional<bool> EvalScript (
-    const CScriptConfig &config,
+data::maybe<bool> EvalScript (
+    const script_config &config,
     bool consensus,
     LimitedStack &stack,
     const CScript &script,
     uint32_t flags,
     ScriptError *error = nullptr);
 
-std::optional<bool> VerifyScript (
-    const CScriptConfig &config,
+data::maybe<bool> VerifyScript (
+    const script_config &config,
     bool consensus,
     const CScript &scriptSig,
     const CScript &scriptPubKey,
     uint32_t flags,
     ScriptError *serror = nullptr);
+
+}
 
 #endif // BITCOIN_SCRIPT_INTERPRETER_H
