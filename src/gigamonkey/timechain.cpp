@@ -106,6 +106,13 @@ namespace Gigamonkey::Bitcoin {
             *this = block {};
         }
     }
+
+    input::operator bytes () const {
+        bytes b (serialized_size ());
+        bytes_writer w {b.begin (), b.end ()};
+        w << *this;
+        return b;
+    }
     
     output::operator bytes () const {
         bytes b (serialized_size ());

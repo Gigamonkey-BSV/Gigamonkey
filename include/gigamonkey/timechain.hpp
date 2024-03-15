@@ -171,6 +171,8 @@ namespace Gigamonkey::Bitcoin {
         explicit input (bytes_view);
         
         uint64 serialized_size () const;
+
+        explicit operator bytes () const;
     };
     
     struct output {

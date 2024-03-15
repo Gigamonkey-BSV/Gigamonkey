@@ -108,7 +108,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     std::strong_ordering inline timestamp::operator <=> (const timestamp& d) const {
-        return nonzero<uint32_little>::Value <=> d.Value;
+        return uint32 (*this) <=> uint32 (d);
     }
     
     duration inline timestamp::operator - (const timestamp& t) const {
