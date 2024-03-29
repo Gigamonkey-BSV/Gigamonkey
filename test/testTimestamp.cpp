@@ -12,6 +12,8 @@ namespace Gigamonkey::Bitcoin {
         uint32 ut = uint32 (tb);
         EXPECT_EQ (tb, timestamp {ut});
         EXPECT_EQ (t, static_cast<time_t> (ut));
+        std::tm tm (tb);
+        EXPECT_EQ (tm.tm_year + 1900, 2020);
     }
 
 }

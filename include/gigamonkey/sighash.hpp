@@ -86,7 +86,7 @@ namespace Gigamonkey::Bitcoin {
             
         };
         
-        bytes write (const document&, sighash::directive);
+        bytes write (const document &, sighash::directive);
         
         writer &write (writer &w, const document &doc, sighash::directive d);
         

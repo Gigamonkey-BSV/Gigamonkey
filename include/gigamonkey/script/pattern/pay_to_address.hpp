@@ -36,12 +36,12 @@ namespace Gigamonkey {
             std::copy (addr.begin (), addr.end (), Address.begin ());
         }
         
-        static bytes redeem (const Bitcoin::signature& s, const Bitcoin::pubkey& p) {
+        static bytes redeem (const Bitcoin::signature &s, const Bitcoin::pubkey &p) {
             using namespace Bitcoin;
             return compile (program {} << push_data (s) << push_data (p));
         }
 
-        static uint64 redeem_expected_size (bool compressed_pubkey) {
+        static uint64 redeem_expected_size (bool compressed_pubkey = true) {
             return 2 + Bitcoin::signature::MaxSize +
                 (compressed_pubkey ? secp256k1::pubkey::CompressedSize : secp256k1::pubkey::UncompressedSize);
         }

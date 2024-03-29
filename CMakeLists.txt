@@ -64,6 +64,7 @@ add_library (gigamonkey STATIC
     src/gigamonkey/work.cpp
     src/gigamonkey/ledger.cpp
     src/gigamonkey/spv.cpp
+    src/gigamonkey/redeem.cpp
     
     src/gigamonkey/schema/random.cpp
     src/gigamonkey/schema/hd.cpp

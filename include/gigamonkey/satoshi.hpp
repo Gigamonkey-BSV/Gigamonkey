@@ -14,6 +14,7 @@ namespace Gigamonkey::Bitcoin {
     struct satoshi : int64_little {
         using int64_little::int64_little;
         explicit satoshi (uint64_little x);
+        satoshi (): int64_little {0} {}
         
         bool valid () const {
             return *this >= 0 && *this < 2100000000000000;

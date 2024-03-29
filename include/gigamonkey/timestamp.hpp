@@ -44,7 +44,15 @@ namespace Gigamonkey::Bitcoin {
 
         explicit operator std::chrono::system_clock::time_point () const;
 
-        explicit operator ptr<std::tm> () const;
+        explicit operator std::tm () const;
+
+        uint16 year () const;
+        byte month () const;
+        byte day () const;
+        byte weekday () const;
+        byte hour () const;
+        byte minute () const;
+        byte second () const;
         
     };
 
@@ -113,6 +121,34 @@ namespace Gigamonkey::Bitcoin {
     
     duration inline timestamp::operator - (const timestamp& t) const {
         return double (uint32 (nonzero<uint32_little>::Value)) - double (uint32 (t.Value));
+    }
+
+    uint16 inline timestamp::year () const {
+        return static_cast<uint16> (1900 + std::tm (*this).tm_year);
+    }
+
+    byte inline timestamp::month () const {
+        return static_cast<byte> (std::tm (*this).tm_mon);
+    }
+
+    byte inline timestamp::day () const {
+        return static_cast<byte> (std::tm (*this).tm_mon);
+    }
+
+    byte inline timestamp::weekday () const {
+        return static_cast<byte> (std::tm (*this).tm_wday);
+    }
+
+    byte inline timestamp::hour () const {
+        return static_cast<byte> (std::tm (*this).tm_hour);
+    }
+
+    byte inline timestamp::minute () const {
+        return static_cast<byte> (std::tm (*this).tm_min);
+    }
+
+    byte inline timestamp::second () const {
+        return static_cast<byte> (std::tm (*this).tm_sec);
     }
 
 }
