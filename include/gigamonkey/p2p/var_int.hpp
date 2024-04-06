@@ -30,6 +30,10 @@ namespace Gigamonkey::Bitcoin {
         static size_t size (uint64 x) {
             return x <= 0xfc ? 1 : x <= 0xffff ? 3 : x <= 0xffffffff ? 5 : 9;
         }
+
+        size_t size () const {
+            return size (Value);
+        }
         
         static uint64 read (reader &r);
         
@@ -60,6 +64,10 @@ namespace Gigamonkey::Bitcoin {
         
         static writer inline &write (writer &w, const bytes& b) {
             return w << var_int {b.size ()} << b;
+        }
+
+        static uint32 size (int64 size) {
+            return size + var_int::size (size);
         }
     
     };

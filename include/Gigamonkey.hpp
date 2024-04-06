@@ -1,8 +1,8 @@
 // Copyright (c) 2021 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#ifndef GIGAMONKEY_NUMBER
-#define GIGAMONKEY_NUMBER
+#ifndef GIGAMONKEY
+#define GIGAMONKEY
 
 // Bitcoin has two concepts numbers. The script uses a 
 // little-endian two's complement representation of 
@@ -126,3 +126,4 @@
 // MAPI implementation. I think it's an earlier version
 // so it might need to be updated. 
 #include <gigamonkey/mapi/mapi.hpp>
+#endif GIGAMONKEY

@@ -6,6 +6,7 @@
 
 #include <gigamonkey/hash.hpp>
 #include <gigamonkey/p2p/var_int.hpp>
+#include <gigamonkey/p2p/command.hpp>
 #include <gigamonkey/satoshi.hpp>
 #include <gigamonkey/merkle/proof.hpp>
 #include <gigamonkey/work/target.hpp>
@@ -242,6 +243,8 @@ namespace Gigamonkey::Bitcoin {
                 return x + o.Value;
             }, satoshi {0}, Outputs);
         }
+
+        constexpr static p2p::command Command {"tx"};
     };
     
     txid inline id (const transaction& t) {

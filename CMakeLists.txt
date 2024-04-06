@@ -5,10 +5,9 @@ if (${CMAKE_VERSION} VERSION_LESS 3.12)
     cmake_policy (VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
 endif ()
 
-project (gigamonkey 	VERSION 0.0.13
+project (gigamonkey 	VERSION 0.0.15
 		DESCRIPTION "open-source Bitcoin library in c++"
 		LANGUAGES CXX)
-
 
 ## Check if GTests is installed. If not, install it
 
@@ -22,7 +21,6 @@ find_package (OpenSSL CONFIG REQUIRED)
 find_package (cryptopp CONFIG REQUIRED)
 find_package (nlohmann_json CONFIG REQUIRED)
 find_package (gmp CONFIG REQUIRED)
-
 
 if (PACKAGE_TESTS)
 	include (CTest)
@@ -44,6 +42,8 @@ add_library (gigamonkey STATIC
     
     src/gigamonkey/p2p/var_int.cpp
     src/gigamonkey/p2p/checksum.cpp
+    src/gigamonkey/p2p/version.cpp
+
     src/gigamonkey/secp256k1.cpp
     src/gigamonkey/timestamp.cpp
     src/gigamonkey/incomplete.cpp
@@ -92,9 +92,7 @@ add_library (gigamonkey STATIC
     
 )
 
-
-
-target_link_libraries(gigamonkey PUBLIC 
+target_link_libraries (gigamonkey PUBLIC
 data::data 
 util 
 boost::boost 
@@ -108,8 +106,8 @@ target_include_directories (gigamonkey PUBLIC include)
 
 # Set C++ version
 target_compile_features (gigamonkey PUBLIC cxx_std_20)
-set_target_properties (gigamonkey PROPERTIES CXX_EXTENSIONS ON)
+set_target_properties (gigamonkey PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_options (gigamonkey PUBLIC "-fconcepts")
 
-install(DIRECTORY include/ DESTINATION include)
-install(TARGETS gigamonkey)
+install (DIRECTORY include/ DESTINATION include)
+install (TARGETS gigamonkey)

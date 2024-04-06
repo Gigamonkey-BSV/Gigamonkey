@@ -31,7 +31,7 @@ class GigamonkeyConan (ConanFile):
         if "CURRENT_VERSION" in environ:
             self.version = environ['CURRENT_VERSION']
         else:
-            self.version = "v0.0.14"
+            self.version = "v0.0.15"
 
     def config_options (self):
         if self.settings.os == "Windows":

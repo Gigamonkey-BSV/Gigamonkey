@@ -4,7 +4,7 @@
 #ifndef GIGAMONKEY_P2P_CHECKSUM
 #define GIGAMONKEY_P2P_CHECKSUM
 
-#include <gigamonkey/types.hpp>
+#include <gigamonkey/hash.hpp>
 
 namespace Gigamonkey::base58 {
 
@@ -34,6 +34,10 @@ namespace Gigamonkey::base58 {
         // to see if we can find a valid base58 check encoded string. 
         static check recover (const string_view invalid);
 
+        struct writer : crypto::hash::Bitcoin<32> {
+            check finalize ();
+        };
+
     private:
         check ();
     };
@@ -55,7 +59,7 @@ namespace Gigamonkey::Bitcoin {
 namespace Gigamonkey::base58 {
 
     bool inline check::valid () const {
-        return size() > 0;
+        return size () > 0;
     }
 
     byte inline check::version () const {
