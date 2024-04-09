@@ -19,6 +19,11 @@ namespace Gigamonkey {
         return drop (encoding::hexidecimal::write (x), 2);
     }
 
+    template<size_t size>
+    digest<size> inline read_backwards_hex (const std::string &x) {
+        return digest<size> {std::string {"0x"} + x};
+    }
+
     template <size_t size>
     writer &operator << (writer &w, const digest<size> &s);
 

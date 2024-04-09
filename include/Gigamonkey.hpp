@@ -126,8 +126,8 @@
 // transaction.
 #include <gigamonkey/redeem.hpp>
 
-// MAPI implementation. I think it's an earlier version
-// so it might need to be updated. 
+// MAPI, a protocol for querying miners about transactions
+// that are being processed. This protocol is depricated however.
 #include <gigamonkey/pay/MAPI.hpp>
 
 #endif GIGAMONKEY

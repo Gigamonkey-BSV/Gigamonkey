@@ -96,7 +96,7 @@ namespace Gigamonkey::SPV {
     // the transaction is valid.
     maybe<proof> generate_proof (const database &d, const bytes &b);
     
-    class database::memory : database {
+    struct database::memory : database {
         struct entry {
             data::entry<data::N, Bitcoin::header> Header;
             Merkle::map Tree;
@@ -114,7 +114,6 @@ namespace Gigamonkey::SPV {
         std::map<Bitcoin::txid, ptr<entry>> ByTxid;
         std::map<Bitcoin::txid, ptr<bytes>> Transactions;
         
-    public:
         memory (const Bitcoin::header &h) {
             insert (0, h);
         }

@@ -13,7 +13,7 @@
 #include <gigamonkey/script/instruction.hpp>
 
 namespace Gigamonkey::Bitcoin {
-    
+
     using txid = digest256;
     
     struct outpoint;

@@ -82,8 +82,16 @@ namespace Gigamonkey::nChain {
         for (const auto &e : u.Proof) Inputs = Inputs.insert (e.Key, to_SPV_envelope (e.Key, e.Value));
     }
 
-    JSON write_txid (const Bitcoin::txid &);
-    maybe<Bitcoin::txid> read_txid (const JSON &);
+    JSON inline write_txid (const Bitcoin::txid &id) {
+        return write_backwards_hex (id);
+    }
+
+    maybe<Bitcoin::txid> read_txid (const JSON &j) {
+        if (!j.is_string ()) return {};
+        Bitcoin::txid id = read_backwards_hex<32> (std::string (j));
+        if (!id.valid ()) return {};
+        return id;
+    }
 
     JSON write_JSON (const SPV_envelope::node &n) {
         JSON::object_t node {};

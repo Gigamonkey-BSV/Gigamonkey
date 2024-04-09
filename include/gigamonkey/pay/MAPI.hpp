@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Daniel Krawisz
+// Copyright (c) 2021-2024 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #ifndef GIGAMONKEY_MAPI_MAPI

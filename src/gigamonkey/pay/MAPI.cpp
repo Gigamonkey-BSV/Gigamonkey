@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Daniel Krawisz
+// Copyright (c) 2021-2024 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/pay/MAPI.hpp>
@@ -55,9 +55,7 @@ namespace Gigamonkey::nChain::MAPI {
         }
         
         JSON to_JSON (const digest256 &v) {
-            std::stringstream ss;
-            ss << v;
-            return ss.str ().substr (9, 64);
+            return write_backwards_hex (v);
         }
         
         JSON to_JSON (const satoshi_per_byte v) {
@@ -134,7 +132,7 @@ namespace Gigamonkey::nChain::MAPI {
                 x.ConflictedWith = cw;
             }
             
-            x.TXID = digest256 {string{"0x"} + string (j["txid"])};
+            x.TXID = read_backwards_hex<32> (std::string (j["txid"]));
             if (!x.TXID.valid ()) return {};
             
             x.ResultDescription = j["resultDescription"];
@@ -253,10 +251,10 @@ namespace Gigamonkey::nChain::MAPI {
             j.contains ("size") && j["size"].is_number_unsigned () &&
             j.contains ("hex") && j["hex"].is_string ())) return;
         
-        auto tx = encoding::hex::read (string (j["hex"]));
+        auto tx = encoding::hex::read (std::string (j["hex"]));
         if (!bool (tx)) return;
         
-        TXID = digest256 {string{"0x"} + string (j["txid"])};
+        TXID = read_backwards_hex<32> (std::string (j["txid"]));
         Size = uint64 (j["size"]);
         Transaction = *tx;
         
@@ -296,7 +294,7 @@ namespace Gigamonkey::nChain::MAPI {
         auto pk_hex = encoding::hex::read (string (j["minerId"]));
         if (!bool (pk_hex)) return;
         
-        digest256 last_block {string{"0x"} + string (j["currentHighestBlockHash"])};
+        digest256 last_block = read_backwards_hex<32> (std::string (j["currentHighestBlockHash"]));
         if (!last_block.valid ()) return;
         
         APIVersion = j["apiVersion"];
@@ -368,7 +366,7 @@ namespace Gigamonkey::nChain::MAPI {
         auto pk_hex = encoding::hex::read (string (j["minerId"]));
         if (! bool (pk_hex)) return;
         
-        digest256 block_hash {string{"0x"} + string (j["currentHighestBlockHash"])};
+        digest256 block_hash = read_backwards_hex<32> (std::string (j["currentHighestBlockHash"]));
         if (!block_hash.valid ()) return;
         
         APIVersion = j["apiVersion"];
@@ -387,13 +385,10 @@ namespace Gigamonkey::nChain::MAPI {
         
         JSON j = to_JSON (static_cast<status> (*this));
         
-        std::stringstream ss;
-        ss << CurrentHighestBlockHash;
-        
         j["apiVersion"] = APIVersion;
         j["timestamp"] = Timestamp;
         j["minerId"] = encoding::hex::write (MinerID);
-        j["currentHighestBlockHash"] = ss.str ().substr (2);
+        j["currentHighestBlockHash"] = write_backwards_hex (CurrentHighestBlockHash);
         j["currentHighestBlockHeight"] = CurrentHighestBlockHeight;
         j["txSecondMempoolExpiry"] = TxSecondMempoolExpiry;
         
@@ -430,7 +425,7 @@ namespace Gigamonkey::nChain::MAPI {
         auto pk_hex = encoding::hex::read (string (j["minerId"]));
         if (! bool (pk_hex)) return;
         
-        digest256 block_hash {string {"0x"} + string (j["blockHash"])};
+        digest256 block_hash = read_backwards_hex<32> (std::string (j["blockHash"]));
         if (!block_hash.valid ()) return;
         
         MinerID = secp256k1::pubkey {*pk_hex};
@@ -484,7 +479,7 @@ namespace Gigamonkey::nChain::MAPI {
         auto pk_hex = encoding::hex::read (string (j["minerId"]));
         if (!bool (pk_hex)) return;
         
-        digest256 block_hash {string {"0x"} + string (j["blockHash"])};
+        digest256 block_hash = read_backwards_hex<32> (std::string (j["blockHash"]));
         if (!block_hash.valid ()) return;
         
         MinerID = secp256k1::pubkey {*pk_hex};
@@ -500,9 +495,7 @@ namespace Gigamonkey::nChain::MAPI {
     }
     
     submit_transactions::operator JSON () const {
-        std::stringstream ss;
-        ss << CurrentHighestBlockHash;
-        
+
         JSON::array_t txs;
         txs.resize (Transactions.size ());
         
@@ -513,7 +506,7 @@ namespace Gigamonkey::nChain::MAPI {
             {"apiVersion", APIVersion }, 
             {"timestamp", Timestamp }, 
             {"minerId", encoding::hex::write (MinerID) },
-            {"currentHighestBlockHash", ss.str ().substr (2) },
+            {"currentHighestBlockHash", write_backwards_hex (CurrentHighestBlockHash) },
             {"currentHighestBlockHeight", CurrentHighestBlockHeight }, 
             {"txSecondMempoolExpiry", TxSecondMempoolExpiry }, 
             {"txs", txs }, 
