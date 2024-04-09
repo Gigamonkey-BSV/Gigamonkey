@@ -34,7 +34,7 @@ namespace Gigamonkey {
         return pay_to_pubkey::redeem (x.sign (doc, first (sigs).Directive));
     }
 
-    ledger::vertex redeemable_transaction::redeem (const Gigamonkey::redeem &r) const {
+    bytes redeemable_transaction::redeem (const Gigamonkey::redeem &r) const {
         auto inputs = this->Inputs;
         auto docs = this->documents ();
         auto sigs = Signatures;

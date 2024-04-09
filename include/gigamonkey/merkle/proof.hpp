@@ -84,7 +84,7 @@ namespace Gigamonkey::Merkle {
         
         bool valid () const;
         
-        digest derive_root (const digest &l) const;
+        digest derive_root (const digest &txid) const;
     };
     
     struct leaf final {
@@ -93,7 +93,7 @@ namespace Gigamonkey::Merkle {
         
         leaf ();
         leaf (digest d, uint64 i);
-        explicit leaf (const digest &d) : leaf(d, 0) {}
+        explicit leaf (const digest &d) : leaf (d, 0) {}
         
         bool valid () const;
         
@@ -102,8 +102,8 @@ namespace Gigamonkey::Merkle {
         }
     };
     
-    inline digest path::derive_root (const digest& l) const {
-        return root (leaf {l, Index}, Digests);
+    inline digest path::derive_root (const digest& txid) const {
+        return root (leaf {txid, Index}, Digests);
     }
     
     using entry = data::entry<digest, path>;
@@ -163,19 +163,19 @@ namespace Gigamonkey::Merkle {
     }
     
     std::ostream inline &operator << (std::ostream &o, const path &p) {
-        return o << "path{" << p.Index << ", " << p.Digests << "}";
+        return o << "path {" << p.Index << ", " << p.Digests << "}";
     }
     
     std::ostream inline &operator << (std::ostream &o, const leaf &p) {
-        return o << "leaf{" << p.Index << ", " << p.Digest << "}";
+        return o << "leaf {" << p.Index << ", " << p.Digest << "}";
     }
     
     std::ostream inline &operator << (std::ostream &o, const branch &b) {
-        return o << "branch{" << b.Leaf << ", " << b.Digests << "}";
+        return o << "branch {" << b.Leaf << ", " << b.Digests << "}";
     }
     
     std::ostream inline &operator << (std::ostream &o, const proof &p) {
-        return o << "proof{" << p.Branch << ", " << p.Root << "}";
+        return o << "proof {" << p.Branch << ", " << p.Root << "}";
     }
     
     bool inline operator == (const path &a, const path &b) {

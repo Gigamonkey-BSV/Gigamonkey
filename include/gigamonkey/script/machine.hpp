@@ -4,7 +4,7 @@
 #ifndef GIGAMONKEY_SCRIPT_MACHINE
 #define GIGAMONKEY_SCRIPT_MACHINE
 
-#include <gigamonkey/script/script.hpp>
+#include <gigamonkey/script.hpp>
 #include <gigamonkey/script/stack.hpp>
 #include <gigamonkey/script/counter.hpp>
 #include <gigamonkey/script/config.hpp>

@@ -4,10 +4,9 @@
 #ifndef GIGAMONKEY_MERKLE_SERIALIZE
 #define GIGAMONKEY_MERKLE_SERIALIZE
 
-#include <gigamonkey/merkle/proof.hpp>
-#include <gigamonkey/timechain.hpp>
+#include <gigamonkey/SPV.hpp>
 
-namespace Gigamonkey::BitcoinAssociation {
+namespace Gigamonkey::nChain {
     
     struct proofs_serialization_standard {
 
@@ -26,9 +25,7 @@ namespace Gigamonkey::BitcoinAssociation {
         // interface for this type has been designed to allow for multiple proofs
         // as the new specification comes out. 
         
-        // this only checks if the format is valid, but the information in the
-        // serialized format isn't always enoughdoes not check the Merkle proof, 
-        // so we don't try to check the proof itself. 
+        // this only checks if the format is valid, but does not check the Merkle proof.
         bool valid () const;
         static bool valid (const JSON &);
         static bool valid (bytes_view);
@@ -109,7 +106,10 @@ namespace Gigamonkey::BitcoinAssociation {
         
         // We can always calculate a root from the given information
         // but not necessarily check the whole proof. 
-        digest256 root() const;
+        digest256 root () const;
+
+        // with a headers database we can check all additional information
+        bool validate (const SPV::database &) const;
         
     private:
         // Everything below this point is subject to change as 
@@ -150,12 +150,12 @@ namespace Gigamonkey::BitcoinAssociation {
         
         // one of these must be included. 
         maybe<bytes> Transaction;
-        maybe<Bitcoin::txid> Txid;
+        maybe<Bitcoin::txid> TXID;
         
         // there is always at least one path. 
         Merkle::path Path;
         
-        // one of these must be included. 
+        // one of these may be included.
         maybe<digest256> BlockHash;
         maybe<digest256> MerkleRoot;
         maybe<Bitcoin::header> BlockHeader;
@@ -245,16 +245,16 @@ namespace Gigamonkey::BitcoinAssociation {
     }
     
     inline proofs_serialization_standard::proofs_serialization_standard (const Merkle::branch &b)
-        : Txid {b.Leaf.Digest}, Path {Merkle::path (b)} {}
+        : TXID {b.Leaf.Digest}, Path {Merkle::path (b)} {}
     
     inline proofs_serialization_standard::proofs_serialization_standard (const Merkle::proof& p)
-        : Txid {p.Branch.Leaf.Digest}, Path {Merkle::path (p.Branch)}, MerkleRoot {p.Root} {}
+        : TXID {p.Branch.Leaf.Digest}, Path {Merkle::path (p.Branch)}, MerkleRoot {p.Root} {}
     
     inline proofs_serialization_standard::proofs_serialization_standard (const Merkle::branch &b, const Bitcoin::header& h)
-        : Txid {b.Leaf.Digest}, Path {Merkle::path (b)}, BlockHeader {h} {}
+        : TXID {b.Leaf.Digest}, Path {Merkle::path (b)}, BlockHeader {h} {}
     
     inline proofs_serialization_standard::proofs_serialization_standard (const Merkle::branch &b, const digest256 &block_hash)
-        : Txid{b.Leaf.Digest}, Path {Merkle::path (b)}, BlockHash {block_hash} {}
+        : TXID{b.Leaf.Digest}, Path {Merkle::path (b)}, BlockHash {block_hash} {}
     
     inline proofs_serialization_standard::proofs_serialization_standard (const Bitcoin::transaction &t, const Merkle::path &p)
         : Transaction{bytes(t)}, Path{p} {}
@@ -310,7 +310,7 @@ namespace Gigamonkey::BitcoinAssociation {
     }
         
     digest256 inline proofs_serialization_standard::txid () const {
-        if (bool (Txid)) return *Txid;
+        if (bool (TXID)) return *TXID;
         return Bitcoin::Hash256 (*Transaction);
     }
     

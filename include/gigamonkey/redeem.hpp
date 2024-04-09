@@ -38,7 +38,7 @@ namespace Gigamonkey {
 
         list<list<sigop>> Signatures;
 
-        ledger::vertex redeem (const Gigamonkey::redeem &) const;
+        bytes redeem (const Gigamonkey::redeem &) const;
     };
 
     inline redeemable_transaction::redeemable_transaction

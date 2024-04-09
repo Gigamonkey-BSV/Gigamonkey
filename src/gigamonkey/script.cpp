@@ -5,7 +5,7 @@
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <sv/script/script.h>
-#include <gigamonkey/script/script.hpp>
+#include <gigamonkey/script.hpp>
 #include <gigamonkey/script/bitcoin_core.hpp>
 #include <gigamonkey/script/counter.hpp>
 

@@ -1,6 +1,6 @@
-#include<gigamonkey/merkle/serialize.hpp>
+#include <gigamonkey/merkle/serialize.hpp>
 
-namespace Gigamonkey::BitcoinAssociation {
+namespace Gigamonkey::nChain {
     
     digest256 inline read_digest (const string &x) {
         return digest256 {string {"0x"} + x};
@@ -57,7 +57,7 @@ namespace Gigamonkey::BitcoinAssociation {
     }
     
     bool proofs_serialization_standard::valid () const {
-        if ((bool (Transaction) && bool (Txid)) || (!bool (Transaction) && !bool (Txid))) return false;
+        if ((bool (Transaction) && bool (TXID)) || (!bool (Transaction) && !bool (TXID))) return false;
         if (bool (BlockHash)) return !bool (BlockHeader) && !bool (MerkleRoot);
         if (bool (BlockHeader)) return !bool (BlockHash) && !bool (MerkleRoot);
         if (bool (MerkleRoot)) return !bool (BlockHeader) && !bool (BlockHash);
@@ -104,8 +104,8 @@ namespace Gigamonkey::BitcoinAssociation {
         j["index"] = Path.Index;
         j["nodes"] = write_path (branch ());
         
-        if (bool (Txid)) {
-            j["txOrId"] = write_digest (*Txid);
+        if (bool (TXID)) {
+            j["txOrId"] = write_digest (*TXID);
         } else {
             j["txOrId"] = encoding::hex::write (*Transaction);
         }
@@ -139,7 +139,7 @@ namespace Gigamonkey::BitcoinAssociation {
         proofs_serialization_standard x;
         if (!proofs_serialization_standard::valid (j)) return {};
         
-        if (string (j["txOrId"]).size () == 64) x.Txid = read_digest (j["txOrId"]);
+        if (string (j["txOrId"]).size () == 64) x.TXID = read_digest (j["txOrId"]);
         // we know this is ok because we checked valid earlier.
         else x.Transaction = *encoding::hex::read (string (j["txOrId"]));
         
@@ -211,7 +211,7 @@ namespace Gigamonkey::BitcoinAssociation {
             } else {
                 Bitcoin::txid t;
                 r >> t;
-                x.Txid = t;
+                x.TXID = t;
             }
 
             switch (target_type (flags)) {
@@ -293,7 +293,7 @@ namespace Gigamonkey::BitcoinAssociation {
         w << flags() << Bitcoin::var_int {index ()};
         
         if (tx_included) write_transaction (w, *Transaction);
-        else write_txid (w, *Txid);
+        else write_txid (w, *TXID);
         
         if (tt == target_type_block_hash) write_txid (w, *BlockHash);
         else if (tt == target_type_Merkle_root) write_txid (w, *MerkleRoot);
@@ -318,12 +318,12 @@ namespace Gigamonkey::BitcoinAssociation {
         return target_type_invalid;
     }
     
-    proofs_serialization_standard::proofs_serialization_standard(
-        const Bitcoin::transaction& t, const Merkle::path& p, const digest256& hash, target_type_value v) {
+    proofs_serialization_standard::proofs_serialization_standard (
+        const Bitcoin::transaction &t, const Merkle::path &p, const digest256 &hash, target_type_value v) {
         if (v == target_type_block_hash) BlockHash = hash;
         else if (v == target_type_Merkle_root) MerkleRoot = hash;
         else return;
-        Transaction = bytes(t);
+        Transaction = bytes (t);
         Path = p;
     }
     
@@ -337,6 +337,24 @@ namespace Gigamonkey::BitcoinAssociation {
     maybe<Bitcoin::header> inline proofs_serialization_standard::block_header (const JSON &j) {
         if (j.contains ("targetType") && j["targetType"] == "header") return {read_header (j["target"])};
         return {};
+    }
+
+    // with an SPV database we can check all additional information
+    bool proofs_serialization_standard::validate (const SPV::database &d) const {
+        if (!valid ()) return false;
+
+        Bitcoin::txid txid = bool (Transaction) ? Bitcoin::transaction::id (*Transaction) : *TXID;
+
+        digest256 root = Path.derive_root (txid);
+
+        const data::entry<N, Bitcoin::header> *header = d.header (root);
+        if (header == nullptr) return false;
+
+        if (bool (MerkleRoot) && root != *MerkleRoot) return false;
+        if (bool (BlockHash) && header->Value.hash () != BlockHash) return false;
+        if (bool (BlockHeader) && header->Value != *BlockHeader) return false;
+
+        return root == header->Value.MerkleRoot;
     }
     
 }

@@ -60,11 +60,7 @@ namespace Gigamonkey::Bitcoin {
     struct header;
     
     bool operator == (const header &a, const header &b);
-    
-    bool operator > (const header &, const header &);
-    bool operator < (const header &, const header &);
-    bool operator >= (const header &, const header &);
-    bool operator <= (const header &, const header &);
+    std::strong_ordering operator <=> (const header &, const header &);
     
     writer &operator << (writer &w, const header &h);
     reader &operator >> (reader &r, header &h);
@@ -123,6 +119,7 @@ namespace Gigamonkey::Bitcoin {
             return Hash256 (write ());
         }
         
+        // check the proof-of-work on the header.
         bool valid () const;
         
         int16 version () const;
@@ -423,20 +420,8 @@ namespace Gigamonkey::Bitcoin {
         return a.Digest == b.Digest ? a.Index <= b.Index : a.Digest <= b.Digest;
     }
     
-    bool inline operator > (const header &a, const header &b) {
-        return a.Timestamp > b.Timestamp;
-    }
-    
-    bool inline operator < (const header &a, const header &b) {
-        return a.Timestamp < b.Timestamp;
-    }
-    
-    bool inline operator >= (const header &a, const header &b) {
-        return a.Timestamp >= b.Timestamp;
-    }
-    
-    bool inline operator <= (const header &a, const header &b) {
-        return a.Timestamp <= b.Timestamp;
+    std::strong_ordering inline operator <=> (const header &a, const header &b) {
+        return a.Timestamp <=> b.Timestamp;
     }
     
     txid inline transaction::id (bytes_view b) {

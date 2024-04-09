@@ -4,8 +4,8 @@
 // Copyright (c) 2019-2021 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#ifndef GIGAMONKEY_SCRIPT_SCRIPT
-#define GIGAMONKEY_SCRIPT_SCRIPT
+#ifndef GIGAMONKEY_SCRIPT
+#define GIGAMONKEY_SCRIPT
 
 #include <gigamonkey/script/error.h>
 #include <gigamonkey/script/flags.h>

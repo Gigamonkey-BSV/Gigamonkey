@@ -84,7 +84,7 @@
 #include <gigamonkey/script/instruction.hpp>
 
 // Bitcoin script evaluation. 
-#include <gigamonkey/script/script.hpp>
+#include <gigamonkey/script.hpp>
 
 // Bitcoin script interpreter that lets you step through
 // an evaluation. 
@@ -116,14 +116,18 @@
 // HD keys, described in BIP32, BIP39, and BIP44
 #include <gigamonkey/schema/hd.hpp>
 
-// Ledger is for processed transactions that include 
-// Merkle proofs. 
-#include <gigamonkey/ledger.hpp> 
+// SPV is for creating SPV proofs.
+#include <gigamonkey/SPV.hpp>
 
 // fees has to do with determining the correct tx fee. 
 #include <gigamonkey/fees.hpp> 
 
+// bringing together all information on how to redeem a
+// transaction.
+#include <gigamonkey/redeem.hpp>
+
 // MAPI implementation. I think it's an earlier version
 // so it might need to be updated. 
-#include <gigamonkey/mapi/mapi.hpp>
+#include <gigamonkey/pay/MAPI.hpp>
+
 #endif GIGAMONKEY

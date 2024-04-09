@@ -49,9 +49,9 @@ add_library (gigamonkey STATIC
     src/gigamonkey/incomplete.cpp
     src/gigamonkey/sighash.cpp
     src/gigamonkey/signature.cpp
+    src/gigamonkey/script.cpp
     
     src/gigamonkey/script/instruction.cpp
-    src/gigamonkey/script/script.cpp
     src/gigamonkey/script/counter.cpp
     src/gigamonkey/script/pattern.cpp
     src/gigamonkey/script/machine.cpp
@@ -62,8 +62,7 @@ add_library (gigamonkey STATIC
     src/gigamonkey/merkle.cpp
     src/gigamonkey/timechain.cpp
     src/gigamonkey/work.cpp
-    src/gigamonkey/ledger.cpp
-    src/gigamonkey/spv.cpp
+    src/gigamonkey/SPV.cpp
     src/gigamonkey/redeem.cpp
     
     src/gigamonkey/schema/random.cpp
@@ -72,8 +71,10 @@ add_library (gigamonkey STATIC
     
     src/gigamonkey/merkle/dual.cpp
     src/gigamonkey/merkle/serialize.cpp
-    
-    src/gigamonkey/boost/boost.cpp
+
+    src/gigamonkey/pay/envelope.cpp
+    src/gigamonkey/pay/MAPI.cpp
+    src/gigamonkey/pay/SPV_envelope.cpp
     
     src/gigamonkey/stratum/method.cpp
     src/gigamonkey/stratum/error.cpp
@@ -86,9 +87,8 @@ add_library (gigamonkey STATIC
     src/gigamonkey/stratum/remote.cpp
     src/gigamonkey/stratum/client_session.cpp
     src/gigamonkey/stratum/server_session.cpp
-    
-    src/gigamonkey/mapi/mapi.cpp
-    src/gigamonkey/mapi/envelope.cpp
+
+    src/gigamonkey/boost/boost.cpp
     
 )
 

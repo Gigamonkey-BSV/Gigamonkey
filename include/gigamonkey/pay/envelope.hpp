@@ -10,8 +10,8 @@
 
 // https://github.com/bitcoin-sv-specs/brfc-misc/tree/master/jsonenvelope
 
-namespace Gigamonkey::BitcoinAssociation {
-        
+namespace Gigamonkey::nChain {
+
     struct JSON_envelope {
         enum payload_encoding {
             none, 
@@ -35,11 +35,17 @@ namespace Gigamonkey::BitcoinAssociation {
         // encode as UTF_8, no signature.
         JSON_envelope (const string &Payload, const string &Mimetype);
         
-        // encode as base64 with signature.
-        JSON_envelope (const bytes &Payload, const string &Mimetype, secp256k1::secret &secret);
+        // encode as base64 and sign.
+        JSON_envelope (const bytes &Payload, const string &Mimetype, const secp256k1::secret &secret);
         
+        // encode as UTF_8 and sign.
+        JSON_envelope (const string &Payload, const string &Mimetype, const secp256k1::secret &secret);
+
+        // encode as base64 with signature.
+        JSON_envelope (const bytes &Payload, const string &Mimetype, const secp256k1::pubkey &p, const secp256k1::signature &x);
+
         // encode as UTF_8 with signature.
-        JSON_envelope (const string &Payload, const string &Mimetype, secp256k1::secret &secret);
+        JSON_envelope (const string &Payload, const string &Mimetype, const secp256k1::pubkey &p, const secp256k1::signature &x);
         
         JSON_envelope (const JSON &);
         operator JSON () const;
@@ -63,8 +69,11 @@ namespace Gigamonkey::BitcoinAssociation {
         JSON_JSON_envelope (const JSON &payload):
             JSON_envelope {payload.dump (), "application/JSON"} {};
         
-        JSON_JSON_envelope (const JSON &payload, secp256k1::secret &secret):
+        JSON_JSON_envelope (const JSON &payload, const secp256k1::secret &secret):
             JSON_envelope {payload.dump (), "application/JSON", secret} {}
+
+        JSON_JSON_envelope (const JSON &payload, const secp256k1::pubkey &p, const secp256k1::signature &x):
+            JSON_envelope {payload.dump (), "application/JSON", p, x} {}
         
         JSON_JSON_envelope (const JSON_envelope &j) : JSON_envelope {j} {}
     };
@@ -87,11 +96,11 @@ namespace Gigamonkey::BitcoinAssociation {
     inline JSON_envelope::JSON_envelope (const string &pl, const string &mime) :
         Payload {pl}, Encoding {UTF_8}, Mimetype {mime}, PublicKey {}, Signature {} {}
     
-    inline JSON_envelope::JSON_envelope (const bytes &pl, const string &mime, secp256k1::secret &secret) :
+    inline JSON_envelope::JSON_envelope (const bytes &pl, const string &mime, const secp256k1::secret &secret) :
         Payload {encoding::base64::write (pl)}, Encoding {base64}, Mimetype {mime},
         PublicKey {secret.to_public ()}, Signature {secret.sign (Gigamonkey::SHA2_256 (pl))} {}
     
-    inline JSON_envelope::JSON_envelope (const string &pl, const string &mime, secp256k1::secret &secret) :
+    inline JSON_envelope::JSON_envelope (const string &pl, const string &mime, const secp256k1::secret &secret) :
         Payload {pl}, Encoding {UTF_8}, Mimetype {mime}, PublicKey{secret.to_public ()},
         Signature {secret.sign (Gigamonkey::SHA2_256 (pl))} {}
 }

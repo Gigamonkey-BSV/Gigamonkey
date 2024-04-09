@@ -4,7 +4,7 @@
 #ifndef GIGAMONKEY_SCRIPT_COUNTER
 #define GIGAMONKEY_SCRIPT_COUNTER
 
-#include <gigamonkey/script/script.hpp>
+#include <gigamonkey/script.hpp>
 #include <gigamonkey/signature.hpp>
 
 namespace Gigamonkey::Bitcoin::interpreter { 

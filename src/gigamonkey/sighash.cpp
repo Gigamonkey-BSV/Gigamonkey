@@ -2,7 +2,7 @@
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/sighash.hpp>
-#include <gigamonkey/script/script.hpp>
+#include <gigamonkey/script.hpp>
 
 namespace Gigamonkey::Bitcoin::sighash {
     

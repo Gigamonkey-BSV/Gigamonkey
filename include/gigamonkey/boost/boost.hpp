@@ -4,10 +4,9 @@
 #ifndef GIGAMONKEY_BOOST_BOOST
 #define GIGAMONKEY_BOOST_BOOST
 
-#include <gigamonkey/script/script.hpp>
+#include <gigamonkey/fees.hpp>
 #include <gigamonkey/work/proof.hpp>
 #include <gigamonkey/wif.hpp>
-#include <gigamonkey/ledger.hpp>
 
 namespace Gigamonkey {
     

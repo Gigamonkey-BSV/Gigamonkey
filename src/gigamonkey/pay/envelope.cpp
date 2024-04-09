@@ -1,10 +1,10 @@
 // Copyright (c) 2021 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#include <gigamonkey/mapi/envelope.hpp>
+#include <gigamonkey/pay/envelope.hpp>
 #include <gigamonkey/address.hpp>
 
-namespace Gigamonkey::BitcoinAssociation {
+namespace Gigamonkey::nChain {
     
     bool JSON_envelope::verify () const {
         if (!valid ()) return false;

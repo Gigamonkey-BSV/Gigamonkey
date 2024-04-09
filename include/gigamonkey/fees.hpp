@@ -4,8 +4,33 @@
 #ifndef GIGAMONKEY_FEES
 #define GIGAMONKEY_FEES
 
-#include "ledger.hpp"
+#include "script.hpp"
 #include <cmath>
+
+// This file is for making it easy to design a transaction to meet your
+// specifications before signing it. transaction_design is an incomplete
+// transaction with more built in to check that the fee is good and that
+// scripts are valid.
+
+namespace Gigamonkey::Bitcoin {
+    Bitcoin::block genesis ();
+
+    struct prevout : data::entry<Bitcoin::outpoint, Bitcoin::output> {
+        using data::entry<Bitcoin::outpoint, Bitcoin::output>::entry;
+
+        Bitcoin::outpoint outpoint () const {
+            return this->Key;
+        }
+
+        Bitcoin::satoshi value () const {
+            return this->Value.Value;
+        }
+
+        bytes script () const {
+            return this->Value.Script;
+        }
+    };
+}
 
 namespace Gigamonkey {
 
@@ -73,8 +98,7 @@ namespace Gigamonkey {
         // construct the documents for each input (the documents represent the data structure that gets signed).
         list<Bitcoin::sighash::document> documents () const;
 
-        // come
-        ledger::vertex complete (list<Bitcoin::script> redeem) const;
+        bytes complete (list<Bitcoin::script> redeem) const;
 
     };
 
@@ -165,14 +189,8 @@ namespace Gigamonkey {
         }, Inputs);
     }
 
-    ledger::vertex inline transaction_design::complete (list<Bitcoin::script> redeem) const {
-        return ledger::vertex
-            {Bitcoin::incomplete::transaction (*this).complete (redeem),
-                data::fold ([] (data::map<Bitcoin::outpoint, Bitcoin::output> m,
-                    const input &i) -> data::map<Bitcoin::outpoint, Bitcoin::output> {
-                    return m.insert (i.Prevout);
-                }, data::map<Bitcoin::outpoint, Bitcoin::output> {},
-                Inputs)};
+    bytes inline transaction_design::complete (list<Bitcoin::script> redeem) const {
+        return bytes (Bitcoin::incomplete::transaction (*this).complete (redeem));
     }
 
 }
