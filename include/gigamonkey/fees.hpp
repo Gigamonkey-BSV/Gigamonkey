@@ -98,7 +98,7 @@ namespace Gigamonkey {
         // construct the documents for each input (the documents represent the data structure that gets signed).
         list<Bitcoin::sighash::document> documents () const;
 
-        bytes complete (list<Bitcoin::script> redeem) const;
+        Bitcoin::transaction complete (list<Bitcoin::script> redeem) const;
 
     };
 
@@ -189,8 +189,8 @@ namespace Gigamonkey {
         }, Inputs);
     }
 
-    bytes inline transaction_design::complete (list<Bitcoin::script> redeem) const {
-        return bytes (Bitcoin::incomplete::transaction (*this).complete (redeem));
+    Bitcoin::transaction inline transaction_design::complete (list<Bitcoin::script> redeem) const {
+        return Bitcoin::incomplete::transaction (*this).complete (redeem);
     }
 
 }

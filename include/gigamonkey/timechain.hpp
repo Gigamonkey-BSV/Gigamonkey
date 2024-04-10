@@ -144,6 +144,8 @@ namespace Gigamonkey::Bitcoin {
             return Coinbase;
         }
 
+        byte_array<36> write () const;
+
         outpoint () : Digest {}, Index {} {}
         outpoint (const txid &id, const Bitcoin::index &i) : Digest {id}, Index {i} {}
     };
@@ -170,6 +172,7 @@ namespace Gigamonkey::Bitcoin {
         
         uint64 serialized_size () const;
 
+        bytes write () const;
         explicit operator bytes () const;
     };
     
@@ -189,11 +192,13 @@ namespace Gigamonkey::Bitcoin {
         output (satoshi v, const Bitcoin::script &x) : Value {v}, Script {x} {}
         
         explicit output (bytes_view);
-        explicit operator bytes () const;
         
         bool valid () const;
         
         uint64 serialized_size () const;
+
+        bytes write () const;
+        explicit operator bytes () const;
     };
 
     struct transaction {
@@ -227,6 +232,7 @@ namespace Gigamonkey::Bitcoin {
         
         bool valid () const;
         
+        bytes write () const;
         explicit operator bytes () const;
         
         txid id () const;
@@ -434,6 +440,10 @@ namespace Gigamonkey::Bitcoin {
     
     uint64 inline output::serialized_size () const {
         return 8u + var_int::size (Script.size ()) + Script.size ();
+    }
+
+    bytes inline transaction::write () const {
+        return bytes (*this);
     }
 }
 

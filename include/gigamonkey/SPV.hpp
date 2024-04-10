@@ -67,10 +67,10 @@ namespace Gigamonkey::SPV {
 
         // a transaction in the database, which may include a merkle proof if we have one.
         struct confirmed {
-            ptr<const bytes> Transaction;
+            ptr<const Bitcoin::transaction> Transaction;
             maybe<proof::confirmation> Confirmation;
 
-            confirmed (ptr<const bytes> t, const proof::confirmation &x) : Transaction {t}, Confirmation {x} {}
+            confirmed (ptr<const Bitcoin::transaction> t, const proof::confirmation &x) : Transaction {t}, Confirmation {x} {}
 
             // check the proof if it exists.
             bool validate () const;
@@ -82,7 +82,7 @@ namespace Gigamonkey::SPV {
         virtual void insert (const N &height, const Bitcoin::header &h) = 0;
         
         virtual bool insert (const Merkle::proof &) = 0;
-        virtual void insert_transaction (const bytes &) = 0;
+        virtual void insert (const Bitcoin::transaction &) = 0;
         
         // an in-memory version of SPV.
         class memory;
@@ -111,8 +111,7 @@ namespace Gigamonkey::SPV {
         std::map<digest256, ptr<entry>> ByHash;
         std::map<digest256, ptr<entry>> ByRoot;
         std::map<Bitcoin::txid, ptr<entry>> ByTXID;
-        std::map<Bitcoin::txid, ptr<entry>> ByTxid;
-        std::map<Bitcoin::txid, ptr<bytes>> Transactions;
+        std::map<Bitcoin::txid, ptr<const Bitcoin::transaction>> Transactions;
         
         memory (const Bitcoin::header &h) {
             insert (0, h);
@@ -133,7 +132,7 @@ namespace Gigamonkey::SPV {
 
         void insert (const data::N &height, const Bitcoin::header &h) final override;
         bool insert (const Merkle::proof &p) final override;
-        void insert_transaction (const bytes &) final override;
+        void insert (const Bitcoin::transaction &) final override;
     };
 
     bool inline proof::confirmation::operator == (const confirmation &t) const {
@@ -157,8 +156,8 @@ namespace Gigamonkey::SPV {
         return double (fee ()) / double (Transaction.size ());
     }
 
-    void inline database::memory::insert_transaction (const bytes &t) {
-        Transactions[Bitcoin::transaction::id (t)] = ptr<bytes> {new bytes {t}};
+    void inline database::memory::insert (const Bitcoin::transaction &t) {
+        Transactions[t.id ()] = ptr<Bitcoin::transaction> {new Bitcoin::transaction {t}};
     }
     
 }

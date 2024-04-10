@@ -53,9 +53,9 @@ namespace Gigamonkey::SPV {
 
     database::confirmed database::memory::tx (const Bitcoin::txid &t) const {
         auto tx = Transactions.find (t);
-        ptr<const bytes> tt {tx == Transactions.end () ? ptr<const bytes> {} : tx->second};
-        auto h = ByTxid.find (t);
-        return h == ByTxid.end () ? confirmed {tt, proof::confirmation {}} :
+        ptr<const Bitcoin::transaction> tt {tx == Transactions.end () ? ptr<const Bitcoin::transaction> {} : tx->second};
+        auto h = ByTXID.find (t);
+        return h == ByTXID.end () ? confirmed {tt, proof::confirmation {}} :
             confirmed {tt, proof::confirmation {
                 Merkle::path (Merkle::dual {h->second->Tree, h->second->Header.Value.MerkleRoot}[t].Branch),
                 h->second->Header.Value}};
@@ -86,7 +86,7 @@ namespace Gigamonkey::SPV {
         auto d = Merkle::dual {h->second->Tree, h->second->Header.Value.MerkleRoot} + p;
         if (!d.valid ()) return false;
         h->second->Tree = d.Paths;
-        ByTxid[p.Branch.Leaf.Digest] = h->second;
+        ByTXID[p.Branch.Leaf.Digest] = h->second;
         return true;
     }
 
@@ -151,7 +151,7 @@ namespace Gigamonkey::SPV {
         database::confirmed n = d.tx (x);
         if (n.Transaction == nullptr) return {};
 
-        if (bool (n.Confirmation)) return ptr<proof::node> {new proof::node {*n.Transaction, proof::tree {*n.Confirmation}}};
+        if (bool (n.Confirmation)) return ptr<proof::node> {new proof::node {n.Transaction->write (), proof::tree {*n.Confirmation}}};
 
         map<Bitcoin::txid, ptr<proof::node>> antecedents;
 
@@ -161,7 +161,7 @@ namespace Gigamonkey::SPV {
             antecedents = antecedents.insert (in.Reference.Digest, u);
         }
 
-        return ptr<proof::node> {new proof::node {*n.Transaction, proof::tree {antecedents}}};
+        return ptr<proof::node> {new proof::node {n.Transaction->write (), proof::tree {antecedents}}};
     }
 
     // attempt to generate a given SPV proof for an unconfirmed transaction.

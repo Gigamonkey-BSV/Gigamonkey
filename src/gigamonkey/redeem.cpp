@@ -3,7 +3,8 @@
 #include <gigamonkey/script/pattern/pay_to_address.hpp>
 
 namespace Gigamonkey {
-    bytes redeem_p2pkh_and_p2pk (const Bitcoin::output &out, const Bitcoin::sighash::document &doc, list<sigop> sigs, const bytes &script_code) {
+    Bitcoin::script redeem_p2pkh_and_p2pk
+        (const Bitcoin::output &out, const Bitcoin::sighash::document &doc, list<sigop> sigs, const bytes &script_code) {
 
         // the only types of scripts we know how to redeem fit this pattern.
         if (size (sigs) != 1) return {};
@@ -34,7 +35,7 @@ namespace Gigamonkey {
         return pay_to_pubkey::redeem (x.sign (doc, first (sigs).Directive));
     }
 
-    bytes redeemable_transaction::redeem (const Gigamonkey::redeem &r) const {
+    Bitcoin::transaction redeemable_transaction::redeem (const Gigamonkey::redeem &r) const {
         auto inputs = this->Inputs;
         auto docs = this->documents ();
         auto sigs = Signatures;
