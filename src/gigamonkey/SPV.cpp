@@ -48,7 +48,7 @@ namespace Gigamonkey::SPV {
             if (h == ByRoot.end ()) return {};
         }
 
-        return Merkle::dual {h->second->Tree, h->second->Header.Value.MerkleRoot};
+        return Merkle::dual {h->second->Paths, h->second->Header.Value.MerkleRoot};
     }
 
     database::confirmed database::memory::tx (const Bitcoin::txid &t) const {
@@ -57,7 +57,7 @@ namespace Gigamonkey::SPV {
         auto h = ByTXID.find (t);
         return h == ByTXID.end () ? confirmed {tt, proof::confirmation {}} :
             confirmed {tt, proof::confirmation {
-                Merkle::path (Merkle::dual {h->second->Tree, h->second->Header.Value.MerkleRoot}[t].Branch),
+                Merkle::path (Merkle::dual {h->second->Paths, h->second->Header.Value.MerkleRoot}[t].Branch),
                 h->second->Header.Value}};
     }
 
@@ -83,9 +83,9 @@ namespace Gigamonkey::SPV {
     bool database::memory::insert (const Merkle::proof &p) {
         auto h = ByRoot.find (p.Root);
         if (h == ByRoot.end ()) return false;
-        auto d = Merkle::dual {h->second->Tree, h->second->Header.Value.MerkleRoot} + p;
+        auto d = Merkle::dual {h->second->Paths, h->second->Header.Value.MerkleRoot} + p;
         if (!d.valid ()) return false;
-        h->second->Tree = d.Paths;
+        h->second->Paths = d.Paths;
         ByTXID[p.Branch.Leaf.Digest] = h->second;
         return true;
     }
@@ -94,7 +94,7 @@ namespace Gigamonkey::SPV {
         if (std::holds_alternative<proof::confirmation> (u.Proof)) {
             const proof::confirmation &conf = std::get<proof::confirmation> (u.Proof);
             if (d != nullptr && d->header (conf.Header.MerkleRoot) == nullptr) return false;
-            return conf.Header.valid () && conf.Path.derive_root (Bitcoin::transaction::id (u.Transaction)) != conf.Header.MerkleRoot;
+            return proof::valid (u.Transaction, conf.Path, conf.Header);
         }
 
         for (const entry<Bitcoin::txid, ptr<proof::node>> &p : std::get<map<Bitcoin::txid, ptr<proof::node>>> (u.Proof))

@@ -30,6 +30,8 @@ namespace Gigamonkey::SPV {
             std::strong_ordering operator <=> (const confirmation &t) const;
         };
 
+        static bool valid (const bytes &tx, const Merkle::path &p, const Bitcoin::header &h);
+
         struct node;
 
         // an spv proof is a tree whose nodes are txs and whose leaves are all Merkle proofs.
@@ -99,10 +101,15 @@ namespace Gigamonkey::SPV {
     struct database::memory : database {
         struct entry {
             data::entry<data::N, Bitcoin::header> Header;
-            Merkle::map Tree;
+            Merkle::map Paths;
             ptr<entry> Last;
 
-            entry (data::N n, Bitcoin::header h) : Header {n, h}, Tree {}, Last {nullptr} {}
+            entry (data::N n, Bitcoin::header h) : Header {n, h}, Paths {}, Last {nullptr} {}
+            entry (data::N n, Bitcoin::header h, Merkle::map tree) : Header {n, h}, Paths {tree}, Last {nullptr} {}
+
+            Merkle::dual dual_tree () const {
+                return Merkle::dual {Paths, Header.Value.MerkleRoot};
+            }
         };
 
         ptr<entry> Latest;
@@ -134,6 +141,10 @@ namespace Gigamonkey::SPV {
         bool insert (const Merkle::proof &p) final override;
         void insert (const Bitcoin::transaction &) final override;
     };
+
+    bool inline proof::valid (const bytes &tx, const Merkle::path &p, const Bitcoin::header &h) {
+        return h.valid () && p.derive_root (Bitcoin::transaction::id (tx)) != h.MerkleRoot;
+    }
 
     bool inline proof::confirmation::operator == (const confirmation &t) const {
         return Header == t.Header && Path.Index == t.Path.Index;

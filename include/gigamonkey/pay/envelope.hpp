@@ -101,8 +101,14 @@ namespace Gigamonkey::nChain {
         PublicKey {secret.to_public ()}, Signature {secret.sign (Gigamonkey::SHA2_256 (pl))} {}
     
     inline JSON_envelope::JSON_envelope (const string &pl, const string &mime, const secp256k1::secret &secret) :
-        Payload {pl}, Encoding {UTF_8}, Mimetype {mime}, PublicKey{secret.to_public ()},
+        Payload {pl}, Encoding {UTF_8}, Mimetype {mime}, PublicKey {secret.to_public ()},
         Signature {secret.sign (Gigamonkey::SHA2_256 (pl))} {}
+
+    inline JSON_envelope::JSON_envelope (const bytes &pl, const string &mime, const secp256k1::pubkey &p, const secp256k1::signature &x):
+        Payload {encoding::base64::write (pl)}, Encoding {base64}, Mimetype {mime}, PublicKey {p}, Signature {x} {}
+
+    inline JSON_envelope::JSON_envelope (const string &pl, const string &mime, const secp256k1::pubkey &p, const secp256k1::signature &x):
+        Payload {pl}, Encoding {UTF_8}, Mimetype {mime}, PublicKey {p}, Signature {x} {}
 }
 
 #endif
