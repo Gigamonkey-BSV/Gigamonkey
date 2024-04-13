@@ -214,8 +214,9 @@ namespace Gigamonkey::nChain::MAPI {
     }
     
     submit_transaction_request::operator net::HTTP::REST::request () const {
+
         if (ContentType == application_JSON) {
-            return net::HTTP::REST::request {net::HTTP::method::post, "/mapi/tx", {},
+            return net::HTTP::REST::request {net::HTTP::method::post, "/mapi/tx", {}, {},
                 {{net::HTTP::header::content_type, "application/JSON"}},
                 JSON (static_cast<const transaction_submission> (*this))};
         }
@@ -225,13 +226,13 @@ namespace Gigamonkey::nChain::MAPI {
         std::copy (this->Transaction.begin (), this->Transaction.end (), tx.begin ());
         
         return net::HTTP::REST::request {net::HTTP::method::post,
-            "/mapi/tx", to_url_params (Parameters),
+            "/mapi/tx", to_url_params (Parameters), {},
             {{net::HTTP::header::content_type, "application/octet-stream"}}, tx};
     }
     
     submit_transactions_request::operator net::HTTP::REST::request () const {
         return net::HTTP::REST::request{net::HTTP::method::post, "/mapi/tx",
-            to_url_params (DefaultParameters),
+            to_url_params (DefaultParameters), {},
             {{net::HTTP::header::content_type, "application/JSON"}},
             to_JSON (Submissions)};
     }

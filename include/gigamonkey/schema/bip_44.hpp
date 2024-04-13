@@ -4,7 +4,7 @@
 #ifndef GIGAMONKEY_SCHEMA_BIP_44
 #define GIGAMONKEY_SCHEMA_BIP_44
 
-#include <gigamonkey/schema/bip_39.hpp>
+#include <gigamonkey/schema/hd.hpp>
 
 // HD is a format for infinite sequences of keys that 
 // can be derived from a single master. This key format
@@ -87,22 +87,8 @@ namespace Gigamonkey::HD::BIP_44 {
     constexpr uint32 relay_x_coin_type = coin_type_Bitcoin_SV;
     
     constexpr uint32 electrum_sv_coin_type = coin_type_Bitcoin_Cash;
-    
-    master_secret inline simply_cash_wallet (const string &words, BIP_32::type net = BIP_32::main) {
-        return root {BIP_32::secret::from_seed (BIP_39::read (words), net)}.master (simply_cash_coin_type, 0);
-    }
-    
-    master_secret inline moneybutton_wallet (const string &words, BIP_32::type net = BIP_32::main) {
-        return root {BIP_32::secret::from_seed (BIP_39::read (words), net)}.master (moneybutton_coin_type, 0);
-    }
-    
-    // Note: electrum sv has its own set of words. It is able to load wallets that were
-    // made with the standard set of words, but we do not load electrum words here yet. 
-    master_secret electrum_sv_wallet (const string &words, BIP_32::type net = BIP_32::main); // TODO
-    
-    master_secret relay_x_wallet (const string &words); // TODO
-    
-    master_secret centbee_wallet (const string &words, uint32 pin); // TODO
+
+    constexpr uint32 centbee_coin_type = coin_type_Bitcoin;
     
 }
 

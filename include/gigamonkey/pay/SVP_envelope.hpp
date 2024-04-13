@@ -1,12 +1,14 @@
 // Copyright (c) 2024 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#ifndef GIGAMONKEY_SPV_ENVELOPE
-#define GIGAMONKEY_SPV_ENVELOPE
+#ifndef GIGAMONKEY_PAY_SPV_ENVELOPE
+#define GIGAMONKEY_PAY_SPV_ENVELOPE
 
 #include <gigamonkey/merkle/serialize.hpp>
 #include <gigamonkey/pay/MAPI.hpp>
 #include <gigamonkey/SPV.hpp>
+
+// https://tsc.bsvblockchain.org/standards/transaction-ancestors/
 
 namespace Gigamonkey::nChain {
 

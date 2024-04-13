@@ -13,7 +13,6 @@
 #include <cryptopp/pwdbased.h>
 #include <boost/locale.hpp>
 
-
 namespace Gigamonkey::HD::BIP_39 {
     char getBit (int index,bytes bitarray) {
         return (bitarray[index/8] >> 7-(index & 0x7)) & 0x1;
@@ -57,9 +56,9 @@ namespace Gigamonkey::HD::BIP_39 {
         byte key[64];
 
         pbkdf2.DeriveKey (key, sizeof (key), 0, (const byte *) wordsBA2, words.length (), (const byte *) salt.data (), salt.length (), 2048);
-        seed seedObj (64);
-        std::copy (std::begin (key), std::end (key), seedObj.begin ());
-        return seedObj;
+        seed x (64);
+        std::copy (std::begin (key), std::end (key), x.begin ());
+        return x;
     }
 
     std::string generate (entropy ent, language lang) {

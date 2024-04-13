@@ -5,6 +5,7 @@
 #define GIGAMONKEY_SCHEMA_BIP_39
 
 #include <gigamonkey/schema/hd.hpp>
+#include <gigamonkey/schema/bip_44.hpp>
 
 // BIP 39 defines a way of generating a BIP 32 master key from a seed phrase.
 namespace Gigamonkey::HD::BIP_39 {
@@ -23,14 +24,25 @@ namespace Gigamonkey::HD::BIP_39 {
     const cross<std::string> &japanese_words ();
 }
 
-// electrum SV uses a different method of working with a seed phrase with the same interface as BIP_39
-namespace Gigamonkey::HD::Electrum_SV {
+namespace Gigamonkey::HD {
 
-    seed read (std::string words, const string &passphrase = "", BIP_39::language lang = BIP_39::language::english);
-    std::string generate (entropy, BIP_39::language lang = BIP_39::language::english);
-    bool valid (std::string words, BIP_39::language lang = BIP_39::language::english);
+    BIP_44::master_secret inline simply_cash_wallet (const string &words, BIP_32::type net = BIP_32::main) {
+        return BIP_44::root {BIP_32::secret::from_seed (BIP_39::read (words), net)}.master (BIP_44::simply_cash_coin_type, 0);
+    }
 
-    const cross<std::string> &english_words ();
+    BIP_44::master_secret inline moneybutton_wallet (const string &words, BIP_32::type net = BIP_32::main) {
+        return BIP_44::root {BIP_32::secret::from_seed (BIP_39::read (words), net)}.master (BIP_44::moneybutton_coin_type, 0);
+    }
+
+    BIP_44::master_secret inline relay_x_wallet (const string &words, BIP_32::type net = BIP_32::main) {
+        return BIP_44::root {BIP_32::secret::from_seed (BIP_39::read (words), net)}.master (BIP_44::relay_x_coin_type, 0);
+    }
+
+    // Note: electrum sv has its own set of words. It is able to load wallets that were
+    // made with the standard set of words, but we do not load electrum words here yet.
+    BIP_44::master_secret electrum_sv_wallet (const string &words, const string &passphrase = ""); // TODO
+
+    BIP_44::master_secret centbee_wallet (const string &words, uint32 pin); // TODO
 }
 
 #endif
