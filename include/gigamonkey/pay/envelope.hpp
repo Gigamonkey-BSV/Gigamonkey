@@ -1,8 +1,8 @@
 // Copyright (c) 2021 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#ifndef GIGAMONKEY_MAPI_JSONENVELOPE
-#define GIGAMONKEY_MAPI_JSONENVELOPE
+#ifndef GIGAMONKEY_PAY_JSONENVELOPE
+#define GIGAMONKEY_PAY_JSONENVELOPE
 
 #include <gigamonkey/secp256k1.hpp>
 #include <data/encoding/base64.hpp>

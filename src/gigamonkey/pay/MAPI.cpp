@@ -26,7 +26,7 @@ namespace Gigamonkey::nChain::MAPI {
         return res;
     }
     
-    net::HTTP::request client::transaction_status_HTTP_request (const Bitcoin::txid &request) const {
+    net::HTTP::request client::transaction_status_HTTP_request (const Bitcoin::TXID &request) const {
         if (!request.valid ()) throw std::invalid_argument {"invalid txid"};
         std::stringstream ss;
         ss << "/mapi/tx/" << request;

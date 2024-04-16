@@ -144,7 +144,7 @@ namespace Gigamonkey::Bitcoin {
         
         EXPECT_EQ (t.Outputs.size (), 110);
         
-        EXPECT_EQ (t.Locktime, 0);
+        EXPECT_EQ (t.LockTime, 0);
         
         EXPECT_EQ (t.serialized_size (), 7676);
         

@@ -35,7 +35,7 @@ namespace Gigamonkey {
         return pay_to_pubkey::redeem (x.sign (doc, first (sigs).Directive));
     }
 
-    Bitcoin::transaction redeemable_transaction::redeem (const Gigamonkey::redeem &r) const {
+    extended::transaction redeemable_transaction::redeem (const Gigamonkey::redeem &r) const {
         auto inputs = this->Inputs;
         auto docs = this->documents ();
         auto sigs = Signatures;
@@ -43,7 +43,7 @@ namespace Gigamonkey {
 
         while (size (docs) > 0) {
             auto &in = first (inputs);
-            input_scripts <<= r (in.Prevout.Value, first (docs), first (sigs), in.InputScriptSoFar);
+            input_scripts <<= r (in.Prevout, first (docs), first (sigs), in.InputScriptSoFar);
             inputs = rest (inputs);
             docs = rest (docs);
             sigs = rest (sigs);

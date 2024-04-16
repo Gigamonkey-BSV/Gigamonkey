@@ -51,7 +51,7 @@ namespace Gigamonkey::SPV {
         return Merkle::dual {h->second->Paths, h->second->Header.Value.MerkleRoot};
     }
 
-    database::confirmed database::memory::tx (const Bitcoin::txid &t) const {
+    database::confirmed database::memory::tx (const Bitcoin::TXID &t) const {
         auto tx = Transactions.find (t);
         ptr<const Bitcoin::transaction> tt {tx == Transactions.end () ? ptr<const Bitcoin::transaction> {} : tx->second};
         auto h = ByTXID.find (t);
@@ -97,14 +97,14 @@ namespace Gigamonkey::SPV {
             return proof::valid (u.Transaction, conf.Path, conf.Header);
         }
 
-        for (const entry<Bitcoin::txid, ptr<proof::node>> &p : std::get<map<Bitcoin::txid, ptr<proof::node>>> (u.Proof))
+        for (const entry<Bitcoin::TXID, ptr<proof::node>> &p : std::get<map<Bitcoin::TXID, ptr<proof::node>>> (u.Proof))
             if (p.Value == nullptr || p.Key != Bitcoin::transaction::id (p.Value->Transaction) || !unconfirmed_validate (*p.Value, d)) return false;
 
         return true;
     }
 
     bool proof_validate (const proof &u, const database *d) {
-        for (const entry<Bitcoin::txid, proof::node> &p : u.Proof)
+        for (const entry<Bitcoin::TXID, proof::node> &p : u.Proof)
             if (p.Key != Bitcoin::transaction::id (p.Value.Transaction) || !unconfirmed_validate (p.Value, d)) return false;
 
         Bitcoin::transaction decoded {u.Transaction};
@@ -146,14 +146,14 @@ namespace Gigamonkey::SPV {
         return spent;
     }
 
-    ptr<proof::node> generate_unconfirmed (const database &d, const Bitcoin::txid &x) {
+    ptr<proof::node> generate_unconfirmed (const database &d, const Bitcoin::TXID &x) {
         //
         database::confirmed n = d.tx (x);
         if (n.Transaction == nullptr) return {};
 
         if (bool (n.Confirmation)) return ptr<proof::node> {new proof::node {n.Transaction->write (), proof::tree {*n.Confirmation}}};
 
-        map<Bitcoin::txid, ptr<proof::node>> antecedents;
+        map<Bitcoin::TXID, ptr<proof::node>> antecedents;
 
         for (const Bitcoin::input &in : Bitcoin::transaction {x}.Inputs) {
             ptr<proof::node> u = generate_unconfirmed (d, in.Reference.Digest);
@@ -168,10 +168,10 @@ namespace Gigamonkey::SPV {
     // this proof can be sent to a merchant who can use it to confirm that
     // the transaction is valid.
     maybe<proof> generate_proof (const database &d, const bytes &b) {
-        Bitcoin::txid x = Bitcoin::transaction::id (b);
+        Bitcoin::TXID x = Bitcoin::transaction::id (b);
         database::confirmed n = d.tx (x);
         if (bool (n.Confirmation)) return {};
-        map<Bitcoin::txid, proof::node> antecedents;
+        map<Bitcoin::TXID, proof::node> antecedents;
 
         for (const Bitcoin::input &in : Bitcoin::transaction {x}.Inputs) {
             ptr<proof::node> u = generate_unconfirmed (d, in.Reference.Digest);

@@ -31,10 +31,10 @@ namespace Gigamonkey::Bitcoin::incomplete {
         int32_little Version;
         list<input> Inputs;
         list<output> Outputs;
-        uint32_little Locktime;
+        uint32_little LockTime;
         
         transaction (int32_little v, list<input> i, list<output> o, uint32_little l = 0) : 
-            Version {v}, Inputs {i}, Outputs {o}, Locktime {l} {}
+            Version {v}, Inputs {i}, Outputs {o}, LockTime {l} {}
         
         transaction (list<input> i, list<output> o, uint32_little l = 0) : 
             transaction {int32_little {Bitcoin::transaction::LatestVersion}, i, o, l} {}
@@ -43,7 +43,7 @@ namespace Gigamonkey::Bitcoin::incomplete {
             Version {tx.Version}, Outputs {tx.Outputs}, Inputs {
                 data::for_each ([] (const Bitcoin::input& i) -> input {
                     return input {i};
-                }, tx.Inputs)}, Locktime {tx.Locktime} {}
+                }, tx.Inputs)}, LockTime {tx.LockTime} {}
         
         explicit operator bytes () const;
         explicit transaction (bytes_view);
@@ -56,7 +56,7 @@ namespace Gigamonkey::Bitcoin::incomplete {
     std::ostream &operator << (std::ostream &, const transaction &);
     
     std::ostream inline &operator << (std::ostream &o, const input &i) {
-        return o << "input{" << i.Reference << ", ___, " << i.Sequence << "}";
+        return o << "input {" << i.Reference << ", ___, " << i.Sequence << "}";
     }
 }
 

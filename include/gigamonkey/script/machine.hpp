@@ -73,15 +73,15 @@ namespace Gigamonkey::Bitcoin::interpreter {
             return (unlock << OP_CODESEPARATOR) + (lock << OP_CODESEPARATOR) + decompile (data::reverse (unlock).first ().data ());
         }
         
-        ScriptError check_scripts (const program unlock, const program lock, uint32 flags) {
+        ScriptError pre_check_scripts (const program unlock, const program lock, uint32 flags) {
             if (flags & SCRIPT_VERIFY_SIGPUSHONLY && !is_push (unlock)) return SCRIPT_ERR_SIG_PUSHONLY;
 
             if (isP2SH (lock)) {
-                if (unlock.empty ()) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                if (data::empty (unlock)) return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 if (!is_push (unlock)) return SCRIPT_ERR_SIG_PUSHONLY;
             }
 
-            return verify (full (unlock, lock), flags);
+            return pre_verify (full (unlock, lock), flags);
         }
         
         machine (maybe<redemption_document> doc, const program unlock, const program lock, uint32 flags);

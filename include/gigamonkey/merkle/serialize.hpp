@@ -150,7 +150,7 @@ namespace Gigamonkey::nChain {
         
         // one of these must be included. 
         maybe<bytes> Transaction;
-        maybe<Bitcoin::txid> TXID;
+        maybe<Bitcoin::TXID> TXID;
         
         // there is always at least one path. 
         Merkle::path Path;
@@ -247,17 +247,17 @@ namespace Gigamonkey::nChain {
     inline proofs_serialization_standard::proofs_serialization_standard (const Merkle::branch &b)
         : TXID {b.Leaf.Digest}, Path {Merkle::path (b)} {}
     
-    inline proofs_serialization_standard::proofs_serialization_standard (const Merkle::proof& p)
+    inline proofs_serialization_standard::proofs_serialization_standard (const Merkle::proof &p)
         : TXID {p.Branch.Leaf.Digest}, Path {Merkle::path (p.Branch)}, MerkleRoot {p.Root} {}
     
-    inline proofs_serialization_standard::proofs_serialization_standard (const Merkle::branch &b, const Bitcoin::header& h)
+    inline proofs_serialization_standard::proofs_serialization_standard (const Merkle::branch &b, const Bitcoin::header &h)
         : TXID {b.Leaf.Digest}, Path {Merkle::path (b)}, BlockHeader {h} {}
     
     inline proofs_serialization_standard::proofs_serialization_standard (const Merkle::branch &b, const digest256 &block_hash)
-        : TXID{b.Leaf.Digest}, Path {Merkle::path (b)}, BlockHash {block_hash} {}
+        : TXID {b.Leaf.Digest}, Path {Merkle::path (b)}, BlockHash {block_hash} {}
     
     inline proofs_serialization_standard::proofs_serialization_standard (const Bitcoin::transaction &t, const Merkle::path &p)
-        : Transaction{bytes(t)}, Path{p} {}
+        : Transaction {bytes (t)}, Path {p} {}
     
     inline proofs_serialization_standard::proofs_serialization_standard (
         const Bitcoin::transaction &t, const Merkle::path &p, const Bitcoin::header &h)

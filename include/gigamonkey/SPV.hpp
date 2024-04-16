@@ -1,10 +1,11 @@
-// Copyright (c) 2019 Daniel Krawisz
+// Copyright (c) 2019-2024 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#ifndef GIGAMONKEY_SPV_HEADERS
-#define GIGAMONKEY_SPV_HEADERS
+#ifndef GIGAMONKEY_SPV
+#define GIGAMONKEY_SPV
 
 #include <gigamonkey/timechain.hpp>
+#include <gigamonkey/pay/extended.hpp>
 #include <gigamonkey/merkle/dual.hpp>
 
 namespace Gigamonkey::Bitcoin {
@@ -18,6 +19,7 @@ namespace Gigamonkey::SPV {
 
     // a proof consists of a transaction + previous transactions that are being redeemed
     // with merkle proofs or previous transactions with merkle proofs, etc
+    // this is what you would send to a peer when you wanted to make a payment.
     struct proof {
 
         struct confirmation {
@@ -35,7 +37,7 @@ namespace Gigamonkey::SPV {
         struct node;
 
         // an spv proof is a tree whose nodes are txs and whose leaves are all Merkle proofs.
-        using tree = either<confirmation, map<Bitcoin::txid, ptr<node>>>;
+        using tree = either<confirmation, map<Bitcoin::TXID, ptr<node>>>;
 
         struct node {
             bytes Transaction;
@@ -43,7 +45,7 @@ namespace Gigamonkey::SPV {
         };
 
         bytes Transaction;
-        map<Bitcoin::txid, node> Proof;
+        map<Bitcoin::TXID, node> Proof;
 
         bool valid () const;
 
@@ -54,6 +56,14 @@ namespace Gigamonkey::SPV {
         Bitcoin::satoshi spent () const;
         Bitcoin::satoshi fee () const;
         double fee_rate () const;
+
+        explicit operator extended::transaction () const {
+            Bitcoin::transaction tx {Transaction};
+            return extended::transaction {tx.Version, for_each ([this] (const Bitcoin::input &in) -> extended::input {
+                return extended::input {Bitcoin::output {
+                    Bitcoin::transaction::output (this->Proof[in.Reference.Digest].Transaction, in.Reference.Index)}, in};
+            }, tx.Inputs), tx.Outputs, tx.LockTime};
+        }
     };
 
     // interface for database containing headers, transactions, and merkle path.
@@ -79,7 +89,7 @@ namespace Gigamonkey::SPV {
         };
 
         // do we have a tx or merkle proof for a given tx?
-        virtual confirmed tx (const Bitcoin::txid &) const = 0;
+        virtual confirmed tx (const Bitcoin::TXID &) const = 0;
         
         virtual void insert (const N &height, const Bitcoin::header &h) = 0;
         
@@ -117,8 +127,8 @@ namespace Gigamonkey::SPV {
         std::map<data::N, ptr<entry>> ByHeight;
         std::map<digest256, ptr<entry>> ByHash;
         std::map<digest256, ptr<entry>> ByRoot;
-        std::map<Bitcoin::txid, ptr<entry>> ByTXID;
-        std::map<Bitcoin::txid, ptr<const Bitcoin::transaction>> Transactions;
+        std::map<Bitcoin::TXID, ptr<entry>> ByTXID;
+        std::map<Bitcoin::TXID, ptr<const Bitcoin::transaction>> Transactions;
         
         memory (const Bitcoin::header &h) {
             insert (0, h);
@@ -134,7 +144,7 @@ namespace Gigamonkey::SPV {
         const Bitcoin::header *header (const data::N &n) const final override;
         const data::entry<data::N, Bitcoin::header> *header (const digest256 &n) const override;
 
-        confirmed tx (const Bitcoin::txid &t) const final override;
+        confirmed tx (const Bitcoin::TXID &t) const final override;
         Merkle::dual dual_tree (const digest256 &d) const;
 
         void insert (const data::N &height, const Bitcoin::header &h) final override;

@@ -39,14 +39,14 @@ namespace Gigamonkey::nChain::MAPI {
         // there are five calls in MAPI
         get_policy_quote_response get_policy_quote ();
         get_fee_quote_response get_fee_quote ();
-        transaction_status_response get_transaction_status (const Bitcoin::txid &);
+        transaction_status_response get_transaction_status (const Bitcoin::TXID &);
         submit_transaction_response submit_transaction (const submit_transaction_request &);
         submit_transactions_response submit_transactions (const submit_transactions_request &);
 
     private:
         net::HTTP::request get_policy_quote_HTTP_request () const;
         net::HTTP::request get_fee_quote_HTTP_request () const;
-        net::HTTP::request transaction_status_HTTP_request (const Bitcoin::txid &) const;
+        net::HTTP::request transaction_status_HTTP_request (const Bitcoin::TXID &) const;
         net::HTTP::request submit_transaction_HTTP_request (const submit_transaction_request &) const;
         net::HTTP::request submit_transactions_HTTP_request (const submit_transactions_request &) const;
         JSON call (const net::HTTP::request &r);
@@ -130,7 +130,7 @@ namespace Gigamonkey::nChain::MAPI {
     // to indicate a double spend.
     struct conflicted_with {
 
-        Bitcoin::txid TXID;
+        Bitcoin::TXID TXID;
         uint64 Size;
         bytes Transaction;
 
@@ -353,7 +353,7 @@ namespace Gigamonkey::nChain::MAPI {
         return call (get_fee_quote_HTTP_request ());
     }
     
-    transaction_status_response inline client::get_transaction_status (const Bitcoin::txid &txid) {
+    transaction_status_response inline client::get_transaction_status (const Bitcoin::TXID &txid) {
         return call (transaction_status_HTTP_request (txid));
     }
     

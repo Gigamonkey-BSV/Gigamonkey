@@ -14,7 +14,7 @@
 
 namespace Gigamonkey::Bitcoin {
 
-    using txid = digest256;
+    using TXID = digest256;
     
     struct outpoint;
     
@@ -130,24 +130,24 @@ namespace Gigamonkey::Bitcoin {
     struct outpoint {
         
         static bool valid (slice<36>);
-        static Bitcoin::txid digest (slice<36>);
+        static Bitcoin::TXID digest (slice<36>);
         static Bitcoin::index index (slice<36>);
         
         // the hash of a previous transaction. 
-        txid Digest; 
+        TXID Digest;
         
         // Index of the previous output in the tx. 
         Bitcoin::index Index;
         
         static outpoint coinbase () {
-            static outpoint Coinbase {txid {}, 0xffffffff};
+            static outpoint Coinbase {TXID {}, 0xffffffff};
             return Coinbase;
         }
 
         byte_array<36> write () const;
 
         outpoint () : Digest {}, Index {} {}
-        outpoint (const txid &id, const Bitcoin::index &i) : Digest {id}, Index {i} {}
+        outpoint (const TXID &id, const Bitcoin::index &i) : Digest {id}, Index {i} {}
     };
 
     struct input {
@@ -166,7 +166,7 @@ namespace Gigamonkey::Bitcoin {
         bool valid () const;
         
         input () : Reference {}, Script {}, Sequence {} {}
-        input (const outpoint& o, const Bitcoin::script& x, const uint32_little& z = Finalized) :
+        input (const outpoint &o, const Bitcoin::script &x, const uint32_little &z = Finalized) :
             Reference {o}, Script {x}, Sequence {z} {}
         explicit input (bytes_view);
         
@@ -209,24 +209,24 @@ namespace Gigamonkey::Bitcoin {
         static cross<bytes_view> inputs (bytes_view);
         static bytes_view output (bytes_view, index);
         static bytes_view input (bytes_view, index);
-        static int32_little locktime (bytes_view);
+        static int32_little lock_time (bytes_view);
         
-        static txid id (bytes_view);
+        static TXID id (bytes_view);
         
         constexpr static int32 LatestVersion = 2;
         
         int32_little Version;
         list<Bitcoin::input> Inputs;
         list<Bitcoin::output> Outputs;
-        uint32_little Locktime;
+        uint32_little LockTime;
         
         transaction (int32_little v, list<Bitcoin::input> i,  list<Bitcoin::output> o, uint32_little t = 0) :
-            Version {v}, Inputs {i}, Outputs {o}, Locktime {t} {}
+            Version {v}, Inputs {i}, Outputs {o}, LockTime {t} {}
         
         transaction (list<Bitcoin::input> i, list<Bitcoin::output> o, uint32_little t = 0) :
             transaction {int32_little {LatestVersion}, i, o, t} {}
             
-        transaction () : Version {}, Inputs {}, Outputs {}, Locktime {} {};
+        transaction () : Version {}, Inputs {}, Outputs {}, LockTime {} {};
         
         explicit transaction (bytes_view b);
         
@@ -235,7 +235,7 @@ namespace Gigamonkey::Bitcoin {
         bytes write () const;
         explicit operator bytes () const;
         
-        txid id () const;
+        TXID id () const;
         
         uint64 serialized_size () const;
         
@@ -250,7 +250,7 @@ namespace Gigamonkey::Bitcoin {
         constexpr static p2p::command Command {"tx"};
     };
     
-    txid inline id (const transaction& t) {
+    TXID inline id (const transaction &t) {
         return Hash256 (bytes (t));
     }
     
@@ -267,7 +267,7 @@ namespace Gigamonkey::Bitcoin {
         static std::vector<bytes_view> transactions (bytes_view);
         
         static digest256 inline merkle_root (bytes_view b) {
-            list<txid> ids {};
+            list<TXID> ids {};
             for (bytes_view x : transactions (b)) ids = ids << Hash256 (x);
             return Merkle::root (ids);
         }
@@ -313,7 +313,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     bool inline operator == (const transaction &a, const transaction &b) {
-        return a.Version == b.Version && a.Inputs == b.Inputs && a.Outputs == b.Outputs && a.Locktime == b.Locktime;
+        return a.Version == b.Version && a.Inputs == b.Inputs && a.Outputs == b.Outputs && a.LockTime == b.LockTime;
     }
     
     bool inline operator == (const block &a, const block &b) {
@@ -321,7 +321,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     std::ostream inline &operator << (std::ostream &o, const header &h) {
-        return o << "header{Version : " << h.Version <<
+        return o << "header {Version : " << h.Version <<
             ", Previous : " << h.Previous << 
             ", MerkleRoot : " << h.MerkleRoot << 
             ", Timestamp : " << h.Timestamp << 
@@ -330,20 +330,20 @@ namespace Gigamonkey::Bitcoin {
     }
     
     std::ostream inline &operator << (std::ostream &o, const outpoint &p) {
-        return o << "outpoint{" << p.Digest << ":" << p.Index << "}";
+        return o << "outpoint {" << p.Digest << ":" << p.Index << "}";
     }
     
     std::ostream inline &operator << (std::ostream &o, const input &p) {
-        return o << "input{Reference : " << p.Reference << ", Script : " << ASM (p.Script) << ", Sequence : " << p.Sequence << "}";
+        return o << "input {Reference : " << p.Reference << ", Script : " << ASM (p.Script) << ", Sequence : " << p.Sequence << "}";
     }
 
     std::ostream inline &operator << (std::ostream &o, const output &p) {
-        return o << "output{Value : " << p.Value << ", Script : " << ASM (p.Script) << "}";
+        return o << "output {Value : " << p.Value << ", Script : " << ASM (p.Script) << "}";
     }
 
     std::ostream inline &operator << (std::ostream &o, const transaction& p) {
-        return o << "transaction{Version : " << p.Version << ", Inputs : " 
-            << p.Inputs << ", Outputs: " << p.Outputs << ", " << p.Locktime << "}";
+        return o << "transaction {Version : " << p.Version << ", Inputs : "
+            << p.Inputs << ", Outputs: " << p.Outputs << ", " << p.LockTime << "}";
     }
     
     writer inline &operator << (writer &w, const header &h) {
@@ -379,11 +379,11 @@ namespace Gigamonkey::Bitcoin {
     }
     
     reader inline &operator >> (reader &r, transaction &t) {
-        return r >> t.Version >> var_sequence<input> {t.Inputs} >> var_sequence<output> {t.Outputs} >> t.Locktime;
+        return r >> t.Version >> var_sequence<input> {t.Inputs} >> var_sequence<output> {t.Outputs} >> t.LockTime;
     }
 
     writer inline &operator << (writer &w, const transaction &t) {
-        return w << t.Version << var_sequence<input> {t.Inputs} << var_sequence<output> {t.Outputs} << t.Locktime;
+        return w << t.Version << var_sequence<input> {t.Inputs} << var_sequence<output> {t.Outputs} << t.LockTime;
     }
 
     reader inline &operator >> (reader &r, block &b) {
@@ -406,7 +406,7 @@ namespace Gigamonkey::Bitcoin {
         return Bitcoin::Hash256 (h);
     }
         
-    txid inline transaction::id () const {
+    TXID inline transaction::id () const {
         return Bitcoin::id (*this);
     }
     
@@ -430,7 +430,7 @@ namespace Gigamonkey::Bitcoin {
         return a.Timestamp <=> b.Timestamp;
     }
     
-    txid inline transaction::id (bytes_view b) {
+    TXID inline transaction::id (bytes_view b) {
         return Hash256 (b);
     }
     

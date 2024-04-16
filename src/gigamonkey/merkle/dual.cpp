@@ -92,7 +92,7 @@ namespace Gigamonkey::Merkle {
                 
             }
             
-            void insert_path(const digests &d, uint32 x, uint32 p) {
+            void insert_path (const digests &d, uint32 x, uint32 p) {
                 
                 uint32 i;
                 uint32 n;
@@ -250,7 +250,7 @@ namespace Gigamonkey::Merkle {
     }
     
     JSON dual::serialize () const {
-        return JSON (inverted_from{*this});
+        return JSON (inverted_from {*this});
     }
     
     dual dual::deserialize (const JSON &j) {

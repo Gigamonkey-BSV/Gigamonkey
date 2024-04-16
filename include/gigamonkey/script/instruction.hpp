@@ -178,10 +178,11 @@ namespace Gigamonkey::Bitcoin {
     
     using program = list<instruction>;
     
-    ScriptError verify (program, uint32 flags = 0);
+    // check flags that can be checked without running the program.
+    ScriptError pre_verify (program, uint32 flags = 0);
     
     bool inline valid (program p) {
-        return verify (p) == SCRIPT_ERR_OK;
+        return pre_verify (p) == SCRIPT_ERR_OK;
     };
     
     bytes compile (program p); 

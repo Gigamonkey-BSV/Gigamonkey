@@ -60,8 +60,9 @@ add_library (gigamonkey STATIC
     src/gigamonkey/address.cpp
     src/gigamonkey/wif.cpp
     src/gigamonkey/merkle.cpp
-    src/gigamonkey/timechain.cpp
     src/gigamonkey/work.cpp
+    src/gigamonkey/timechain.cpp
+    src/gigamonkey/pay/extended.cpp
     src/gigamonkey/SPV.cpp
     src/gigamonkey/redeem.cpp
     
@@ -72,6 +73,7 @@ add_library (gigamonkey STATIC
     
     src/gigamonkey/merkle/dual.cpp
     src/gigamonkey/merkle/serialize.cpp
+    src/gigamonkey/merkle/BUMP.cpp
 
     src/gigamonkey/pay/envelope.cpp
     src/gigamonkey/pay/MAPI.cpp

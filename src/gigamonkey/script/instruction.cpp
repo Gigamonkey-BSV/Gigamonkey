@@ -392,7 +392,7 @@ namespace Gigamonkey::Bitcoin {
         return valid_program (p.rest (), x, flags);
     }
     
-    ScriptError verify (program p, uint32 flags) {
+    ScriptError pre_verify (program p, uint32 flags) {
         bool script_genesis = (flags & SCRIPT_GENESIS) != 0;
         bool utxo_after_genesis = (flags & SCRIPT_UTXO_AFTER_GENESIS) != 0;
         

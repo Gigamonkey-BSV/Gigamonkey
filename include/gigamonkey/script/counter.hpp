@@ -19,26 +19,35 @@ namespace Gigamonkey::Bitcoin::interpreter {
         
         static bytes_view read_instruction (bytes_view subscript);
         
-        program_counter (bytes_view s): 
-            Next {read_instruction (s)}, Script {s}, Counter {0}, LastCodeSeparator {0} {}
-        
-        program_counter next () const {
-            size_t next_counter = Counter + Next.size ();
-            return program_counter {
-                read_instruction (Script.substr (next_counter)), 
-                Script, next_counter, 
-                Next.size () > 0 && Next[0] == OP_CODESEPARATOR ? next_counter : LastCodeSeparator};
-        }
-        
-        bytes_view script_code () const {
-            return bytes_view {Script.data () + LastCodeSeparator, Script.size () - LastCodeSeparator};
-        }
+        program_counter (bytes_view s);
+        program_counter next () const;
+
+        // the script code is the part of the script that gets signed.
+        // normally this will be the locking script.
+        bytes_view script_code () const;
         
     private:
-        program_counter (bytes_view n, bytes_view s, size_t c, size_t l) : 
-            Next {n}, Script {s}, Counter {c}, LastCodeSeparator {l} {}
+        program_counter (bytes_view n, bytes_view s, size_t c, size_t l);
     };
     
+
+    inline program_counter::program_counter (bytes_view s):
+        Next {read_instruction (s)}, Script {s}, Counter {0}, LastCodeSeparator {0} {}
+
+    program_counter inline program_counter::next () const {
+        size_t next_counter = Counter + Next.size ();
+        return program_counter {
+            read_instruction (Script.substr (next_counter)),
+            Script, next_counter,
+            Next.size () > 0 && Next[0] == OP_CODESEPARATOR ? next_counter : LastCodeSeparator};
+    }
+
+    bytes_view inline program_counter::script_code () const {
+        return bytes_view {Script.data () + LastCodeSeparator, Script.size () - LastCodeSeparator};
+    }
+
+    inline program_counter::program_counter (bytes_view n, bytes_view s, size_t c, size_t l) :
+        Next {n}, Script {s}, Counter {c}, LastCodeSeparator {l} {}
 }
 
 #endif

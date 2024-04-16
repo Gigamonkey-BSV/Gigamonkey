@@ -43,6 +43,20 @@ namespace Gigamonkey::Bitcoin {
 
 }
 
+namespace Gigamonkey {
+    struct satoshi_per_byte {
+        Bitcoin::satoshi Satoshis;
+        uint64 Bytes;
+
+        operator double () const;
+        bool valid () const;
+    };
+
+    std::weak_ordering inline operator <=> (const satoshi_per_byte &a, const satoshi_per_byte &b);
+
+    bool operator == (const satoshi_per_byte &a, const satoshi_per_byte &b);
+}
+
 namespace data::math {
     
     template <> struct identity<plus<Gigamonkey::Bitcoin::satoshi>, Gigamonkey::Bitcoin::satoshi> {

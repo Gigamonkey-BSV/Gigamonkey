@@ -209,7 +209,7 @@ namespace Gigamonkey::nChain {
                 bytes tx;
                 read_transaction (r, tx);
             } else {
-                Bitcoin::txid t;
+                Bitcoin::TXID t;
                 r >> t;
                 x.TXID = t;
             }
@@ -261,7 +261,7 @@ namespace Gigamonkey::nChain {
         return w;
     }
     
-    writer inline &write_txid (writer &w, const Bitcoin::txid &t) {
+    writer inline &write_txid (writer &w, const Bitcoin::TXID &t) {
         return w << t;
     }
     
@@ -343,7 +343,7 @@ namespace Gigamonkey::nChain {
     bool proofs_serialization_standard::validate (const SPV::database &d) const {
         if (!valid ()) return false;
 
-        Bitcoin::txid txid = bool (Transaction) ? Bitcoin::transaction::id (*Transaction) : *TXID;
+        Bitcoin::TXID txid = bool (Transaction) ? Bitcoin::transaction::id (*Transaction) : *TXID;
 
         digest256 root = Path.derive_root (txid);
 

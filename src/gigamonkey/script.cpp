@@ -25,14 +25,14 @@ namespace Gigamonkey::Bitcoin {
         // We want to compare apples to apples, so fail the script unless the type
         // of nLockTime being tested is the same as the nLockTime in the
         // transaction.
-        if (!((Transaction.Locktime < LOCKTIME_THRESHOLD &&
+        if (!((Transaction.LockTime < LOCKTIME_THRESHOLD &&
             nLockTime < LOCKTIME_THRESHOLD) ||
-            (Transaction.Locktime >= LOCKTIME_THRESHOLD &&
+            (Transaction.LockTime >= LOCKTIME_THRESHOLD &&
             nLockTime >= LOCKTIME_THRESHOLD))) return false;
 
         // Now that we know we're comparing apples-to-apples, the comparison is a
         // simple numeric one.
-        if (nLockTime > int64_t (Transaction.Locktime)) return false;
+        if (nLockTime > int64_t (Transaction.LockTime)) return false;
 
         // Finally the nLockTime feature can be disabled and thus
         // CHECKLOCKTIMEVERIFY bypassed if every txin has been finalized by setting

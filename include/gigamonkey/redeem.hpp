@@ -4,6 +4,7 @@
 #ifndef GIGAMONKEY_REDEEM
 #define GIGAMONKEY_REDEEM
 
+#include <gigamonkey/pay/extended.hpp>
 #include "fees.hpp"
 #include "wif.hpp"
 #include <cmath>
@@ -38,7 +39,7 @@ namespace Gigamonkey {
 
         list<list<sigop>> Signatures;
 
-        Bitcoin::transaction redeem (const Gigamonkey::redeem &) const;
+        extended::transaction redeem (const Gigamonkey::redeem &) const;
     };
 
     inline redeemable_transaction::redeemable_transaction

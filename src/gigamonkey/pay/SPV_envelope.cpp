@@ -9,7 +9,7 @@ namespace Gigamonkey::nChain {
     enum class no_excluded_middle : byte {no = false, yes = true, unknown = 2};
 
     bool validate_node (
-        const Bitcoin::txid &txid,
+        const Bitcoin::TXID &txid,
         const SPV_envelope::node &n,
         no_excluded_middle &MAPI_responses_included,
         const SPV::database *h) {
@@ -30,7 +30,7 @@ namespace Gigamonkey::nChain {
 
         if (bool (n.Proof)) return h != nullptr ? n.Proof->validate (*h) : n.Proof->valid ();
 
-        for (const entry<Bitcoin::txid, ptr<SPV_envelope::node>> &p : n.Inputs)
+        for (const entry<Bitcoin::TXID, ptr<SPV_envelope::node>> &p : n.Inputs)
             if (p.Value == nullptr || !validate_node (p.Key, *p.Value, MAPI_responses_included, h)) return false;
 
         return true;
@@ -45,7 +45,7 @@ namespace Gigamonkey::nChain {
 
         no_excluded_middle MAPI_responses_included = no_excluded_middle::unknown;
 
-        for (const entry<Bitcoin::txid, SPV_envelope::node> &p : n.Inputs)
+        for (const entry<Bitcoin::TXID, SPV_envelope::node> &p : n.Inputs)
             if (!validate_node (p.Key, p.Value, MAPI_responses_included, nullptr)) return false;
 
         return true;
@@ -61,15 +61,15 @@ namespace Gigamonkey::nChain {
         return nChain::validate (*this, &h);
     }
 
-    SPV_envelope::node to_SPV_envelope (const Bitcoin::txid &txid, const SPV::proof::node &u) {
+    SPV_envelope::node to_SPV_envelope (const Bitcoin::TXID &txid, const SPV::proof::node &u) {
 
         if (std::holds_alternative<SPV::proof::confirmation> (u.Proof)) {
             const auto &conf = std::get<SPV::proof::confirmation> (u.Proof);
             return SPV_envelope::node {u.Transaction, proofs_serialization_standard {Merkle::branch {txid, conf.Path}, conf.Header}};
         }
 
-        map<Bitcoin::txid, ptr<SPV_envelope::node>> inputs;
-        for (const auto &e : std::get<map<Bitcoin::txid, ptr<SPV::proof::node>>> (u.Proof))
+        map<Bitcoin::TXID, ptr<SPV_envelope::node>> inputs;
+        for (const auto &e : std::get<map<Bitcoin::TXID, ptr<SPV::proof::node>>> (u.Proof))
             inputs = inputs.insert (e.Key, std::make_shared<SPV_envelope::node> (to_SPV_envelope (e.Key, *e.Value)));
 
         return SPV_envelope::node {u.Transaction, inputs};
@@ -82,13 +82,13 @@ namespace Gigamonkey::nChain {
         for (const auto &e : u.Proof) Inputs = Inputs.insert (e.Key, to_SPV_envelope (e.Key, e.Value));
     }
 
-    JSON inline write_txid (const Bitcoin::txid &id) {
+    JSON inline write_txid (const Bitcoin::TXID &id) {
         return write_backwards_hex (id);
     }
 
-    maybe<Bitcoin::txid> read_txid (const JSON &j) {
+    maybe<Bitcoin::TXID> read_txid (const JSON &j) {
         if (!j.is_string ()) return {};
-        Bitcoin::txid id = read_backwards_hex<32> (std::string (j));
+        Bitcoin::TXID id = read_backwards_hex<32> (std::string (j));
         if (!id.valid ()) return {};
         return id;
     }
@@ -109,7 +109,7 @@ namespace Gigamonkey::nChain {
         }
 
         JSON::object_t inputs {};
-        for (const entry<Bitcoin::txid, ptr<SPV_envelope::node>> &p : n.Inputs)
+        for (const entry<Bitcoin::TXID, ptr<SPV_envelope::node>> &p : n.Inputs)
             inputs[write_txid (p.Key)] = write_JSON (*p.Value);
         node["inputs"] = inputs;
 
@@ -129,7 +129,7 @@ namespace Gigamonkey::nChain {
         }
 
         JSON::object_t inputs {};
-        for (const entry<Bitcoin::txid, SPV_envelope::node> &p : Inputs)
+        for (const entry<Bitcoin::TXID, SPV_envelope::node> &p : Inputs)
             inputs[write_txid (p.Key)] = write_JSON (p.Value);
         node["inputs"] = inputs;
 
@@ -174,7 +174,7 @@ namespace Gigamonkey::nChain {
         const auto &inputs = j["inputs"];
         if (!inputs.is_object ()) return nullptr;
 
-        map<Bitcoin::txid, ptr<SPV_envelope::node>> Inputs;
+        map<Bitcoin::TXID, ptr<SPV_envelope::node>> Inputs;
         for (const auto &[key, value] : inputs.items ()) {
             SPV_envelope::node *nn = read_JSON (value);
             if (nn == nullptr) return nullptr;
@@ -200,7 +200,7 @@ namespace Gigamonkey::nChain {
         auto mapiResponses = read_mapi_responses (j);
         if (!bool (mapiResponses)) return;
 
-        map<Bitcoin::txid, node> ins;
+        map<Bitcoin::TXID, node> ins;
         for (const auto &[key, value] : inputs.items ()) {
             SPV_envelope::node *nn = read_JSON (value);
             if (nn == nullptr) return;

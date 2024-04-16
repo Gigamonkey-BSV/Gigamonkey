@@ -23,7 +23,7 @@ namespace Gigamonkey::Bitcoin::sighash {
         
         else for (int i = 0; i < doc.Transaction.Inputs.size (); i++)
             in <<= input {doc.Transaction.Inputs[i].Reference,
-                i == doc.InputIndex ? remove_code_separators (doc.ScriptCode) : bytes{},
+                i == doc.InputIndex ? remove_code_separators (doc.ScriptCode) : bytes {},
                 base (d) == sighash::all || i == doc.InputIndex ? doc.Transaction.Inputs[i].Sequence : uint32_little {0}};
         
         if (sighash::base (d) == sighash::single)
@@ -32,7 +32,7 @@ namespace Gigamonkey::Bitcoin::sighash {
             for (const output &o : doc.Transaction.Outputs)
                 out <<= o;
         
-        return transaction {doc.Transaction.Version, in, out, doc.Transaction.Locktime};
+        return transaction {doc.Transaction.Version, in, out, doc.Transaction.LockTime};
         
     }
 
@@ -102,7 +102,7 @@ namespace Gigamonkey::Bitcoin::sighash {
                 // Outputs (none/one/all, depending on flags)
                 << hashOutputs
                 // Locktime
-                << doc.Transaction.Locktime
+                << doc.Transaction.LockTime
                 // Sighash type
                 << uint32_little {d};
             

@@ -4,7 +4,8 @@
 #ifndef GIGAMONKEY_FEES
 #define GIGAMONKEY_FEES
 
-#include "script.hpp"
+#include <gigamonkey/pay/extended.hpp>
+#include <gigamonkey/sighash.hpp>
 #include <cmath>
 
 // This file is for making it easy to design a transaction to meet your
@@ -13,7 +14,6 @@
 // scripts are valid.
 
 namespace Gigamonkey::Bitcoin {
-    Bitcoin::block genesis ();
 
     struct prevout : data::entry<Bitcoin::outpoint, Bitcoin::output> {
         using data::entry<Bitcoin::outpoint, Bitcoin::output>::entry;
@@ -34,18 +34,6 @@ namespace Gigamonkey::Bitcoin {
 
 namespace Gigamonkey {
 
-    struct satoshi_per_byte {
-        Bitcoin::satoshi Satoshis;
-        uint64 Bytes;
-
-        operator double () const;
-        bool valid () const;
-    };
-
-    std::weak_ordering inline operator <=> (const satoshi_per_byte &a, const satoshi_per_byte &b);
-
-    bool operator == (const satoshi_per_byte &a, const satoshi_per_byte &b);
-
     // given a tx size, what fee should we pay?
     Bitcoin::satoshi calculate_fee (satoshi_per_byte v, uint64 size);
 
@@ -59,14 +47,12 @@ namespace Gigamonkey {
         // however, we must estimate the size of the inputs before we sign because the
         // transaction fee is included in the signature, and we don't know what a good
         // tx fee is going to be without knowing the size of the final transaction.
-        struct input {
+        struct input : Bitcoin::incomplete::input {
             // the output being redeemed.
-            Bitcoin::prevout Prevout;
+            Bitcoin::output Prevout;
 
             // the expected size of the input script.
             uint64 ExpectedScriptSize;
-
-            uint32_little Sequence;
 
             // The signature may sometimes sign part of the input script,
             // if OP_CODESEPARATOR is used and FORKID is not used. This allows
@@ -75,15 +61,21 @@ namespace Gigamonkey {
             bytes InputScriptSoFar;
 
             input (Bitcoin::prevout p, uint64 x, uint32_little q = Bitcoin::input::Finalized, bytes z = {});
-            operator Bitcoin::incomplete::input () const;
             uint64 expected_size () const;
+
+            // the script code is the part of the script that gets signed.
+            // it is either the
             bytes script_code () const;
+
+            extended::input complete (bytes_view script) const {
+                return extended::input {Prevout, static_cast<const Bitcoin::incomplete::input &> (*this).complete (script)};
+            }
         };
 
         int32_little Version;
         list<input> Inputs;
         list<Bitcoin::output> Outputs;
-        uint32_little Locktime;
+        uint32_little LockTime;
 
         // compare this to a satoshi_per_byte value to see if the fee is good enough.
         uint64 expected_size () const;
@@ -98,26 +90,9 @@ namespace Gigamonkey {
         // construct the documents for each input (the documents represent the data structure that gets signed).
         list<Bitcoin::sighash::document> documents () const;
 
-        Bitcoin::transaction complete (list<Bitcoin::script> redeem) const;
+        extended::transaction complete (list<Bitcoin::script> redeem) const;
 
     };
-
-    inline satoshi_per_byte::operator double () const {
-        if (Bytes == 0) throw data::math::division_by_zero {};
-        return double (Satoshis) / double (Bytes);
-    }
-
-    bool inline satoshi_per_byte::valid () const {
-        return Bytes != 0;
-    }
-
-    std::weak_ordering inline operator <=> (const satoshi_per_byte &a, const satoshi_per_byte &b) {
-        return math::fraction<int64, uint64> (int64 (a.Satoshis), a.Bytes) <=> math::fraction<int64, uint64> (int64 (b.Satoshis), b.Bytes);
-    }
-
-    bool inline operator == (const satoshi_per_byte &a, const satoshi_per_byte &b) {
-        return math::fraction<int64, uint64> (int64 (a.Satoshis), a.Bytes) == math::fraction<int64, uint64> (int64 (b.Satoshis), b.Bytes);
-    }
 
     Bitcoin::satoshi inline calculate_fee (satoshi_per_byte v, uint64 size) {
         if (v.Bytes == 0) throw data::math::division_by_zero {};
@@ -125,18 +100,16 @@ namespace Gigamonkey {
     }
 
     inline transaction_design::input::input (Bitcoin::prevout p, uint64 x, uint32_little q, bytes z):
-        Prevout {p}, ExpectedScriptSize {x}, Sequence {q}, InputScriptSoFar {z} {}
-
-    inline transaction_design::input::operator Bitcoin::incomplete::input () const {
-        return {Prevout.Key, Sequence};
-    }
+        Bitcoin::incomplete::input {p.Key, q}, Prevout {p.Value},
+        ExpectedScriptSize {x}, InputScriptSoFar {z} {}
 
     uint64 inline transaction_design::input::expected_size () const {
         return 40 + Bitcoin::var_int::size (ExpectedScriptSize) + ExpectedScriptSize;
     }
 
     bytes inline transaction_design::input::script_code () const {
-        return write_bytes (Prevout.script ().size () + InputScriptSoFar.size (), Prevout.script (), InputScriptSoFar);
+        return write_bytes (Prevout.Script.size () + InputScriptSoFar.size () + 1,
+                Prevout.Script, byte (OP_CODESEPARATOR), InputScriptSoFar);
     }
 
     uint64 inline transaction_design::expected_size () const {
@@ -151,7 +124,7 @@ namespace Gigamonkey {
 
     Bitcoin::satoshi inline transaction_design::spent () const {
         return data::fold ([] (Bitcoin::satoshi x, const input &in) -> Bitcoin::satoshi {
-            return in.Prevout.value () + x;
+            return in.Prevout.Value + x;
         }, Bitcoin::satoshi {0}, Inputs);
     }
 
@@ -173,7 +146,7 @@ namespace Gigamonkey {
     inline transaction_design::operator Bitcoin::incomplete::transaction () const {
         return Bitcoin::incomplete::transaction {Version, data::for_each ([] (const input &in) -> Bitcoin::incomplete::input {
             return in;
-        }, Inputs), Outputs, Locktime};
+        }, Inputs), Outputs, LockTime};
     }
 
     // construct the documents for each input (the documents represent the data structure that gets signed).
@@ -182,18 +155,22 @@ namespace Gigamonkey {
         uint32 index = 0;
         return data::for_each ([&incomplete, &index] (const input &in) -> Bitcoin::sighash::document {
             return Bitcoin::sighash::document {
-                in.Prevout.value (),
+                in.Prevout.Value,
                 Bitcoin::remove_until_last_code_separator (in.script_code ()),
                 incomplete,
                 index++};
         }, Inputs);
     }
 
-    Bitcoin::transaction inline transaction_design::complete (list<Bitcoin::script> redeem) const {
-        return Bitcoin::incomplete::transaction (*this).complete (redeem);
+    extended::transaction inline transaction_design::complete (list<Bitcoin::script> scripts) const {
+        if (scripts.size () != Inputs.size ()) throw std::logic_error {"need one script for each input."};
+        return extended::transaction {Version, data::map_thread ([] (const input &in, const bytes &script) -> extended::input {
+            return in.complete (script);
+        }, Inputs, scripts), Outputs, LockTime};
     }
 
 }
+
 
 #endif
 

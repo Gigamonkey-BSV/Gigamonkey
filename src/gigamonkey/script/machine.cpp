@@ -58,7 +58,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
     }
     
     std::ostream &operator << (std::ostream &o, const machine &i) {
-        return o << "machine{\n\tProgram: " << i.State.unread ()
+        return o << "machine {\n\tProgram: " << i.State.unread ()
             << ",\n\tHalt: " << (i.Halt ? "true" : "false") 
             << ", Result: " << i.Result << ", Flags: " << i.State.Flags
             << ",\n\tStack: " << i.State.Stack << ",\n\tAltStack: "
@@ -92,7 +92,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
     
     machine::machine (maybe<redemption_document> doc, const program unlock, const program lock, uint32 flags) :
         Halt {false}, Result {false}, State {flags, false, doc, compile (full (unlock, lock))} {
-        if (auto err = check_scripts (unlock, lock, flags); err) {
+        if (auto err = pre_check_scripts (unlock, lock, flags); err) {
             Halt = true;
             Result = err;
         }

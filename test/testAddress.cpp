@@ -19,7 +19,7 @@
 
 namespace Gigamonkey::Bitcoin {
     
-    TEST(AddressTest, TestAddresses) {
+    TEST (AddressTest, TestAddresses) {
         
         // We start with a secret key. 
         secret key {secret::test, secp256k1::secret {uint256 {"0x00000000000000000000000000000000000000000000000000000000000101a7"}}};
@@ -50,7 +50,7 @@ namespace Gigamonkey::Bitcoin {
         redemption_document doc {redeemed_value,
             incomplete::transaction {
                 transaction::LatestVersion, 
-                list<incomplete::input> {incomplete::input {outpoint {txid {307}, 7}}},
+                list<incomplete::input> {incomplete::input {outpoint {Bitcoin::TXID {307}, 7}}},
                 list<output> {}, 0}, 0};
         
         sighash::directive directive = sighash::all | sighash::fork_id;
