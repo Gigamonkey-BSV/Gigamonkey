@@ -56,6 +56,10 @@ namespace Gigamonkey::Bitcoin {
 
             address encode () const;
 
+            bool operator == (const decoded &d) const {
+                return Prefix == d.Prefix && Digest == d.Digest;
+            }
+
             std::strong_ordering operator <=> (const decoded &) const;
             explicit operator string () const;
         };
@@ -90,11 +94,11 @@ namespace Gigamonkey::Bitcoin {
         }
     };
 
-    std::ostream inline &operator << (std::ostream& o, const address &a) {
+    std::ostream inline &operator << (std::ostream &o, const address &a) {
         return o << static_cast<string> (a);
     }
 
-    std::ostream inline &operator << (std::ostream& o, const pubkey &a) {
+    std::ostream inline &operator << (std::ostream &o, const pubkey &a) {
         return o << string (a);
     }
 

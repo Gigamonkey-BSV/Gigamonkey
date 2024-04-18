@@ -445,6 +445,10 @@ namespace Gigamonkey::Bitcoin {
     bytes inline transaction::write () const {
         return bytes (*this);
     }
+
+    bool inline transaction::valid () const {
+        return Inputs.size () > 0 && Outputs.size () > 0 && data::valid (Inputs) && data::valid (Outputs);
+    }
 }
 
 #endif

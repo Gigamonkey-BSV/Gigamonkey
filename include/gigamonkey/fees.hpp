@@ -34,9 +34,6 @@ namespace Gigamonkey::Bitcoin {
 
 namespace Gigamonkey {
 
-    // given a tx size, what fee should we pay?
-    Bitcoin::satoshi calculate_fee (satoshi_per_byte v, uint64 size);
-
     // Bitcoin signatures within a transaction sign part of the transaction. Thus,
     // we need to have the transacton partly created when we make the signatures.
     // transaction_design is for determining if the fee is correct and generating the

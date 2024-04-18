@@ -49,7 +49,7 @@ namespace Gigamonkey::extended {
         Bitcoin::result evaluate (
             const Bitcoin::incomplete::transaction &,
             uint32 input_index,
-            uint32 flags = StandardScriptVerifyFlags (true, true));
+            uint32 flags = StandardScriptVerifyFlags (true, true)) const;
     };
 
     struct transaction {
@@ -59,13 +59,19 @@ namespace Gigamonkey::extended {
         list<Bitcoin::output> Outputs;
         uint32_little LockTime;
 
+        transaction (): Version {0}, Inputs {}, Outputs {}, LockTime {} {}
         transaction (int32_little v, list<input> i, list<Bitcoin::output> o, uint32_little l = 0) :
             Version {v}, Inputs {i}, Outputs {o}, LockTime {l} {}
 
         transaction (list<input> i, list<Bitcoin::output> o, uint32_little l = 0) :
             transaction {int32_little {Bitcoin::transaction::LatestVersion}, i, o, l} {}
 
-        explicit operator Bitcoin::transaction ();
+        // check all scripts and check that the fee is non-negative.
+        bool valid (uint32 flags = StandardScriptVerifyFlags (true, true)) const;
+
+        explicit operator Bitcoin::transaction () const;
+
+        Bitcoin::TXID id () const;
 
         // the extended tx has a serialized form for broadcasting.
         uint64 serialized_size () const;
@@ -129,7 +135,7 @@ namespace Gigamonkey::extended {
         return Bitcoin::evaluate (this->Script, Prevout.Script, flags);
     }
 
-    Bitcoin::result inline input::evaluate (const Bitcoin::incomplete::transaction &tx, uint32 input_index, uint32 flags) {
+    Bitcoin::result inline input::evaluate (const Bitcoin::incomplete::transaction &tx, uint32 input_index, uint32 flags) const {
         return Bitcoin::evaluate (this->Script, Prevout.Script,
             Bitcoin::redemption_document {Prevout.Value, tx, input_index}, flags);
     }
@@ -142,10 +148,14 @@ namespace Gigamonkey::extended {
         return bytes (*this);
     }
 
-    inline transaction::operator Bitcoin::transaction () {
+    inline transaction::operator Bitcoin::transaction () const {
         return Bitcoin::transaction {Version, for_each ([] (const input &in) -> Bitcoin::input {
             return static_cast<Bitcoin::input> (in);
         }, Inputs), Outputs, LockTime};
+    }
+
+    Bitcoin::TXID inline transaction::id () const {
+        return Bitcoin::transaction (*this).id ();
     }
 }
 

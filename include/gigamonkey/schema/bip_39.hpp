@@ -42,7 +42,10 @@ namespace Gigamonkey::HD {
     // made with the standard set of words, but we do not load electrum words here yet.
     BIP_44::master_secret electrum_sv_wallet (const string &words, const string &passphrase = ""); // TODO
 
-    BIP_44::master_secret centbee_wallet (const string &words, uint32 pin); // TODO
+    // this is a hypothesis about how CentBee works that we are testing.
+    BIP_44::master_secret inline centbee_wallet (const string &words, uint32 pin, BIP_32::type net = BIP_32::main) {
+        return BIP_44::root {BIP_32::secret::from_seed (BIP_39::read (words, std::to_string (pin)), net)}.master (BIP_44::centbee_coin_type, 0);
+    }
 }
 
 #endif

@@ -15,11 +15,11 @@
 
 namespace Gigamonkey::HD::BIP_39 {
     char getBit (int index,bytes bitarray) {
-        return (bitarray[index/8] >> 7-(index & 0x7)) & 0x1;
+        return (bitarray[index/8] >> 7 - (index & 0x7)) & 0x1;
     }
 
     void setBit (int index, int value,bytes& bitarray) {
-        bitarray[index/8] = bitarray[index/8] | (value  << 7-(index & 0x7));
+        bitarray[index/8] = bitarray[index/8] | (value  << 7 - (index & 0x7));
     }
     
     const cross<std::string> &getWordList (language lang) {
@@ -34,7 +34,7 @@ namespace Gigamonkey::HD::BIP_39 {
     }
     
     std::string getLangSplit (language lang) {
-        switch(lang) {
+        switch (lang) {
             case japanese:
                 return "\u3000";
             default:

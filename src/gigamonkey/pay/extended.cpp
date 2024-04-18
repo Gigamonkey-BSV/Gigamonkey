@@ -1,5 +1,6 @@
 
 #include <gigamonkey/pay/extended.hpp>
+#include <gigamonkey/script/machine.hpp>
 
 namespace Gigamonkey::extended {
 
@@ -25,5 +26,19 @@ namespace Gigamonkey::extended {
         bytes_writer w {b.begin (), b.end ()};
         w << *this;
         return b;
+    }
+
+    bool transaction::valid (uint32 flags) const {
+        if (!(Inputs.size () > 0 && Outputs.size () > 0 && data::valid (Inputs) && data::valid (Outputs) && sent () <= spent ())) return false;
+
+        Bitcoin::incomplete::transaction tx (Bitcoin::transaction (*this));
+
+        uint32 index = 0;
+        for (const input &in : Inputs) {
+            if (!in.evaluate (tx, index, flags)) return false;
+            index ++;
+        }
+
+        return true;
     }
 }

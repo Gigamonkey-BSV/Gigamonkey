@@ -116,8 +116,4 @@ namespace Gigamonkey::Bitcoin {
     
 }
 
-namespace Gigamonkey::Bitcoin::interpreter {
-
-}
-
 #endif

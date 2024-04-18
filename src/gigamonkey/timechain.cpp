@@ -270,12 +270,5 @@ namespace Gigamonkey::Bitcoin {
         return x;
     }
     
-    bool transaction::valid () const {
-        if (Inputs.size () == 0 || Outputs.size () == 0) return false;
-        for (const Bitcoin::input& i : Inputs) if (!i.valid ()) return false;
-        for (const Bitcoin::output& o : Outputs) if (!o.valid ()) return false;
-        return true;
-    }
-    
 }
 

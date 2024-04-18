@@ -55,6 +55,9 @@ namespace Gigamonkey {
     std::weak_ordering inline operator <=> (const satoshi_per_byte &a, const satoshi_per_byte &b);
 
     bool operator == (const satoshi_per_byte &a, const satoshi_per_byte &b);
+
+    // given a tx size, what fee should we pay?
+    Bitcoin::satoshi calculate_fee (satoshi_per_byte v, uint64 size);
 }
 
 namespace data::math {

@@ -25,7 +25,7 @@ namespace Gigamonkey::Merkle {
         
         const list<proof> proofs () const;
         
-        proof operator[] (uint32 i) const;
+        proof operator [] (uint32 i) const;
         
         operator dual () const;
         
