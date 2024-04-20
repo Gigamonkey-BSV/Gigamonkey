@@ -5,6 +5,107 @@
 
 namespace Gigamonkey::Merkle {
 
+    uint64 BUMP::serialized_size () const {
+        uint64 size = Bitcoin::var_int::size (BlockHeight) + 1;
+
+        for (const ordered_list<node> &nnn : Path) {
+            size += Bitcoin::var_int::size (data::size (nnn));
+
+            for (const node &n : nnn) size += n.serialized_size ();
+        }
+
+        return size;
+    }
+
+    writer &operator << (writer &w, const BUMP::node &h) {
+        w << byte (h.Flag);
+        if (bool (h.Digest)) w << *h.Digest;
+        return w;
+    }
+
+    reader &operator >> (reader &r, BUMP::node &h) {
+        Bitcoin::var_int offset;
+        r >> offset;
+
+        byte flag;
+        r >> flag;
+
+        if (BUMP::flag (flag) == BUMP::flag::duplicate)
+            h = BUMP::node {offset.Value};
+        else {
+            digest d;
+            r >> d;
+            h = BUMP::node {offset.Value, BUMP::flag (flag), d};
+        }
+
+        return r;
+
+    }
+
+    BUMP::node::operator JSON () const {
+        JSON::object_t j;
+        j["offset"] = Offset;
+
+        if (Flag == flag::duplicate) {
+            j["duplicate"] = true;
+            return j;
+        }
+
+        j["hash"] = Gigamonkey::write_reverse_hex (*Digest);
+
+        if (Flag == flag::client) j["txid"] = true;
+
+        return j;
+    }
+
+    BUMP::node::node (const JSON &j): Offset {j["offset"]}, Flag {}, Digest {} {
+        if (j.contains ("duplicate") && bool (j["duplicate"])) {
+            Flag = flag::duplicate;
+            return;
+        }
+
+        Digest = Gigamonkey::read_reverse_hex<32> (std::string (j["hash"]));
+
+        Flag = j.contains ("txid") && bool (j["txid"]) ? flag::client : flag::intermediate;
+    }
+
+    writer &operator << (writer &w, const BUMP &h) {
+        w << Bitcoin::var_int {h.BlockHeight};
+
+        w << static_cast<byte> (data::size (h.Path));
+
+        for (const auto &level : h.Path) {
+            w << Bitcoin::var_int {data::size (level)};
+            for (const auto &n : level) w << n;
+        }
+
+        return w;
+    }
+
+    reader &operator >> (reader &r, BUMP &h) {
+        Bitcoin::var_int block_height;
+        r >> block_height;
+        byte depth;
+        r >> depth;
+
+        list<ordered_list<BUMP::node>> tree;
+        for (int i = 0; i < depth; i++) {
+            stack<BUMP::node> nodes;
+            Bitcoin::var_int number_of_nodes;
+            for (int j = 0; j < number_of_nodes; j++) {
+                BUMP::node n {};
+                r >> n;
+                nodes <<= n;
+            }
+
+            ordered_list<BUMP::node> nnnn;
+            for (const BUMP::node &n : data::reverse (nodes)) nnnn <<= n;
+            tree <<= nnnn;
+        }
+
+        return r;
+    }
+
     namespace {
         JSON JSON_write_path (ordered_list<BUMP::node> nodes) {
             JSON::array_t paths;
@@ -18,9 +119,32 @@ namespace Gigamonkey::Merkle {
             return zaps;
         }
 
-        BUMP::nodes read_paths (const JSON &j);
+        BUMP::nodes read_paths (const JSON &j) {
+            list<ordered_list<BUMP::node>> nodes;
+            for (const JSON &k : j) {
+                ordered_list<BUMP::node> level;
+                for (auto a = k.rbegin (); a != k.rend (); a++) level <<= BUMP::node {*a};
+                nodes <<= level;
+            }
+            return nodes;
+        }
 
-        BUMP::nodes to_path (const branch &p);
+        BUMP::nodes to_path (const branch &b) {
+            uint32 path_index = b.Leaf.Index & 1 == 1 ? b.Leaf.Index - 1 : b.Leaf.Index + 1;
+
+            digest last = b.Leaf.Digest;
+            list<ordered_list<BUMP::node>> nodes;
+            ordered_list<BUMP::node> level {BUMP::node {b.Leaf.Index, BUMP::flag::client, b.Leaf.Digest}};
+            for (const digest &next : b.Digests) {
+                level <<= last == next ? BUMP::node {path_index} : BUMP::node {path_index, BUMP::flag::intermediate, next};
+                nodes <<= level;
+                path_index >>= 1;
+                last = hash_concatinated (last, next);
+                level = ordered_list<BUMP::node> {};
+            }
+
+            return nodes;
+        }
     }
 
     BUMP::operator bytes () const {
@@ -38,19 +162,6 @@ namespace Gigamonkey::Merkle {
             *this = BUMP {};
         }
 
-    }
-
-    writer &operator << (writer &w, const BUMP &h) {
-        w << Bitcoin::var_int {h.BlockHeight};
-
-        w << static_cast<byte> (data::size (h.Path));
-
-        for (const auto &level : h.Path) {
-            w << Bitcoin::var_int {data::size (level)};
-            for (const auto &n : level) w << n;
-        }
-
-        return w;
     }
 
     BUMP::operator JSON () const {
@@ -153,9 +264,9 @@ namespace Gigamonkey::Merkle {
         return result;
     }
 
-    inline BUMP::BUMP (uint32 block_height, const branch &d): BlockHeight {block_height}, Path {to_path (d)} {}
+    BUMP::BUMP (uint64 block_height, const branch &d): BlockHeight {block_height}, Path {to_path (d)} {}
 
-    digest256 inline BUMP::root () const {
+    digest256 BUMP::root () const {
         uint32 height = 0;
         ordered_list<node> current {};
         for (const ordered_list<node> &next : Path) {
@@ -166,4 +277,88 @@ namespace Gigamonkey::Merkle {
         return data::size (current) == 1 && bool (data::first (current).Digest) ? *data::first (current).Digest : digest256 {};
     }
 
+    namespace {
+
+        struct smash : BUMP::node {
+            using BUMP::node::node;
+
+            smash (const BUMP::node &n) : BUMP::node {n} {}
+
+            ptr<smash> Left {nullptr};
+            ptr<smash> Right {nullptr};
+        };
+
+        bool inline operator == (ptr<smash> a, ptr<smash> b) {
+            return a->Offset == b->Offset && a->Digest == b->Digest;
+        }
+
+        std::weak_ordering inline operator <=> (ptr<smash> a, ptr<smash> b) {
+            return a->Offset <=> b->Offset;
+        }
+
+        ordered_list<ptr<smash>> path_next_layer (ordered_list<ptr<smash>>, ordered_list<BUMP::node>);
+
+        void read_down (map &, ptr<smash>, digests = {});
+    }
+
+    map BUMP::paths () const {
+        ordered_list<ptr<smash>> smashes;
+        for (const ordered_list<node> &n : Path) smashes = path_next_layer (smashes, n);
+        map m;
+        if (smashes[0]->Right != nullptr) read_down (m, smashes[0]->Right);
+        if (smashes[0]->Left != nullptr) read_down (m, smashes[0]->Left);
+        return m;
+    }
+
+    namespace {
+        ptr<smash> smash_together (const ptr<smash> &a, const ptr<smash> &b) {
+            ptr<smash> z {b->Flag == BUMP::flag::duplicate ?
+                new smash {a->Offset >> 1, BUMP::flag::intermediate, hash_concatinated (*a->Digest, *a->Digest)}:
+                new smash {a->Offset >> 1, BUMP::flag::intermediate, hash_concatinated (*a->Digest, *b->Digest)}};
+            z->Left = a;
+            z->Right = b;
+            return z;
+        }
+
+        ordered_list<ptr<smash>> path_next_layer (ordered_list<ptr<smash>> zntz, ordered_list<BUMP::node> qbt) {
+            auto qnf = zntz;
+            auto lfo = qbt;
+
+            while (!data::empty (lfo)) {
+                qnf = qnf.insert (std::make_shared<smash> (lfo.first ()));
+                lfo = lfo.rest ();
+            }
+
+            ordered_list<ptr<smash>> mzol;
+
+            while (!data::empty (qnf)) {
+                mzol = mzol.insert (smash_together (qnf[0], qnf[1]));
+                qnf = qnf.rest ().rest ();
+            }
+
+            return mzol;
+        }
+
+        void read_down (map &m, ptr<smash> z, digests d) {
+            // this will only happen for a block with just one tx in it.
+            if (z->Right == nullptr && z->Left == nullptr) {
+                m.insert (*z->Digest, path {z->Offset, d});
+
+                return;
+            }
+
+            if (z->Right != nullptr && z->Left != nullptr && (z->Right->Flag == BUMP::flag::client || z->Left->Flag == BUMP::flag::client)) {
+
+                if (z->Right->Flag == BUMP::flag::client) m.insert (*z->Right->Digest, path {z->Offset, d << *z->Left->Digest});
+
+                if (z->Left->Flag == BUMP::flag::client) m.insert (*z->Left->Digest, path {z->Offset, d << *z->Right->Digest});
+
+                return;
+            }
+
+            if (z->Left != nullptr) read_down (m, z->Left, d << *z->Digest);
+
+            if (z->Right != nullptr) read_down (m, z->Right, d << *z->Digest);
+        }
+    }
 }

@@ -30,10 +30,10 @@ namespace Gigamonkey::HD::BIP_44 {
         return list<uint32> {purpose, coin_type, BIP_32::harden (account), uint32 (change), index};
     }
     
-    struct master_pubkey {
+    struct account_pubkey {
         BIP_32::pubkey Pubkey;
         
-        master_pubkey (const BIP_32::pubkey& p) : Pubkey {p} {}
+        account_pubkey (const BIP_32::pubkey& p) : Pubkey {p} {}
         
         Bitcoin::address::decoded receive (uint32 index) const {
             return Bitcoin::address::decoded (Pubkey.derive ({receive_index, index}));
@@ -48,14 +48,14 @@ namespace Gigamonkey::HD::BIP_44 {
         }
     };
     
-    struct master_secret {
+    struct account_secret {
         BIP_32::secret Secret;
         
-        master_pubkey to_public () const {
-            return master_pubkey {Secret.to_public ()};
+        account_pubkey to_public () const {
+            return account_pubkey {Secret.to_public ()};
         }
         
-        master_secret (const BIP_32::secret &s) : Secret {s} {}
+        account_secret (const BIP_32::secret &s) : Secret {s} {}
         
         Bitcoin::secret receive (uint32 index) const {
             return Bitcoin::secret (Secret.derive ({receive_index, index}));
@@ -70,11 +70,11 @@ namespace Gigamonkey::HD::BIP_44 {
         return x.derive ({purpose, coin_type, BIP_32::harden (account)});
     }
     
-    struct root {
+    struct master {
         BIP_32::secret Secret;
         
-        master_secret master (uint32 coin_type, uint32 account = 0) {
-            return master_secret {from_root (Secret, coin_type, account)};
+        account_secret account (uint32 coin_type, uint32 account = 0) {
+            return account_secret {from_root (Secret, coin_type, account)};
         }
         
     };
@@ -88,7 +88,7 @@ namespace Gigamonkey::HD::BIP_44 {
     
     constexpr uint32 electrum_sv_coin_type = coin_type_Bitcoin_Cash;
 
-    constexpr uint32 centbee_coin_type = coin_type_Bitcoin;
+    constexpr uint32 centbee_coin_type = 0;
     
 }
 

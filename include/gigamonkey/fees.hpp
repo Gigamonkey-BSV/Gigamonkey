@@ -91,11 +91,6 @@ namespace Gigamonkey {
 
     };
 
-    Bitcoin::satoshi inline calculate_fee (satoshi_per_byte v, uint64 size) {
-        if (v.Bytes == 0) throw data::math::division_by_zero {};
-        return std::ceil (double (v.Satoshis) * double (size) / double (v.Bytes));
-    }
-
     inline transaction_design::input::input (Bitcoin::prevout p, uint64 x, uint32_little q, bytes z):
         Bitcoin::incomplete::input {p.Key, q}, Prevout {p.Value},
         ExpectedScriptSize {x}, InputScriptSoFar {z} {}

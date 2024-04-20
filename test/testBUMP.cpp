@@ -7,7 +7,8 @@
 namespace Gigamonkey::Merkle {
 
     // these are examples that come from the specification.
-    std::string binary_BUMP_HEX = "fe8a6a0c00" // blockHeight (813706), VarInt
+    std::string binary_BUMP_HEX =
+        "fe8a6a0c00" // blockHeight (813706), VarInt
         "0c" // treeHeight (12), byte
         // Level 0, client TXIDs and sibling TXIDs (TXIDs required only to compute internal tree hash).
         "04" // nLeaves, VarInt

@@ -18,7 +18,7 @@ namespace Gigamonkey::Merkle {
         friend writer &operator << (writer &w, const BUMP &h);
         friend reader &operator >> (reader &r, BUMP &h);
 
-        BUMP (uint32 block_height, const branch &);
+        BUMP (uint64 block_height, const branch &);
 
         // encode
         operator bytes () const;
@@ -29,7 +29,7 @@ namespace Gigamonkey::Merkle {
         BUMP (const bytes &);
 
         map paths () const;
-        BUMP (uint32 block_height, map);
+        BUMP (uint64 block_height, map);
 
         // check whether the data structure was read.
         bool valid () const;
@@ -49,12 +49,13 @@ namespace Gigamonkey::Merkle {
         };
 
         struct node {
-            uint32 Offset;
+            uint64 Offset;
             flag Flag;
             maybe<digest> Digest;
 
-            node (uint32 offset, flag f, const digest &id): Offset {offset}, Flag {f}, Digest {id} {}
-            node (uint32 offset) : Offset {offset}, Flag {flag::duplicate}, Digest {} {}
+            node (): Offset {0}, Flag {flag::intermediate}, Digest {} {}
+            node (uint64 offset, flag f, const digest &id): Offset {offset}, Flag {f}, Digest {id} {}
+            node (uint64 offset) : Offset {offset}, Flag {flag::duplicate}, Digest {} {}
 
             bool valid () const {
                 return bool (Digest) && Flag != flag::duplicate || !bool (Digest) && Flag == flag::duplicate;
@@ -77,15 +78,19 @@ namespace Gigamonkey::Merkle {
             // encode and decode bytes.
             friend writer &operator << (writer &w, const node &h);
             friend reader &operator >> (reader &r, node &h);
+
+            uint64 serialized_size () const {
+                return Flag == flag::duplicate ? 1 : 33;
+            }
         };
 
-        uint32 BlockHeight;
+        uint64 BlockHeight;
 
         using nodes = list<ordered_list<node>>;
         nodes Path;
 
         BUMP (): BlockHeight {0}, Path {} {}
-        BUMP (uint32 block_height, nodes path): BlockHeight {block_height}, Path {path} {}
+        BUMP (uint64 block_height, nodes path): BlockHeight {block_height}, Path {path} {}
 
         // calculate the next layer of merkle nodes as part of the validation process.
         static ordered_list<node> step (ordered_list<node>);
@@ -105,7 +110,7 @@ namespace Gigamonkey::Merkle {
         return *this + BUMP {BlockHeight, p};
     }
 
-    inline BUMP::BUMP (uint32 block_height, map m): BlockHeight {block_height}, Path {} {
+    inline BUMP::BUMP (uint64 block_height, map m): BlockHeight {block_height}, Path {} {
         for (const auto &e : m) *this = *this + branch {e.Key, e.Value};
     }
 

@@ -83,12 +83,12 @@ namespace Gigamonkey::nChain {
     }
 
     JSON inline write_txid (const Bitcoin::TXID &id) {
-        return write_backwards_hex (id);
+        return write_reverse_hex (id);
     }
 
     maybe<Bitcoin::TXID> read_txid (const JSON &j) {
         if (!j.is_string ()) return {};
-        Bitcoin::TXID id = read_backwards_hex<32> (std::string (j));
+        Bitcoin::TXID id = read_reverse_hex<32> (std::string (j));
         if (!id.valid ()) return {};
         return id;
     }

@@ -57,7 +57,10 @@ namespace Gigamonkey {
     bool operator == (const satoshi_per_byte &a, const satoshi_per_byte &b);
 
     // given a tx size, what fee should we pay?
-    Bitcoin::satoshi calculate_fee (satoshi_per_byte v, uint64 size);
+    Bitcoin::satoshi inline calculate_fee (satoshi_per_byte v, uint64 size) {
+        if (v.Bytes == 0) throw data::math::division_by_zero {};
+        return std::ceil (double (v.Satoshis) * double (size) / double (v.Bytes));
+    }
 
     inline satoshi_per_byte::operator double () const {
         if (Bytes == 0) throw data::math::division_by_zero {};
@@ -74,11 +77,6 @@ namespace Gigamonkey {
 
     bool inline operator == (const satoshi_per_byte &a, const satoshi_per_byte &b) {
         return math::fraction<int64, uint64> (int64 (a.Satoshis), a.Bytes) == math::fraction<int64, uint64> (int64 (b.Satoshis), b.Bytes);
-    }
-
-    Bitcoin::satoshi inline calculate_fee (satoshi_per_byte v, uint64 size) {
-        if (v.Bytes == 0) throw data::math::division_by_zero {};
-        return std::ceil (double (v.Satoshis) * double (size) / double (v.Bytes));
     }
 }
 
