@@ -32,7 +32,7 @@ uint64_t CScript::GetSigOpCount (bool fAccurate, bool isGenesisEnabled, bool &si
             else if (isGenesisEnabled) {
                 if (lastOpcode == OP_0) {
                     // Checking multisig with 0 keys, so nothing to add to n
-                } else if (last_instruction.operand().size() > CScriptNum::MAXIMUM_ELEMENT_SIZE) {
+                } else if (last_instruction.operand ().size () > CScriptNum::MAXIMUM_ELEMENT_SIZE) {
                     // When trying to spend such output EvalScript does not allow numbers bigger than 4 bytes
                     // and the execution of such script would fail and make the coin unspendable
                     sigOpCountError = true;
@@ -49,7 +49,7 @@ uint64_t CScript::GetSigOpCount (bool fAccurate, bool isGenesisEnabled, bool &si
                         return 0;
                     }
 
-                    int numSigs = CScriptNum(last_instruction.operand(), true).getint();
+                    int numSigs = CScriptNum (last_instruction.operand (), true).getint ();
 
                     if (numSigs < 0) {
                         sigOpCountError = true;

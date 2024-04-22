@@ -6,7 +6,7 @@
 
 #include <gigamonkey/timechain.hpp>
 #include <gigamonkey/pay/extended.hpp>
-#include <gigamonkey/merkle/dual.hpp>
+#include <gigamonkey/merkle/BUMP.hpp>
 
 namespace Gigamonkey::Bitcoin {
     Bitcoin::block genesis ();
@@ -119,6 +119,10 @@ namespace Gigamonkey::SPV {
 
             Merkle::dual dual_tree () const {
                 return Merkle::dual {Paths, Header.Value.MerkleRoot};
+            }
+
+            Merkle::BUMP BUMP () const {
+                return Merkle::BUMP {uint64 (Header.Key), Paths};
             }
         };
 

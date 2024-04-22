@@ -131,13 +131,6 @@ namespace Gigamonkey::Stratum::mining {
         return !(*this == b);
     }
     
-    std::ostream inline &operator << (std::ostream &o, const notify::parameters &p) {
-        return o << "{ID: " << p.JobID << ", Digest: " << p.Digest << ", GenerationTx1 " << p.GenerationTx1 
-            << ", GenerationTx2: " << p.GenerationTx2 << ", Path: " << p.Path << ", Version: " << p.Version 
-            << ", Difficulty: " << work::difficulty(p.Target) << ", Now: " << p.Now << ", Clean: " 
-            << (p.Clean ? "true" : "false") << "}";
-    }
-    
 }
 
 #endif

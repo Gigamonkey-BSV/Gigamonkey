@@ -163,7 +163,7 @@ namespace Gigamonkey::nChain {
     };
     
     digest256 read_digest (const string &);
-    string write_digest (const digest256 &);
+    std::string write_digest (const digest256 &);
     
     bool inline proofs_serialization_standard::valid (bytes_view b) {
         return read_binary (b).valid ();

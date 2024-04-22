@@ -5,6 +5,10 @@
 
 namespace Gigamonkey::Merkle {
 
+    uint32 inline next_offset (uint32 offset) {
+        return ((offset & ~2) | (~offset & 2)) >> 1;
+    }
+
     uint64 BUMP::serialized_size () const {
         uint64 size = Bitcoin::var_int::size (BlockHeight) + 1;
 
@@ -136,16 +140,23 @@ namespace Gigamonkey::Merkle {
         }
 
         BUMP::nodes to_path (const branch &b) {
-            uint32 path_index = b.Leaf.Index & 1 == 1 ? b.Leaf.Index - 1 : b.Leaf.Index + 1;
+            uint32 path_index = (b.Leaf.Index & ~1) | (~b.Leaf.Index & 1);
 
             digest last = b.Leaf.Digest;
             list<ordered_list<BUMP::node>> nodes;
             ordered_list<BUMP::node> level {BUMP::node {b.Leaf.Index, BUMP::flag::client, b.Leaf.Digest}};
-            for (const digest &next : b.Digests) {
-                level <<= last == next ? BUMP::node {path_index} : BUMP::node {path_index, BUMP::flag::intermediate, next};
+
+            for (const maybe<digest> &next : b.Digests) {
+                if (bool (next)) {
+                    level <<= BUMP::node {path_index, BUMP::flag::intermediate, *next};
+                    last = hash_concatinated (last, *next);
+                } else {
+                    level <<= BUMP::node {path_index};
+                    last = hash_concatinated (last, last);
+                }
+
                 nodes <<= level;
-                path_index >>= 1;
-                last = hash_concatinated (last, next);
+                path_index = next_offset (path_index);
                 level = ordered_list<BUMP::node> {};
             }
 
@@ -198,7 +209,6 @@ namespace Gigamonkey::Merkle {
             stack<BUMP::node> b = reverse (static_cast<stack<BUMP::node>> (B));
 
             ordered_list<BUMP::node> result;
-
             while (!data::empty (a) || !data::empty (b))
                 if (!data::empty (a) && (data::empty (b) || a.first ().Offset < b.first ().Offset)) {
                     result = result.insert (a.first ());
@@ -207,11 +217,18 @@ namespace Gigamonkey::Merkle {
                     result = result.insert (b.first ());
                     b = b.rest ();
                 } else {
-                    result = result.insert (a.first ().Flag == BUMP::flag::client ? a.first () : b.first ());
+                    // in this case, we are combining two lists with the same node. It doesn't matter
+                    // which one we pick unless one is a client tx and the other isn't.
+                    // it is also possible that one of these says to duplicate the hash and the
+                    // other doesn't. In that case we pick the one that says to duplicate.
+                    result = result.insert (
+                        a.first ().Flag == BUMP::flag::client ? a.first () :
+                        b.first ().Flag == BUMP::flag::client ? b.first () :
+                        a.first ().Flag == BUMP::flag::duplicate ? a.first () :
+                        b.first ().Flag == BUMP::flag::duplicate ? b.first () : a.first ());
                     a = a.rest ();
                     b = b.rest ();
                 }
-
             return result;
         }
 
@@ -272,8 +289,7 @@ namespace Gigamonkey::Merkle {
     digest256 BUMP::root () const {
         ordered_list<node> current {};
 
-        for (const ordered_list<node> &next : Path)
-            current = step (combine (current, next));
+        for (const ordered_list<node> &next : Path) current = step (combine (current, next));
 
         return data::size (current) == 1 && bool (data::first (current).Digest) ? *data::first (current).Digest : digest256 {};
     }
@@ -324,7 +340,6 @@ namespace Gigamonkey::Merkle {
     }
 
     BUMP BUMP::remove_unnecessary_nodes () const {
-
         nodes paths;
         ordered_list<uint64> generated;
         for (const auto &level : Path) {

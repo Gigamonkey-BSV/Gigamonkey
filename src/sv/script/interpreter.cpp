@@ -47,7 +47,7 @@ static bool IsInvalidBranchingOpcode (opcodetype opcode) {
     return opcode == OP_VERNOTIF || opcode == OP_VERIF;
 }
 
-std::optional<bool> EvalScript (
+data::maybe<bool> EvalScript (
     const script_config &config,
     bool consensus,
     LimitedStack &stack,

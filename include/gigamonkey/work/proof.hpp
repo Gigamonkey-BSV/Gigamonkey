@@ -19,22 +19,11 @@ namespace Gigamonkey::work {
     proof solve (const puzzle &p, const solution &initial);
     
     bool operator == (const share &, const share &);
-    bool operator != (const share &, const share &);
-    
     bool operator == (const solution &, const solution &);
-    bool operator != (const solution &, const solution &);
-    
     bool operator == (const job &, const job &);
-    bool operator != (const job &, const job &);
-    
     bool operator == (const puzzle &, const puzzle &);
-    bool operator != (const puzzle &, const puzzle &);
-    
     bool operator == (const proof &, const proof &);
-    bool operator != (const proof &, const proof &);
-    
     bool operator == (const candidate &, const candidate &);
-    bool operator != (const candidate &, const candidate &);
     
     // candidate corresponds to a block that has been designed by the node but not completed with a nonce, timestamp, or coinbase. 
     struct candidate {
@@ -216,33 +205,6 @@ namespace Gigamonkey::work {
     
     bool inline operator != (const proof &a, const proof &b) {
         return !(a == b);
-    }
-    
-    std::ostream inline &operator << (std::ostream &o, const share &p) {
-        o << "share{Timestamp: " << p.Timestamp << ", Nonce: " << p.Nonce << ", ExtraNonce2: " << p.ExtraNonce2;
-        if (p.Bits) o << ", Bits: " << *p.Bits; 
-        return o << "}";
-    }
-    
-    std::ostream inline &operator << (std::ostream &o, const candidate &p) {
-        return o << "candidate{Category: " << p.Category << ", Digest: " << p.Digest << ", Target: " << 
-            p.Target << ", Path: " << p.Path << "}";
-    }
-    
-    std::ostream inline &operator << (std::ostream &o, const puzzle &p) {
-        return o << "puzzle{" << p.Candidate << ", Header: " << p.Header << ", Body: " << p.Body << ", Mask: " << p.Mask << "}";
-    }
-    
-    std::ostream inline &operator << (std::ostream &o, const job &p) {
-        return o << "job{" << p.Puzzle << ", ExtraNonce1: " << p.ExtraNonce1 << "}";
-    }
-    
-    std::ostream inline &operator << (std::ostream &o, const solution &p) {
-        return o << "solution{" << p.Share << ", ExtraNonce1: " << p.ExtraNonce1 << "}";
-    }
-    
-    std::ostream inline &operator << (std::ostream &o, const proof &p) {
-        return o << "proof{Puzzle: " << p.Puzzle << ", Solution: " << p.Solution << "}";
     }
     
     inline share::share (Bitcoin::timestamp t, Bitcoin::nonce n, bytes b)

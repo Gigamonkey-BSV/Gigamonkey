@@ -47,6 +47,7 @@ namespace Gigamonkey::Merkle {
         // if we have several paths in this data structure,
         // it may be that certain nodes are redundant.
         BUMP remove_unnecessary_nodes () const;
+        BUMP restore_unnecessary_nodes () const;
 
         enum class flag : byte {
             intermediate = 0,

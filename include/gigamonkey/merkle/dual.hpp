@@ -15,8 +15,6 @@ namespace Gigamonkey::Merkle {
     
     dual operator + (const proof &a, const proof &b);
     
-    std::ostream &operator << (std::ostream &o, const dual &d);
-    
     struct tree;
     
     using map = data::map<digest, path>;
@@ -34,7 +32,8 @@ namespace Gigamonkey::Merkle {
         dual (const proof &p) : Paths {{entry (p.Branch)}}, Root {p.Root} {}
         
         dual (const tree &t);
-        
+
+        // check all proofs.
         bool valid () const;
         
         bool contains (const digest &b) const {
@@ -48,7 +47,7 @@ namespace Gigamonkey::Merkle {
         }
         
         list<leaf> leaves () const {
-            return data::for_each([] (const proof &p) -> leaf {
+            return data::for_each ([] (const proof &p) -> leaf {
                 return p.Branch.Leaf;
             }, proofs ());
         }
@@ -59,8 +58,6 @@ namespace Gigamonkey::Merkle {
         
         dual &operator = (const dual &d);
         
-        JSON serialize () const;
-        static dual deserialize (const JSON &);
     };
     
     inline bool operator == (const dual &a, const dual &b) {
@@ -79,10 +76,6 @@ namespace Gigamonkey::Merkle {
         Paths = d.Paths;
         Root = d.Root;
         return *this;
-    }
-    
-    inline std::ostream &operator << (std::ostream &o, const dual &d) {
-        return o << "dual{" << d.Paths << ", " << d.Root << "}";
     }
     
 }

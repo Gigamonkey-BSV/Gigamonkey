@@ -196,11 +196,13 @@ namespace Gigamonkey::Merkle {
         EXPECT_EQ (JSON (from_bytes), JSON_BUMP);
 
         EXPECT_EQ (encoding::hex::write (bytes (from_bytes)), binary_BUMP_HEX);
-/*
+
         auto paths = from_bytes.paths ();
+        bool paths_are_valid = dual {paths, expected_merkle_root}.valid ();
+        EXPECT_TRUE (paths_are_valid);
         BUMP from_paths {from_bytes.BlockHeight, paths};
 
-        EXPECT_EQ (expected_merkle_root, from_paths.root ());*/
+        EXPECT_EQ (expected_merkle_root, from_paths.root ());
 
     }
 

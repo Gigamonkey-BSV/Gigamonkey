@@ -56,7 +56,7 @@ namespace Gigamonkey::Merkle {
             
             dual ReconstructedLeft {};
             
-            for (const leaf& j : Dual.leaves ()) {
+            for (const leaf &j : Dual.leaves ()) {
                 proof p = Dual[j.Digest];
                 
                 EXPECT_TRUE (p.valid ());
@@ -74,9 +74,6 @@ namespace Gigamonkey::Merkle {
                 q.Root = fail;
                 EXPECT_FALSE (q.valid ());
                 
-                JSON serialized = ReconstructedLeft.serialize ();
-                auto DeserializedLeft = dual::deserialize (serialized);
-                ASSERT_EQ (ReconstructedLeft, DeserializedLeft);
             }
             
             EXPECT_EQ (Dual, ReconstructedLeft);

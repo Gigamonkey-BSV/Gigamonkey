@@ -8,11 +8,7 @@
 #include <string_view>
 #include <array>
 
-#include <nlohmann/json.hpp>
-
 #include <boost/endian/conversion.hpp>
-
-#include <nlohmann/json.hpp>
 
 #include <data/stream.hpp>
 #include <data/tools.hpp>
@@ -22,6 +18,7 @@
 #include <data/for_each.hpp>
 #include <data/encoding/hex.hpp>
 #include <data/math/nonnegative.hpp>
+#include <data/net/JSON.hpp>
 
 inline bool implies (bool a, bool b) {
     return (!a) || b;

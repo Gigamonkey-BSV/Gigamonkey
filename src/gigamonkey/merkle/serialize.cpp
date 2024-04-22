@@ -6,7 +6,7 @@ namespace Gigamonkey::nChain {
         return digest256 {string {"0x"} + x};
     }
 
-    string inline write_digest (const digest256 &x) {
+    std::string inline write_digest (const digest256 &x) {
         return write_reverse_hex (x);
     }
     
@@ -48,9 +48,8 @@ namespace Gigamonkey::nChain {
         JSON::array_t nodes (b.Digests.size ());
 
         for (JSON& j : nodes) {
-            if (b.Leaf.Digest == b.Digests.first ()) j = "*";
-            else j = write_digest (b.Digests.first ());
-            b = b.rest();
+            j = bool (b.Digests.first ()) ? write_digest (*b.Digests.first ()) : std::string {"*"};
+            b = b.rest ();
         }
 
         return nodes;
