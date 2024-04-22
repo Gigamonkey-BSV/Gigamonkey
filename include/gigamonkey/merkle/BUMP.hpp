@@ -39,8 +39,14 @@ namespace Gigamonkey::Merkle {
 
         digest256 root () const;
 
+        byte depth () const;
+
         // how big will this be in the binary representation?
         uint64 serialized_size () const;
+
+        // if we have several paths in this data structure,
+        // it may be that certain nodes are redundant.
+        BUMP remove_unnecessary_nodes () const;
 
         enum class flag : byte {
             intermediate = 0,
@@ -80,7 +86,7 @@ namespace Gigamonkey::Merkle {
             friend reader &operator >> (reader &r, node &h);
 
             uint64 serialized_size () const {
-                return Flag == flag::duplicate ? 1 : 33;
+                return Bitcoin::var_int::size (Offset) + (Flag == flag::duplicate ? 1 : 33);
             }
         };
 
@@ -92,14 +98,6 @@ namespace Gigamonkey::Merkle {
         BUMP (): BlockHeight {0}, Path {} {}
         BUMP (uint64 block_height, nodes path): BlockHeight {block_height}, Path {path} {}
 
-        // calculate the next layer of merkle nodes as part of the validation process.
-        static ordered_list<node> step (ordered_list<node>);
-
-        // sort and remove duplicates.
-        static ordered_list<node> combine (ordered_list<node>, ordered_list<node>, uint32 tree_height);
-
-        // thrown when an error is found during validation.
-        struct validation_error {};
     };
 
     bool inline BUMP::valid () const {
@@ -110,16 +108,8 @@ namespace Gigamonkey::Merkle {
         return *this + BUMP {BlockHeight, p};
     }
 
-    inline BUMP::BUMP (uint64 block_height, map m): BlockHeight {block_height}, Path {} {
-        for (const auto &e : m) *this = *this + branch {e.Key, e.Value};
-    }
-
-    bool inline BUMP::validate (const Bitcoin::TXID &expected_root) const {
-        try {
-            return expected_root == root ();
-        } catch (const validation_error &) {
-            return false;
-        }
+    byte inline BUMP::depth () const {
+        return static_cast<byte> (data::size (Path));
     }
 
 }

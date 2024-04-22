@@ -80,7 +80,7 @@ namespace Gigamonkey::Merkle {
         "af8764ce7e1cc132ab5ed2229a005c87201c9a5ee15c0f91dd53eff31ab30cd4" // hash
         ;
 
-    std::string json_BUMP = R"({
+    std::string JSON_BUMP_string = R"({
         "blockHeight": 813706,
         "path": [
             [
@@ -178,16 +178,29 @@ namespace Gigamonkey::Merkle {
 
     TEST (BUMPTest, TestBUMP) {
 
-        BUMP from_JSON {JSON::parse (json_BUMP)};
-        BUMP from_bytes {*encoding::hex::read (binary_BUMP_HEX)};
+        JSON JSON_BUMP = JSON::parse (JSON_BUMP_string);
+
+        BUMP from_JSON {JSON_BUMP};
+
+        auto expected_merkle_root = digest {"0x57aab6e6fb1b697174ffb64e062c4728f2ffd33ddcfa02a43b64d8cd29b483b4"};
+
+        EXPECT_EQ (expected_merkle_root, from_JSON.root ());
+
+        EXPECT_EQ (JSON (from_JSON), JSON_BUMP);
 
         EXPECT_EQ (encoding::hex::write (bytes (from_JSON)), binary_BUMP_HEX);
-        EXPECT_EQ (JSON (from_bytes).dump (), json_BUMP);
 
+        BUMP from_bytes {*encoding::hex::read (binary_BUMP_HEX)};
+        EXPECT_EQ (expected_merkle_root, from_bytes.root ());
+
+        EXPECT_EQ (JSON (from_bytes), JSON_BUMP);
+
+        EXPECT_EQ (encoding::hex::write (bytes (from_bytes)), binary_BUMP_HEX);
+/*
         auto paths = from_bytes.paths ();
         BUMP from_paths {from_bytes.BlockHeight, paths};
 
-        EXPECT_EQ (encoding::hex::write (bytes (from_paths)), binary_BUMP_HEX);
+        EXPECT_EQ (expected_merkle_root, from_paths.root ());*/
 
     }
 

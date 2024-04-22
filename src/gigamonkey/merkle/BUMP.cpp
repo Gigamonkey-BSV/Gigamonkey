@@ -18,6 +18,7 @@ namespace Gigamonkey::Merkle {
     }
 
     writer &operator << (writer &w, const BUMP::node &h) {
+        w << Bitcoin::var_int {h.Offset};
         w << byte (h.Flag);
         if (bool (h.Digest)) w << *h.Digest;
         return w;
@@ -72,7 +73,7 @@ namespace Gigamonkey::Merkle {
     writer &operator << (writer &w, const BUMP &h) {
         w << Bitcoin::var_int {h.BlockHeight};
 
-        w << static_cast<byte> (data::size (h.Path));
+        w << h.depth ();
 
         for (const auto &level : h.Path) {
             w << Bitcoin::var_int {data::size (level)};
@@ -92,6 +93,9 @@ namespace Gigamonkey::Merkle {
         for (int i = 0; i < depth; i++) {
             stack<BUMP::node> nodes;
             Bitcoin::var_int number_of_nodes;
+
+            r >> number_of_nodes;
+
             for (int j = 0; j < number_of_nodes; j++) {
                 BUMP::node n {};
                 r >> n;
@@ -99,9 +103,11 @@ namespace Gigamonkey::Merkle {
             }
 
             ordered_list<BUMP::node> nnnn;
-            for (const BUMP::node &n : data::reverse (nodes)) nnnn <<= n;
+            for (const BUMP::node &n : nodes) nnnn <<= n;
             tree <<= nnnn;
         }
+
+        h = BUMP {block_height.Value, tree};
 
         return r;
     }
@@ -175,106 +181,159 @@ namespace Gigamonkey::Merkle {
 
     }
 
+    BUMP::BUMP (uint64 block_height, const branch &d): BlockHeight {block_height}, Path {to_path (d)} {}
+
     BUMP::BUMP (const JSON &j): BlockHeight {j["blockHeight"]}, Path {read_paths (j["path"])} {}
 
-    ordered_list<BUMP::node> BUMP::combine (ordered_list<node> A, ordered_list<node> B, uint32 tree_height) {
-        stack<node> a = reverse (static_cast<stack<node>> (A));
-        stack<node> b = reverse (static_cast<stack<node>> (B));
+    BUMP::BUMP (uint64 block_height, map m): BlockHeight {block_height}, Path {} {
+        auto b = m.begin ();
+        if (b == m.end ()) return;
+        for (uint64 i = 0; i < data::size ((*b).Value.Digests); i++) Path <<= ordered_list<node> {};
+        for (const auto &e : m) *this = *this + branch {e.Key, e.Value};
+    }
 
-        stack<node> remainder;
-        ordered_list<node> result;
+    namespace {
+        ordered_list<BUMP::node> combine (ordered_list<BUMP::node> A, ordered_list<BUMP::node> B) {
+            stack<BUMP::node> a = reverse (static_cast<stack<BUMP::node>> (A));
+            stack<BUMP::node> b = reverse (static_cast<stack<BUMP::node>> (B));
 
-        while (true) {
-            if (data::empty (a)) {
-                remainder = b;
-                break;
-            }
+            ordered_list<BUMP::node> result;
 
-            if (data::empty (b)) {
-                remainder = a;
-                break;
-            }
+            while (!data::empty (a) || !data::empty (b))
+                if (!data::empty (a) && (data::empty (b) || a.first ().Offset < b.first ().Offset)) {
+                    result = result.insert (a.first ());
+                    a = a.rest ();
+                } else if (!data::empty (b) && (data::empty (a) || a.first ().Offset > b.first ().Offset)) {
+                    result = result.insert (b.first ());
+                    b = b.rest ();
+                } else {
+                    result = result.insert (a.first ().Flag == BUMP::flag::client ? a.first () : b.first ());
+                    a = a.rest ();
+                    b = b.rest ();
+                }
 
-            stack<node> &next = a.first () > b.first () ? a : b;
-
-            if (data::size (result) == 0) goto round_done;
-
-            if (next.first ().Offset == result.first ().Offset) {
-                if (next.first ().Flag == result.first ().Flag ||
-                    result.first ().Flag == flag::client && next.first ().Flag == flag::intermediate) goto round_done;
-
-                if (result.first ().Flag == flag::intermediate && next.first ().Flag == flag::client)
-                    result = result.rest ().insert (next.first ());
-                else if (result.first ().Flag == flag::duplicate && result.first ().Flag != flag::duplicate)
-                    result = result.rest ().insert (next.first ()).insert (result.first ());
-                else if (result.first ().Flag != flag::duplicate && result.first ().Flag == flag::duplicate)
-                    result = result.insert (next.first ());
-            // if the two offsets complement one another, then we don't
-            // need them, unless the height is zero, in which case we need both.
-            } else if (tree_height != 0 && next.first ().Offset & ~1 == result.first ().Offset & ~1) result = result.rest ();
-            else result = result.insert (next.first ());
-
-            round_done:
-            next = next.rest ();
+            return result;
         }
 
-        while (data::size (remainder) > 0) {
-            result = result.insert (remainder.first ());
-            remainder = remainder.rest ();
-        }
+        // thrown when an error is found during validation.
+        struct validation_error {};
 
-        return result;
+        // calculate the next layer of merkle nodes as part of the validation process.
+        ordered_list<BUMP::node> step (ordered_list<BUMP::node> x) {
+
+            // the elements of the node should be organized in pairs, either
+            // adjacent nodes of the full tree or a digest and a note saying
+            // to duplicate it.
+            if (data::size (x) % 2 == 1) throw validation_error {};
+
+            stack<BUMP::node> nodes = reverse (static_cast<stack<BUMP::node>> (x));
+
+            ordered_list<BUMP::node> result;
+            while (data::size (nodes) > 0) {
+                if ((nodes[0].Offset >> 1) != (nodes[1].Offset >> 1) || nodes[1].Offset + 1 != nodes[0].Offset) throw validation_error {};
+
+                result = result.insert (BUMP::node {nodes[0].Offset >> 1, BUMP::flag::intermediate, hash_concatinated (*nodes[1].Digest,
+                    nodes[0].Flag == BUMP::flag::duplicate ? *nodes[1].Digest : *nodes[0].Digest)});
+
+                nodes = nodes.rest ().rest ();
+
+            }
+
+            return result;
+        }
+    }
+
+    bool BUMP::validate (const Bitcoin::TXID &expected_root) const {
+        try {
+            return expected_root == root ();
+        } catch (const validation_error &) {
+            return false;
+        }
     }
 
     BUMP operator + (const BUMP &a, const BUMP &b) {
         if (a.BlockHeight != b.BlockHeight) return {};
+
         BUMP::nodes left = a.Path;
         BUMP::nodes right = b.Path;
         BUMP::nodes result;
+
         uint32 height = 0;
         while (data::size (left) > 0) {
-            result <<= BUMP::combine (left.first (), right.first (), height);
+            result <<= combine (left.first (), right.first ());
             left = left.rest ();
             right = right.rest ();
             height++;
         }
-        return BUMP {a.BlockHeight, result};
+
+        return BUMP {a.BlockHeight, result}.remove_unnecessary_nodes ();
     }
-
-    // calculate the next layer of merkle nodes as part of the validation process.
-    ordered_list<BUMP::node> BUMP::step (ordered_list<node> x) {
-
-        // the elements of the node should be organized in pairs, either
-        // adjacent nodes of the full tree or a digest and a note saying
-        // to duplicate it.
-        if (data::size (x) % 2 == 1) throw validation_error {};
-
-        stack<node> nodes = reverse (static_cast<stack<node>> (x));
-
-        ordered_list<node> result;
-        while (data::size (nodes) > 0) {
-            if ((nodes[0].Offset >> 1) != (nodes[1].Offset >> 1)) throw validation_error {};
-
-            if (nodes[0].Offset == nodes[1].Offset) {
-                if (nodes[0].Flag != flag::duplicate) throw validation_error {};
-                result = result.insert (node {nodes[0].Offset >> 1, flag::intermediate, hash_concatinated (*nodes[1].Digest, *nodes[1].Digest)});
-            } else result = result.insert (node {nodes[0].Offset >> 1, flag::intermediate, hash_concatinated (*nodes[1].Digest, *nodes[0].Digest)});
-        }
-
-        return result;
-    }
-
-    BUMP::BUMP (uint64 block_height, const branch &d): BlockHeight {block_height}, Path {to_path (d)} {}
 
     digest256 BUMP::root () const {
-        uint32 height = 0;
         ordered_list<node> current {};
-        for (const ordered_list<node> &next : Path) {
-            current = step (combine (current, next, height));
-            height++;
-        }
+
+        for (const ordered_list<node> &next : Path)
+            current = step (combine (current, next));
 
         return data::size (current) == 1 && bool (data::first (current).Digest) ? *data::first (current).Digest : digest256 {};
+    }
+
+    namespace {
+        struct unnecessary_removed {
+            ordered_list<uint64> AvailableNodesLastLevel {};
+
+            ordered_list<BUMP::node> UnnecessaryRemoved {};
+        };
+
+        unnecessary_removed remove_unnecessary (ordered_list<BUMP::node> current, ordered_list<uint64> available_last_level) {
+            ordered_list<uint64> generated_next_level;
+
+            ordered_list<uint64> available = available_last_level;
+            while (!data::empty (available)) {
+                generated_next_level = generated_next_level.insert (available.first () >> 1);
+                available = available.rest ().rest ();
+            }
+
+            unnecessary_removed result;
+
+            while (!data::empty (current) || !data::empty (generated_next_level))
+                if (!data::empty (current) && (data::empty (generated_next_level) ||
+                    current.first ().Offset <= generated_next_level.first ())) {
+
+                    while (!data::empty (available_last_level) && available_last_level.first () < (current.first ().Offset << 1))
+                        available_last_level = available_last_level.rest ();
+
+                    // if we didn't generate both of the lower nodes, then we can remove this one.
+                    if (data::size (available_last_level) < 2 ||
+                        available_last_level[0] != (current.first ().Offset << 1) ||
+                        available_last_level[1] != (current.first ().Offset << 1) + 1)
+                        result.UnnecessaryRemoved = result.UnnecessaryRemoved.insert (current.first ());
+
+                    result.AvailableNodesLastLevel = result.AvailableNodesLastLevel.insert (current.first ().Offset);
+                    if (!data::empty (generated_next_level) && current.first ().Offset == generated_next_level.first ())
+                        generated_next_level = generated_next_level.rest ();
+
+                    current = current.rest ();
+                } else {
+                    result.AvailableNodesLastLevel = result.AvailableNodesLastLevel.insert (generated_next_level.first ());
+                    generated_next_level = generated_next_level.rest ();
+                }
+
+            return result;
+        }
+    }
+
+    BUMP BUMP::remove_unnecessary_nodes () const {
+
+        nodes paths;
+        ordered_list<uint64> generated;
+        for (const auto &level : Path) {
+            auto removed = remove_unnecessary (level, generated);
+            generated = removed.AvailableNodesLastLevel;
+            paths <<= removed.UnnecessaryRemoved;
+        }
+
+        return BUMP {BlockHeight, paths};
     }
 
     namespace {
@@ -305,8 +364,7 @@ namespace Gigamonkey::Merkle {
         ordered_list<ptr<smash>> smashes;
         for (const ordered_list<node> &n : Path) smashes = path_next_layer (smashes, n);
         map m;
-        if (smashes[0]->Right != nullptr) read_down (m, smashes[0]->Right);
-        if (smashes[0]->Left != nullptr) read_down (m, smashes[0]->Left);
+        read_down (m, smashes[0]);
         return m;
     }
 
@@ -320,45 +378,47 @@ namespace Gigamonkey::Merkle {
             return z;
         }
 
-        ordered_list<ptr<smash>> path_next_layer (ordered_list<ptr<smash>> zntz, ordered_list<BUMP::node> qbt) {
-            auto qnf = zntz;
-            auto lfo = qbt;
+        ordered_list<ptr<smash>> path_next_layer (ordered_list<ptr<smash>> Generated, ordered_list<BUMP::node> Provided) {
 
-            while (!data::empty (lfo)) {
-                qnf = qnf.insert (std::make_shared<smash> (lfo.first ()));
-                lfo = lfo.rest ();
+            stack<ptr<smash>> generated = data::reverse (static_cast<stack<ptr<smash>>> (Generated));
+            stack<BUMP::node> provided = data::reverse (static_cast<stack<BUMP::node>> (Provided));
+
+            ordered_list<ptr<smash>> to_smash;
+            while (!data::empty (generated) || !data::empty (provided)) {
+                if (!data::empty (generated) && (data::empty (provided) || generated.first ()->Offset < provided.first ().Offset)) {
+                    to_smash = to_smash.insert (generated.first ());
+                    generated = generated.rest ();
+                } else if (!data::empty (provided) && (data::empty (generated) || generated.first ()->Offset > provided.first ().Offset)) {
+                    to_smash = to_smash.insert (std::make_shared<smash> (provided.first ()));
+                    provided = provided.rest ();
+                } else {
+                    to_smash = to_smash.insert (generated.first ());
+                    generated = generated.rest ();
+                    provided = provided.rest ();
+                }
             }
 
-            ordered_list<ptr<smash>> mzol;
+            ordered_list<ptr<smash>> smashed;
 
-            while (!data::empty (qnf)) {
-                mzol = mzol.insert (smash_together (qnf[0], qnf[1]));
-                qnf = qnf.rest ().rest ();
+            while (!data::empty (to_smash)) {
+                smashed = smashed.insert (smash_together (to_smash[0], to_smash[1]));
+                to_smash = to_smash.rest ().rest ();
             }
 
-            return mzol;
+            return smashed;
         }
 
         void read_down (map &m, ptr<smash> z, digests d) {
-            // this will only happen for a block with just one tx in it.
-            if (z->Right == nullptr && z->Left == nullptr) {
-                m.insert (*z->Digest, path {z->Offset, d});
-
+            if (z->Flag == BUMP::flag::client) {
+                m = m.insert (*z->Digest, path {z->Offset, d});
                 return;
             }
 
-            if (z->Right != nullptr && z->Left != nullptr && (z->Right->Flag == BUMP::flag::client || z->Left->Flag == BUMP::flag::client)) {
+            if (z->Right == nullptr && z->Left == nullptr) return;
 
-                if (z->Right->Flag == BUMP::flag::client) m.insert (*z->Right->Digest, path {z->Offset, d << *z->Left->Digest});
+            read_down (m, z->Left, d << (z->Right->Flag == BUMP::flag::duplicate ? *z->Left->Digest : *z->Right->Digest));
 
-                if (z->Left->Flag == BUMP::flag::client) m.insert (*z->Left->Digest, path {z->Offset, d << *z->Right->Digest});
-
-                return;
-            }
-
-            if (z->Left != nullptr) read_down (m, z->Left, d << *z->Digest);
-
-            if (z->Right != nullptr) read_down (m, z->Right, d << *z->Digest);
+            read_down (m, z->Right, d << *z->Left->Digest);
         }
     }
 }
