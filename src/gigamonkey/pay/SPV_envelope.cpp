@@ -65,19 +65,18 @@ namespace Gigamonkey::nChain {
 
         if (std::holds_alternative<SPV::proof::confirmation> (u.Proof)) {
             const auto &conf = std::get<SPV::proof::confirmation> (u.Proof);
-            return SPV_envelope::node {u.Transaction, proofs_serialization_standard {Merkle::branch {txid, conf.Path}, conf.Header}};
+            return SPV_envelope::node {bytes (u.Transaction), proofs_serialization_standard {Merkle::branch {txid, conf.Path}, conf.Header}};
         }
 
         map<Bitcoin::TXID, ptr<SPV_envelope::node>> inputs;
         for (const auto &e : std::get<map<Bitcoin::TXID, ptr<SPV::proof::node>>> (u.Proof))
             inputs = inputs.insert (e.Key, std::make_shared<SPV_envelope::node> (to_SPV_envelope (e.Key, *e.Value)));
 
-        return SPV_envelope::node {u.Transaction, inputs};
+        return SPV_envelope::node {bytes (u.Transaction), inputs};
     }
 
     SPV_envelope::SPV_envelope (const SPV::proof &u) {
-
-        RawTx = u.Transaction;
+        RawTx = bytes (u.Transaction);
 
         for (const auto &e : u.Proof) Inputs = Inputs.insert (e.Key, to_SPV_envelope (e.Key, e.Value));
     }

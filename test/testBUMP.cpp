@@ -177,25 +177,27 @@ namespace Gigamonkey::Merkle {
     })";
 
     TEST (BUMPTest, TestBUMP) {
+        bytes bump_bytes = *encoding::hex::read (binary_BUMP_HEX);
+        BUMP from_bytes {bump_bytes};
+
+        EXPECT_EQ (from_bytes.serialized_size (), bump_bytes.size ());
 
         JSON JSON_BUMP = JSON::parse (JSON_BUMP_string);
 
         BUMP from_JSON {JSON_BUMP};
+        EXPECT_EQ (from_JSON.serialized_size (), bump_bytes.size ());
+
+        EXPECT_EQ (JSON (from_JSON), JSON_BUMP);
+        EXPECT_EQ (JSON (from_bytes), JSON_BUMP);
+
+        EXPECT_EQ (encoding::hex::write (bytes (from_JSON)), binary_BUMP_HEX);
+        EXPECT_EQ (encoding::hex::write (bytes (from_bytes)), binary_BUMP_HEX);
 
         auto expected_merkle_root = digest {"0x57aab6e6fb1b697174ffb64e062c4728f2ffd33ddcfa02a43b64d8cd29b483b4"};
 
         EXPECT_EQ (expected_merkle_root, from_JSON.root ());
 
-        EXPECT_EQ (JSON (from_JSON), JSON_BUMP);
-
-        EXPECT_EQ (encoding::hex::write (bytes (from_JSON)), binary_BUMP_HEX);
-
-        BUMP from_bytes {*encoding::hex::read (binary_BUMP_HEX)};
         EXPECT_EQ (expected_merkle_root, from_bytes.root ());
-
-        EXPECT_EQ (JSON (from_bytes), JSON_BUMP);
-
-        EXPECT_EQ (encoding::hex::write (bytes (from_bytes)), binary_BUMP_HEX);
 
         auto paths = from_bytes.paths ();
         bool paths_are_valid = dual {paths, expected_merkle_root}.valid ();

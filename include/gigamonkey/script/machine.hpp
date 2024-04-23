@@ -99,7 +99,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
     
     std::ostream &operator << (std::ostream &, const machine &);
     
-    void step_through (machine &m);
+    result step_through (machine &m);
     
 }
 

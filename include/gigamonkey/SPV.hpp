@@ -24,15 +24,16 @@ namespace Gigamonkey::SPV {
 
         struct confirmation {
             Merkle::path Path;
+            N Height;
             Bitcoin::header Header;
 
-            confirmation () : Path {}, Header {} {}
-            confirmation (Merkle::path p, const Bitcoin::header &h): Path {p}, Header {h} {}
+            confirmation () : Path {}, Height {0}, Header {} {}
+            confirmation (Merkle::path p, const N &height, const Bitcoin::header &h): Path {p}, Height {height}, Header {h} {}
             bool operator == (const confirmation &t) const;
             std::strong_ordering operator <=> (const confirmation &t) const;
         };
 
-        static bool valid (const bytes &tx, const Merkle::path &p, const Bitcoin::header &h);
+        static bool valid (const Bitcoin::transaction &tx, const Merkle::path &p, const Bitcoin::header &h);
 
         struct node;
 
@@ -40,11 +41,11 @@ namespace Gigamonkey::SPV {
         using tree = either<confirmation, map<Bitcoin::TXID, ptr<node>>>;
 
         struct node {
-            bytes Transaction;
+            Bitcoin::transaction Transaction;
             tree Proof;
         };
 
-        bytes Transaction;
+        Bitcoin::transaction Transaction;
         map<Bitcoin::TXID, node> Proof;
 
         bool valid () const;
@@ -58,11 +59,9 @@ namespace Gigamonkey::SPV {
         double fee_rate () const;
 
         explicit operator extended::transaction () const {
-            Bitcoin::transaction tx {Transaction};
-            return extended::transaction {tx.Version, for_each ([this] (const Bitcoin::input &in) -> extended::input {
-                return extended::input {Bitcoin::output {
-                    Bitcoin::transaction::output (this->Proof[in.Reference.Digest].Transaction, in.Reference.Index)}, in};
-            }, tx.Inputs), tx.Outputs, tx.LockTime};
+            return extended::transaction {Transaction.Version, for_each ([this] (const Bitcoin::input &in) -> extended::input {
+                return extended::input {this->Proof[in.Reference.Digest].Transaction.Outputs[in.Reference.Index], in};
+            }, Transaction.Inputs), Transaction.Outputs, Transaction.LockTime};
         }
     };
 
@@ -156,12 +155,12 @@ namespace Gigamonkey::SPV {
         void insert (const Bitcoin::transaction &) final override;
     };
 
-    bool inline proof::valid (const bytes &tx, const Merkle::path &p, const Bitcoin::header &h) {
-        return h.valid () && p.derive_root (Bitcoin::transaction::id (tx)) != h.MerkleRoot;
+    bool inline proof::valid (const Bitcoin::transaction &tx, const Merkle::path &p, const Bitcoin::header &h) {
+        return h.valid () && p.derive_root (tx.id ()) != h.MerkleRoot;
     }
 
     bool inline proof::confirmation::operator == (const confirmation &t) const {
-        return Header == t.Header && Path.Index == t.Path.Index;
+        return Header == t.Header && t.Height == Height && Path.Index == t.Path.Index;
     }
 
     std::strong_ordering inline proof::confirmation::operator <=> (const confirmation &t) const {
@@ -178,7 +177,7 @@ namespace Gigamonkey::SPV {
     }
 
     double inline proof::fee_rate () const {
-        return double (fee ()) / double (Transaction.size ());
+        return double (fee ()) / double (Transaction.serialized_size ());
     }
 
     void inline database::memory::insert (const Bitcoin::transaction &t) {

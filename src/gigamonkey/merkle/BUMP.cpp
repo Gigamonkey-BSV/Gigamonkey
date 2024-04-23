@@ -79,10 +79,7 @@ namespace Gigamonkey::Merkle {
 
         w << h.depth ();
 
-        for (const auto &level : h.Path) {
-            w << Bitcoin::var_int {data::size (level)};
-            for (const auto &n : level) w << n;
-        }
+        for (const auto &level : h.Path) Bitcoin::var_sequence<BUMP::node>::write<ordered_list<BUMP::node>> (w, level);
 
         return w;
     }
@@ -96,15 +93,8 @@ namespace Gigamonkey::Merkle {
         list<ordered_list<BUMP::node>> tree;
         for (int i = 0; i < depth; i++) {
             stack<BUMP::node> nodes;
-            Bitcoin::var_int number_of_nodes;
 
-            r >> number_of_nodes;
-
-            for (int j = 0; j < number_of_nodes; j++) {
-                BUMP::node n {};
-                r >> n;
-                nodes <<= n;
-            }
+            Bitcoin::var_sequence<BUMP::node>::read<stack<BUMP::node>> (r, nodes);
 
             ordered_list<BUMP::node> nnnn;
             for (const BUMP::node &n : nodes) nnnn <<= n;

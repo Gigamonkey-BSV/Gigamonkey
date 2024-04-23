@@ -39,8 +39,8 @@ namespace Gigamonkey::nChain {
 
         map<Bitcoin::TXID, node> Inputs;
 
-        SPV_envelope (const SPV::proof &);
-        SPV_envelope (const JSON &);
+        explicit SPV_envelope (const SPV::proof &);
+        explicit SPV_envelope (const JSON &);
         explicit operator JSON () const;
 
         // envelope is valid if the root transaction is valid,

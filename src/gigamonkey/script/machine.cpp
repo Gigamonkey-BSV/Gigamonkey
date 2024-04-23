@@ -66,7 +66,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
             << ", Else: " << make_list (i.State.Else) << "}";
     }
     
-    void step_through (machine &m) {
+    result step_through (machine &m) {
         std::cout << "begin program" << std::endl;
         while (true) {
             std::cout << m << std::endl;
@@ -76,6 +76,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
         }
         
         std::cout << "Result " << m.Result << std::endl;
+        return m.Result;
     }
     
     machine::state::state (uint32 flags, bool consensus, maybe<redemption_document> doc, const bytes &script) :

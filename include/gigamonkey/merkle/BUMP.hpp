@@ -13,7 +13,8 @@ namespace Gigamonkey::Merkle {
 
     struct BUMP {
         friend BUMP operator + (const BUMP &, const BUMP &);
-        BUMP operator + (const branch &);
+        BUMP operator + (const branch &) const;
+        BUMP &operator += (const branch &p);
 
         friend writer &operator << (writer &w, const BUMP &h);
         friend reader &operator >> (reader &r, BUMP &h);
@@ -101,11 +102,15 @@ namespace Gigamonkey::Merkle {
 
     };
 
+    BUMP inline &BUMP::operator += (const branch &p) {
+        return *this = *this + p;
+    }
+
     bool inline BUMP::valid () const {
         return data::size (Path) != 0 && data::valid (Path);
     }
 
-    BUMP inline BUMP::operator + (const branch &p) {
+    BUMP inline BUMP::operator + (const branch &p) const {
         return *this + BUMP {BlockHeight, p};
     }
 

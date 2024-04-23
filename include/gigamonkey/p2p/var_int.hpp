@@ -21,8 +21,13 @@ namespace Gigamonkey::Bitcoin {
     
     template <typename X> struct var_sequence;
     
-    template <typename X> writer inline &operator << (writer &w, const var_sequence<X> &x);
-    template <typename X> reader inline &operator >> (reader &r, var_sequence<X> &x);
+    template <typename X> requires requires (writer &w, const X &x) {
+        { w << x } -> std::same_as<writer &>;
+    } writer inline &operator << (writer &w, const var_sequence<X> &x);
+
+    template <typename X> requires requires (reader &r, X &x) {
+        { r >> x } -> std::same_as<reader &>;
+    } reader inline &operator >> (reader &r, var_sequence<X> &x);
     
     struct var_int {
         uint64 Value;
@@ -87,8 +92,9 @@ namespace Gigamonkey::Bitcoin {
         var_sequence (const list<X> &b) : List {const_cast<list<X> &> (b)} {};
         var_sequence (list<X> &b) : List {b} {};
         
-        static reader &read (reader &r, list<X> &l) {
-            l = {};
+        template <typename Q>
+        static reader &read (reader &r, Q &l) {
+            l = Q {};
             var_int size;
             r >> size;
 
@@ -101,21 +107,31 @@ namespace Gigamonkey::Bitcoin {
             return r;
         }
         
-        static writer &write (writer &w, list<X> l) {
+        template <typename Q>
+        static writer &write (writer &w, Q l) {
             w << var_int {data::size (l)};
             for (const X &x: l) w << x;
             return w;
         }
+
+        template <typename Q>
+        static uint64 size (const Q &q) {
+            uint64 x = var_int::size (q.size ());
+            for (const auto &n : q) x += n.serialized_size ();
+            return x;
+        }
     
     };
     
-    template <typename X>
-    writer inline &operator << (writer &w, const var_sequence<X> &x) {
+    template <typename X>requires requires (writer &w, const X &x) {
+        { w << x } -> std::same_as<writer &>;
+    } writer inline &operator << (writer &w, const var_sequence<X> &x) {
         return var_sequence<X>::write (w, x.List);
     }
     
-    template <typename X>
-    reader inline &operator >> (reader &r, var_sequence<X> x) {
+    template <typename X> requires requires (reader &r, X &x) {
+        { r >> x } -> std::same_as<reader &>;
+    } reader inline &operator >> (reader &r, var_sequence<X> x) {
         return var_sequence<X>::read (r, x.List);
     }
     

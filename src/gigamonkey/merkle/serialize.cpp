@@ -20,28 +20,12 @@ namespace Gigamonkey::nChain {
         return encoding::hex::write (h.write ());
     }
     
-    Merkle::digests read_path (const JSON::array_t &j, Merkle::leaf l) {
+    Merkle::digests read_path (const JSON::array_t &j) {
         Merkle::digests d;
 
-        for (const JSON &n : j) {
-            digest256 next = (n == "*" ? l.Digest : read_digest (n));
-            d = d << next;
-            l = l.next (next);
-        }
+        for (const JSON &n : j) d = d << (n == "*" ? maybe<digest256> {} : maybe<digest256> {read_digest (n)});
 
         return data::reverse (d);
-    }
-    
-    list<maybe<digest256>> generate_path (Merkle::branch b) {
-        list<maybe<digest256>> l;
-
-        while (b.Digests.size () > 0) {
-            if (b.Leaf.Digest == b.Digests.first ()) l = l << maybe<digest256> {};
-            else l = l << maybe<digest256> {b.Digests.first ()};
-            b = b.rest ();
-        }
-
-        return l;
     }
     
     JSON write_path (Merkle::branch b) {
@@ -144,7 +128,7 @@ namespace Gigamonkey::nChain {
         
         x.Path.Index = j["index"];
 
-        x.Path.Digests = read_path (j["nodes"], x.leaf ());
+        x.Path.Digests = read_path (j["nodes"]);
         
         if (!j.contains ("targetType")) {
             x.BlockHash = read_digest (j["target"]);
@@ -177,20 +161,19 @@ namespace Gigamonkey::nChain {
         return r;
     }
     
-    reader &read_path (reader &r, digest256 leaf, Merkle::path &p) {
+    reader &read_path (reader &r, Merkle::digests &p) {
 
         Bitcoin::var_int size; 
         r >> size;
         Merkle::digests d;
-        Merkle::leaf l {leaf, p.Index};
+
         for (int i = 0; i < size; i++) {
-            maybe<digest256> Next;
-            r = read_node (r, Next);
-            digest256& next = bool (Next) ? *Next : l.Digest;
+            maybe<digest256> next;
+            r = read_node (r, next);
             d = d << next;
-            l = l.next (next);
         }
-        p.Digests = data::reverse (d);
+
+        p = data::reverse (d);
         return r;
     }
     
@@ -237,7 +220,7 @@ namespace Gigamonkey::nChain {
                 }
             }
             
-            read_path (r, x.txid (), x.Path);
+            read_path (r, x.Path.Digests);
             return x;
         } catch (...) {}
         return {};
@@ -272,8 +255,7 @@ namespace Gigamonkey::nChain {
         bool tx_included = transaction_included ();
         auto tt = target_type ();
         
-        // we need to pre-generate some data for the path. 
-        auto path = generate_path (branch ());
+        auto path = branch ().Digests;
         
         // figure out the serialized size. 
         size_t size = 1 + 
