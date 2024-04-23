@@ -82,6 +82,8 @@ namespace Gigamonkey {
     }
 
     namespace {
+        using namespace Bitcoin;
+
         struct SPV_proof_reader {
             BEEF &Beef;
             map<digest256, uint32> RootToIndex {};
@@ -89,7 +91,7 @@ namespace Gigamonkey {
             SPV_proof_reader (BEEF &beef, const SPV::proof &p);
         };
 
-        void read_node (const Bitcoin::TXID &id, const SPV::proof::node &tx, SPV_proof_reader &spv) {
+        void read_node (const TXID &id, const SPV::proof::node &tx, SPV_proof_reader &spv) {
             if (std::holds_alternative<SPV::proof::confirmation> (tx.Proof)) {
                 const auto &conf = std::get<SPV::proof::confirmation> (tx.Proof);
 
@@ -97,17 +99,17 @@ namespace Gigamonkey {
                 auto i = spv.RootToIndex.contains (conf.Header.MerkleRoot);
                 if (bool (i)) {
                     spv.Bumps[*i] += Merkle::branch {id, conf.Path};
-                    spv.Beef.Transactions <<= BEEF::transaction {Bitcoin::transaction {tx.Transaction}, *i};
+                    spv.Beef.Transactions <<= BEEF::transaction {transaction {tx.Transaction}, *i};
                 } else {
                     uint64 index = spv.Beef.BUMPs.size ();
                     spv.Bumps.push_back (Merkle::BUMP {uint64 (conf.Height), Merkle::branch {id, conf.Path}});
                     spv.RootToIndex = spv.RootToIndex.insert (conf.Header.MerkleRoot, index);
-                    spv.Beef.Transactions <<= BEEF::transaction {Bitcoin::transaction {tx.Transaction}, index};
+                    spv.Beef.Transactions <<= BEEF::transaction {transaction {tx.Transaction}, index};
                 }
 
             } else {
-                for (const auto &e : std::get<map<Bitcoin::TXID, ptr<SPV::proof::node>>> (tx.Proof)) read_node (e.Key, *e.Value, spv);
-                spv.Beef.Transactions <<= BEEF::transaction {Bitcoin::transaction {tx.Transaction}};
+                for (const auto &e : std::get<map<TXID, ptr<SPV::proof::node>>> (tx.Proof)) read_node (e.Key, *e.Value, spv);
+                spv.Beef.Transactions <<= BEEF::transaction {transaction {tx.Transaction}};
             }
         }
 
@@ -118,6 +120,115 @@ namespace Gigamonkey {
 
     BEEF::BEEF (const SPV::proof &p) {
         SPV_proof_reader {*this, p};
+    }
+
+    namespace {
+
+        map<TXID, SPV::proof::node> read_SPV_proof (
+            const BEEF::transaction &tx,
+            list<entry<uint64, Merkle::map>> merks,
+            list<entry<TXID, BEEF::transaction>> txs,
+            const SPV::database &db);
+
+        map<TXID, ptr<SPV::proof::node>> read_SPV_tree (
+            const BEEF::transaction &tx,
+            list<entry<uint64, Merkle::map>> merks,
+            list<entry<TXID, BEEF::transaction>> txs,
+            const SPV::database &db);
+    }
+
+    SPV::proof BEEF::read_SPV_proof (const SPV::database &db) const {
+        auto all_txs = data::reverse (Transactions);
+
+        SPV::proof p;
+        p.Transaction = Bitcoin::transaction (data::first (all_txs).Transaction);
+
+        // calculate all txids
+        list<entry<Bitcoin::TXID, BEEF::transaction>> txs = for_each ([] (const BEEF::transaction &tx) -> auto {
+            return entry<Bitcoin::TXID, BEEF::transaction> {tx.Transaction.id (), tx};
+        }, data::rest (all_txs));
+
+        // calculate all merkle maps
+        list<entry<uint64, Merkle::map>> merks = for_each ([] (const Merkle::BUMP &b) -> auto {
+            return entry<uint64, Merkle::map> {b.BlockHeight, b.paths ()};
+        }, BUMPs);
+
+        p.Proof = Gigamonkey::read_SPV_proof (p.Transaction, merks, txs.rest (), db);
+
+        return p;
+    }
+
+    namespace {
+
+        ptr<SPV::proof::node> read_SPV_ptr_node (
+            const entry<TXID, BEEF::transaction> &tx,
+            list<entry<uint64, Merkle::map>> merks,
+            list<entry<TXID, BEEF::transaction>> txs,
+            const SPV::database &db) {
+
+            if (tx.Value.BUMPIndex) {
+                const entry<uint64, Merkle::map> &merk = merks[*tx.Value.BUMPIndex];
+                return ptr<SPV::proof::node> {new SPV::proof::node
+                    {tx.Value.Transaction, SPV::proof::confirmation
+                        {merk.Value[tx.Key], merk.Key, *db.header (data::N {merk.Key})}}};
+            }
+
+            return ptr<SPV::proof::node> {new SPV::proof::node
+                {tx.Value.Transaction, read_SPV_tree (tx.Value, merks, txs, db)}};
+        }
+
+        map<TXID, ptr<SPV::proof::node>> read_SPV_tree (
+            const BEEF::transaction &tx,
+            list<entry<uint64, Merkle::map>> merks,
+            list<entry<TXID, BEEF::transaction>> txs,
+            const SPV::database &db) {
+
+            map<TXID, ptr<SPV::proof::node>> p;
+            for (const input &in : tx.Transaction.Inputs) if (!p.contains (in.Reference.Digest)) {
+                auto dependencies = txs;
+                while (dependencies.first ().Key != in.Reference.Digest)
+                    dependencies = dependencies.rest ();
+
+                p = p.insert (in.Reference.Digest,
+                    read_SPV_ptr_node (dependencies.first (), merks, dependencies.rest (), db));
+            }
+
+            return p;
+        }
+
+        SPV::proof::node read_SPV_node (
+            const entry<TXID, BEEF::transaction> &tx,
+            list<entry<uint64, Merkle::map>> merks,
+            list<entry<TXID, BEEF::transaction>> txs,
+            const SPV::database &db) {
+
+            if (tx.Value.BUMPIndex) {
+                const entry<uint64, Merkle::map> &merk = merks[*tx.Value.BUMPIndex];
+                return SPV::proof::node {tx.Value.Transaction,
+                    SPV::proof::confirmation {merk.Value[tx.Key], merk.Key, *db.header (data::N {merk.Key})}};
+            }
+
+            return SPV::proof::node {tx.Value.Transaction, read_SPV_tree (tx.Value, merks, txs, db)};
+        }
+
+        map<Bitcoin::TXID, SPV::proof::node> read_SPV_proof (
+            const BEEF::transaction &tx,
+            list<entry<uint64, Merkle::map>> merks,
+            list<entry<TXID, BEEF::transaction>> txs,
+            const SPV::database &db) {
+
+            map<Bitcoin::TXID, SPV::proof::node> p;
+            for (const Bitcoin::input &in : tx.Transaction.Inputs) if (!p.contains (in.Reference.Digest)) {
+                auto dependencies = txs;
+                while (dependencies.first ().Key != in.Reference.Digest)
+                    dependencies = dependencies.rest ();
+
+                p = p.insert (in.Reference.Digest,
+                    read_SPV_node (dependencies.first (), merks, dependencies.rest (), db));
+            }
+
+            return p;
+        }
     }
 }
 

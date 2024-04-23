@@ -53,6 +53,8 @@ namespace Gigamonkey::nChain {
         // validate means that we actually check all the merkle
         // against the block headers.
         bool validate (const SPV::database &) const;
+
+        SPV::proof read_SPV_proof (const SPV::database &) const;
     };
 
 

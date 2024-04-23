@@ -43,10 +43,16 @@ namespace Gigamonkey::SPV {
         struct node {
             Bitcoin::transaction Transaction;
             tree Proof;
+
+            node (const Bitcoin::transaction &tx, const confirmation &c) : Transaction {tx}, Proof {c} {}
+            node (const Bitcoin::transaction &tx, map<Bitcoin::TXID, ptr<node>> m) : Transaction {tx}, Proof {m} {}
         };
 
         Bitcoin::transaction Transaction;
         map<Bitcoin::TXID, node> Proof;
+
+        proof (): Transaction {}, Proof {} {}
+        proof (const Bitcoin::transaction &tx, map<Bitcoin::TXID, node> p) : Transaction {tx}, Proof {p} {}
 
         bool valid () const;
 

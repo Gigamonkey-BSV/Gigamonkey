@@ -152,7 +152,7 @@ namespace Gigamonkey::SPV {
         database::confirmed n = d.tx (x);
         if (n.Transaction == nullptr) return {};
 
-        if (bool (n.Confirmation)) return ptr<proof::node> {new proof::node {*n.Transaction, proof::tree {*n.Confirmation}}};
+        if (bool (n.Confirmation)) return ptr<proof::node> {new proof::node {*n.Transaction, *n.Confirmation}};
 
         map<Bitcoin::TXID, ptr<proof::node>> antecedents;
 
@@ -162,7 +162,7 @@ namespace Gigamonkey::SPV {
             antecedents = antecedents.insert (in.Reference.Digest, u);
         }
 
-        return ptr<proof::node> {new proof::node {*n.Transaction, proof::tree {antecedents}}};
+        return ptr<proof::node> {new proof::node {*n.Transaction, antecedents}};
     }
 
     // attempt to generate a given SPV proof for an unconfirmed transaction.
@@ -174,11 +174,12 @@ namespace Gigamonkey::SPV {
         if (bool (n.Confirmation)) return {};
         map<Bitcoin::TXID, proof::node> antecedents;
 
-        for (const Bitcoin::input &in : Bitcoin::transaction {x}.Inputs) {
-            ptr<proof::node> u = generate_unconfirmed (d, in.Reference.Digest);
-            if (u == nullptr) return {};
-            antecedents = antecedents.insert (in.Reference.Digest, *u);
-        }
+        for (const Bitcoin::input &in : Bitcoin::transaction {x}.Inputs)
+            if (!antecedents.contains (in.Reference.Digest)) {
+                ptr<proof::node> u = generate_unconfirmed (d, in.Reference.Digest);
+                if (u == nullptr) return {};
+                antecedents = antecedents.insert (in.Reference.Digest, *u);
+            }
 
         return {proof {b, antecedents}};
     }

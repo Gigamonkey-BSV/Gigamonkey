@@ -33,6 +33,10 @@ namespace Gigamonkey {
         // against the block headers.
         bool validate (const SPV::database &) const;
 
+        uint64 serialized_size () const;
+
+        SPV::proof read_SPV_proof (const SPV::database &) const;
+
         // written out in byte order this is 0100BEEF.
         uint32_little Version {0xEFBE0001};
 
@@ -56,8 +60,6 @@ namespace Gigamonkey {
         };
 
         list<transaction> Transactions {};
-
-        uint64 serialized_size () const;
     };
 
     bool inline BEEF::valid () const {
