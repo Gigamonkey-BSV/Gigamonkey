@@ -31,7 +31,8 @@ namespace Gigamonkey::Stratum {
         
         notification ();
         notification (Stratum::method m, const parameters &p);
-        explicit notification (const JSON &j) : JSON (j) {}
+        explicit notification (JSON &&j);
+        explicit notification (const JSON &j);
         
     };
     
@@ -51,7 +52,8 @@ namespace Gigamonkey::Stratum {
         
         request ();
         request (const message_id &id, Stratum::method m, const parameters &p);
-        explicit request (const JSON &j) : JSON (j) {}
+        explicit request (JSON &&j);
+        explicit request (const JSON &j);
         
     };
     
@@ -62,9 +64,13 @@ namespace Gigamonkey::Stratum {
         static message_id id (const JSON &);
         static JSON result (const JSON &);
         static optional<Stratum::error> error (const JSON &);
-        
+
         bool valid () const {
             return valid (*this);
+        }
+
+        bool is_error () const {
+            return bool (error ());
         }
         
         message_id id () const;
@@ -74,18 +80,28 @@ namespace Gigamonkey::Stratum {
         response ();
         response (const message_id &id, const JSON &p);
         response (const message_id &id, const JSON &p, const Stratum::error &e);
-        explicit response (const JSON &j) : JSON (j) {}
-        
-        bool is_error () const {
-            return bool (error ());
-        }
+        explicit response (JSON &&j);
+        explicit response (const JSON &j);
         
     };
+
+    // NOTE: need () for JSON constructor and not {} or something different will happen.
+    inline notification::notification (JSON &&j) : JSON (std::move (j)) {}
+
+    inline notification::notification (const JSON &j): JSON (j) {}
+
+    inline request::request (JSON &&j) : JSON (std::move (j)) {}
+
+    inline request::request (const JSON &j): JSON (j) {}
+
+    inline response::response (JSON &&j) : JSON (std::move (j)) {}
+
+    inline response::response (const JSON &j): JSON (j) {}
     
     inline request::request () : JSON {} {}
     
     inline request::request (const message_id &id, Stratum::method m, const parameters &p) : JSON (JSON::object_t {}) {
-        (*this)["id"] = static_cast<const JSON &>(id);
+        (*this)["id"] = static_cast<const JSON &> (id);
         (*this)["method"] = method_to_string (m);
         (*this)["params"] = p;
     }

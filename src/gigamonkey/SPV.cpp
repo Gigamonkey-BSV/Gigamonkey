@@ -105,27 +105,30 @@ namespace Gigamonkey::SPV {
     }
 
     bool proof_validate (const proof &u, const database *d) {
-        for (const entry<Bitcoin::TXID, proof::node> &p : u.Proof)
-            if (p.Key != p.Value.Transaction.id () || !unconfirmed_validate (p.Value, d)) return false;
+        for (const entry<Bitcoin::TXID, ptr<proof::node>> &p : u.Proof)
+            if (p.Key != p.Value->Transaction.id () || !unconfirmed_validate (*p.Value, d)) return false;
 
-        Bitcoin::transaction decoded {u.Transaction};
+        for (const Bitcoin::transaction &decoded : u.Transactions) {
 
-        if (!decoded.valid ()) return false;
+            if (!decoded.valid ()) return false;
 
-        Bitcoin::satoshi spent {0};
-        for (const Bitcoin::input &in : decoded.Inputs) {
-            Bitcoin::transaction prev {u.Proof[in.Reference.Digest].Transaction};
-            if (!prev.valid ()) return false;
+            Bitcoin::satoshi spent {0};
+            for (const Bitcoin::input &in : decoded.Inputs) {
+                Bitcoin::transaction prev {u.Proof[in.Reference.Digest]->Transaction};
+                if (!prev.valid ()) return false;
 
-            const Bitcoin::output &out = prev.Outputs[in.Reference.Index];
+                const Bitcoin::output &out = prev.Outputs[in.Reference.Index];
 
-            if (!Bitcoin::evaluate (in.Script, out.Script,
-                Bitcoin::redemption_document {out.Value, Bitcoin::incomplete::transaction {decoded}, in.Reference.Index})) return false;
+                if (!Bitcoin::evaluate (in.Script, out.Script,
+                    Bitcoin::redemption_document {out.Value, Bitcoin::incomplete::transaction {decoded}, in.Reference.Index})) return false;
 
-            spent += out.Value;
+                spent += out.Value;
+            }
+
+            if (decoded.sent () > spent) return false;
         }
 
-        return decoded.sent () > spent;
+        return true;
     }
 
     bool proof::valid () const {
@@ -135,16 +138,6 @@ namespace Gigamonkey::SPV {
     // check valid and check that all headers are in our database.
     bool proof::validate (const SPV::database &d) const {
         return proof_validate (*this, &d);
-    }
-
-    Bitcoin::satoshi proof::spent () const {
-        Bitcoin::transaction decoded {Transaction};
-
-        Bitcoin::satoshi spent {0};
-        for (const Bitcoin::input &in : decoded.Inputs)
-            spent += Bitcoin::transaction {Proof[in.Reference.Digest].Transaction}.Outputs[in.Reference.Index].Value;
-
-        return spent;
     }
 
     ptr<proof::node> generate_unconfirmed (const database &d, const Bitcoin::TXID &x) {
@@ -168,19 +161,25 @@ namespace Gigamonkey::SPV {
     // attempt to generate a given SPV proof for an unconfirmed transaction.
     // this proof can be sent to a merchant who can use it to confirm that
     // the transaction is valid.
-    maybe<proof> generate_proof (const database &d, const Bitcoin::transaction &b) {
-        Bitcoin::TXID x = b.id ();
-        database::confirmed n = d.tx (x);
-        if (bool (n.Confirmation)) return {};
-        map<Bitcoin::TXID, proof::node> antecedents;
+    maybe<proof> generate_proof (const database &d, list<Bitcoin::transaction> bb) {
+        proof p;
 
-        for (const Bitcoin::input &in : Bitcoin::transaction {x}.Inputs)
-            if (!antecedents.contains (in.Reference.Digest)) {
-                ptr<proof::node> u = generate_unconfirmed (d, in.Reference.Digest);
-                if (u == nullptr) return {};
-                antecedents = antecedents.insert (in.Reference.Digest, *u);
-            }
+        for (const Bitcoin::transaction &b : bb) {
 
-        return {proof {b, antecedents}};
+            Bitcoin::TXID x = b.id ();
+            database::confirmed n = d.tx (x);
+            if (bool (n.Confirmation)) continue;
+
+            p.Transactions <<= b;
+
+            for (const Bitcoin::input &in : b.Inputs)
+                if (!p.Proof.contains (in.Reference.Digest)) {
+                    ptr<proof::node> u = generate_unconfirmed (d, in.Reference.Digest);
+                    if (u == nullptr) return {};
+                    p.Proof = p.Proof.insert (in.Reference.Digest, u);
+                }
+        }
+
+        return p;
     }
 }

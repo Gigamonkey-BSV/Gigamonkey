@@ -48,28 +48,30 @@ namespace Gigamonkey::SPV {
             node (const Bitcoin::transaction &tx, map<Bitcoin::TXID, ptr<node>> m) : Transaction {tx}, Proof {m} {}
         };
 
-        Bitcoin::transaction Transaction;
-        map<Bitcoin::TXID, node> Proof;
+        list<Bitcoin::transaction> Transactions;
+        map<Bitcoin::TXID, ptr<node>> Proof;
 
-        proof (): Transaction {}, Proof {} {}
-        proof (const Bitcoin::transaction &tx, map<Bitcoin::TXID, node> p) : Transaction {tx}, Proof {p} {}
+        proof (): Transactions {}, Proof {} {}
 
         bool valid () const;
 
         // check valid and check that all headers are in our database.
         bool validate (const database &) const;
 
-        Bitcoin::satoshi sent () const;
-        Bitcoin::satoshi spent () const;
-        Bitcoin::satoshi fee () const;
-        double fee_rate () const;
-
-        explicit operator extended::transaction () const {
-            return extended::transaction {Transaction.Version, for_each ([this] (const Bitcoin::input &in) -> extended::input {
-                return extended::input {this->Proof[in.Reference.Digest].Transaction.Outputs[in.Reference.Index], in};
-            }, Transaction.Inputs), Transaction.Outputs, Transaction.LockTime};
+        explicit operator list<extended::transaction> () const {
+            return for_each ([this] (const Bitcoin::transaction &tx) -> extended::transaction {
+                return extended::transaction {tx.Version, for_each ([this] (const Bitcoin::input &in) -> extended::input {
+                    return extended::input {this->Proof[in.Reference.Digest]->Transaction.Outputs[in.Reference.Index], in};
+                }, tx.Inputs), tx.Outputs, tx.LockTime};
+            }, Transactions);
         }
+
     };
+
+    // attempt to generate a given SPV proof for an unconfirmed transaction.
+    // this proof can be sent to a merchant who can use it to confirm that
+    // the transaction is valid.
+    maybe<proof> generate_proof (const database &d, list<Bitcoin::transaction> b);
 
     // interface for database containing headers, transactions, and merkle path.
     struct database {
@@ -107,11 +109,6 @@ namespace Gigamonkey::SPV {
         virtual ~database () {}
         
     };
-
-    // attempt to generate a given SPV proof for an unconfirmed transaction.
-    // this proof can be sent to a merchant who can use it to confirm that
-    // the transaction is valid.
-    maybe<proof> generate_proof (const database &d, const bytes &b);
     
     struct database::memory : database {
         struct entry {
@@ -172,18 +169,6 @@ namespace Gigamonkey::SPV {
     std::strong_ordering inline proof::confirmation::operator <=> (const confirmation &t) const {
         auto cmp_block = Header <=> Header;
         return cmp_block == std::strong_ordering::equal ? cmp_block : Path.Index <=> t.Path.Index;
-    }
-
-    Bitcoin::satoshi inline proof::sent () const {
-        return Bitcoin::transaction {Transaction}.sent ();
-    }
-
-    Bitcoin::satoshi inline proof::fee () const {
-        return spent () - sent ();
-    }
-
-    double inline proof::fee_rate () const {
-        return double (fee ()) / double (Transaction.serialized_size ());
     }
 
     void inline database::memory::insert (const Bitcoin::transaction &t) {

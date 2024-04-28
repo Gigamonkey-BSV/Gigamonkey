@@ -57,7 +57,6 @@ namespace Gigamonkey::nChain {
         SPV::proof read_SPV_proof (const SPV::database &) const;
     };
 
-
     inline SPV_envelope::node::node (const bytes &raw, const proofs_serialization_standard &proof, list<MAPI::transaction_status_response> r):
         RawTx {raw}, MAPIResponses {r}, Proof {proof}, Inputs {} {}
 

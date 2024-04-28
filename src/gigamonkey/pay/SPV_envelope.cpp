@@ -56,7 +56,8 @@ namespace Gigamonkey::nChain {
 
             if (std::holds_alternative<SPV::proof::confirmation> (u.Proof)) {
                 const auto &conf = std::get<SPV::proof::confirmation> (u.Proof);
-                return SPV_envelope::node {bytes (u.Transaction), proofs_serialization_standard {Merkle::branch {txid, conf.Path}, conf.Header}};
+                return SPV_envelope::node {bytes (u.Transaction),
+                    proofs_serialization_standard {Merkle::branch {txid, conf.Path}, conf.Header}};
             }
 
             map<Bitcoin::TXID, ptr<SPV_envelope::node>> inputs;
@@ -78,9 +79,11 @@ namespace Gigamonkey::nChain {
     }
 
     SPV_envelope::SPV_envelope (const SPV::proof &u) {
-        RawTx = bytes (u.Transaction);
+        if (u.Transactions.size () != 1)
+            throw exception {} << "cannot generate SPV envelope from proof containing more than one top transaction.";
+        RawTx = bytes (u.Transactions[0]);
 
-        for (const auto &e : u.Proof) Inputs = Inputs.insert (e.Key, to_SPV_envelope (e.Key, e.Value));
+        for (const auto &e : u.Proof) Inputs = Inputs.insert (e.Key, to_SPV_envelope (e.Key, *e.Value));
     }
 
     namespace {
@@ -226,12 +229,15 @@ namespace Gigamonkey::nChain {
     }
 
     namespace {
-        map<TXID, SPV::proof::node> read_SPV_proof (map<TXID, SPV_envelope::node> inputs, const SPV::database &db);
+        map<TXID, ptr<SPV::proof::node>> read_SPV_proof (map<TXID, SPV_envelope::node> inputs, const SPV::database &db);
         map<TXID, ptr<SPV::proof::node>> read_SPV_proof (map<TXID, ptr<SPV_envelope::node>> inputs, const SPV::database &db);
     }
 
     SPV::proof SPV_envelope::read_SPV_proof (const SPV::database &db) const {
-        return SPV::proof {Bitcoin::transaction {RawTx}, nChain::read_SPV_proof (Inputs, db)};
+        SPV::proof p;
+        p.Transactions = {Bitcoin::transaction {RawTx}};
+        p.Proof = nChain::read_SPV_proof (Inputs, db);
+        return p;
     }
 
     namespace {
@@ -258,15 +264,9 @@ namespace Gigamonkey::nChain {
             return result;
         }
 
-        SPV::proof::node read_SPV_node_bottom (const SPV_envelope::node &input, const SPV::database &db) {
-            return bool (input.Proof) ?
-                SPV::proof::node {Bitcoin::transaction {input.RawTx}, read_confirmation (*input.Proof, db)} :
-                SPV::proof::node {Bitcoin::transaction {input.RawTx}, read_SPV_proof (input.Inputs, db)};
-        }
-
-        map<TXID, SPV::proof::node> read_SPV_proof (map<TXID, SPV_envelope::node> inputs, const SPV::database &db) {
-            map<TXID, SPV::proof::node> result;
-            for (const auto &e : inputs) result = result.insert (e.Key, read_SPV_node_bottom (e.Value, db));
+        map<TXID, ptr<SPV::proof::node>> read_SPV_proof (map<TXID, SPV_envelope::node> inputs, const SPV::database &db) {
+            map<TXID, ptr<SPV::proof::node>> result;
+            for (const auto &e : inputs) result = result.insert (e.Key, read_SPV_node (e.Value, db));
             return result;
         }
     }

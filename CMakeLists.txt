@@ -79,6 +79,8 @@ add_library (gigamonkey STATIC
     src/gigamonkey/pay/MAPI.cpp
     src/gigamonkey/pay/SPV_envelope.cpp
     src/gigamonkey/pay/BEEF.cpp
+    src/gigamonkey/pay/pay.cpp
+    src/gigamonkey/pay/ARC.cpp
     
     src/gigamonkey/stratum/method.cpp
     src/gigamonkey/stratum/error.cpp

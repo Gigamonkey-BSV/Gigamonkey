@@ -16,6 +16,7 @@
 #include <data/math.hpp>
 #include <data/fold.hpp>
 #include <data/for_each.hpp>
+#include <data/string.hpp>
 #include <data/encoding/hex.hpp>
 #include <data/math/nonnegative.hpp>
 #include <data/net/JSON.hpp>

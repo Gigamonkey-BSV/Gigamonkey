@@ -35,6 +35,8 @@ namespace Gigamonkey {
 
         uint64 serialized_size () const;
 
+        // NOTE: it is possible for BUMP to contain several unconfirmeed
+        // transactions.
         SPV::proof read_SPV_proof (const SPV::database &) const;
 
         // written out in byte order this is 0100BEEF.
@@ -57,6 +59,10 @@ namespace Gigamonkey {
             friend writer &operator << (writer &w, const transaction &h);
             friend reader &operator >> (reader &r, transaction &h);
             uint64 serialized_size () const;
+
+            bool Merkle_proof_included () const {
+                return bool (BUMPIndex);
+            }
         };
 
         list<transaction> Transactions {};
