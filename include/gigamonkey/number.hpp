@@ -30,7 +30,7 @@ namespace Gigamonkey {
     template <endian::order r> bool is_positive_zero (const integer<r> &);
     template <endian::order r> bool is_negative_zero (const integer<r> &);
 
-    template <endian::order r> math::sign sign (const integer<r> &);
+    template <endian::order r> math::signature sign (const integer<r> &);
 
     // comparison
     template <endian::order r> bool operator == (const integer<r> &a, const integer<r> &b);
@@ -159,7 +159,7 @@ namespace Gigamonkey {
         
         static bool sign_bit (bytes_view b);
         
-        static data::math::sign sign (bytes_view b);
+        static data::math::signature sign (bytes_view b);
         
         static bool is_positive (bytes_view b);
         static bool is_negative (bytes_view b);
@@ -309,7 +309,7 @@ namespace Gigamonkey {
         return integer<r>::is_negative_zero (x);
     }
 
-    template <endian::order r> math::sign inline sign (const integer<r> &x) {
+    template <endian::order r> math::signature inline sign (const integer<r> &x) {
         return integer<r>::sign (x);
     }
 
@@ -471,7 +471,7 @@ namespace Gigamonkey {
         return is_zero (b) && !sign_bit (b);
     }
 
-    template <endian::order r> math::sign inline integer<r>::sign (bytes_view b) {
+    template <endian::order r> math::signature inline integer<r>::sign (bytes_view b) {
         return is_zero (b) ? math::zero : sign_bit (b) ? math::negative : math::positive;
     }
 
@@ -575,8 +575,6 @@ namespace Gigamonkey {
         return math::number::natural::divide (*this, z);
     }
 */
-    namespace arithmetic = math::number::arithmetic;
-
     template <endian::order r> bool inline integer<r>::is_minimal_size (bytes_view b) {
         return arithmetic::is_minimal<r, math::number::complement::twos, byte> (b);
     }

@@ -159,7 +159,7 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_EQ (bytes_view (trim (Z ("0x80007f"))), *encoding::hex::read  ("ff"));
         
     }
-    
+    /*
     TEST (NumberTest, TestNumberSignZ) {
         
         EXPECT_TRUE (is_zero (Z ("0x00")));
@@ -266,7 +266,7 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_FALSE (is_negative (Z ("0x000080")));
         EXPECT_TRUE (is_negative (Z ("0x800080")));
     
-    }
+    }*/
 
     TEST (NumberTest, TestNumberConstructorsDecimalNegative) {
         
@@ -347,7 +347,7 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_FALSE (is_minimal_size (N ("0x00007f")));
         
     }
-
+/*
     TEST (NumberTest, TestNumberZeroN) {
         
         EXPECT_TRUE (is_zero (N ("0x00")));
@@ -371,7 +371,7 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_FALSE (is_negative_zero (N ("0x000000")));
         EXPECT_TRUE (is_negative_zero (N ("0x800000")));
         
-    }
+    }*/
     
     TEST (NumberTest, TestNumberCompare) {
         

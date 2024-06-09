@@ -4,7 +4,7 @@
 #include <gigamonkey/p2p/checksum.hpp>
 #include <gigamonkey/schema/hd.hpp>
 #include <data/encoding/base58.hpp>
-#include <data/encoding/endian/endian.hpp>
+#include <data/arithmetic/endian.hpp>
 #include <data/io/unimplemented.hpp>
 #include <cryptopp/cryptlib.h>
 #include <cryptopp/hmac.h>
@@ -169,13 +169,13 @@ namespace Gigamonkey::HD::BIP_32 {
 
         bytes_reader reader (view.begin () + 3, view.end ());
         
-        data::endian::arithmetic<false, endian::big, 1> depth;
+        byte depth;
         reader >> depth;
         secret1.Depth = depth;
-        data::endian::arithmetic<false, endian::big, 4> parent;
+        uint32_big parent;
         reader >> parent;
         secret1.Parent = parent;
-        data::endian::arithmetic<false, endian::big, 4> sequence;
+        uint32_big sequence;
         
         reader >> sequence;
         secret1.Sequence = sequence;
@@ -319,13 +319,13 @@ namespace Gigamonkey::HD::BIP_32 {
         if (prv != check) return pubkey ();
         bytes_reader reader (view.begin () + 3, view.end());
         
-        data::endian::arithmetic<false, endian::big, 1> depth;
+        byte depth;
         reader >> depth;
         pubkey1.Depth = depth;
-        data::endian::arithmetic<false, endian::big, 4> parent;
+        uint32_big parent;
         reader >> parent;
         pubkey1.Parent = parent;
-        data::endian::arithmetic<false, endian::big, 4> sequence;
+        uint32_big sequence;
         
         reader >> sequence;
         pubkey1.Sequence = sequence;

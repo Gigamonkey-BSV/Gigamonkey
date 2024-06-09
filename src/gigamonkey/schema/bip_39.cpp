@@ -3,7 +3,7 @@
 
 #include <gigamonkey/schema/bip_39.hpp>
 #include <data/encoding/base58.hpp>
-#include <data/encoding/endian/endian.hpp>
+#include <data/arithmetic/endian.hpp>
 #include <data/io/unimplemented.hpp>
 #include <cryptopp/cryptlib.h>
 #include <cryptopp/hmac.h>
@@ -14,11 +14,11 @@
 #include <boost/locale.hpp>
 
 namespace Gigamonkey::HD::BIP_39 {
-    char getBit (int index,bytes bitarray) {
+    char getBit (int index, bytes bitarray) {
         return (bitarray[index/8] >> 7 - (index & 0x7)) & 0x1;
     }
 
-    void setBit (int index, int value,bytes& bitarray) {
+    void setBit (int index, int value, bytes &bitarray) {
         bitarray[index/8] = bitarray[index/8] | (value  << 7 - (index & 0x7));
     }
     
