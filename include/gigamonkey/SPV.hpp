@@ -7,6 +7,7 @@
 #include <gigamonkey/timechain.hpp>
 #include <gigamonkey/pay/extended.hpp>
 #include <gigamonkey/merkle/BUMP.hpp>
+#include <data/either.hpp>
 
 namespace Gigamonkey::Bitcoin {
     Bitcoin::block genesis ();

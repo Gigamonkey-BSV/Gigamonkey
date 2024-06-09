@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <sv/big_int.h>
+#include <variant>
 
 class scriptnum_overflow_error : public std::overflow_error {
 public:
@@ -79,7 +80,7 @@ public:
 private:
     bool equal_index (const CScriptNum &) const;
 
-    using value_type = data::either<int64_t, bsv::bint>;
+    using value_type = std::variant<int64_t, bsv::bint>;
     value_type m_value;
 };
 
