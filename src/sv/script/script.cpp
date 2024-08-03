@@ -67,8 +67,7 @@ uint64_t CScript::GetSigOpCount (bool fAccurate, bool isGenesisEnabled, bool &si
     return n;
 }
 
-uint64_t CScript::GetSigOpCount (const CScript &scriptSig, bool isGenesisEnabled, bool &sigOpCountError) const
-{
+uint64_t CScript::GetSigOpCount (const CScript &scriptSig, bool isGenesisEnabled, bool &sigOpCountError) const {
     sigOpCountError = false;
     if (!IsP2SH (*this)) return GetSigOpCount (true, isGenesisEnabled, sigOpCountError);
 

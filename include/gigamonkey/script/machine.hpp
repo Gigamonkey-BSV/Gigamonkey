@@ -10,9 +10,6 @@
 #include <gigamonkey/script/config.hpp>
 
 namespace Gigamonkey::Bitcoin::interpreter { 
-
-    using stack = LimitedStack<Z>;
-    using vector = LimitedVector<Z>;
     
     // a Bitcoin script interpreter that can be advanced step-by-step.
     struct machine {
@@ -30,8 +27,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
             bytes Script;
             program_counter Counter;
             
-            stack Stack;
-            stack AltStack;
+            limited_two_stack Stack;
             
             cross<bool> Exec;
             cross<bool> Else;

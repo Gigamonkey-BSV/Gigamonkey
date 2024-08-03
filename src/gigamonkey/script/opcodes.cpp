@@ -6,16 +6,13 @@
 
 #include <iostream>
 
-std::ostream& operator<<(std::ostream& os, const opcodetype& opcode)
-{
-    if(opcode >= 1 && opcode <= 75)
-    {
-        os << static_cast<int>(opcode);
+std::ostream &operator << (std::ostream &os, const opcodetype &opcode) {
+    if (opcode >= 1 && opcode <= 75) {
+        os << static_cast<int> (opcode);
         return os;
     }
 
-    switch(opcode)
-    {
+    switch (opcode) {
     case OP_0:
         os << "OP_0";
         break;
@@ -68,15 +65,13 @@ std::ostream& operator<<(std::ostream& os, const opcodetype& opcode)
         os << "OP_16";
         break;
     default:
-        os << GetOpName(opcode);
+        os << GetOpName (opcode);
     }
     return os;
 }
 
-const char* GetOpName(opcodetype opcode)
-{
-    switch(opcode)
-    {
+const char *GetOpName (opcodetype opcode) {
+    switch (opcode) {
     // push value
     case OP_0:
         return "0";

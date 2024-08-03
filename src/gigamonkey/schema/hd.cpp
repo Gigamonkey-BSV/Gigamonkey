@@ -4,7 +4,7 @@
 #include <gigamonkey/p2p/checksum.hpp>
 #include <gigamonkey/schema/hd.hpp>
 #include <data/encoding/base58.hpp>
-#include <data/encoding/endian/endian.hpp>
+#include <data/encoding/endian.hpp>
 #include <data/io/unimplemented.hpp>
 #include <cryptopp/cryptlib.h>
 #include <cryptopp/hmac.h>
@@ -169,13 +169,13 @@ namespace Gigamonkey::HD::BIP_32 {
 
         bytes_reader reader (view.begin () + 3, view.end ());
         
-        data::endian::arithmetic<false, endian::big, 1> depth;
+        byte depth;
         reader >> depth;
         secret1.Depth = depth;
-        data::endian::arithmetic<false, endian::big, 4> parent;
+        uint32_big parent;
         reader >> parent;
         secret1.Parent = parent;
-        data::endian::arithmetic<false, endian::big, 4> sequence;
+        uint32_big sequence;
         
         reader >> sequence;
         secret1.Sequence = sequence;
@@ -317,15 +317,15 @@ namespace Gigamonkey::HD::BIP_32 {
         bytes prv = bytes ({0x88, 0xB2, 0x1E});
         auto check = view.substr (0, 3);
         if (prv != check) return pubkey ();
-        bytes_reader reader (view.begin () + 3, view.end());
+        bytes_reader reader (view.begin () + 3, view.end ());
         
-        data::endian::arithmetic<false, endian::big, 1> depth;
+        byte depth;
         reader >> depth;
         pubkey1.Depth = depth;
-        data::endian::arithmetic<false, endian::big, 4> parent;
+        uint32_big parent;
         reader >> parent;
         pubkey1.Parent = parent;
-        data::endian::arithmetic<false, endian::big, 4> sequence;
+        uint32_big sequence;
         
         reader >> sequence;
         pubkey1.Sequence = sequence;
@@ -333,7 +333,7 @@ namespace Gigamonkey::HD::BIP_32 {
         bytes_view chain_code = view.substr (12, 32);
         bytes_view key = view.substr (12 + 32);
 
-        uint<33> keyuint;
+        Bitcoin::uint<33> keyuint;
         std::copy (key.begin (), key.end (), keyuint.begin ());
         pubkey1.ChainCode = bytes (32);
         std::copy (chain_code.begin (), chain_code.end (), pubkey1.ChainCode.begin ());

@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <iterator>
 #include <vector>
+#include <span>
 
 namespace bsv {
     inline auto abs (const int64_t value)
@@ -124,7 +125,7 @@ namespace bsv {
         }
 
         // If the next byte has it sign bit set, then we are minimaly encoded.
-        if (data[data.size() - 2] & 0x80) return false;
+        if (data[data.size () - 2] & 0x80) return false;
 
         // We are not minimally encoded, we need to figure out how much to trim.
         for (size_t i = data.size () - 1; i > 0; i--) {

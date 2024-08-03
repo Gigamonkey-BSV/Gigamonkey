@@ -1,6 +1,6 @@
 #include <gigamonkey/boost/boost.hpp>
 #include <gigamonkey/script/pattern.hpp>
-#include <data/encoding/halves.hpp>
+#include <data/arithmetic/halves.hpp>
 #include <gigamonkey/p2p/var_int.hpp>
 #include <iostream>
 

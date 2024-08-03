@@ -4,7 +4,7 @@
 #ifndef GIGAMONKEY_WORK_ASIC_BOOST
 #define GIGAMONKEY_WORK_ASIC_BOOST
 
-#include <data/encoding/halves.hpp>
+#include <data/arithmetic/halves.hpp>
 #include <gigamonkey/types.hpp>
 
 namespace Gigamonkey::work::ASICBoost {

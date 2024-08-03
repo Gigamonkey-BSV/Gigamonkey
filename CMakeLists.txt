@@ -33,12 +33,8 @@ add_library (gigamonkey STATIC
     
     src/sv/random.cpp
     src/sv/big_int.cpp
-    src/sv/script/opcodes.cpp
-    src/sv/script/script_error.cpp
     src/sv/script/script_num.cpp
     src/sv/script/script.cpp
-    src/sv/config.cpp
-    src/sv/script/interpreter.cpp
     
     src/gigamonkey/p2p/var_int.cpp
     src/gigamonkey/p2p/checksum.cpp
@@ -52,8 +48,12 @@ add_library (gigamonkey STATIC
     src/gigamonkey/script.cpp
     
     src/gigamonkey/script/instruction.cpp
+    src/gigamonkey/script/error.cpp
+    src/gigamonkey/script/config.cpp
+    src/gigamonkey/script/opcodes.cpp
     src/gigamonkey/script/counter.cpp
     src/gigamonkey/script/pattern.cpp
+    src/gigamonkey/script/stack.cpp
     src/gigamonkey/script/machine.cpp
     src/gigamonkey/script/typed_data_bip_276.cpp
     

@@ -97,10 +97,10 @@ namespace Gigamonkey::Stratum::mining {
         }
         
         encoding::hex::fixed<4> inline write (const Bitcoin::timestamp &x) {
-            return encoding::hex::write (uint32_big {x}, hex_case::lower);
+            return encoding::hex::write (uint32_big {x.Value}, hex_case::lower);
         }
         
-        bool read(const JSON &j, Bitcoin::timestamp &x) {
+        bool read (const JSON &j, Bitcoin::timestamp &x) {
             if (!j.is_string ()) return false;
             string str (j);
             if (str.size () != 8) return false;

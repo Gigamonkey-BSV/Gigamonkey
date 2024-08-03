@@ -52,7 +52,7 @@ CScriptNum &CScriptNum::operator &= (const CScriptNum &other) {
     return *this;
 }
 
-CScriptNum& CScriptNum::operator &= (int64_t other) {
+CScriptNum &CScriptNum::operator &= (int64_t other) {
     std::visit ([&other] (auto &n) { n &= other; }, m_value);
     return *this;
 }
@@ -76,8 +76,7 @@ bool operator == (const CScriptNum &a, const CScriptNum &b) {
     // clang-format on
 }
 
-bool operator < (const CScriptNum &a, const CScriptNum &b)
-{
+bool operator < (const CScriptNum &a, const CScriptNum &b) {
     static_assert (variant_size_v<CScriptNum::value_type> == 2);
 
     // clang-format off
@@ -220,14 +219,14 @@ size_t CScriptNum::to_size_t_limited () const {
 }
 
 
-Gigamonkey::Bitcoin::Z CScriptNum::getvch () const {
+Gigamonkey::Bitcoin::integer CScriptNum::getvch () const {
     static_assert (variant_size_v<CScriptNum::value_type> == 2);
 
     // clang-format off
     return std::visit (overload {[] (const bsv::bint &n) {
                 return n.serialize ();
             }, [](const auto &n) {
-                Gigamonkey::Bitcoin::Z v;
+                Gigamonkey::Bitcoin::integer v;
                 v.reserve (sizeof (n));
                 bsv::serialize (n, back_inserter (v));
                 return v;
