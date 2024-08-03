@@ -9,7 +9,7 @@
 // integers as arbitrar size byte strings. For the 
 // purpose of checking proof of work, hash digestst 
 // are interpreted as unsigned little endian numbers. 
-#include <gigamonkey/number.hpp>
+#include <gigamonkey/types.hpp>
 
 // Bitcoin uses several hash functions. The script has 
 // op codes for SHA1, SHA2_256, and RIPEMD160, which 

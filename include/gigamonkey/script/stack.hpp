@@ -5,7 +5,7 @@
 #ifndef GIGAMONKEY_INTERPRETER_STACK
 #define GIGAMONKEY_INTERPRETER_STACK
 
-#include <gigamonkey/number.hpp>
+#include <gigamonkey/types.hpp>
 #include <sv/script/int_serialization.h>
 
 namespace Gigamonkey::Bitcoin::interpreter {
@@ -18,92 +18,73 @@ namespace Gigamonkey::Bitcoin::interpreter {
 
     template <typename valtype> class LimitedStack;
 
-    template <typename valtype>
-    class LimitedVector
-    {
-    private:
-        valtype stackElement;
-        std::reference_wrapper<LimitedStack<valtype>> stack;
+    using stack = LimitedStack<integer>;
 
-        LimitedVector (const valtype& stackElementIn, LimitedStack<valtype>& stackIn);
+    struct limited_two_stack {
+        // max combined size
+        uint64 MaxMemoryUsage;
+        // combined size of both stacks.
+        uint64 MemoryUsage;
+        cross<integer> Stack;
+        cross<integer> AltStack;
 
-        // WARNING: modifying returned element will NOT adjust stack size
-        valtype& GetElementNonConst ();
-    public:
+        limited_two_stack (uint64 max_memory_usage) :
+            MaxMemoryUsage {max_memory_usage}, MemoryUsage {0}, Stack {}, AltStack {} {}
+
+        void increase_memory_usage (uint64_t additionalSize);
+        void decrease_memory_usage (uint64_t additionalSize);
 
         // Memory usage of one stack element (without data). This is a consensus rule. Do not change.
         // It prevents someone from creating stack with millions of empty elements.
         static constexpr unsigned int ELEMENT_OVERHEAD = 32;
 
-        // Warning: returned reference is invalidated if parent stack is modified.
-        const valtype &GetElement () const;
-        uint8_t &front ();
-        uint8_t &back ();
-        const uint8_t &front () const;
-        const uint8_t &back () const;
-        uint8_t& operator [] (uint64_t pos);
-        const uint8_t &operator [] (uint64_t pos) const;
-
-        size_t size () const;
-        bool empty () const;
-
-        void push_back (uint8_t element);
-        void append (const LimitedVector &second);
-        void padRight (size_t size, uint8_t signbit);
-
-        typename valtype::iterator begin ();
-        typename valtype::iterator end ();
-
-        const typename valtype::const_iterator begin () const;
-        const typename valtype::const_iterator end () const;
-
-        bool MinimallyEncode ();
-        bool IsMinimallyEncoded (uint64_t maxSize) const;
-
-        const LimitedStack<valtype> &getStack () const;
-
-        friend class LimitedStack<valtype>;
-    };
-    
-    template <typename valtype> 
-    class LimitedStack
-    {
-    private:
-        uint64_t combinedStackSize = 0;
-        uint64_t maxStackSize = 0;
-        std::vector<LimitedVector<valtype>> stack;
-        LimitedStack* parentStack { nullptr };
-        void decreaseCombinedStackSize (uint64_t additionalSize);
-        void increaseCombinedStackSize (uint64_t additionalSize);
-
-        LimitedStack (const LimitedStack &) = default;
-        LimitedStack () = default;
-
-    public:
-        LimitedStack (uint64_t maxStackSizeIn);
-        LimitedStack (const std::vector<valtype>& stackElements, uint64_t maxStackSizeIn);
-
-        LimitedStack (LimitedStack &&) = default;
-        LimitedStack &operator = (LimitedStack &&) = default;
-        LimitedStack &operator = (const LimitedStack &) = delete;
-
-        // Compares the stacks but ignores the parent.
-        bool operator == (const LimitedStack& other) const;
-
         // Warning: returned reference is invalidated if stack is modified.
-        LimitedVector<valtype> &stacktop (int index);
+        integer &top (int index = -1);
+        integer &alt_top (int index = -1);
 
-        const LimitedVector<valtype> &front () const;
-        const LimitedVector<valtype> &back () const;
-        const LimitedVector<valtype> &at (uint64_t i) const;
+        const integer &at (uint64_t i) const;
 
-        uint64_t getCombinedStackSize () const;
-        size_t size () const;
-        bool empty () const;
+        size_t size () const {
+            return Stack.size ();
+        }
+
+        size_t alt_size () const {
+            return AltStack.size ();
+        }
+
+        size_t combined_size () const {
+            return size () + alt_size ();
+        }
+
+        bool empty () const {
+            return Stack.empty ();
+        }
 
         void pop_back ();
-        void push_back (const LimitedVector<valtype> &element);
-        void push_back (const valtype &element);
+        void push_back (const integer &element);
+
+        template <typename ... P>
+        void emplace_back (P ... p) {
+            Stack.emplace_back (p...);
+            increase_memory_usage (top ().size ());
+        }
+
+        bool modify_back (std::function<bool (integer &)> f) {
+            auto &val = top (-1);
+            size_t before_size = val.size ();
+            bool result = f (val);
+            size_t after_size = val.size ();
+            if (before_size > after_size) decrease_memory_usage (before_size - after_size);
+            else increase_memory_usage (after_size - before_size);
+            return result;
+        }
+
+        void replace_back (const integer &element) {
+            modify_back ([&element] (integer &val) -> bool {
+                val = element;
+                return true;
+            });
+        }
 
         // erase elements from including (top - first). element until excluding (top - last). element
         // first and last should be negative numbers (distance from the top)
@@ -113,356 +94,75 @@ namespace Gigamonkey::Bitcoin::interpreter {
         void erase (int index);
 
         // position should be negative number (distance from the top)
-        void insert (int position, const LimitedVector<valtype> &element);
+        void insert (int position, const integer &element);
 
-        void swapElements (size_t index1, size_t index2);
+        void swap (size_t index1, size_t index2);
 
-        void moveTopToStack (LimitedStack& otherStack);
+        void to_alt ();
+        void from_alt ();
 
-        void MoveToValtypes (std::vector<valtype> &script);
-
-        LimitedStack makeChildStack ();
-
-        // parent must be null
-        LimitedStack makeRootStackCopy ();
-
-        const LimitedStack* getParentStack () const;
-
-        friend class LimitedVector<valtype>;
-        
-        typename std::vector<LimitedVector<valtype>>::const_iterator begin () const {
-            return stack.begin ();
+        typename std::vector<integer>::const_iterator begin () const {
+            return Stack.begin ();
         }
-        
-        typename std::vector<LimitedVector<valtype>>::const_iterator end () const {
-            return stack.end ();
+
+        typename std::vector<integer>::const_iterator end () const {
+            return Stack.end ();
         }
+
+        typename std::vector<integer>::iterator begin () {
+            return Stack.begin ();
+        }
+
+        typename std::vector<integer>::iterator end () {
+            return Stack.end ();
+        }
+
     };
-    
-    template <typename valtype> std::ostream &operator << (std::ostream &o, const LimitedStack<valtype> &stack) {
-        o << "{";
 
-        if (stack.size () > 0) {
-            auto i = stack.begin ();
-            auto e = stack.end ();
-            while (true) {
-                o << i->GetElement ();
-                i++;
-                if (i == e) break;
-                o << ", ";
-            }
-        }
-
-        return o << "}";
-    }
-    
-    template <typename valtype>
-    LimitedVector<valtype>::LimitedVector (const valtype &stackElementIn, LimitedStack<valtype> &stackIn) :
-        stackElement (stackElementIn), stack (stackIn) {}
-    
-    template <typename valtype>
-    const valtype& LimitedVector<valtype>::GetElement () const {
-        return stackElement;
-    }
-    
-    template <typename valtype>
-    valtype& LimitedVector<valtype>::GetElementNonConst () {
-        return stackElement;
-    }
-    
-    template <typename valtype>
-    size_t LimitedVector<valtype>::size () const {
-        return stackElement.size ();
-    }
-    
-    template <typename valtype>
-    bool LimitedVector<valtype>::empty () const {
-        return stackElement.empty ();
-    }
-    
-    template <typename valtype>
-    uint8_t& LimitedVector<valtype>::operator [] (uint64_t pos) {
-        return stackElement[pos];
-    }
-    
-    template <typename valtype>
-    const uint8_t &LimitedVector<valtype>::operator [] (uint64_t pos) const {
-        return stackElement[pos];
-    }
-    
-    template <typename valtype>
-    void LimitedVector<valtype>::push_back (uint8_t element)
-    {
-        stack.get ().increaseCombinedStackSize (1);
-        stackElement.push_back (element);
-    }
-    
-    template <typename valtype>
-    void LimitedVector<valtype>::append (const LimitedVector &second) {
-        stack.get ().increaseCombinedStackSize (second.size ());
-        stackElement.insert (stackElement.end (), second.begin (), second.end ());
-    }
-    
-    template <typename valtype>
-    void LimitedVector<valtype>::padRight (size_t size, uint8_t signbit) {
-        if (size > stackElement.size ()) {
-            size_t sizeDifference = size - stackElement.size ();
-
-            stack.get ().increaseCombinedStackSize (sizeDifference);
-
-            static_cast<bytes> (stackElement).resize (size, 0x00);
-            stackElement.back () = signbit;
-        }
-    }
-    
-    template <typename valtype>
-    typename valtype::iterator LimitedVector<valtype>::begin () {
-        return stackElement.begin ();
-    }
-    
-    template <typename valtype>
-    typename valtype::iterator LimitedVector<valtype>::end () {
-        return stackElement.end ();
-    }
-    
-    template <typename valtype>
-    const typename valtype::const_iterator LimitedVector<valtype>::begin () const {
-        return stackElement.begin ();
-    }
-    
-    template <typename valtype>
-    const typename valtype::const_iterator LimitedVector<valtype>::end () const {
-        return stackElement.end ();
-    }
-    
-    template <typename valtype>
-    uint8_t &LimitedVector<valtype>::front () {
-        return stackElement.front ();
-    }
-    
-    template <typename valtype>
-    uint8_t &LimitedVector<valtype>::back () {
-        return stackElement.back ();
-    }
-    
-    template <typename valtype>
-    const uint8_t &LimitedVector<valtype>::front () const {
-        return stackElement.front();
-    }
-    
-    template <typename valtype>
-    const uint8_t &LimitedVector<valtype>::back () const {
-        return stackElement.back ();
-    }
-    
-    template <typename valtype>
-    bool LimitedVector<valtype>::MinimallyEncode () {
-        stack.get ().decreaseCombinedStackSize (stackElement.size ());
-        bool successfulEncoding = bsv::MinimallyEncode (stackElement);
-        stack.get ().increaseCombinedStackSize (stackElement.size ());
-
-        return successfulEncoding;
-    }
-    
-    template <typename valtype>
-    bool LimitedVector<valtype>::IsMinimallyEncoded (uint64_t maxSize) const {
-        return bsv::IsMinimallyEncoded (stackElement, maxSize);
-    }
-    
-    template <typename valtype>
-    const LimitedStack<valtype> &LimitedVector<valtype>::getStack () const {
-        return stack.get ();
-    }
-    
-    template <typename valtype>
-    LimitedStack<valtype>::LimitedStack (uint64_t maxStackSizeIn) {
-        maxStackSize = maxStackSizeIn;
-        parentStack = nullptr;
-    }
-    
-    template <typename valtype>
-    LimitedStack<valtype>::LimitedStack(const std::vector<valtype> &stackElements, uint64_t maxStackSizeIn) {
-        maxStackSize = maxStackSizeIn;
-        parentStack = nullptr;
-        for (const auto &element : stackElements)
-            push_back (element);
-    }
-    
-    template <typename valtype>
-    bool LimitedStack<valtype>::operator == (const LimitedStack<valtype> &other) const {
-        if (stack.size () != other.size ())
-            return false;
-
-        for (size_t i = 0; i < stack.size (); i++)
-            if (stack.at (i).GetElement () != other.at (i).GetElement ())
-                return false;
-
-        return true;
-    }
-    
-    template <typename valtype>
-    void LimitedStack<valtype>::decreaseCombinedStackSize (uint64_t additionalSize) {
-        if (parentStack != nullptr)
-            parentStack->decreaseCombinedStackSize(additionalSize);
-        else combinedStackSize -= additionalSize;
-    }
-    
-    template <typename valtype>
-    void LimitedStack<valtype>::increaseCombinedStackSize (uint64_t additionalSize) {
-        if (parentStack != nullptr)
-            parentStack->increaseCombinedStackSize (additionalSize);
-        else {
-            if (getCombinedStackSize () + additionalSize > maxStackSize)
-                throw stack_overflow_error ("pushstack(): stack oversized");
-
-            combinedStackSize += additionalSize;
-        }
-    }
-    
-    template <typename valtype>
-    void LimitedStack<valtype>::pop_back () {
-        if (stack.empty ())
-            throw std::runtime_error ("popstack(): stack empty");
-
-        decreaseCombinedStackSize (stacktop (-1).size () + LimitedVector<valtype>::ELEMENT_OVERHEAD);
-        stack.pop_back ();
-    }
-    
-    template <typename valtype>
-    void LimitedStack<valtype>::push_back(const LimitedVector<valtype> &element) {
-        if (&element.getStack () != this)
-            throw std::invalid_argument
-                ("Invalid argument - element that is added should have the same parent stack as the one we are adding to.");
-
-        increaseCombinedStackSize (element.size () + LimitedVector<valtype>::ELEMENT_OVERHEAD);
-        stack.push_back (element);
-    }
-    
-    template <typename valtype>
-    void LimitedStack<valtype>::push_back (const valtype &element) {
-        increaseCombinedStackSize (element.size () + LimitedVector<valtype>::ELEMENT_OVERHEAD);
-        stack.push_back (LimitedVector {element, *this});
-    }
-    
-    template <typename valtype>
-    LimitedVector<valtype> &LimitedStack<valtype>::stacktop (int index) {
-        if (index >= 0)
-            throw std::invalid_argument ("Invalid argument - index should be < 0.");
-
-        return stack.at (stack.size () + (index));
-    }
-    
-    template <typename valtype>
-    uint64_t LimitedStack<valtype>::getCombinedStackSize () const {
-        if (parentStack != nullptr)
-            return parentStack->getCombinedStackSize ();
-
-        return combinedStackSize;
+    std::ostream inline &operator << (std::ostream &o, const limited_two_stack &i) {
+        return o << "{Stack: " << i.Stack << ", AltStack: " << i.AltStack << "}";
     }
 
-    template <typename valtype>
-    void LimitedStack<valtype>::erase (int first, int last) {
-        if (last >= 0 || last <= first)
-            throw std::invalid_argument ("Invalid argument - first and last should be negative, also last should be larger than first.");
-
-        for (typename std::vector<LimitedVector<valtype>>::iterator it = stack.end () + first; it != stack.end () + last; it++)
-            decreaseCombinedStackSize (it->size () + LimitedVector<valtype>::ELEMENT_OVERHEAD);
-
-        stack.erase (stack.end () + first, stack.end () + last);
+    void inline limited_two_stack::decrease_memory_usage (uint64_t additionalSize) {
+        MemoryUsage -= additionalSize;
     }
 
-    template <typename valtype>
-    void LimitedStack<valtype>::erase (int index) {
+    void inline limited_two_stack::increase_memory_usage (uint64_t additionalSize) {
+        if (MemoryUsage + additionalSize > MaxMemoryUsage) throw stack_overflow_error ("pushstack(): stack oversized");
+        MemoryUsage += additionalSize;
+    }
+
+    void inline limited_two_stack::push_back (const integer &element) {
+        increase_memory_usage (element.size () + ELEMENT_OVERHEAD);
+        Stack.push_back (element);
+    }
+
+    integer inline &limited_two_stack::top (int index) {
         if (index >= 0) throw std::invalid_argument ("Invalid argument - index should be < 0.");
-
-        decreaseCombinedStackSize (stack.at (stack.size () + index).size () + LimitedVector<valtype>::ELEMENT_OVERHEAD);
-        stack.erase (stack.end () + index);
+        return Stack.at (Stack.size () + index);
     }
 
-    template <typename valtype>
-    void LimitedStack<valtype>::insert (int position, const LimitedVector<valtype> &element) {
-        if (&element.getStack () != this)
-            throw std::invalid_argument
-                ("Invalid argument - element that is added should have the same parent stack as the one we are adding to.");
-
-        if (position >= 0) throw std::invalid_argument ("Invalid argument - position should be < 0.");
-
-        increaseCombinedStackSize (element.size () + LimitedVector<valtype>::ELEMENT_OVERHEAD);
-        stack.insert (stack.end () + position, element);
-    }
-    
-    template <typename valtype>
-    void LimitedStack<valtype>::swapElements (size_t index1, size_t index2) {
-        std::swap (stack.at (index1), stack.at (index2));
+    integer inline &limited_two_stack::alt_top (int index) {
+        if (index >= 0) throw std::invalid_argument ("Invalid argument - index should be < 0.");
+        return AltStack.at (AltStack.size () + index);
     }
 
-    // this method does not change combinedSize
-    // it is allowed only for relations parent-child
-    template <typename valtype>
-    void LimitedStack<valtype>::moveTopToStack (LimitedStack& otherStack) {
-        if (parentStack == &otherStack || otherStack.getParentStack() == this) {
-            // Moving element to other stack does not change the total size of stack.
-            // Just use internal functions to move the element.
-            stack.push_back (std::move (otherStack.stacktop (-1)));
-            otherStack.stack.pop_back ();
-        } else throw std::runtime_error ("Method moveTopToStack is allowed only for relations parent-child.");
+    void inline limited_two_stack::swap (size_t index1, size_t index2) {
+        std::swap (Stack.at (index1), Stack.at (index2));
     }
-    
-    template <typename valtype>
-    size_t LimitedStack<valtype>::size () const {
-        return stack.size ();
-    }
-    
-    template <typename valtype>
-    const LimitedVector<valtype> &LimitedStack<valtype>::front () const {
-        return stack.front ();
-    }
-    
-    template <typename valtype>
-    const LimitedVector<valtype> &LimitedStack<valtype>::back () const {
-        return stack.back ();
-    }
-    
-    template <typename valtype>
-    const LimitedVector<valtype> &LimitedStack<valtype>::at (uint64_t i) const {
-        return stack.at (i);
-    }
-    
-    template <typename valtype>
-    bool LimitedStack<valtype>::empty () const {
-        return stack.empty ();
-    }
-    
-    template <typename valtype>
-    void  LimitedStack<valtype>::MoveToValtypes (std::vector<valtype> &valtypes) {
-        for (LimitedVector<valtype> &it : stack) {
-            decreaseCombinedStackSize (it.size () + LimitedVector<valtype>::ELEMENT_OVERHEAD);
-            valtypes.push_back (std::move (it.GetElementNonConst ()));
-        }
 
-        stack.clear ();
+    void inline limited_two_stack::from_alt () {
+        // Moving element to other stack does not change the total size of stack.
+        // Just use internal functions to move the element.
+        Stack.push_back (std::move (alt_top ()));
+        AltStack.pop_back ();
     }
-    
-    template <typename valtype>
-    LimitedStack<valtype> LimitedStack<valtype>::makeChildStack () {
-        LimitedStack stack;
-        stack.parentStack = this;
 
-        return stack;
-    }
-    
-    template <typename valtype>
-    LimitedStack<valtype> LimitedStack<valtype>::makeRootStackCopy () {
-        if (parentStack != nullptr)
-            throw std::runtime_error
-                ("Parent stack must be null if you are creating stack copy.");
-
-        return *this;
-    }
-    
-    template <typename valtype>
-    const LimitedStack<valtype> *LimitedStack<valtype>::getParentStack () const {
-        return parentStack;
+    void inline limited_two_stack::to_alt () {
+        // Moving element to other stack does not change the total size of stack.
+        // Just use internal functions to move the element.
+        AltStack.push_back (std::move (top ()));
+        Stack.pop_back ();
     }
 
 }

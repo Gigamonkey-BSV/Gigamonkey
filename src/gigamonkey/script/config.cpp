@@ -10,12 +10,11 @@
 #include <boost/algorithm/string.hpp>
 #include <limits>
 
-namespace
-{
+namespace {
     bool LessThan (
         int64_t argValue,
-        std::string* err,
-        const std::string& errorMessage,
+        std::string *err,
+        const std::string &errorMessage,
         int64_t minValue) {
         if (argValue < minValue) {
             if (err) *err = errorMessage;
@@ -26,26 +25,24 @@ namespace
 
     bool LessThanZero (
         int64_t argValue,
-        std::string* err,
-        const std::string& errorMessage) {
+        std::string *err,
+        const std::string &errorMessage) {
         return LessThan ( argValue, err, errorMessage, 0 );
     }
 }
 
 
-bool script_config::SetMaxOpsPerScriptPolicy(int64_t maxOpsPerScriptPolicyIn, std::string* error)
+bool script_config::SetMaxOpsPerScriptPolicy (int64_t maxOpsPerScriptPolicyIn, std::string *error)
 {
-    if (LessThanZero(maxOpsPerScriptPolicyIn, error, "Policy value for MaxOpsPerScript cannot be less than zero."))
-    {
+    if (LessThanZero (maxOpsPerScriptPolicyIn, error, "Policy value for MaxOpsPerScript cannot be less than zero."))
         return false;
-    }
-    uint64_t maxOpsPerScriptPolicyInUnsigned = static_cast<uint64_t>(maxOpsPerScriptPolicyIn);
+
+    uint64_t maxOpsPerScriptPolicyInUnsigned = static_cast<uint64_t> (maxOpsPerScriptPolicyIn);
 
     if (maxOpsPerScriptPolicyInUnsigned > MAX_OPS_PER_SCRIPT_AFTER_GENESIS)
     {
-        if (error)
-        {
-            *error = "Policy value for MaxOpsPerScript must not exceed consensus limit of " + std::to_string(MAX_OPS_PER_SCRIPT_AFTER_GENESIS) + ".";
+        if (error) {
+            *error = "Policy value for MaxOpsPerScript must not exceed consensus limit of " + std::to_string (MAX_OPS_PER_SCRIPT_AFTER_GENESIS) + ".";
         }
         return false;
     }
@@ -61,23 +58,16 @@ bool script_config::SetMaxOpsPerScriptPolicy(int64_t maxOpsPerScriptPolicyIn, st
     return true;
 }
 
-uint64_t script_config::GetMaxOpsPerScript(bool isGenesisEnabled, bool consensus) const
-{
-    if (!isGenesisEnabled)
-    {
-        return MAX_OPS_PER_SCRIPT_BEFORE_GENESIS; // no changes before genesis
-    }
+uint64_t script_config::GetMaxOpsPerScript(bool isGenesisEnabled, bool consensus) const {
+    if (!isGenesisEnabled) return MAX_OPS_PER_SCRIPT_BEFORE_GENESIS; // no changes before genesis
 
-    if (consensus)
-    {
-        return MAX_OPS_PER_SCRIPT_AFTER_GENESIS; // use new limit after genesis
-    }
+    if (consensus) return MAX_OPS_PER_SCRIPT_AFTER_GENESIS; // use new limit after genesis
+
     return maxOpsPerScriptPolicy;
 }
 
-bool script_config::SetMaxPubKeysPerMultiSigPolicy(int64_t maxPubKeysPerMultiSigIn, std::string* err)
-{
-    if (LessThanZero(maxPubKeysPerMultiSigIn, err, "Policy value for maximum public keys per multisig must not be less than zero"))
+bool script_config::SetMaxPubKeysPerMultiSigPolicy (int64_t maxPubKeysPerMultiSigIn, std::string *err) {
+    if (LessThanZero (maxPubKeysPerMultiSigIn, err, "Policy value for maximum public keys per multisig must not be less than zero"))
     {
         return false;
     }
@@ -86,25 +76,20 @@ bool script_config::SetMaxPubKeysPerMultiSigPolicy(int64_t maxPubKeysPerMultiSig
     if (maxPubKeysPerMultiSigUnsigned > MAX_PUBKEYS_PER_MULTISIG_AFTER_GENESIS)
     {
         if (err)
-        {
-            *err = "Policy value for maximum public keys per multisig must not exceed consensus limit of " + std::to_string(MAX_PUBKEYS_PER_MULTISIG_AFTER_GENESIS) + ".";
-        }
+            *err = "Policy value for maximum public keys per multisig must not exceed consensus limit of "
+                + std::to_string (MAX_PUBKEYS_PER_MULTISIG_AFTER_GENESIS) + ".";
         return false;
     }
     else if (maxPubKeysPerMultiSigUnsigned == 0)
     {
         maxPubKeysPerMultiSig = MAX_PUBKEYS_PER_MULTISIG_AFTER_GENESIS;
     }
-    else
-    {
-        maxPubKeysPerMultiSig = maxPubKeysPerMultiSigUnsigned;
-    }
+    else maxPubKeysPerMultiSig = maxPubKeysPerMultiSigUnsigned;
 
     return true;
 }
 
-uint64_t script_config::GetMaxPubKeysPerMultiSig(bool isGenesisEnabled, bool consensus) const
-{
+uint64_t script_config::GetMaxPubKeysPerMultiSig(bool isGenesisEnabled, bool consensus) const {
     if (!isGenesisEnabled)
     {
         return MAX_PUBKEYS_PER_MULTISIG_BEFORE_GENESIS; // no changes before  genesis
@@ -118,22 +103,17 @@ uint64_t script_config::GetMaxPubKeysPerMultiSig(bool isGenesisEnabled, bool con
     return maxPubKeysPerMultiSig;
 }
 
-bool script_config::SetMaxStackMemoryUsage(int64_t maxStackMemoryUsageConsensusIn, int64_t maxStackMemoryUsagePolicyIn, std::string* err)
-{
-    if (maxStackMemoryUsageConsensusIn < 0 || maxStackMemoryUsagePolicyIn < 0)
-    {
-        if (err)
-            *err = "Policy and consensus value for max stack memory usage must not be less than 0.";
+bool script_config::SetMaxStackMemoryUsage(int64_t maxStackMemoryUsageConsensusIn, int64_t maxStackMemoryUsagePolicyIn, std::string *err) {
+    if (maxStackMemoryUsageConsensusIn < 0 || maxStackMemoryUsagePolicyIn < 0) {
+        if (err) *err = "Policy and consensus value for max stack memory usage must not be less than 0.";
         return false;
     }
 
-    if (maxStackMemoryUsageConsensusIn == 0)
-        maxStackMemoryUsageConsensus = DEFAULT_STACK_MEMORY_USAGE_CONSENSUS_AFTER_GENESIS;
-    else maxStackMemoryUsageConsensus = static_cast<uint64_t>(maxStackMemoryUsageConsensusIn);
+    if (maxStackMemoryUsageConsensusIn == 0) maxStackMemoryUsageConsensus = DEFAULT_STACK_MEMORY_USAGE_CONSENSUS_AFTER_GENESIS;
+    else maxStackMemoryUsageConsensus = static_cast<uint64_t> (maxStackMemoryUsageConsensusIn);
 
-    if (maxStackMemoryUsagePolicyIn == 0)
-        maxStackMemoryUsagePolicy = DEFAULT_STACK_MEMORY_USAGE_CONSENSUS_AFTER_GENESIS;
-    else maxStackMemoryUsagePolicy = static_cast<uint64_t>(maxStackMemoryUsagePolicyIn);
+    if (maxStackMemoryUsagePolicyIn == 0) maxStackMemoryUsagePolicy = DEFAULT_STACK_MEMORY_USAGE_CONSENSUS_AFTER_GENESIS;
+    else maxStackMemoryUsagePolicy = static_cast<uint64_t> (maxStackMemoryUsagePolicyIn);
 
     if (maxStackMemoryUsagePolicy > maxStackMemoryUsageConsensus) {
         if (err)
@@ -178,17 +158,15 @@ bool script_config::SetMaxScriptNumLengthPolicy (int64_t maxScriptNumLengthIn, s
     return true;
 }
 
-uint64_t script_config::GetMaxScriptNumLength(bool isGenesisEnabled, bool isConsensus) const {
-    if (!isGenesisEnabled)
-        return MAX_SCRIPT_NUM_LENGTH_BEFORE_GENESIS; // no changes before genesis
+uint64_t script_config::GetMaxScriptNumLength (bool isGenesisEnabled, bool isConsensus) const {
+    if (!isGenesisEnabled) return MAX_SCRIPT_NUM_LENGTH_BEFORE_GENESIS; // no changes before genesis
 
-    if (isConsensus)
-        return MAX_SCRIPT_NUM_LENGTH_AFTER_GENESIS; // use new limit after genesis
+    if (isConsensus) return MAX_SCRIPT_NUM_LENGTH_AFTER_GENESIS; // use new limit after genesis
 
     return maxScriptNumLengthPolicy; // use policy
 }
 
-bool script_config::SetMaxScriptSizePolicy(int64_t maxScriptSizePolicyIn, std::string* err) {
+bool script_config::SetMaxScriptSizePolicy (int64_t maxScriptSizePolicyIn, std::string *err) {
     if (LessThanZero (maxScriptSizePolicyIn, err, "Policy value for max script size must not be less than 0"))
         return false;
 

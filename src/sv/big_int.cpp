@@ -426,10 +426,10 @@ namespace {
     constexpr auto length_in_bytes {4};
 }
 
-Gigamonkey::Bitcoin::Z bsv::bint::serialize () const {
+Gigamonkey::Bitcoin::integer bsv::bint::serialize () const {
     const auto len {BN_bn2mpi (value_.get (), nullptr)};
     // assert(len >= length_in_bytes);
-    Gigamonkey::Bitcoin::Z result;
+    Gigamonkey::Bitcoin::integer result;
     result.resize (len);
     BN_bn2mpi (value_.get (), result.data ());
     result.erase (begin (result), begin (result) + length_in_bytes);

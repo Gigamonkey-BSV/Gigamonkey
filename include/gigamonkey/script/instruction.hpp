@@ -12,7 +12,7 @@
 #include <gigamonkey/script/error.h>
 #include <sv/policy/policy.h>
 
-#include <gigamonkey/number.hpp>
+#include <gigamonkey/hash.hpp>
 
 namespace Gigamonkey::Bitcoin { 
     
@@ -126,11 +126,12 @@ namespace Gigamonkey::Bitcoin {
     
     std::ostream &operator << (std::ostream &, const instruction &);
     
-    instruction push_data (int z);
+    instruction push_data (int);
+    instruction push_data (const Z &z);
     instruction push_data (bytes_view);
     
     template <bool is_signed, boost::endian::order o, std::size_t size>
-    instruction push_data (const data::arithmetic::endian_integral<is_signed, o, size> &x);
+    instruction push_data (const arithmetic::endian_integral<is_signed, o, size> &x);
     
     bool is_minimal (const instruction &);
     
@@ -138,13 +139,13 @@ namespace Gigamonkey::Bitcoin {
     // by itself or an op code for pushing data to the stack along with data. 
     struct instruction {
         op Op;
-        Z Data;
+        integer Data;
         
         instruction ();
         instruction (op p);
         instruction (bytes_view d) : instruction {push (d)} {}
         
-        Z data () const;
+        integer data () const;
         
         ScriptError verify (uint32 flags = 0) const;
         
@@ -160,7 +161,7 @@ namespace Gigamonkey::Bitcoin {
         static instruction op_code (op o);
         static instruction read (bytes_view b);
         static instruction push (bytes_view d);
-        static instruction op_return_data (const bytes &data) {
+        static instruction op_return_data (const integer &data) {
             return instruction (OP_RETURN, data);
         }
         
@@ -173,7 +174,7 @@ namespace Gigamonkey::Bitcoin {
         // use this if you want to make a non-minimal push. Otherwise use 
         // one of the other constructors. 
     private:
-        instruction (op p, bytes d);
+        instruction (op p, const integer &d);
     };
     
     using program = list<instruction>;
@@ -227,7 +228,7 @@ namespace Gigamonkey::Bitcoin {
     
     inline instruction::instruction () : Op {OP_INVALIDOPCODE}, Data {} {}
     
-    inline instruction::instruction (op p, bytes d) : Op {p}, Data {d} {}
+    inline instruction::instruction (op p, const integer &d) : Op {p}, Data {d} {}
     
     inline instruction::instruction (op p) : Op {p}, Data {} {}
     
@@ -236,17 +237,21 @@ namespace Gigamonkey::Bitcoin {
     instruction inline instruction::op_code (op o) {
         return instruction {o};
     }
+
+    instruction inline push_data (int i) {
+        return push_data (integer {i});
+    }
     
     instruction inline push_data (bytes_view b) {
         return instruction::push (b);
     }
-    
-    instruction inline push_data (int z) {
-        return push_data (Z {z});
+
+    instruction inline push_data (const Z &z) {
+        return push_data (integer {z});
     }
     
     template <bool is_signed, boost::endian::order o, std::size_t size>
-    instruction inline push_data (const data::arithmetic::endian_integral<is_signed, o, size> &x) {
+    instruction inline push_data (const arithmetic::endian_integral<is_signed, o, size> &x) {
         return push_data (bytes_view (x));
     }
 }

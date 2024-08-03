@@ -3,11 +3,10 @@
 
 #include <gigamonkey/script/machine.hpp>
 #include <gigamonkey/script/bitcoin_core.hpp>
-#include <sv/script/interpreter.h>
 #include <sv/script/script.h>
 #include <sv/script/script_num.h>
 #include <sv/policy/policy.h>
-#include <sv/hash.h>
+//#include <sv/hash.h>
 #include <boost/scoped_ptr.hpp>
 #include <data/io/wait_for_enter.hpp>
 
@@ -61,8 +60,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
         return o << "machine {\n\tProgram: " << i.State.unread ()
             << ",\n\tHalt: " << (i.Halt ? "true" : "false") 
             << ", Result: " << i.Result << ", Flags: " << i.State.Flags
-            << ",\n\tStack: " << i.State.Stack << ",\n\tAltStack: "
-            << i.State.AltStack << ", Exec: " << make_list (i.State.Exec)
+            << ",\n\tStack: " << i.State.Stack << ", Exec: " << make_list (i.State.Exec)
             << ", Else: " << make_list (i.State.Else) << "}";
     }
     
@@ -83,7 +81,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
         Flags {flags}, Consensus {consensus}, Config {}, Document {doc},
         Script {script}, Counter {program_counter {Script}},
         Stack {Config.GetMaxStackMemoryUsage (Flags & SCRIPT_UTXO_AFTER_GENESIS, consensus)},
-        AltStack {Stack.makeChildStack ()}, Exec {}, Else {}, OpCount {0} {}
+        Exec {}, Else {}, OpCount {0} {}
     
     machine::machine (const script &unlock, const script &lock, const redemption_document &doc, uint32 flags) :
         machine {{doc}, decompile (unlock), decompile (lock), flags} {}
@@ -187,16 +185,16 @@ namespace Gigamonkey::Bitcoin::interpreter {
     }
 
     // shift x right by n bits, implements OP_RSHIFT
-    static Z RShift (const Z &x, int n) {
-        Z::size_type bit_shift = n % 8;
-        Z::size_type byte_shift = n / 8;
+    static integer RShift (const integer &x, int n) {
+        integer::size_type bit_shift = n % 8;
+        integer::size_type byte_shift = n / 8;
 
         uint8_t mask = make_rshift_mask (bit_shift);
         uint8_t overflow_mask = ~mask;
 
-        Z result = Z::zero (x.size ());
-        for (Z::size_type i = 0; i < x.size (); i++) {
-            Z::size_type k = i + byte_shift;
+        integer result = integer::zero (x.size ());
+        for (integer::size_type i = 0; i < x.size (); i++) {
+            integer::size_type k = i + byte_shift;
             if (k < x.size ()) {
                 uint8_t val = (x[i] & mask);
                 val >>= bit_shift;
@@ -214,20 +212,20 @@ namespace Gigamonkey::Bitcoin::interpreter {
     }
 
     // shift x left by n bits, implements OP_LSHIFT
-    static Z LShift (const Z &x, int n) {
-        Z::size_type bit_shift = n % 8;
-        Z::size_type byte_shift = n / 8;
+    static integer LShift (const integer &x, int n) {
+        integer::size_type bit_shift = n % 8;
+        integer::size_type byte_shift = n / 8;
 
         uint8_t mask = make_lshift_mask (bit_shift);
         uint8_t overflow_mask = ~mask;
 
-        Z result = Z::zero (x.size ());
-        for (Z::size_type index = x.size (); index > 0; index--) {
-            Z::size_type i = index - 1;
+        integer result = integer::zero (x.size ());
+        for (integer::size_type index = x.size (); index > 0; index--) {
+            integer::size_type i = index - 1;
             // make sure that k is always >= 0
             if (byte_shift <= i)
             {
-                Z::size_type k = i - byte_shift;
+                integer::size_type k = i - byte_shift;
                 uint8_t val = (x[i] & mask);
                 val <<= bit_shift;
                 result[k] |= val;
@@ -260,6 +258,10 @@ namespace Gigamonkey::Bitcoin::interpreter {
         
         return instruction.substr (5);
     }
+
+    bool inline IsInvalidBranchingOpcode (op opcode) {
+        return opcode == OP_VERNOTIF || opcode == OP_VERIF;
+    }
     
     result machine::state::step () {
     
@@ -288,6 +290,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
             return SCRIPT_ERR_PUSH_SIZE;
         
         // whether this op code will be executed. 
+        // need to take into account OP_RETURN
         bool executed = !count (Exec.begin (), Exec.end (), false);
         if (!executed) return SCRIPT_ERR_OK;
 
@@ -295,7 +298,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
         if (IsOpcodeDisabled (Op) && (!utxo_after_genesis || executed ))
             return SCRIPT_ERR_DISABLED_OPCODE;
         
-        if (executed && 0 <= Op && Op <= OP_PUSHDATA4) Stack.push_back (get_push_data (Counter.Next));
+        if (executed && 0 <= Op && Op <= OP_PUSHDATA4) Stack.push_back (integer (get_push_data (Counter.Next)));
         else switch (Op) {
             //
             // Push value
@@ -357,7 +360,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 // up to 5-byte bignums, which are good until 2**39-1,
                 // well beyond the 2**32-1 limit of the nLockTime field
                 // itself.
-                const CScriptNum nLockTime (Stack.stacktop (-1).GetElement (), fRequireMinimal, 5);
+                const CScriptNum nLockTime (Stack.top (), fRequireMinimal, 5);
 
                 // In the rare event that the argument may be < 0 due to
                 // some arithmetic being done first, you can always use
@@ -382,7 +385,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 // nSequence, like nLockTime, is a 32-bit unsigned
                 // integer field. See the comment in CHECKLOCKTIMEVERIFY
                 // regarding 5-byte numeric operands.
-                const CScriptNum nSequence (Stack.stacktop (-1).GetElement (), fRequireMinimal, 5);
+                const CScriptNum nSequence (Stack.top (), fRequireMinimal, 5);
 
                 // In the rare event that the argument may be < 0 due to
                 // some arithmetic being done first, you can always use
@@ -412,12 +415,55 @@ namespace Gigamonkey::Bitcoin::interpreter {
                     return SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS;
             } break;
 
+            case OP_IF:
+            case OP_NOTIF: {
+                // <expression> if [statements] [else [statements]]
+                // endif
+                bool fValue = false;
+                if (executed) {
+                    if (Stack.size () < 1) return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
+
+                    auto &vch = Stack.top ();
+                    if (Flags & SCRIPT_VERIFY_MINIMALIF) {
+                        if (vch.size () > 1)
+                            return SCRIPT_ERR_MINIMALIF;
+
+                        if (vch.size () == 1 && vch[0] != 1)
+                            return SCRIPT_ERR_MINIMALIF;
+                    }
+
+                    fValue = bool (vch);
+                    if (Op == OP_NOTIF)
+                        fValue = !fValue;
+
+                    Stack.pop_back ();
+                }
+
+                Exec.push_back (fValue);
+                Else.push_back (false);
+            } break;
+
+            case OP_ELSE: {
+                // Only one ELSE is allowed in IF after genesis.
+                if (Exec.empty () || (Else.back () && utxo_after_genesis))
+                    return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
+
+                Exec.back () = !Exec.back ();
+                Else.back () = true;
+            } break;
+
+            case OP_ENDIF: {
+                if (Exec.empty ()) return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
+                Exec.pop_back ();
+                Else.pop_back ();
+            } break;
+
             case OP_VERIFY: {
                 // (true -- ) or
                 // (false -- false) and return
                 if (Stack.size () < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
 
-                if (bool (Stack.stacktop (-1).GetElement ())) Stack.pop_back ();
+                if (bool (Stack.top ())) Stack.pop_back ();
                 else return SCRIPT_ERR_VERIFY;
                 
             } break;
@@ -434,12 +480,12 @@ namespace Gigamonkey::Bitcoin::interpreter {
             //
             case OP_TOALTSTACK: {
                 if (Stack.size () < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
-                AltStack.moveTopToStack (Stack);
+                Stack.to_alt ();
             } break;
 
             case OP_FROMALTSTACK: {
-                if (AltStack.size () < 1) return SCRIPT_ERR_INVALID_ALTSTACK_OPERATION;
-                Stack.moveTopToStack (AltStack);
+                if (Stack.alt_size () < 1) return SCRIPT_ERR_INVALID_ALTSTACK_OPERATION;
+                Stack.from_alt ();
             } break;
 
             case OP_2DROP: {
@@ -455,8 +501,8 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 // (x1 x2 -- x1 x2 x1 x2)
                 if (Stack.size () < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 
-                vector vch1 = Stack.stacktop (-2);
-                vector vch2 = Stack.stacktop (-1);
+                auto vch1 = Stack.top (-2);
+                auto vch2 = Stack.top ();
                 
                 Stack.push_back (vch1);
                 Stack.push_back (vch2);
@@ -467,9 +513,9 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 // (x1 x2 x3 -- x1 x2 x3 x1 x2 x3)
                 if (Stack.size () < 3) return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 
-                vector vch1 = Stack.stacktop (-3);
-                vector vch2 = Stack.stacktop (-2);
-                vector vch3 = Stack.stacktop (-1);
+                auto vch1 = Stack.top (-3);
+                auto vch2 = Stack.top (-2);
+                auto vch3 = Stack.top ();
                 
                 Stack.push_back (vch1);
                 Stack.push_back (vch2);
@@ -481,8 +527,8 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 // (x1 x2 x3 x4 -- x1 x2 x3 x4 x1 x2)
                 if (Stack.size () < 4) return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 
-                vector vch1 = Stack.stacktop (-4);
-                vector vch2 = Stack.stacktop (-3);
+                auto vch1 = Stack.top (-4);
+                auto vch2 = Stack.top (-3);
                 Stack.push_back (vch1);
                 Stack.push_back (vch2);
             } break;
@@ -491,8 +537,8 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 // (x1 x2 x3 x4 x5 x6 -- x3 x4 x5 x6 x1 x2)
                 if (Stack.size () < 6) return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 
-                vector vch1 = Stack.stacktop (-6);
-                vector vch2 = Stack.stacktop (-5);
+                auto vch1 = Stack.top (-6);
+                auto vch2 = Stack.top (-5);
                 
                 Stack.erase (- 6, - 4);
                 Stack.push_back (vch1);
@@ -505,8 +551,8 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 // (x1 x2 x3 x4 -- x3 x4 x1 x2)
                 if (Stack.size () < 4) return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 
-                Stack.swapElements (Stack.size () - 4, Stack.size () - 2);
-                Stack.swapElements (Stack.size () - 3, Stack.size () - 1);
+                Stack.swap (Stack.size () - 4, Stack.size () - 2);
+                Stack.swap (Stack.size () - 3, Stack.size () - 1);
                 
             } break;
             
@@ -515,9 +561,9 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 if (Stack.size () < 1)
                     return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 
-                vector vch = Stack.stacktop (-1);
+                auto vch = Stack.top ();
 
-                if (bool (vch.GetElement ())) Stack.push_back (vch);
+                if (bool (vch)) Stack.push_back (vch);
                 
             } break;
 
@@ -539,7 +585,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 // (x -- x x)
                 if (Stack.size () < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 
-                vector vch = Stack.stacktop (-1);
+                auto vch = Stack.top ();
                 Stack.push_back (vch);
                 
             } break;
@@ -554,7 +600,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
             case OP_OVER: {
                 // (x1 x2 -- x1 x2 x1)
                 if (Stack.size () < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
-                vector vch = Stack.stacktop (-2);
+                auto vch = Stack.top (-2);
                 Stack.push_back (vch);
                 
             } break;
@@ -565,7 +611,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 // (xn ... x2 x1 x0 n - ... x2 x1 x0 xn)
                 if (Stack.size () < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
 
-                const auto &top {Stack.stacktop (-1).GetElement ()};
+                const auto &top {Stack.top ()};
 
                 const CScriptNum sn {
                     top, fRequireMinimal,
@@ -577,7 +623,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
                     return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 
                 const auto n{sn.to_size_t_limited ()};
-                vector vch = Stack.stacktop (-n - 1);
+                auto vch = Stack.top (-n - 1);
 
                 if (Op == OP_ROLL) Stack.erase (- n - 1);
 
@@ -592,22 +638,22 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 if (Stack.size () < 3)
                     return SCRIPT_ERR_INVALID_STACK_OPERATION;
 
-                Stack.swapElements (Stack.size () - 3, Stack.size () - 2);
-                Stack.swapElements (Stack.size () - 2, Stack.size () - 1);
+                Stack.swap (Stack.size () - 3, Stack.size () - 2);
+                Stack.swap (Stack.size () - 2, Stack.size () - 1);
                 
             } break;
 
             case OP_SWAP: {
                 // (x1 x2 -- x2 x1)
                 if (Stack.size () < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
-                Stack.swapElements (Stack.size () - 2, Stack.size () - 1);
+                Stack.swap (Stack.size () - 2, Stack.size () - 1);
                 
             } break;
 
             case OP_TUCK: {
                 // (x1 x2 -- x2 x1 x2)
                 if (Stack.size () < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
-                vector vch = Stack.stacktop (-1);
+                auto vch = Stack.top ();
                 Stack.insert (-2, vch);
                 
             } break;
@@ -616,7 +662,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 // (in -- in size)
                 if (Stack.size () < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
 
-                CScriptNum bn (bsv::bint {Stack.stacktop (-1).size ()});
+                CScriptNum bn (bsv::bint {Stack.top ().size ()});
                 Stack.push_back (bn.getvch ());
                 
             } break;
@@ -630,8 +676,8 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 // (x1 x2 - out)
                 if (Stack.size () < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 
-                vector &vch1 = Stack.stacktop (-2);
-                vector &vch2 = Stack.stacktop (-1);
+                auto &vch1 = Stack.top (-2);
+                auto &vch2 = Stack.top ();
 
                 // Inputs must be the same size
                 if (vch1.size () != vch2.size ()) return SCRIPT_ERR_INVALID_OPERAND_SIZE;
@@ -659,7 +705,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 // (x -- out)
                 if (Stack.size () < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 
-                vector &vch1 = Stack.stacktop (-1);
+                auto &vch1 = Stack.top ();
                 // To avoid allocating, we modify vch1 in place
                 for (size_t i=0; i<vch1.size (); i++) vch1[i] = ~vch1[i];
                 
@@ -669,15 +715,15 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 // (x n -- out)
                 if (Stack.size () < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
 
-                const vector vch1 = Stack.stacktop (-2);
-                const auto& top {Stack.stacktop (-1).GetElement ()};
+                const auto vch1 = Stack.top (-2);
+                const auto& top {Stack.top ()};
                 CScriptNum n {top, fRequireMinimal, maxScriptNumLength, utxo_after_genesis};
 
                 if (n < 0) return SCRIPT_ERR_INVALID_NUMBER_RANGE;
 
                 Stack.pop_back ();
                 Stack.pop_back ();
-                auto values {vch1.GetElement ()};
+                auto values {vch1};
 
                 if (n >= values.size () * bits_per_byte) fill (begin (values), end (values), 0);
                 else {
@@ -696,15 +742,15 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 // (x n -- out)
                 if (Stack.size () < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
 
-                const vector vch1 = Stack.stacktop (-2);
-                const auto& top {Stack.stacktop (-1).GetElement ()};
+                const auto vch1 = Stack.top (-2);
+                const auto& top {Stack.top ()};
                 CScriptNum n {top, fRequireMinimal, maxScriptNumLength, utxo_after_genesis};
 
                 if (n < 0) return SCRIPT_ERR_INVALID_NUMBER_RANGE;
 
                 Stack.pop_back ();
                 Stack.pop_back ();
-                auto values {vch1.GetElement ()};
+                auto values {vch1};
 
                 if (n >= values.size () * bits_per_byte) fill (begin (values), end (values), 0);
                 else {
@@ -723,10 +769,10 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 // (x1 x2 - bool)
                 if (Stack.size () < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 
-                vector &vch1 = Stack.stacktop (-2);
-                vector &vch2 = Stack.stacktop (-1);
+                auto &vch1 = Stack.top (-2);
+                auto &vch2 = Stack.top ();
 
-                bool fEqual = (vch1.GetElement () == vch2.GetElement ());
+                bool fEqual = (vch1 == vch2);
                 // OP_NOTEQUAL is disabled because it would be too
                 // easy to say something like n != 1 and have some
                 // wiseguy pass in 1 with extra zero bytes after it
@@ -735,7 +781,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 //    fEqual = !fEqual;
                 Stack.pop_back ();
                 Stack.pop_back ();
-                Stack.push_back (Z::boolean (fEqual));
+                Stack.push_back (integer (fEqual));
                 
                 if (Op == OP_EQUALVERIFY) {
                     if (fEqual) Stack.pop_back ();
@@ -756,7 +802,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 // (in -- out)
                 if (Stack.size () < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 
-                const auto &top {Stack.stacktop (-1).GetElement ()};
+                const auto &top {Stack.top ()};
                 CScriptNum bn {top, fRequireMinimal, maxScriptNumLength, utxo_after_genesis};
                 
                 switch (Op) {
@@ -807,14 +853,14 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 // (x1 x2 -- out)
                 if (Stack.size () < 2) SCRIPT_ERR_INVALID_STACK_OPERATION;
 
-                const auto& arg_2 = Stack.stacktop (-2);
-                const auto& arg_1 = Stack.stacktop (-1);
+                const auto& arg_2 = Stack.top (-2);
+                const auto& arg_1 = Stack.top ();
 
-                CScriptNum bn1 (arg_2.GetElement (), fRequireMinimal,
+                CScriptNum bn1 (arg_2, fRequireMinimal,
                                 maxScriptNumLength,
                                 utxo_after_genesis);
                 
-                CScriptNum bn2 (arg_1.GetElement (), fRequireMinimal,
+                CScriptNum bn2 (arg_1, fRequireMinimal,
                                 maxScriptNumLength,
                                 utxo_after_genesis);
                 CScriptNum bn;
@@ -886,7 +932,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 Stack.push_back (bn.getvch ());
 
                 if (Op == OP_NUMEQUALVERIFY) {
-                    if (bool (Stack.stacktop (-1).GetElement ())) Stack.pop_back ();
+                    if (bool (Stack.top ())) Stack.pop_back ();
                     else return SCRIPT_ERR_NUMEQUALVERIFY;
                 }
             } break;
@@ -895,19 +941,19 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 // (x min max -- out)
                 if (Stack.size () < 3) return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 
-                const auto& top_3 {Stack.stacktop (-3).GetElement ()};
+                const auto& top_3 {Stack.top (-3)};
                 const CScriptNum bn1 {
                     top_3, fRequireMinimal,
                     maxScriptNumLength,
                     utxo_after_genesis};
                     
-                const auto& top_2 {Stack.stacktop (-2).GetElement ()};
+                const auto& top_2 {Stack.top (-2)};
                 const CScriptNum bn2 {
                     top_2, fRequireMinimal,
                     maxScriptNumLength,
                     utxo_after_genesis};
                     
-                const auto& top_1 {Stack.stacktop (-1).GetElement ()};
+                const auto& top_1 {Stack.top ()};
                 const CScriptNum bn3 {
                     top_1, fRequireMinimal,
                     maxScriptNumLength,
@@ -918,7 +964,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 Stack.pop_back ();
                 Stack.pop_back ();
 
-                Stack.push_back (Z::boolean (fValue));
+                Stack.push_back (integer (fValue));
             } break;
             //
             // Crypto
@@ -929,34 +975,13 @@ namespace Gigamonkey::Bitcoin::interpreter {
             case OP_HASH160:
             case OP_HASH256: {
                 // (in -- hash)
-                if (Stack.size () < 1)
-                    return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                if (Stack.size () < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
 
-                vector &vch = Stack.stacktop (-1);
-
-                Z vchHash;
-
-                if (Op == OP_RIPEMD160) {
-                    auto d = RIPEMD_160 (vch.GetElement ());
-                    Stack.pop_back ();
-                    Stack.push_back (bytes_view (d));
-                } else if (Op == OP_SHA1) {
-                    auto d = SHA1 (vch.GetElement ());
-                    Stack.pop_back ();
-                    Stack.push_back (bytes_view (d));
-                } else if (Op == OP_SHA256) {
-                    auto d = SHA2_256 (vch.GetElement ());
-                    Stack.pop_back ();
-                    Stack.push_back (bytes_view (d));
-                } else if (Op == OP_HASH160) {
-                    auto d = Hash160 (vch.GetElement ());
-                    Stack.pop_back ();
-                    Stack.push_back (bytes_view (d));
-                } else if (Op == OP_HASH256) {
-                    auto d = Hash256 (vch.GetElement ());
-                    Stack.pop_back ();
-                    Stack.push_back (bytes_view (d));
-                }
+                if (Op == OP_RIPEMD160) Stack.replace_back (integer (bytes_view (RIPEMD_160 (Stack.top ()))));
+                else if (Op == OP_SHA1) Stack.replace_back (integer (bytes_view (SHA1 (Stack.top ()))));
+                else if (Op == OP_SHA256) Stack.replace_back (integer (bytes_view (SHA2_256 (Stack.top ()))));
+                else if (Op == OP_HASH160) Stack.replace_back (integer (bytes_view (Hash160 (Stack.top ()))));
+                else if (Op == OP_HASH256) Stack.replace_back (integer (bytes_view (Hash256 (Stack.top ()))));
             } break;
             
             // we take care of this elsewhere. 
@@ -966,8 +991,8 @@ namespace Gigamonkey::Bitcoin::interpreter {
             case OP_CHECKSIGVERIFY: {
                 if (Stack.size () < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 
-                const Z &sig = Stack.stacktop (-2).GetElement ();
-                const Z &pub = Stack.stacktop (-1).GetElement ();
+                const integer &sig = Stack.top (-2);
+                const integer &pub = Stack.top ();
                 
                 result r = bool (Document) ?
                     result {verify_signature
@@ -978,7 +1003,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 
                 Stack.pop_back ();
                 Stack.pop_back ();
-                Stack.push_back (Z::boolean (r.Success));
+                Stack.push_back (integer (r.Success));
                 
                 if (Op == OP_CHECKSIGVERIFY) {
                     if (r.Success) {
@@ -1001,7 +1026,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 // initialize to max size of CScriptNum::MAXIMUM_ELEMENT_SIZE (4 bytes) 
                 // because only 4 byte integers are supported by  OP_CHECKMULTISIG / OP_CHECKMULTISIGVERIFY
                 int64_t nKeysCountSigned =
-                    CScriptNum (Stack.stacktop (-i).GetElement (), fRequireMinimal, CScriptNum::MAXIMUM_ELEMENT_SIZE).getint ();
+                    CScriptNum (Stack.top (-i), fRequireMinimal, CScriptNum::MAXIMUM_ELEMENT_SIZE).getint ();
                 if (nKeysCountSigned < 0) return SCRIPT_ERR_PUBKEY_COUNT;
                 
                 uint64_t nKeysCount = static_cast<uint64_t> (nKeysCountSigned);
@@ -1022,7 +1047,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 if (Stack.size () < i) return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 
                 int64_t nSigsCountSigned =
-                    CScriptNum (Stack.stacktop (-i).GetElement (), fRequireMinimal, CScriptNum::MAXIMUM_ELEMENT_SIZE).getint ();
+                    CScriptNum (Stack.top (-i), fRequireMinimal, CScriptNum::MAXIMUM_ELEMENT_SIZE).getint ();
                     
                 if (nSigsCountSigned < 0) return SCRIPT_ERR_SIG_COUNT;
                 
@@ -1039,7 +1064,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
                     
                     // Remove signature for pre-fork scripts
                     for (auto it = Stack.begin () + 1; it != Stack.begin () + 1 + nSigsCount; it++)
-                        script_code = cleanup_script_code (script_code, it->GetElement ());
+                        script_code = cleanup_script_code (script_code, *it);
                     
                     doc = add_script_code (*Document, script_code);
                 }
@@ -1047,8 +1072,8 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 bool fSuccess = true;
                 while (fSuccess && nSigsCount > 0) {
 
-                    const Z &sig = Stack.stacktop (-isig).GetElement ();
-                    const Z &pub = Stack.stacktop (-ikey).GetElement ();
+                    const integer &sig = Stack.top (-isig);
+                    const integer &pub = Stack.top (-ikey);
                     
                     // Note how this makes the exact order of
                     // pubkey/signature evaluation distinguishable by
@@ -1082,7 +1107,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
                     // If the operation failed, we require that all
                     // signatures must be empty vector
                     if (!fSuccess && (Flags & SCRIPT_VERIFY_NULLFAIL) &&
-                        !ikey2 && Stack.stacktop (-1).size ()) {
+                        !ikey2 && Stack.top ().size ()) {
                         return SCRIPT_ERR_SIG_NULLFAIL;
                     }
                     
@@ -1100,11 +1125,11 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 if (Stack.size () < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 
                 if ((Flags & SCRIPT_VERIFY_NULLDUMMY) &&
-                    Stack.stacktop (-1).size ()) return SCRIPT_ERR_SIG_NULLDUMMY;
+                    Stack.top ().size ()) return SCRIPT_ERR_SIG_NULLDUMMY;
                 
                 Stack.pop_back ();
                 
-                Stack.push_back (Z::boolean (fSuccess));
+                Stack.push_back (integer (fSuccess));
                 
                 if (Op == OP_CHECKMULTISIGVERIFY) {
                     if (fSuccess) {
@@ -1122,29 +1147,31 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 // (x1 x2 -- out)
                 if (Stack.size () < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
 
-                vector &vch1 = Stack.stacktop (-2);
                 // We make copy of last element on stack (vch2) so we can pop the last
                 // element before appending it to the previous element.
                 // If appending would be first, we could exceed stack size in the process
                 // even though OP_CAT actually reduces total stack size.
-                vector vch2 = Stack.stacktop (-1);
+                auto vch = Stack.top ();
 
                 if (!utxo_after_genesis &&
-                    (vch1.size () + vch2.size () > MAX_SCRIPT_ELEMENT_SIZE_BEFORE_GENESIS))
+                    (Stack.top (-2).size () + vch.size () > MAX_SCRIPT_ELEMENT_SIZE_BEFORE_GENESIS))
                     return SCRIPT_ERR_PUSH_SIZE;
 
                 Stack.pop_back ();
-                vch1.append (vch2);
+                Stack.modify_back ([&vch] (integer &val) -> bool {
+                    val.insert (val.end (), vch.begin (), vch.end ());
+                    return true;
+                });
             } break;
 
             case OP_SPLIT: {
                 // (in position -- x1 x2)
                 if (Stack.size () < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
 
-                const vector &data = Stack.stacktop (-2);
+                const auto &data = Stack.top (-2);
 
                 // Make sure the split point is apropriate.
-                const auto& top {Stack.stacktop (-1).GetElement ()};
+                const auto& top {Stack.top ()};
                 const CScriptNum n {
                     top, fRequireMinimal,
                     maxScriptNumLength,
@@ -1157,8 +1184,8 @@ namespace Gigamonkey::Bitcoin::interpreter {
 
                 // Prepare the results in their own buffer as `data`
                 // will be invalidated.
-                Z n1;
-                Z n2;
+                integer n1;
+                integer n2;
 
                 n1.resize (position);
                 n2.resize (data.size () - position);
@@ -1181,7 +1208,8 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 // (in size -- out)
                 if (Stack.size () < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
 
-                const auto& arg_1 = Stack.stacktop (-1).GetElement ();
+                const auto& arg_1 = Stack.top ();
+
                 const CScriptNum n {
                     arg_1, fRequireMinimal,
                     maxScriptNumLength,
@@ -1195,56 +1223,41 @@ namespace Gigamonkey::Bitcoin::interpreter {
                     return SCRIPT_ERR_PUSH_SIZE;
 
                 Stack.pop_back ();
-                vector &rawnum = Stack.stacktop (-1);
 
-                // Try to see if we can fit that number in the number of
-                // byte requested.
-                rawnum.MinimallyEncode ();
-                if (rawnum.size () > size)
-                    // We definitively cannot.
-                    return SCRIPT_ERR_IMPOSSIBLE_ENCODING;
+                if (!Stack.modify_back ([size] (integer &rawnum) -> bool {
+                    auto min_size = minimal_size (rawnum);
 
-                // We already have an element of the right size, we
-                // don't need to do anything.
-                if (rawnum.size () == size) break;
+                    // Try to see if we can fit that number in the number of
+                    // byte requested.
+                    if (min_size > size) return false;
 
-                uint8_t signbit = 0x00;
-                if (rawnum.size () > 0) {
-                    signbit = rawnum.GetElement ().back () & 0x80;
-                    rawnum[rawnum.size () - 1] &= 0x7f;
-                }
+                    rawnum = extend (rawnum, size);
+                    return true;
+                })) return SCRIPT_ERR_IMPOSSIBLE_ENCODING;
 
-                rawnum.padRight (size, signbit);
             } break;
 
             case OP_BIN2NUM: {
+
                 // (in -- out)
                 if (Stack.size () < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
 
-                vector &n = Stack.stacktop (-1);
-                n.MinimallyEncode ();
+                if (!Stack.modify_back ([maxScriptNumLength] (integer &n) -> bool {
+                    n.trim ();
+                    return n.size () <= maxScriptNumLength;
+                })) return SCRIPT_ERR_INVALID_NUMBER_RANGE;
 
-                // The resulting number must be a valid number.
-                if (!n.IsMinimallyEncoded (maxScriptNumLength)) return SCRIPT_ERR_INVALID_NUMBER_RANGE;
             } break;
             
             default: {
-                ScriptError err;
-                
-                long count;
-                maybe<bool> result = Satoshi::EvalScript (
-                    Config, Consensus, 
-                    Stack, CScript (Counter.Next.begin (), Counter.Next.end ()), Flags,
-                    AltStack, count,
-                    Exec, Else, &err);
-                
-                if (err) return err;
-                
+                if (IsInvalidBranchingOpcode (Op) && utxo_after_genesis && !executed) break;
+
+                return SCRIPT_ERR_BAD_OPCODE;
             }
         }
 
         // Size limits
-        if (!utxo_after_genesis && (Stack.size () + AltStack.size () > MAX_STACK_ELEMENTS_BEFORE_GENESIS))
+        if (!utxo_after_genesis && (Stack.combined_size () > MAX_STACK_ELEMENTS_BEFORE_GENESIS))
             return SCRIPT_ERR_STACK_SIZE;
         
         Counter = Counter.next ();

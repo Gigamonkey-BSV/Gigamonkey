@@ -317,7 +317,7 @@ namespace Gigamonkey::HD::BIP_32 {
         bytes prv = bytes ({0x88, 0xB2, 0x1E});
         auto check = view.substr (0, 3);
         if (prv != check) return pubkey ();
-        bytes_reader reader (view.begin () + 3, view.end());
+        bytes_reader reader (view.begin () + 3, view.end ());
         
         byte depth;
         reader >> depth;
@@ -333,7 +333,7 @@ namespace Gigamonkey::HD::BIP_32 {
         bytes_view chain_code = view.substr (12, 32);
         bytes_view key = view.substr (12 + 32);
 
-        uint<33> keyuint;
+        Bitcoin::uint<33> keyuint;
         std::copy (key.begin (), key.end (), keyuint.begin ());
         pubkey1.ChainCode = bytes (32);
         std::copy (chain_code.begin (), chain_code.end (), pubkey1.ChainCode.begin ());

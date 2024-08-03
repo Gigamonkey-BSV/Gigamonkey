@@ -26,7 +26,7 @@ namespace Gigamonkey::secp256k1 {
     }
     
     bool signature::valid (bytes_view x) {
-        size_t size = x.size();
+        size_t size = x.size ();
         if (size < 6 || x[0] != 0x30 || x[1] != size - 2 || x[2] != 0x02) return false;
         size_t r_size = x[3];
         if (size < r_size + 6 || x[4 + r_size] != 0x02) return false;
@@ -284,7 +284,7 @@ namespace Gigamonkey::secp256k1 {
         sig.resize (signature::MaxSize);
         size_t size = sig.size ();
         secp256k1_ecdsa_signature_serialize_der (context, sig.data (), &size, &x);
-        sig.resize(size);
+        sig.resize (size);
         return sig;
     }
     

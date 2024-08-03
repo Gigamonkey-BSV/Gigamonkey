@@ -6,12 +6,19 @@
 #ifndef BITCOIN_SCRIPT_STANDARD_H
 #define BITCOIN_SCRIPT_STANDARD_H
 
-#include <sv/script/interpreter.h>
-
 #include <cstdint>
+#include <sv/script/script_num.h>
+//#include <data/cross.hpp>
+//#include <gigamonkey/script/stack.hpp>
+#include <gigamonkey/script/flags.h>
+#include <gigamonkey/script/error.h>
+#include <gigamonkey/script/config.hpp>
 
 static const bool DEFAULT_ACCEPT_DATACARRIER = true;
 
+class CPubKey;
+class CScript;
+class CTransaction;
 class CKeyID;
 class CScript;
 
@@ -38,7 +45,7 @@ const char *GetTxnOutputType (txnouttype t);
 bool Solver (const CScript &scriptPubKey, bool genesisEnabled, txnouttype &typeRet,
     std::vector<std::vector<uint8_t>> &vSolutionsRet);
     
-CScript GetScriptForRawPubKey (const CPubKey &pubkey);
-CScript GetScriptForMultisig (int nRequired, const std::vector<CPubKey> &keys);
+//CScript GetScriptForRawPubKey (const CPubKey &pubkey);
+//CScript GetScriptForMultisig (int nRequired, const std::vector<CPubKey> &keys);
 
 #endif // BITCOIN_SCRIPT_STANDARD_H

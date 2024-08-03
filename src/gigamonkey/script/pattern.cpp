@@ -3,7 +3,6 @@
 
 #include <gigamonkey/script/pattern.hpp>
 #include <gigamonkey/script/counter.hpp>
-#include <data/math/number/bytes/Z.hpp>
 
 namespace Gigamonkey {
     
@@ -78,12 +77,12 @@ namespace Gigamonkey {
         return pattern::scan (p.substr (1));
     }
     
-    bool push::match (const Bitcoin::instruction& i) const {
+    bool push::match (const Bitcoin::instruction &i) const {
         switch (Type) {
             case any : 
                 return Bitcoin::is_push (i.Op);
             case value : 
-                return Bitcoin::is_push (i.Op) && Value == Z (i.data ());
+                return Bitcoin::is_push (i.Op) && Value == Bitcoin::integer (i.data ());
             case data : 
                 return Bitcoin::is_push (i.Op) && Data == static_cast<bytes> (i.data ());
             case read : 

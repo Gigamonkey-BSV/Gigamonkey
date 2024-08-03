@@ -4,7 +4,8 @@
 #ifndef GIGAMONKEY_SECP256K1
 #define GIGAMONKEY_SECP256K1
 
-#include "number.hpp"
+#include <gigamonkey/p2p/var_int.hpp>
+#include <gigamonkey/hash.hpp>
 #include <data/encoding/integer.hpp>
 #include <data/crypto/encrypted.hpp>
 
@@ -16,7 +17,7 @@ namespace Gigamonkey::secp256k1 {
         coordinate R;
         coordinate S;
         
-        point (const coordinate &r, const coordinate &s) : R{r}, S{s} {}
+        point (const coordinate &r, const coordinate &s) : R {r}, S {s} {}
     };
     
     writer &operator << (writer &, const point &);
@@ -50,7 +51,7 @@ namespace Gigamonkey::secp256k1 {
         explicit signature (bytes_view b) : bytes {b} {}
         
         explicit operator point () const;
-        explicit signature (const point&);
+        explicit signature (const point &);
         signature normalize () const;
         
         static size_t serialized_size (const point &p) {
@@ -83,7 +84,7 @@ namespace Gigamonkey::secp256k1 {
         static bool valid (bytes_view);
         
         static bool compressed (bytes_view b) {
-            return valid (b) && b.size() == CompressedSize;
+            return valid (b) && b.size () == CompressedSize;
         }
         
         static bool verify (bytes_view pubkey, const digest&, bytes_view sig);
@@ -91,7 +92,7 @@ namespace Gigamonkey::secp256k1 {
         static bytes decompress (bytes_view);
         static bytes negate (bytes_view);
         static bytes plus_pubkey (bytes_view, bytes_view);
-        static bytes plus_secret (bytes_view, const uint256&);
+        static bytes plus_secret (bytes_view, const uint256 &);
         static bytes times (bytes_view, bytes_view);
         
         static bool valid_size (size_t size) {
@@ -99,11 +100,11 @@ namespace Gigamonkey::secp256k1 {
         }
         
         pubkey () : bytes () {}
-        explicit pubkey (bytes_view v) : bytes{v} {}
+        explicit pubkey (bytes_view v) : bytes {v} {}
         
         bool valid () const;
         
-        bool verify (const digest& d, const signature& s) const;
+        bool verify (const digest &d, const signature &s) const;
         
         pubkey_type type () const;
         
@@ -125,7 +126,7 @@ namespace Gigamonkey::secp256k1 {
         pubkey operator * (const secret &) const;
         
     private:
-        explicit pubkey (bytes&& b) : bytes {b} {}
+        explicit pubkey (bytes &&b) : bytes {b} {}
         friend struct secret;
     };
     
@@ -134,11 +135,11 @@ namespace Gigamonkey::secp256k1 {
         static bool valid (bytes_view);
         static bytes to_public_compressed (bytes_view);
         static bytes to_public_uncompressed (bytes_view);
-        static signature sign (bytes_view, const digest&);
+        static signature sign (bytes_view, const digest &);
         
-        static uint256 negate (const uint256&);
-        static uint256 plus (const uint256&, const uint256&);
-        static uint256 times (const uint256&, const uint256&);
+        static uint256 negate (const uint256 &);
+        static uint256 plus (const uint256 &, const uint256 &);
+        static uint256 times (const uint256 &, const uint256 &);
         
         constexpr static size_t Size = 32;
         
@@ -151,7 +152,7 @@ namespace Gigamonkey::secp256k1 {
         
         bool valid () const;
         
-        signature sign (const digest& d) const;
+        signature sign (const digest &d) const;
         
         pubkey to_public () const;
     
@@ -169,9 +170,9 @@ namespace Gigamonkey::secp256k1 {
         return !(a == b);
     }
     
-    reader &operator >> (reader& r, point& p);
+    reader &operator >> (reader &r, point &p);
     
-    writer inline &operator << (writer &w, const point& p) {
+    writer inline &operator << (writer &w, const point &p) {
         return w << byte (0x30) <<
             Bitcoin::var_int {Bitcoin::serialized_size (p.R) + Bitcoin::serialized_size (p.S) + 4} << p.R << p.S;
     }
@@ -188,23 +189,23 @@ namespace Gigamonkey::secp256k1 {
         return o << "signature{" << data::encoding::hex::write (bytes (x)) << "}";
     }
     
-    bool inline valid (const secret& s) {
+    bool inline valid (const secret &s) {
         return s.valid ();
     }
     
-    signature inline sign (const secret& s, const digest& d) {
+    signature inline sign (const secret &s, const digest& d) {
         return s.sign (d);
     }
     
-    secret inline negate (const secret& s) {
+    secret inline negate (const secret &s) {
         return -s;
     }
     
-    secret inline plus (const secret& a, const secret& b) {
+    secret inline plus (const secret &a, const secret& b) {
         return a + b;
     }
     
-    pubkey inline to_public (const secret& s) {
+    pubkey inline to_public (const secret &s) {
         return s.to_public ();
     }
     
@@ -212,7 +213,7 @@ namespace Gigamonkey::secp256k1 {
         return p.valid ();
     }
     
-    bool inline verify (const pubkey& p, const digest& d, const signature& s) {
+    bool inline verify (const pubkey &p, const digest& d, const signature& s) {
         return p.verify (d, s);
     }
     
@@ -220,19 +221,19 @@ namespace Gigamonkey::secp256k1 {
         return -p;
     }
     
-    pubkey inline plus (const pubkey& a, const pubkey& b) {
+    pubkey inline plus (const pubkey &a, const pubkey &b) {
         return a + b;
     }
     
-    pubkey inline plus (const pubkey& a, const secret& b) {
+    pubkey inline plus (const pubkey &a, const secret &b) {
         return a + b;
     }
     
-    secret inline times(const secret& a, const secret& b) {
+    secret inline times (const secret &a, const secret &b) {
         return a * b;
     }
     
-    pubkey inline times (const pubkey& a, const secret& b) {
+    pubkey inline times (const pubkey &a, const secret &b) {
         return a * b;
     }
     
@@ -280,7 +281,7 @@ namespace Gigamonkey::secp256k1 {
         return static_cast<bytes> (a) != static_cast<bytes> (b);
     }
     
-    bool inline pubkey::verify (const digest& d, const signature& s) const {
+    bool inline pubkey::verify (const digest &d, const signature &s) const {
         return verify (*this, d, s);
     }
     
@@ -288,7 +289,7 @@ namespace Gigamonkey::secp256k1 {
         return size () == 0 ? invalid : pubkey_type {bytes::operator [] (0)};
     }
     
-    point inline pubkey::point() const {
+    point inline pubkey::point () const {
         return {x (), y ()};
     }
     

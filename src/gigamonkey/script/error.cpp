@@ -7,7 +7,7 @@
 #include <gigamonkey/script/error.h>
 #include <iostream>
 
-const char *ScriptErrorString(const ScriptError serror) {
+const char *ScriptErrorString (const ScriptError serror) {
     switch (serror) {
         case SCRIPT_ERR_OK:
             return "No error";
@@ -108,9 +108,8 @@ const char *ScriptErrorString(const ScriptError serror) {
     return "unknown error";
 }
 
-std::ostream& operator<<(std::ostream& os, const ScriptError e)
-{
-    os << ScriptErrorString(e);
+std::ostream &operator << (std::ostream &os, const ScriptError e) {
+    os << ScriptErrorString (e);
     return os;
 }
 

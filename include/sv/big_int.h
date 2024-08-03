@@ -7,10 +7,10 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-
+#include <utility>
 #include <span>
 
-#include <gigamonkey/number.hpp>
+#include <gigamonkey/types.hpp>
 
 struct bignum_st;
 
@@ -68,7 +68,7 @@ namespace bsv {
         friend long to_long (const bint &);
         friend std::size_t to_size_t_limited (const bint &);
 
-        Gigamonkey::Bitcoin::Z serialize () const;
+        Gigamonkey::Bitcoin::integer serialize () const;
         static bint deserialize (std::span<const uint8_t>);
 
     private:
@@ -96,28 +96,28 @@ namespace bsv {
     bool operator < (const bint &, const bint &);
     bool operator == (const bint &, const bint &);
 
-    bool inline operator != (const bint& a, const bint& b) { return !(a == b); }
+    bool inline operator != (const bint &a, const bint& b) { return !(a == b); }
 
-    bool inline operator <= (const bint& a, const bint& b) { return !(b < a); }
-    bool inline operator > (const bint& a, const bint& b) { return b < a; }
-    bool inline operator >= (const bint& a, const bint& b) { return !(a < b); }
+    bool inline operator <= (const bint &a, const bint &b) { return !(b < a); }
+    bool inline operator > (const bint &a, const bint &b) { return b < a; }
+    bool inline operator >= (const bint &a, const bint &b) { return !(a < b); }
         
-    bint inline operator + (bint a, const bint& b) {
+    bint inline operator + (bint a, const bint &b) {
         a += b;
         return a;
     }
 
-    bint inline operator - (bint a, const bint& b) {
+    bint inline operator - (bint a, const bint &b) {
         a -= b;
         return a;
     }
 
-    bint inline operator * (bint a, const bint& b) {
+    bint inline operator * (bint a, const bint &b) {
         a *= b;
         return a;
     }
 
-    bint inline operator /(bint a, const bint& b) {
+    bint inline operator / (bint a, const bint &b) {
         a /= b;
         return a;
     }
@@ -191,8 +191,7 @@ namespace bsv {
 
 namespace std {
     // See Effective C++ Third Edition Item 25 "Consider Support for a non-throwing Swap"
-    template <>
-    void inline swap<bsv::bint> (bsv::bint& a, bsv::bint& b) noexcept {
+    template <> void inline swap<bsv::bint> (bsv::bint &a, bsv::bint &b) noexcept {
         a.swap (b);
     }
 }

@@ -12,6 +12,7 @@
 #include <optional>
 #include <string>
 
+class CTransaction;
 class CScriptConfig;
 class CCoinsViewCache;
 
