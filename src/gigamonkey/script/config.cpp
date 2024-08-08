@@ -50,7 +50,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     uint64_t script_config::GetMaxOpsPerScript () const {
-        if (!after_genesis ()) return MAX_OPS_PER_SCRIPT_BEFORE_GENESIS; // no changes before genesis
+        if (!utxo_after_genesis ()) return MAX_OPS_PER_SCRIPT_BEFORE_GENESIS; // no changes before genesis
 
         if (Consensus) return MAX_OPS_PER_SCRIPT_AFTER_GENESIS; // use new limit after genesis
 
@@ -76,7 +76,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     uint64_t script_config::GetMaxPubKeysPerMultiSig () const {
-        if (!after_genesis ()) return MAX_PUBKEYS_PER_MULTISIG_BEFORE_GENESIS; // no changes before  genesis
+        if (!utxo_after_genesis ()) return MAX_PUBKEYS_PER_MULTISIG_BEFORE_GENESIS; // no changes before  genesis
 
         if (Consensus) return MAX_PUBKEYS_PER_MULTISIG_AFTER_GENESIS; // use new limit after genesis
 
@@ -98,7 +98,7 @@ namespace Gigamonkey::Bitcoin {
         if (maxStackMemoryUsagePolicy > maxStackMemoryUsageConsensus) {
             if (err)
                 *err = "Policy value of max stack memory usage must not exceed consensus limit of " +
-                    std::to_string(maxStackMemoryUsageConsensus);
+                    std::to_string (maxStackMemoryUsageConsensus);
             return false;
         }
 
@@ -108,7 +108,7 @@ namespace Gigamonkey::Bitcoin {
     uint64_t script_config::GetMaxStackMemoryUsage () const {
         // concept of max stack memory usage is not defined before genesis
         // before Genesis stricter limitations exist, so maxStackMemoryUsage can be infinite
-        if (!after_genesis ()) return INT64_MAX;
+        if (!utxo_after_genesis ()) return INT64_MAX;
 
         if (Consensus) return maxStackMemoryUsageConsensus;
 
@@ -137,7 +137,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     uint64_t script_config::GetMaxScriptNumLength () const {
-        if (!after_genesis ()) return MAX_SCRIPT_NUM_LENGTH_BEFORE_GENESIS; // no changes before genesis
+        if (!utxo_after_genesis ()) return MAX_SCRIPT_NUM_LENGTH_BEFORE_GENESIS; // no changes before genesis
 
         if (Consensus) return MAX_SCRIPT_NUM_LENGTH_AFTER_GENESIS; // use new limit after genesis
 
@@ -161,7 +161,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     uint64_t script_config::GetMaxScriptSize () const {
-        if (!after_genesis ()) return MAX_SCRIPT_SIZE_BEFORE_GENESIS;
+        if (!utxo_after_genesis ()) return MAX_SCRIPT_SIZE_BEFORE_GENESIS;
         if (Consensus) return MAX_SCRIPT_SIZE_AFTER_GENESIS;
         return maxScriptSizePolicy;
     }

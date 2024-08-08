@@ -7,7 +7,7 @@
 #include <gigamonkey/script.hpp>
 #include <gigamonkey/signature.hpp>
 
-namespace Gigamonkey::Bitcoin::interpreter { 
+namespace Gigamonkey::Bitcoin {
     
     bytes find_and_delete (bytes_view script_code, bytes_view sig);
     
@@ -19,12 +19,25 @@ namespace Gigamonkey::Bitcoin::interpreter {
         
         static bytes_view read_instruction (bytes_view subscript);
         
+        program_counter () {}
         program_counter (bytes_view s);
         program_counter next () const;
 
         // the script code is the part of the script that gets signed.
         // normally this will be the locking script.
         bytes_view script_code () const;
+
+        // pre-increment;
+        program_counter &operator ++ () {
+            return *this = next ();
+        }
+
+        // post-increment
+        program_counter operator ++ (int) {
+            program_counter z = *this;
+            *this = next ();
+            return z;
+        }
         
     private:
         program_counter (bytes_view n, bytes_view s, size_t c, size_t l);

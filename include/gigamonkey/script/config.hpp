@@ -16,13 +16,30 @@ static_assert (sizeof (void*) >= 8, "32 bit systems are not supported");
 #include <gigamonkey/script/flags.h>
 
 namespace Gigamonkey::Bitcoin {
-
+    // if genesis is not enabled, then these values are fixed.
+    // otherwise, they have defaults but can be set by the use
     struct script_config final {
         uint32 Flags;
         bool Consensus;
 
-        bool after_genesis () const {
+        bool utxo_after_genesis () const {
             return Flags & SCRIPT_UTXO_AFTER_GENESIS;
+        }
+
+        bool support_P2SH () const {
+            return !utxo_after_genesis ();
+        }
+
+        bool verify_sig_push_only () const {
+            return Flags & SCRIPT_VERIFY_SIGPUSHONLY;
+        }
+
+        bool verify_minimal_data () const {
+            return Flags & SCRIPT_VERIFY_MINIMALDATA;
+        }
+
+        bool verify_clean_stack () const {
+            return Flags & SCRIPT_VERIFY_CLEANSTACK;
         }
 
         script_config (uint32 flags = StandardScriptVerifyFlags (true, true), bool consensus = false);

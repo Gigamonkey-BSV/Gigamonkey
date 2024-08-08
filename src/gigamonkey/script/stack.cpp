@@ -1,7 +1,8 @@
 
 #include <gigamonkey/script/stack.hpp>
+#include <sv/script/script_num.h>
 
-namespace Gigamonkey::Bitcoin::interpreter {
+namespace Gigamonkey::Bitcoin {
 
     void limited_two_stack<false>::modify_back (std::function<void (integer &)> f) {
         auto &val = Stack.at (Stack.size () - 1);

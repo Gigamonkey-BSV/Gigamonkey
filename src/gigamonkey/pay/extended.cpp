@@ -1,6 +1,6 @@
 
 #include <gigamonkey/pay/extended.hpp>
-#include <gigamonkey/script/machine.hpp>
+#include <gigamonkey/script/interpreter.hpp>
 
 namespace Gigamonkey::extended {
 

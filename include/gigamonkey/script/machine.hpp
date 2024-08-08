@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Daniel Krawisz
+// Copyright (c) 2021-2024 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #ifndef GIGAMONKEY_SCRIPT_MACHINE
@@ -9,104 +9,57 @@
 #include <gigamonkey/script/counter.hpp>
 #include <gigamonkey/script/config.hpp>
 
-namespace Gigamonkey::Bitcoin::interpreter { 
-    
+namespace Gigamonkey::Bitcoin {
+
     // a Bitcoin script interpreter that can be advanced step-by-step.
     struct machine {
+
         bool Halt;
         result Result;
-        
-        struct state {
-            script_config Config;
-            
-            maybe<redemption_document> Document;
-            
-            bytes Script;
-            program_counter Counter;
-            
-            ptr<two_stack> Stack;
-            
-            cross<bool> Exec;
-            cross<bool> Else;
-            
-            long OpCount;
-            
-            state (const script_config &, maybe<redemption_document> doc, const bytes &script);
-            
-            program unread () const {
-                return decompile (bytes_view {Counter.Script}.substr (Counter.Counter));
-            }
-            
-            result step ();
-        };
-        
-        state State;
-    
-        machine (const script &unlock, const script &lock, const script_config & = {});
-    
-        machine (const script &unlock, const script &lock,
-            const redemption_document &doc, const script_config & = {});
-    
-        machine (program p, const script_config & = {});
-        
-        void step ();
-        
-        result run ();
-        
-    private:
 
-        static bool isP2SH (const program p) {
-            bytes script = compile (p);
-            return script.size () == 23 && script[0] == OP_HASH160 &&
-                script[1] == 0x14 && script[22] == OP_EQUAL;
-        }
-        
-        program inline full (const program unlock, const program lock) {
-            if (!isP2SH (lock) || data::empty (unlock)) return (unlock << OP_CODESEPARATOR) + lock;
-            return (unlock << OP_CODESEPARATOR) + (lock << OP_CODESEPARATOR) + decompile (data::reverse (unlock).first ().data ());
-        }
-        
-        ScriptError pre_check_scripts (const program unlock, const program lock, uint32 flags) {
-            if (flags & SCRIPT_VERIFY_SIGPUSHONLY && !is_push (unlock)) return SCRIPT_ERR_SIG_PUSHONLY;
+        script_config Config;
 
-            if (isP2SH (lock)) {
-                if (data::empty (unlock)) return SCRIPT_ERR_INVALID_STACK_OPERATION;
-                if (!is_push (unlock)) return SCRIPT_ERR_SIG_PUSHONLY;
-            }
+        bool UtxoAfterGenesis;
+        uint64 MaxScriptNumLength;
+        bool RequireMinimal;
+            
+        maybe<redemption_document> Document;
+            
+        ptr<two_stack> Stack;
+            
+        cross<bool> Exec;
+        cross<bool> Else;
 
-            return pre_verify (full (unlock, lock), flags);
-        }
-        
-        machine (maybe<redemption_document> doc, const program unlock, const program lock, const script_config &);
-        
-        static const CScriptNum &script_zero () {
-            static CScriptNum Zero (0);
-            return Zero;
-        }
-        
-        static const CScriptNum &script_one () {
-            static CScriptNum One (1);
-            return One;
-        }
+        long OpCount;
+
+        bool increment_operation ();
+        uint64 max_pubkeys_per_multisig () const;
+
+        result step (const program_counter &Counter);
+
+        machine (maybe<redemption_document> doc = {}, const script_config &conf = {}):
+            machine (conf.utxo_after_genesis () ?
+                std::static_pointer_cast<two_stack> (std::make_shared<limited_two_stack<true>> (conf.GetMaxStackMemoryUsage ())) :
+                std::static_pointer_cast<two_stack> (std::make_shared<limited_two_stack<false>> ()), doc, conf) {}
+
+        machine (ptr<two_stack>, maybe<redemption_document> doc = {}, const script_config & = {});
+
+        static const CScriptNum &script_zero ();
+
+        static const CScriptNum &script_one ();
     };
-    
-    std::ostream &operator << (std::ostream &, const machine &);
-    
-    result step_through (machine &m);
-    
+
+    const CScriptNum inline &machine::script_zero () {
+        static CScriptNum Zero (0);
+        return Zero;
+    }
+
+    const CScriptNum inline &machine::script_one () {
+        static CScriptNum One (1);
+        return One;
+    }
+
 }
 
-namespace Gigamonkey::Bitcoin { 
-    
-    result inline evaluate (const script &unlock, const script& lock, const script_config &conf) {
-        return interpreter::machine (unlock, lock, conf).run ();
-    }
-    
-    // Evaluate script with real signature operations. 
-    result inline evaluate (const script &unlock, const script& lock, const redemption_document &doc, const script_config &conf) {
-        return interpreter::machine (unlock, lock, doc, conf).run ();
-    }
-    
-}
 
 #endif

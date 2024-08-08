@@ -3,7 +3,7 @@
 
 #include <gigamonkey/script/counter.hpp>
 
-namespace Gigamonkey::Bitcoin::interpreter { 
+namespace Gigamonkey::Bitcoin {
     
     bytes find_and_delete (bytes_view script_code, bytes_view instruction) {
         program_counter p {script_code};

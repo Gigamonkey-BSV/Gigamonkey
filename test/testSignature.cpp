@@ -158,10 +158,10 @@ namespace Gigamonkey::Bitcoin {
         auto t1_4 = compile (program {push_sig1, OP_DUP, OP_ROLL, push_sig1});
         auto t1 = compile (program {OP_DUP, OP_ROLL});
         
-        EXPECT_TRUE (interpreter::find_and_delete (t1_1, sig1p) == t1);
-        EXPECT_TRUE (interpreter::find_and_delete (t1_2, sig1p) == t1);
-        EXPECT_TRUE (interpreter::find_and_delete (t1_3, sig1p) == t1);
-        EXPECT_TRUE (interpreter::find_and_delete (t1_4, sig1p) == t1);
+        EXPECT_TRUE (find_and_delete (t1_1, sig1p) == t1);
+        EXPECT_TRUE (find_and_delete (t1_2, sig1p) == t1);
+        EXPECT_TRUE (find_and_delete (t1_3, sig1p) == t1);
+        EXPECT_TRUE (find_and_delete (t1_4, sig1p) == t1);
         
         auto xsig1 = CScript (sig1);
         auto xsig2 = CScript (sig2);

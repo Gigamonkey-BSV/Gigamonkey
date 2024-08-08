@@ -8,7 +8,7 @@
 
 #include <gigamonkey/wif.hpp>
 #include <gigamonkey/p2p/checksum.hpp>
-#include <gigamonkey/script/machine.hpp>
+#include <gigamonkey/script/interpreter.hpp>
 #include <gigamonkey/script/pattern/pay_to_address.hpp>
 #include <gigamonkey/script/pattern/pay_to_pubkey.hpp>
 #include <gigamonkey/script/typed_data_bip_276.hpp>
@@ -76,7 +76,7 @@ namespace Gigamonkey::Bitcoin {
         
         EXPECT_TRUE (evaluate_p2pkh_compressed) << evaluate_p2pkh_compressed;
         EXPECT_TRUE (evaluate_p2pkh_uncompressed) << evaluate_p2pkh_uncompressed;
-        
+
         EXPECT_FALSE (evaluate (redeem_p2pk_uncompressed, script_p2pk_compressed, doc));
         EXPECT_FALSE (evaluate (redeem_p2pk_compressed, script_p2pk_uncompressed, doc));
         

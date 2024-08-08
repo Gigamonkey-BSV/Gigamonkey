@@ -6,11 +6,13 @@
 #define GIGAMONKEY_INTERPRETER_STACK
 
 #include <gigamonkey/types.hpp>
+#include <gigamonkey/script/config.hpp>
+#include <gigamonkey/script/flags.h>
 #include <gigamonkey/script/error.h>
 #include <sv/script/script.h>
 #include <sv/script/int_serialization.h>
 
-namespace Gigamonkey::Bitcoin::interpreter {
+namespace Gigamonkey::Bitcoin {
 
     void inline throw_stack_overflow_exception () {
         throw script_exception {SCRIPT_ERR_STACK_SIZE};

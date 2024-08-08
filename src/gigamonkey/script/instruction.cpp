@@ -391,23 +391,23 @@ namespace Gigamonkey::Bitcoin {
         
         return valid_program (p.rest (), x, flags);
     }
-    
+
     ScriptError pre_verify (program p, uint32 flags) {
         bool script_genesis = (flags & SCRIPT_GENESIS) != 0;
         bool utxo_after_genesis = (flags & SCRIPT_UTXO_AFTER_GENESIS) != 0;
-        
+
         if (utxo_after_genesis && !script_genesis) return SCRIPT_ERR_IMPOSSIBLE_ENCODING;
 
         if (data::empty (p)) return SCRIPT_ERR_OK;
-        
-        // first we check for OP_RETURN data. 
+
+        // first we check for OP_RETURN data.
         if (script_genesis && utxo_after_genesis) {
             if (p.size () == 2 && p.first ().Op == OP_FALSE && p.first ().valid () && p.rest ().first ().Op == OP_RETURN)
                 return SCRIPT_ERR_OK;
         } else {
             if (p.size () == 1 && p.first ().Op == OP_RETURN) return SCRIPT_ERR_OK;
         }
-        
+
         return valid_program (p, {}, flags);
     }
     

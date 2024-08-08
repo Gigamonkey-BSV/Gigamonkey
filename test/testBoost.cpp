@@ -1,5 +1,5 @@
 #include <gigamonkey/boost/boost.hpp>
-#include <gigamonkey/script/machine.hpp>
+#include <gigamonkey/script/interpreter.hpp>
 #include <gigamonkey/address.hpp>
 #include <gigamonkey/wif.hpp>
 #include <gigamonkey/stratum/job.hpp>
@@ -30,7 +30,7 @@ namespace Gigamonkey::Boost {
             X in = input.first ();
             Y ex = uuu.first ();
             
-            if(!foo (in, ex)) return false;
+            if (!foo (in, ex)) return false;
             
             uuu = uuu.rest ();
             
@@ -49,14 +49,14 @@ namespace Gigamonkey::Boost {
     }
     
     template <typename X>
-    static bool test_orthogonal(list<X> a, list<X> b) {
+    static bool test_orthogonal (list<X> a, list<X> b) {
         return dot_cross ([](X a, X b) -> bool {
             return a == b;
         }, a, b);
     }
     
     template <typename X>
-    static bool test_equal(list<X> a, list<X> b) {
+    static bool test_equal (list<X> a, list<X> b) {
         if (a.size () != b.size ()) return false;
         while (!a.empty ()) {
             if (a.first () != b.first ()) return false;
@@ -90,24 +90,24 @@ namespace Gigamonkey::Boost {
     
     class test_case {
         test_case (
-            const output_script& x, 
+            const output_script &x,
             Stratum::session_id n1, 
-            const bytes& n2, 
+            const bytes &n2,
             Bitcoin::timestamp start, 
             Bitcoin::secret key) : 
             Script {x}, ExtraNonce1 {n1}, ExtraNonce2 {n2}, Start {start}, Key {key}, Bits {} {}
             
         test_case (
-            const output_script& x, 
+            const output_script &x,
             Stratum::session_id n1, 
-            const bytes& n2, 
+            const bytes &n2,
             Bitcoin::timestamp start, 
             Bitcoin::secret key, 
             int32_little bits) : 
             Script {x}, ExtraNonce1 {n1}, ExtraNonce2 {n2}, Start {start}, Key {key}, Bits {bits} {}
         
         static test_case build (
-            const output_script& o, 
+            const output_script &o,
             Bitcoin::timestamp start, 
             Stratum::session_id n1, 
             uint64_big n2, uint64 key) {
@@ -120,11 +120,11 @@ namespace Gigamonkey::Boost {
         }
         
         static test_case build (Boost::type type,
-            const uint256& content, 
+            const uint256 &content,
             work::compact target, 
-            const bytes& tag, 
+            const bytes &tag,
             uint32_little user_nonce, 
-            const bytes& data, 
+            const bytes &data,
             Bitcoin::timestamp start, 
             Stratum::session_id n1,  
             uint64_big n2, 
@@ -143,17 +143,17 @@ namespace Gigamonkey::Boost {
         }
         
         static test_case build (Boost::type type,
-            const uint256& content, 
+            const uint256 &content,
             work::compact target, 
-            const bytes& tag, 
+            const bytes &tag,
             uint32_little user_nonce, 
-            const bytes& data, 
+            const bytes &data,
             int32_little bits, 
             Bitcoin::timestamp start, 
             Stratum::session_id n1, 
             uint64_big n2, 
             uint64 key) { 
-            Bitcoin::secret s (Bitcoin::secret::main, secp256k1::secret(uint256(key)));
+            Bitcoin::secret s (Bitcoin::secret::main, secp256k1::secret (uint256 (key)));
             digest160 address = Bitcoin::Hash160 (s.to_public ());
             
             output_script o = type == contract ? 
@@ -161,7 +161,7 @@ namespace Gigamonkey::Boost {
                 output_script::bounty (1, content, target, tag, user_nonce, data, true);
                 
             bytes extra_nonce_2 (8);
-            std::copy (n2.begin (), n2.end(), extra_nonce_2.begin ());
+            std::copy (n2.begin (), n2.end (), extra_nonce_2.begin ());
             
             return test_case (o, n1, extra_nonce_2, start, s, bits);
         }
