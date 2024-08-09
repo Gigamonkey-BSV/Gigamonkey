@@ -6,37 +6,31 @@
 #define GIGAMONKEY_INTERPRETER_STACK
 
 #include <gigamonkey/types.hpp>
+#include <gigamonkey/script/error.h>
+#include <sv/script/script.h>
 #include <sv/script/int_serialization.h>
 
 namespace Gigamonkey::Bitcoin::interpreter {
 
-    class stack_overflow_error : public std::overflow_error {
-    public:
-        explicit stack_overflow_error (const std::string &str)
-            : std::overflow_error (str) {}
+    void inline throw_stack_overflow_exception () {
+        throw script_exception {SCRIPT_ERR_STACK_SIZE};
     };
 
-    template <typename valtype> class LimitedStack;
+    void inline throw_push_size_exception () {
+        throw script_exception {SCRIPT_ERR_PUSH_SIZE};
+    };
 
-    using stack = LimitedStack<integer>;
+    // before genesis, limited_two_stack has separate values
+    // for maximum element size and for maximum number of elements.
+    // after genesis, this was replaced by a requirement for maximum
+    // estimate of the amount of memory used by the stack.
+    template <bool after_genesis> struct limited_two_stack;
 
-    struct limited_two_stack {
-        // max combined size
-        uint64 MaxMemoryUsage;
-        // combined size of both stacks.
-        uint64 MemoryUsage;
+    struct two_stack {
+    protected:
         cross<integer> Stack;
         cross<integer> AltStack;
-
-        limited_two_stack (uint64 max_memory_usage) :
-            MaxMemoryUsage {max_memory_usage}, MemoryUsage {0}, Stack {}, AltStack {} {}
-
-        void increase_memory_usage (uint64_t additionalSize);
-        void decrease_memory_usage (uint64_t additionalSize);
-
-        // Memory usage of one stack element (without data). This is a consensus rule. Do not change.
-        // It prevents someone from creating stack with millions of empty elements.
-        static constexpr unsigned int ELEMENT_OVERHEAD = 32;
+    public:
 
         // Warning: returned reference is invalidated if stack is modified.
         integer &top (int index = -1);
@@ -44,124 +38,196 @@ namespace Gigamonkey::Bitcoin::interpreter {
 
         const integer &at (uint64_t i) const;
 
-        size_t size () const {
-            return Stack.size ();
-        }
+        size_t size () const;
+        size_t alt_size () const;
+        size_t combined_size () const;
+        bool empty () const;
 
-        size_t alt_size () const {
-            return AltStack.size ();
-        }
-
-        size_t combined_size () const {
-            return size () + alt_size ();
-        }
-
-        bool empty () const {
-            return Stack.empty ();
-        }
-
-        void pop_back ();
-        void push_back (const integer &element);
-
-        template <typename ... P>
-        void emplace_back (P ... p) {
-            Stack.emplace_back (p...);
-            increase_memory_usage (top ().size ());
-        }
-
-        bool modify_back (std::function<bool (integer &)> f) {
-            auto &val = top (-1);
-            size_t before_size = val.size ();
-            bool result = f (val);
-            size_t after_size = val.size ();
-            if (before_size > after_size) decrease_memory_usage (before_size - after_size);
-            else increase_memory_usage (after_size - before_size);
-            return result;
-        }
-
-        void replace_back (const integer &element) {
-            modify_back ([&element] (integer &val) -> bool {
-                val = element;
-                return true;
-            });
-        }
+        virtual void pop_back () = 0;
+        virtual void push_back (const integer &element) = 0;
 
         // erase elements from including (top - first). element until excluding (top - last). element
         // first and last should be negative numbers (distance from the top)
-        void erase (int first, int last);
+        virtual void erase (int first, int last) = 0;
 
         // index should be negative number (distance from the top)
-        void erase (int index);
+        virtual void erase (int index) = 0;
 
         // position should be negative number (distance from the top)
-        void insert (int position, const integer &element);
-
-        void swap (size_t index1, size_t index2);
+        virtual void insert (int position, const integer &element) = 0;
 
         void to_alt ();
         void from_alt ();
 
-        typename std::vector<integer>::const_iterator begin () const {
-            return Stack.begin ();
+        void swap (size_t index1, size_t index2);
+
+        virtual void modify_back (std::function<void (integer &)>) = 0;
+
+        void replace_back (const integer &element) {
+            modify_back ([&element] (integer &val) {
+                val = element;
+            });
         }
 
-        typename std::vector<integer>::const_iterator end () const {
-            return Stack.end ();
-        }
+        typename std::vector<integer>::const_iterator begin () const;
+        typename std::vector<integer>::const_iterator end () const;
+        typename std::vector<integer>::iterator begin ();
+        typename std::vector<integer>::iterator end ();
 
-        typename std::vector<integer>::iterator begin () {
-            return Stack.begin ();
-        }
+        virtual ~two_stack () {}
 
-        typename std::vector<integer>::iterator end () {
-            return Stack.end ();
+        friend std::ostream inline &operator << (std::ostream &o, const two_stack &i) {
+            return o << "{Stack: " << i.Stack << ", AltStack: " << i.AltStack << "}";
         }
 
     };
 
-    std::ostream inline &operator << (std::ostream &o, const limited_two_stack &i) {
-        return o << "{Stack: " << i.Stack << ", AltStack: " << i.AltStack << "}";
+    template <> struct limited_two_stack<false> final : two_stack {
+        uint32 MaxScriptElementSize;
+        uint32 MaxStackElements;
+
+        limited_two_stack (uint32 mxxz = MAX_SCRIPT_ELEMENT_SIZE_BEFORE_GENESIS, uint32 mxe = MAX_STACK_ELEMENTS_BEFORE_GENESIS) :
+            MaxScriptElementSize {mxxz}, MaxStackElements {mxe} {}
+
+        bool valid () const;
+
+        void pop_back () override;
+        void push_back (const integer &element) override;
+
+        // erase elements from including (top - first). element until excluding (top - last). element
+        // first and last should be negative numbers (distance from the top)
+        void erase (int first, int last) override;
+
+        // index should be negative number (distance from the top)
+        void erase (int index) override;
+
+        // position should be negative number (distance from the top)
+        void insert (int position, const integer &element) override;
+
+        void modify_back (std::function<void (integer &)> f) override;
+
+    };
+
+    template <> struct limited_two_stack<true> final : two_stack {
+        // Memory usage of one stack element (without data). This is a consensus rule. Do not change.
+        // It prevents someone from creating stack with millions of empty elements.
+        static constexpr unsigned int ELEMENT_OVERHEAD = 32;
+
+        // max combined size
+        uint64 MaxMemoryUsage;
+        // combined size of both stacks.
+        uint64 MemoryUsage;
+
+        bool valid () const;
+
+        limited_two_stack (uint64 max_memory_usage) : two_stack {},
+            MaxMemoryUsage {max_memory_usage}, MemoryUsage {0} {}
+
+        void increase_memory_usage (uint64_t additionalSize);
+        void decrease_memory_usage (uint64_t additionalSize);
+
+        void pop_back () override;
+        void push_back (const integer &element) override;
+
+        // erase elements from including (top - first). element until excluding (top - last). element
+        // first and last should be negative numbers (distance from the top)
+        void erase (int first, int last) override;
+
+        // index should be negative number (distance from the top)
+        void erase (int index) override;
+
+        // position should be negative number (distance from the top)
+        void insert (int position, const integer &element) override;
+
+        void modify_back (std::function<void (integer &)> f) override;
+    };
+
+    size_t inline two_stack::size () const {
+        return Stack.size ();
     }
 
-    void inline limited_two_stack::decrease_memory_usage (uint64_t additionalSize) {
-        MemoryUsage -= additionalSize;
+    size_t inline two_stack::alt_size () const {
+        return AltStack.size ();
     }
 
-    void inline limited_two_stack::increase_memory_usage (uint64_t additionalSize) {
-        if (MemoryUsage + additionalSize > MaxMemoryUsage) throw stack_overflow_error ("pushstack(): stack oversized");
-        MemoryUsage += additionalSize;
+    size_t inline two_stack::combined_size () const {
+        return size () + alt_size ();
     }
 
-    void inline limited_two_stack::push_back (const integer &element) {
-        increase_memory_usage (element.size () + ELEMENT_OVERHEAD);
-        Stack.push_back (element);
+    bool inline two_stack::empty () const {
+        return Stack.empty ();
     }
 
-    integer inline &limited_two_stack::top (int index) {
+    integer inline &two_stack::top (int index) {
         if (index >= 0) throw std::invalid_argument ("Invalid argument - index should be < 0.");
         return Stack.at (Stack.size () + index);
     }
 
-    integer inline &limited_two_stack::alt_top (int index) {
+    integer inline &two_stack::alt_top (int index) {
         if (index >= 0) throw std::invalid_argument ("Invalid argument - index should be < 0.");
         return AltStack.at (AltStack.size () + index);
     }
 
-    void inline limited_two_stack::swap (size_t index1, size_t index2) {
+    void inline two_stack::swap (size_t index1, size_t index2) {
         std::swap (Stack.at (index1), Stack.at (index2));
     }
 
-    void inline limited_two_stack::from_alt () {
+    const integer inline &two_stack::at (uint64_t i) const {
+        return Stack.at (i);
+    }
+
+    void inline two_stack::from_alt () {
         // Moving element to other stack does not change the total size of stack.
         // Just use internal functions to move the element.
-        Stack.push_back (std::move (alt_top ()));
+        Stack.push_back (std::move (AltStack.at (AltStack.size () - 1)));
         AltStack.pop_back ();
     }
 
-    void inline limited_two_stack::to_alt () {
+    void inline two_stack::to_alt () {
         // Moving element to other stack does not change the total size of stack.
         // Just use internal functions to move the element.
-        AltStack.push_back (std::move (top ()));
+        AltStack.push_back (std::move (Stack.at (Stack.size () - 1)));
+        Stack.pop_back ();
+    }
+
+    typename std::vector<integer>::const_iterator inline two_stack::begin () const {
+        return Stack.begin ();
+    }
+
+    typename std::vector<integer>::const_iterator inline two_stack::end () const {
+        return Stack.end ();
+    }
+
+    typename std::vector<integer>::iterator inline two_stack::begin () {
+        return Stack.begin ();
+    }
+
+    typename std::vector<integer>::iterator inline two_stack::end () {
+        return Stack.end ();
+    }
+
+    void inline limited_two_stack<true>::decrease_memory_usage (uint64_t additionalSize) {
+        MemoryUsage -= additionalSize;
+    }
+
+    void inline limited_two_stack<true>::increase_memory_usage (uint64_t additionalSize) {
+        if (MemoryUsage + additionalSize > MaxMemoryUsage) throw_stack_overflow_exception ();
+        MemoryUsage += additionalSize;
+    }
+
+    void inline limited_two_stack<true>::push_back (const integer &element) {
+        increase_memory_usage (element.size () + ELEMENT_OVERHEAD);
+        Stack.push_back (element);
+    }
+
+    void inline limited_two_stack<false>::push_back (const integer &element) {
+        if (element.size () > MaxScriptElementSize) throw_push_size_exception ();
+        if (this->combined_size () == MaxStackElements) throw_stack_overflow_exception ();
+        Stack.push_back (element);
+    }
+
+    void inline limited_two_stack<false>::pop_back () {
+        if (Stack.empty ()) throw std::runtime_error ("popstack(): stack empty");
         Stack.pop_back ();
     }
 

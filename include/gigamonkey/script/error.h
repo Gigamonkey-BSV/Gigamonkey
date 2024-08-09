@@ -9,8 +9,7 @@
 
 #include <iosfwd>
 
-typedef enum ScriptError_t
-{
+typedef enum ScriptError_t {
     SCRIPT_ERR_OK = 0,
     SCRIPT_ERR_UNKNOWN_ERROR,
     SCRIPT_ERR_EVAL_FALSE,
@@ -86,5 +85,11 @@ typedef enum ScriptError_t
 const char *ScriptErrorString (const ScriptError error);
 
 std::ostream& operator << (std::ostream &, const ScriptError);
+
+namespace Gigamonkey::Bitcoin {
+    struct script_exception {
+        ScriptError Error;
+    };
+};
 
 #endif // BITCOIN_SCRIPT_SCRIPT_ERROR_H

@@ -9,6 +9,7 @@
 
 #include <gigamonkey/script/error.h>
 #include <gigamonkey/script/flags.h>
+#include <gigamonkey/script/config.hpp>
 #include <gigamonkey/sighash.hpp>
 #include <gigamonkey/satoshi.hpp>
 
@@ -19,7 +20,7 @@ namespace Gigamonkey::Bitcoin {
     struct result; 
     
     // Test validity of a script. All signature operations succeed. 
-    result evaluate (const script &unlock, const script &lock, uint32 flags = StandardScriptVerifyFlags (true, true));
+    result evaluate (const script &unlock, const script &lock, const script_config & = {});
     
     struct redemption_document;
     
@@ -27,8 +28,8 @@ namespace Gigamonkey::Bitcoin {
     result evaluate (
         const script &unlock,
         const script &lock,
-        const redemption_document &doc, 
-        uint32 flags = StandardScriptVerifyFlags (true, true));
+        const redemption_document &doc,
+        const script_config & = {});
     
     bool operator == (const result &, const result &);
     bool operator != (const result &, const result &);

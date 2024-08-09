@@ -17,9 +17,6 @@ namespace Gigamonkey::Bitcoin::interpreter {
         result Result;
         
         struct state {
-            uint32 Flags;
-            bool Consensus;
-            
             script_config Config;
             
             maybe<redemption_document> Document;
@@ -27,14 +24,14 @@ namespace Gigamonkey::Bitcoin::interpreter {
             bytes Script;
             program_counter Counter;
             
-            limited_two_stack Stack;
+            ptr<two_stack> Stack;
             
             cross<bool> Exec;
             cross<bool> Else;
             
             long OpCount;
             
-            state (uint32 flags, bool consensus, maybe<redemption_document> doc, const bytes &script);
+            state (const script_config &, maybe<redemption_document> doc, const bytes &script);
             
             program unread () const {
                 return decompile (bytes_view {Counter.Script}.substr (Counter.Counter));
@@ -45,12 +42,12 @@ namespace Gigamonkey::Bitcoin::interpreter {
         
         state State;
     
-        machine (const script &unlock, const script &lock, uint32 flags = StandardScriptVerifyFlags (true, true));
+        machine (const script &unlock, const script &lock, const script_config & = {});
     
         machine (const script &unlock, const script &lock,
-            const redemption_document &doc, uint32 flags = StandardScriptVerifyFlags (true, true));
+            const redemption_document &doc, const script_config & = {});
     
-        machine (program p, uint32 flags = StandardScriptVerifyFlags (true, true));
+        machine (program p, const script_config & = {});
         
         void step ();
         
@@ -80,7 +77,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
             return pre_verify (full (unlock, lock), flags);
         }
         
-        machine (maybe<redemption_document> doc, const program unlock, const program lock, uint32 flags);
+        machine (maybe<redemption_document> doc, const program unlock, const program lock, const script_config &);
         
         static const CScriptNum &script_zero () {
             static CScriptNum Zero (0);
@@ -101,13 +98,13 @@ namespace Gigamonkey::Bitcoin::interpreter {
 
 namespace Gigamonkey::Bitcoin { 
     
-    result inline evaluate (const script &unlock, const script& lock, uint32 flags) {
-        return interpreter::machine (unlock, lock, flags).run ();
+    result inline evaluate (const script &unlock, const script& lock, const script_config &conf) {
+        return interpreter::machine (unlock, lock, conf).run ();
     }
     
     // Evaluate script with real signature operations. 
-    result inline evaluate (const script &unlock, const script& lock, const redemption_document &doc, uint32 flags) {
-        return interpreter::machine (unlock, lock, doc, flags).run ();
+    result inline evaluate (const script &unlock, const script& lock, const redemption_document &doc, const script_config &conf) {
+        return interpreter::machine (unlock, lock, doc, conf).run ();
     }
     
 }
