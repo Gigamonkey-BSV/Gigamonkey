@@ -43,21 +43,7 @@ namespace Gigamonkey::Bitcoin {
                 std::static_pointer_cast<two_stack> (std::make_shared<limited_two_stack<false>> ()), doc, conf) {}
 
         machine (ptr<two_stack>, maybe<redemption_document> doc = {}, const script_config & = {});
-
-        static const CScriptNum &script_zero ();
-
-        static const CScriptNum &script_one ();
     };
-
-    const CScriptNum inline &machine::script_zero () {
-        static CScriptNum Zero (0);
-        return Zero;
-    }
-
-    const CScriptNum inline &machine::script_one () {
-        static CScriptNum One (1);
-        return One;
-    }
 
 }
 

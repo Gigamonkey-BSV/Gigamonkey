@@ -70,8 +70,8 @@ namespace Gigamonkey::Bitcoin {
         }
         
         // holdovers from Bitcoin Core. 
-        bool check_locktime (const CScriptNum &) const;
-        bool check_sequence (const CScriptNum &) const;
+        bool check_locktime (const uint32_little &) const;
+        bool check_sequence (const uint32_little &) const;
     };
 
     // delete the script up to and including the last instance of OP_CODESEPARATOR.

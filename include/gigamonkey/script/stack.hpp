@@ -36,7 +36,6 @@ namespace Gigamonkey::Bitcoin {
 
         // Warning: returned reference is invalidated if stack is modified.
         integer &top (int index = -1);
-        integer &alt_top (int index = -1);
 
         const integer &at (uint64_t i) const;
 
@@ -63,10 +62,10 @@ namespace Gigamonkey::Bitcoin {
 
         void swap (size_t index1, size_t index2);
 
-        virtual void modify_back (std::function<void (integer &)>) = 0;
+        virtual void modify_top (std::function<void (integer &)>, int index = -1) = 0;
 
         void replace_back (const integer &element) {
-            modify_back ([&element] (integer &val) {
+            modify_top ([&element] (integer &val) {
                 val = element;
             });
         }
@@ -106,7 +105,7 @@ namespace Gigamonkey::Bitcoin {
         // position should be negative number (distance from the top)
         void insert (int position, const integer &element) override;
 
-        void modify_back (std::function<void (integer &)> f) override;
+        void modify_top (std::function<void (integer &)> f, int index = -1) override;
 
     };
 
@@ -141,7 +140,7 @@ namespace Gigamonkey::Bitcoin {
         // position should be negative number (distance from the top)
         void insert (int position, const integer &element) override;
 
-        void modify_back (std::function<void (integer &)> f) override;
+        void modify_top (std::function<void (integer &)> f, int index = -1) override;
     };
 
     size_t inline two_stack::size () const {
@@ -163,11 +162,6 @@ namespace Gigamonkey::Bitcoin {
     integer inline &two_stack::top (int index) {
         if (index >= 0) throw std::invalid_argument ("Invalid argument - index should be < 0.");
         return Stack.at (Stack.size () + index);
-    }
-
-    integer inline &two_stack::alt_top (int index) {
-        if (index >= 0) throw std::invalid_argument ("Invalid argument - index should be < 0.");
-        return AltStack.at (AltStack.size () + index);
     }
 
     void inline two_stack::swap (size_t index1, size_t index2) {

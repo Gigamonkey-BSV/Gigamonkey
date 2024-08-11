@@ -42,6 +42,14 @@ namespace Gigamonkey::Bitcoin {
             return Flags & SCRIPT_VERIFY_CLEANSTACK;
         }
 
+        bool check_locktime () const {
+            return Flags & SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY && !utxo_after_genesis ();
+        }
+
+        bool check_sequence () const {
+            return Flags & SCRIPT_VERIFY_CHECKSEQUENCEVERIFY && !utxo_after_genesis ();
+        }
+
         script_config (uint32 flags = StandardScriptVerifyFlags (true, true), bool consensus = false);
 
         bool SetMaxOpsPerScriptPolicy (int64_t maxOpsPerScriptPolicyIn, std::string *error);

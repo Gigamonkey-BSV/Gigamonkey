@@ -4,21 +4,23 @@
 
 namespace Gigamonkey::Bitcoin {
 
-    void limited_two_stack<false>::modify_back (std::function<void (integer &)> f) {
-        auto &val = Stack.at (Stack.size () - 1);
+    void limited_two_stack<false>::modify_top (std::function<void (integer &)> f, int index) {
+        if (index >= 0) throw std::invalid_argument ("Invalid argument - index should be < 0.");
+        auto &val = Stack.at (Stack.size () + index);
         size_t before_size = val.size ();
         f (val);
         size_t after_size = val.size ();
         if (after_size > MaxScriptElementSize) throw_push_size_exception ();
     }
 
-    void limited_two_stack<true>::modify_back (std::function<void (integer &)> f) {
-        auto &val = Stack.at (Stack.size () - 1);
+    void limited_two_stack<true>::modify_top (std::function<void (integer &)> f, int index) {
+        if (index >= 0) throw std::invalid_argument ("Invalid argument - index should be < 0.");
+        auto &val = Stack.at (Stack.size () + index);
         size_t before_size = val.size ();
         f (val);
         size_t after_size = val.size ();
-        if (before_size > after_size) decrease_memory_usage (before_size - after_size);
-        else increase_memory_usage (after_size - before_size);
+        if (before_size < after_size) increase_memory_usage (after_size - before_size);
+        else decrease_memory_usage (before_size - after_size);
     }
 
     void limited_two_stack<true>::pop_back () {

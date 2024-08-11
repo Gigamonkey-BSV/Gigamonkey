@@ -17,7 +17,7 @@ namespace Gigamonkey::Bitcoin {
         return counter.script_code ();
     }
     
-    bool redemption_document::check_locktime (const CScriptNum &nLockTime) const {
+    bool redemption_document::check_locktime (const uint32_little &nLockTime) const {
         // There are two kinds of nLockTime: lock-by-blockheight and
         // lock-by-blocktime, distinguished by whether nLockTime <
         // LOCKTIME_THRESHOLD.
@@ -48,7 +48,7 @@ namespace Gigamonkey::Bitcoin {
         return true;
     }
 
-    bool redemption_document::check_sequence (const CScriptNum &nSequence) const {
+    bool redemption_document::check_sequence (const uint32_little &nSequence) const {
         // Relative lock times are supported by comparing the passed in operand to
         // the sequence number of the input.
         const int64_t txToSequence = int64_t (Transaction.Inputs[InputIndex].Sequence);
@@ -65,10 +65,10 @@ namespace Gigamonkey::Bitcoin {
 
         // Mask off any bits that do not have consensus-enforced meaning before
         // doing the integer comparisons
-        const uint32_t nLockTimeMask =
+        const uint32 nLockTimeMask =
             CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG | CTxIn::SEQUENCE_LOCKTIME_MASK;
-        const int64_t txToSequenceMasked = txToSequence & nLockTimeMask;
-        const CScriptNum nSequenceMasked = nSequence & nLockTimeMask;
+        const int64 txToSequenceMasked = txToSequence & nLockTimeMask;
+        const uint32 nSequenceMasked = uint32 (nSequence) & nLockTimeMask;
 
         // There are two kinds of nSequence: lock-by-blockheight and
         // lock-by-blocktime, distinguished by whether nSequenceMasked <
