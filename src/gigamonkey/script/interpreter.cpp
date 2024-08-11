@@ -39,7 +39,7 @@ namespace Gigamonkey::Bitcoin {
         return o << "interpreter {\n\tProgram: " << i.unread ()
             << ",\n\tHalt: " << (i.Machine.Halt ? "true" : "false")
             << ", Result: " << i.Machine.Result << ", Flags: " << i.Machine.Config.Flags
-            << ",\n\tStack: " << *i.Machine.Stack << ", Exec: " << make_list (i.Machine.Exec)
+            << ",\n\t" << *i.Machine.Stack << ", Exec: " << make_list (i.Machine.Exec)
             << ", Else: " << make_list (i.Machine.Else) << "}";
     }
 

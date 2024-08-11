@@ -78,7 +78,7 @@ namespace Gigamonkey::Bitcoin {
         virtual ~two_stack () {}
 
         friend std::ostream inline &operator << (std::ostream &o, const two_stack &i) {
-            return o << "{Stack: " << i.Stack << ", AltStack: " << i.AltStack << "}";
+            return o << std::hex << "{Stack: " << i.Stack << ", AltStack: " << i.AltStack << "}";
         }
 
     };

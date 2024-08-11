@@ -408,7 +408,7 @@ namespace Gigamonkey::Boost {
         list<scripts> list_of_scripts = map_thread<scripts> ([] (const bytes in, const bytes out) -> scripts {
             return scripts {in, out};
         }, serialized_input_scripts, serialized_output_scripts);
-        
+
         bool check_scripts = dot_cross ([] (bytes_view in, bytes_view out) {
             return Bitcoin::evaluate (in, out);
         }, serialized_input_scripts.rest (), serialized_output_scripts.rest ());

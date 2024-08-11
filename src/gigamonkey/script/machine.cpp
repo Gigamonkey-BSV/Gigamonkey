@@ -919,11 +919,10 @@ namespace Gigamonkey::Bitcoin {
                 
                 // initialize to max size of CScriptNum::MAXIMUM_ELEMENT_SIZE (4 bytes) 
                 // because only 4 byte integers are supported by  OP_CHECKMULTISIG / OP_CHECKMULTISIGVERIFY
-                int64_t nKeysCountSigned =
-                    CScriptNum (Stack->top (-i), RequireMinimal, CScriptNum::MAXIMUM_ELEMENT_SIZE).getint ();
-                if (nKeysCountSigned < 0) return SCRIPT_ERR_PUBKEY_COUNT;
+                auto nKeysCountZ = read_integer (Stack->top (-i), RequireMinimal, MAXIMUM_ELEMENT_SIZE);
+                if (nKeysCountZ < 0) return SCRIPT_ERR_PUBKEY_COUNT;
                 
-                uint64_t nKeysCount = static_cast<uint64_t> (nKeysCountSigned);
+                int64 nKeysCount = static_cast<int64> (nKeysCountZ);
                 if (nKeysCount > Config.GetMaxPubKeysPerMultiSig ())
                     return SCRIPT_ERR_PUBKEY_COUNT;
                 
@@ -940,12 +939,11 @@ namespace Gigamonkey::Bitcoin {
                 i += nKeysCount;
                 if (Stack->size () < i) return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 
-                int64_t nSigsCountSigned =
-                    CScriptNum (Stack->top (-i), RequireMinimal, CScriptNum::MAXIMUM_ELEMENT_SIZE).getint ();
+                auto nSigsCountZ = read_integer (Stack->top (-i), RequireMinimal, MAXIMUM_ELEMENT_SIZE);
                     
-                if (nSigsCountSigned < 0) return SCRIPT_ERR_SIG_COUNT;
+                if (nSigsCountZ < 0) return SCRIPT_ERR_SIG_COUNT;
                 
-                uint64_t nSigsCount = static_cast<uint64_t> (nSigsCountSigned);
+                int64 nSigsCount = static_cast<int64> (nSigsCountZ);
                 if (nSigsCount > nKeysCount) return SCRIPT_ERR_SIG_COUNT;
                 
                 uint64_t isig = ++i;
@@ -1064,16 +1062,11 @@ namespace Gigamonkey::Bitcoin {
                 const auto &data = Stack->top (-2);
 
                 // Make sure the split point is apropriate.
-                const auto& top {Stack->top ()};
-                const CScriptNum n {
-                    top, RequireMinimal,
-                    MaxScriptNumLength,
-                    UtxoAfterGenesis};
+                const integer n = read_integer (Stack->top (), RequireMinimal, MaxScriptNumLength);
 
-                if (n < 0 || n > data.size ())
-                    return SCRIPT_ERR_INVALID_SPLIT_RANGE;
+                if (n < 0 || n > data.size ()) return SCRIPT_ERR_INVALID_SPLIT_RANGE;
 
-                const auto position {n.to_size_t_limited ()};
+                const size_t position = static_cast<size_t> (uint32 (read_as_uint32_little (n)));
 
                 // Prepare the results in their own buffer as `data`
                 // will be invalidated.
