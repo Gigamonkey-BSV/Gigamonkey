@@ -20,7 +20,6 @@ namespace Gigamonkey::Bitcoin {
         script_config Config;
 
         bool UtxoAfterGenesis;
-        uint64 MaxScriptNumLength;
         bool RequireMinimal;
             
         maybe<redemption_document> Document;
@@ -39,7 +38,7 @@ namespace Gigamonkey::Bitcoin {
 
         machine (maybe<redemption_document> doc = {}, const script_config &conf = {}):
             machine (conf.utxo_after_genesis () ?
-                std::static_pointer_cast<two_stack> (std::make_shared<limited_two_stack<true>> (conf.GetMaxStackMemoryUsage ())) :
+                std::static_pointer_cast<two_stack> (std::make_shared<limited_two_stack<true>> (conf.MaxStackMemoryUsage)) :
                 std::static_pointer_cast<two_stack> (std::make_shared<limited_two_stack<false>> ()), doc, conf) {}
 
         machine (ptr<two_stack>, maybe<redemption_document> doc = {}, const script_config & = {});

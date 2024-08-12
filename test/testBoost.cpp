@@ -13,7 +13,7 @@ struct scripts {
     data::bytes output_script;
 };
     
-std::ostream& operator << (std::ostream& o, scripts x) {
+std::ostream &operator << (std::ostream &o, scripts x) {
     return o << "{InputScript: " << x.input_script << ", OutputScript: " << x.output_script << "}";
 }
 
@@ -21,7 +21,7 @@ namespace Gigamonkey::Boost {
 
     template <typename f, typename X, typename Y>
     bool dot_cross (f foo, list<X> x, list<Y> y) {
-        if (x.size () != y.size()) return false;
+        if (x.size () != y.size ()) return false;
         if (x.size () == 0) return true;
         list<X> input = x;
         list<Y> expected = y;
@@ -50,7 +50,7 @@ namespace Gigamonkey::Boost {
     
     template <typename X>
     static bool test_orthogonal (list<X> a, list<X> b) {
-        return dot_cross ([](X a, X b) -> bool {
+        return dot_cross ([] (X a, X b) -> bool {
             return a == b;
         }, a, b);
     }
@@ -270,7 +270,8 @@ namespace Gigamonkey::Boost {
             test_case { // contract v1
                 Boost::contract, 
                 ContentsA, 
-                Target, bytes_view (Tag),
+                Target,
+                bytes_view (Tag),
                 UserNonce + 1, 
                 AdditionalData, 
                 Start, 
@@ -280,7 +281,8 @@ namespace Gigamonkey::Boost {
             test_case { // bounty v1
                 Boost::bounty, 
                 ContentsB, 
-                Target, bytes_view (Tag),
+                Target,
+                bytes_view (Tag),
                 UserNonce + 2, 
                 AdditionalData,
                 Start, 
@@ -290,7 +292,8 @@ namespace Gigamonkey::Boost {
             test_case { // contract v1
                 Boost::contract, 
                 ContentsB, 
-                Target, bytes_view (Tag),
+                Target,
+                bytes_view (Tag),
                 UserNonce + 3, 
                 AdditionalData,
                 Start, 
@@ -312,7 +315,8 @@ namespace Gigamonkey::Boost {
             test_case { // contract v2
                 Boost::contract, 
                 ContentsA, 
-                Target, bytes_view (Tag),
+                Target,
+                bytes_view (Tag),
                 UserNonce + 1, 
                 AdditionalData, 
                 0xabcd,
@@ -323,7 +327,8 @@ namespace Gigamonkey::Boost {
             test_case { // bounty v2
                 Boost::bounty, 
                 ContentsB, 
-                Target, bytes_view (Tag),
+                Target,
+                bytes_view (Tag),
                 UserNonce + 2, 
                 AdditionalData,
                 0xabcd,
@@ -334,7 +339,8 @@ namespace Gigamonkey::Boost {
             test_case { // contract v2
                 Boost::contract, 
                 ContentsB, 
-                Target, bytes_view (Tag),
+                Target,
+                bytes_view (Tag),
                 UserNonce + 3, 
                 AdditionalData,
                 0xabcd,

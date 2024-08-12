@@ -4,12 +4,45 @@
 // Copyright (c) 2019-2021 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#include <sv/script/script.h>
 #include <gigamonkey/script.hpp>
 #include <gigamonkey/script/bitcoin_core.hpp>
 #include <gigamonkey/script/counter.hpp>
+#include <gigamonkey/script/stack.hpp>
 
 namespace Gigamonkey::Bitcoin {
+
+    result verify_signature (bytes_view sig, bytes_view pub, const sighash::document &doc, uint32 flags) {
+
+        if (flags & SCRIPT_VERIFY_COMPRESSED_PUBKEYTYPE && !secp256k1::pubkey::compressed (pub))
+            return SCRIPT_ERR_NONCOMPRESSED_PUBKEY;
+
+        else if (flags & SCRIPT_VERIFY_STRICTENC && !secp256k1::pubkey::valid (pub))
+            return SCRIPT_ERR_PUBKEYTYPE;
+
+        auto d = signature::directive (sig);
+        auto raw = signature::raw (sig);
+
+        if (!sighash::valid (d)) return SCRIPT_ERR_SIG_HASHTYPE;
+
+        if (sighash::has_fork_id (d) && !(flags & SCRIPT_ENABLE_SIGHASH_FORKID))
+            return SCRIPT_ERR_ILLEGAL_FORKID;
+
+        if (!sighash::has_fork_id (d) && (flags & SCRIPT_ENABLE_SIGHASH_FORKID))
+            return SCRIPT_ERR_MUST_USE_FORKID;
+
+        if ((flags & (SCRIPT_VERIFY_DERSIG | SCRIPT_VERIFY_LOW_S | SCRIPT_VERIFY_STRICTENC)) && !signature::DER (sig))
+            return SCRIPT_ERR_SIG_DER;
+
+        if ((flags & SCRIPT_VERIFY_LOW_S) && !secp256k1::signature::normalized (raw))
+            return SCRIPT_ERR_SIG_HIGH_S;
+
+        if (signature::verify (sig, pub, doc)) return true;
+
+        if (flags & SCRIPT_VERIFY_NULLFAIL && sig.size () != 0)
+            return SCRIPT_ERR_SIG_NULLFAIL;
+
+        return false;
+    }
 
     bytes_view remove_until_last_code_separator (bytes_view b) {
         program_counter counter {b};

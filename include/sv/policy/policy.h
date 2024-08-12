@@ -7,16 +7,9 @@
 #define BITCOIN_POLICY_POLICY_H
 
 #include <sv/consensus/consensus.h>
-#include <sv/script/standard.h>
 
 #include <optional>
 #include <string>
-
-class CTransaction;
-class CScriptConfig;
-class CCoinsViewCache;
-
-namespace task {class CCancellationToken;}
 
 /** Defaults for -excessiveblocksize and -blockmaxsize. The changed when we reach blocksize activation time.
  *
@@ -122,32 +115,5 @@ static const uint64_t DEFAULT_SCRIPT_NUM_LENGTH_POLICY_AFTER_GENESIS = 250 * ONE
 // loaded into cache but instead returned directly to the caller.
 static const uint64_t MIN_COINS_PROVIDER_CACHE_SIZE = ONE_MEGABYTE;
 static const uint64_t DEFAULT_COINS_PROVIDER_CACHE_SIZE = ONE_GIGABYTE;
-
-/** Consolidation transactions are free */
-bool IsConsolidationTxn (const CScriptConfig &config, const CTransaction &tx, const CCoinsViewCache &inputs, int32_t tipHeight);
-
-bool IsStandard (const CScriptConfig &config, const CScript &scriptPubKey, int32_t nScriptPubKeyHeight, txnouttype &whichType);
-
-/**
- * Check for standard transaction types
- * @param[in] nHeight represents the height that transactions was mined or the height that
- * we expect transcation will be mined in (in case transcation is being added to mempool)
- * @return True if all outputs (scriptPubKeys) use only standard transaction
- * forms
- */
-bool IsStandardTx (const CScriptConfig &config, const CTransaction &tx, int32_t nHeight, std::string &reason);
-
-/**
- * Check for standard transaction types
- * @param[in] mapInputs    Map of previous transactions that have outputs we're
- * spending
- * @return True if all inputs (scriptSigs) use only standard transaction forms
- */
-data::maybe<bool> AreInputsStandard (
-    const task::CCancellationToken &token,
-    const CScriptConfig &config,
-    const CTransaction &tx,
-    const CCoinsViewCache &mapInputs,
-    const int32_t mempoolHeight);
 
 #endif // BITCOIN_POLICY_POLICY_H

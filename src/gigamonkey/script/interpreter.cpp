@@ -3,12 +3,7 @@
 
 #include <gigamonkey/script/interpreter.hpp>
 #include <gigamonkey/script/bitcoin_core.hpp>
-#include <sv/script/script.h>
-#include <sv/script/script_num.h>
 #include <sv/policy/policy.h>
-//#include <sv/hash.h>
-#include <boost/scoped_ptr.hpp>
-#include <data/io/wait_for_enter.hpp>
 
 namespace Gigamonkey::Bitcoin {
 
@@ -75,13 +70,13 @@ namespace Gigamonkey::Bitcoin {
             return fn (x, p);
         } catch (script_exception &err) {
             return err.Error;
-        } catch (scriptnum_overflow_error &err) {
+        } /*catch (scriptnum_overflow_error &err) {
             return SCRIPT_ERR_SCRIPTNUM_OVERFLOW;
         } catch (scriptnum_minencode_error &err) {
             return SCRIPT_ERR_SCRIPTNUM_MINENCODE;
         } catch (const bsv::big_int_error &) {
             return SCRIPT_ERR_BIG_INT;
-        } catch (std::out_of_range &err) {
+        } */catch (std::out_of_range &err) {
             return SCRIPT_ERR_INVALID_STACK_OPERATION;
         } catch (...) {
             return SCRIPT_ERR_UNKNOWN_ERROR;

@@ -1,10 +1,9 @@
 
 #include <gigamonkey/script/stack.hpp>
-#include <sv/script/script_num.h>
 
 namespace Gigamonkey::Bitcoin {
 
-    void limited_two_stack<false>::modify_top (std::function<void (integer &)> f, int index) {
+    void limited_two_stack<false>::modify_top (std::function<void (bytes &)> f, int index) {
         if (index >= 0) throw std::invalid_argument ("Invalid argument - index should be < 0.");
         auto &val = Stack.at (Stack.size () + index);
         size_t before_size = val.size ();
@@ -13,7 +12,7 @@ namespace Gigamonkey::Bitcoin {
         if (after_size > MaxScriptElementSize) throw_push_size_exception ();
     }
 
-    void limited_two_stack<true>::modify_top (std::function<void (integer &)> f, int index) {
+    void limited_two_stack<true>::modify_top (std::function<void (bytes &)> f, int index) {
         if (index >= 0) throw std::invalid_argument ("Invalid argument - index should be < 0.");
         auto &val = Stack.at (Stack.size () + index);
         size_t before_size = val.size ();
@@ -59,20 +58,20 @@ namespace Gigamonkey::Bitcoin {
         Stack.erase (Stack.end () + index);
     }
 
-    void limited_two_stack<true>::insert (int position, const integer &element) {
+    void limited_two_stack<true>::insert (int position, bytes_view element) {
 
         if (position >= 0) throw std::invalid_argument ("Invalid argument - position should be < 0.");
 
         increase_memory_usage (element.size () + ELEMENT_OVERHEAD);
-        Stack.insert (Stack.end () + position, element);
+        Stack.insert (Stack.end () + position, integer {element});
     }
 
-    void limited_two_stack<false>::insert (int position, const integer &element) {
+    void limited_two_stack<false>::insert (int position, bytes_view element) {
         if (position >= 0) throw std::invalid_argument ("Invalid argument - position should be < 0.");
 
         if (element.size () > MaxScriptElementSize || this->combined_size () == MaxStackElements)
             throw_stack_overflow_exception ();
 
-        Stack.insert (Stack.end () + position, element);
+        Stack.insert (Stack.end () + position, integer {element});
     }
 }

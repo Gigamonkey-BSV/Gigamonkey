@@ -10,7 +10,7 @@
 #include <gigamonkey/script/opcodes.h>
 #include <gigamonkey/script/flags.h>
 #include <gigamonkey/script/error.h>
-#include <sv/policy/policy.h>
+//#include <sv/policy/policy.h>
 
 #include <gigamonkey/hash.hpp>
 

@@ -78,6 +78,9 @@ namespace Gigamonkey::Bitcoin {
     // if no OP_CODESEPARATOR is found, nothing is removed.
     // this function is needed for correctly checking and generating signatures.
     bytes_view remove_until_last_code_separator (bytes_view);
+
+    // the signature verification algorithm used by the script interpreter.
+    result verify_signature (bytes_view sig, bytes_view pub, const sighash::document &doc, uint32 flags);
     
     bool inline operator == (const result &a, const result &b) {
         return a.Success == b.Success && a.Error == b.Error;

@@ -20,7 +20,22 @@ namespace Gigamonkey::Bitcoin {
     // otherwise, they have defaults but can be set by the use
     struct script_config final {
         uint32 Flags;
-        bool Consensus;
+
+        uint64 MaxOpsPerScript;
+        uint64 MaxPubKeysPerMultiSig;
+        uint64 MaxStackMemoryUsage;
+        uint64 MaxScriptNumLength;
+        uint64 MaxScriptSize;
+
+        // if the flags state that the utxo is before genesis, then
+        // consensus doesn't matter.
+        script_config (uint32 flags = StandardScriptVerifyFlags (true, true), bool consensus = false);
+        script_config (uint32 flags,
+            uint64 max_ops_per_script,
+            uint64 max_pubkeys_per_multisig,
+            uint64 max_stack_memory_usage,
+            uint64 max_script_num_length,
+            uint64 max_script_size);
 
         bool utxo_after_genesis () const {
             return Flags & SCRIPT_UTXO_AFTER_GENESIS;
@@ -49,34 +64,6 @@ namespace Gigamonkey::Bitcoin {
         bool check_sequence () const {
             return Flags & SCRIPT_VERIFY_CHECKSEQUENCEVERIFY && !utxo_after_genesis ();
         }
-
-        script_config (uint32 flags = StandardScriptVerifyFlags (true, true), bool consensus = false);
-
-        bool SetMaxOpsPerScriptPolicy (int64_t maxOpsPerScriptPolicyIn, std::string *error);
-        uint64_t GetMaxOpsPerScript () const;
-
-        bool SetMaxPubKeysPerMultiSigPolicy (int64_t maxPubKeysPerMultiSigIn, std::string *error = nullptr);
-        uint64_t GetMaxPubKeysPerMultiSig () const;
-
-        bool SetMaxStackMemoryUsage (int64_t maxStackMemoryUsageConsensusIn, int64_t maxStackMemoryUsagePolicyIn, std::string *err = nullptr);
-        uint64_t GetMaxStackMemoryUsage () const;
-
-        bool SetMaxScriptSizePolicy (int64_t maxScriptSizePolicyIn, std::string *err = nullptr);
-        uint64_t GetMaxScriptSize () const;
-
-        bool SetMaxScriptNumLengthPolicy (int64_t maxScriptNumLengthIn, std::string *err = nullptr);
-        uint64_t GetMaxScriptNumLength () const;
-
-    private:
-        uint64_t maxOpsPerScriptPolicy;
-        uint64_t maxPubKeysPerMultiSig;
-
-        uint64_t maxStackMemoryUsagePolicy;
-        uint64_t maxStackMemoryUsageConsensus;
-
-        uint64_t maxScriptNumLengthPolicy;
-
-        uint64_t maxScriptSizePolicy;
 
     };
 }
