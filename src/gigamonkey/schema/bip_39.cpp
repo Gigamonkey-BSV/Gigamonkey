@@ -123,11 +123,12 @@ namespace Gigamonkey::HD::BIP_39 {
         int wordIndicesSize = wordIndices.size ();
         double numBits = ((wordIndices.size ()) * 11);
         bytes byteArray (std::ceil (numBits / 8));
-        for (int i = 0; i < numBits; i++)
-        {
+
+        for (int i = 0; i < numBits; i++) {
             bool bit = ((wordIndices[i/11]) & (1 << (10 - (i % 11))));
             setBit (i, bit, byteArray);
         }
+
         byte check = byteArray[byteArray.size () - 1];
         byte abDigest[CryptoPP::SHA256::DIGESTSIZE];
         CryptoPP::SHA256 ().CalculateDigest (abDigest, byteArray.data (), byteArray.size () - 1);

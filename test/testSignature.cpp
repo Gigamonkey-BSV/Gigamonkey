@@ -6,7 +6,6 @@
 #include <gigamonkey/script/pattern/pay_to_address.hpp>
 #include <gigamonkey/wif.hpp>
 #include <gigamonkey/script/machine.hpp>
-#include <sv/script/script.h>
 #include "gtest/gtest.h"
 
 namespace Gigamonkey::Bitcoin {
@@ -71,7 +70,7 @@ namespace Gigamonkey::Bitcoin {
     
     TEST (SignatureTest, TestSighash) {
         
-        sighash::document doc{
+        sighash::document doc {
             satoshi{0xfeee}, 
             pay_to_address::script (digest160 {uint160 {"0xdddddddddd000000000000000000006767676791"}}),
             incomplete::transaction {
@@ -163,25 +162,16 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_TRUE (find_and_delete (t1_3, sig1p) == t1);
         EXPECT_TRUE (find_and_delete (t1_4, sig1p) == t1);
         
-        auto xsig1 = CScript (sig1);
-        auto xsig2 = CScript (sig2);
-        
-        auto x1_1 = CScript (t1_1.begin (), t1_1.end ());
-        auto x1_2 = CScript (t1_2.begin (), t1_2.end ());
-        auto x1_3 = CScript (t1_3.begin (), t1_3.end ());
-        auto x1_4 = CScript (t1_4.begin (), t1_4.end ());
-        auto x1 = CScript (t1.begin (), t1.end ());
-        
-        x1_1.FindAndDelete (xsig1);
-        x1_2.FindAndDelete (xsig1);
-        x1_3.FindAndDelete (xsig1);
-        x1_4.FindAndDelete (xsig1);
-        
-        EXPECT_TRUE (x1_1 == x1) << x1_1 << " vs " << x1;
-        EXPECT_TRUE (x1_2 == x1) << x1_2 << " vs " << x1;
-        EXPECT_TRUE (x1_3 == x1) << x1_3 << " vs " << x1;
-        EXPECT_TRUE (x1_4 == x1) << x1_4 << " vs " << x1;
-        
+    }
+
+    TEST (SignatureTest, TestFlags) {
+        // compressed pubkey
+        // strict encoding
+        // invalid sighash
+        // fork id
+        // DER
+        // low S
+        // null fail
     }
 
 }

@@ -32,9 +32,6 @@ endif ()
 add_library (gigamonkey STATIC
     
     src/sv/random.cpp
-    src/sv/big_int.cpp
-    src/sv/script/script_num.cpp
-    src/sv/script/script.cpp
     
     src/gigamonkey/p2p/var_int.cpp
     src/gigamonkey/p2p/checksum.cpp

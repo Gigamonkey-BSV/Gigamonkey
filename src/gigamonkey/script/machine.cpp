@@ -3,8 +3,6 @@
 
 #include <gigamonkey/script/machine.hpp>
 #include <gigamonkey/script/bitcoin_core.hpp>
-#include <sv/script/script_num.h>
-//#include <sv/script/script.h>
 #include <sv/policy/policy.h>
 
 // not in use but required by config.h dependency
@@ -61,7 +59,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     // shift x right by n bits, implements OP_RSHIFT
-    static integer RShift (const integer &x, int n) {
+    static integer RShift (const bytes &x, int32 n) {
         integer::size_type bit_shift = n % 8;
         integer::size_type byte_shift = n / 8;
 
@@ -88,7 +86,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     // shift x left by n bits, implements OP_LSHIFT
-    static integer LShift (const integer &x, int n) {
+    static integer LShift (const bytes &x, int32 n) {
         integer::size_type bit_shift = n % 8;
         integer::size_type byte_shift = n / 8;
 
@@ -592,56 +590,43 @@ namespace Gigamonkey::Bitcoin {
             case OP_LSHIFT: {
                 // (x n -- out)
                 if (Stack->size () < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
-
-                const auto vch1 = Stack->top (-2);
-                const auto& top {Stack->top ()};
-                CScriptNum n {top, RequireMinimal, Config.MaxScriptNumLength, UtxoAfterGenesis};
-
+                integer n = read_integer (Stack->top (), RequireMinimal, Config.MaxScriptNumLength);
                 if (n < 0) return SCRIPT_ERR_INVALID_NUMBER_RANGE;
 
                 Stack->pop_back ();
-                Stack->pop_back ();
-                integer values {bytes_view (vch1)};
 
-                if (n >= values.size () * bits_per_byte) fill (begin (values), end (values), 0);
-                else {
-                    do {
-                        values = LShift (values, n.getint ());
-                        n -= UtxoAfterGenesis
-                                    ? CScriptNum {bsv::bint {INT32_MAX}}
-                                    : CScriptNum {INT32_MAX};
-                    } while (n > 0);
-                }
-
-                Stack->push_back (values);
-
+                Stack->modify_top ([&n] (bytes &values) {
+                    if (n >= values.size () * bits_per_byte) fill (begin (values), end (values), 0);
+                    else {
+                        integer max = integer {INT32_MAX};
+                        while (n > max) {
+                            values = LShift (values, INT32_MAX);
+                            n -= max;
+                        }
+                        values = LShift (values, static_cast<int32> (uint32 (read_as_uint32_little (n))));
+                    }
+                });
             } break;
 
             case OP_RSHIFT: {
                 // (x n -- out)
                 if (Stack->size () < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
-
-                const auto vch1 = Stack->top (-2);
-                const auto& top {Stack->top ()};
-                CScriptNum n {top, RequireMinimal, Config.MaxScriptNumLength, UtxoAfterGenesis};
-
+                integer n = read_integer (Stack->top (), RequireMinimal, Config.MaxScriptNumLength);
                 if (n < 0) return SCRIPT_ERR_INVALID_NUMBER_RANGE;
 
                 Stack->pop_back ();
-                Stack->pop_back ();
-                integer values {bytes_view (vch1)};
 
-                if (n >= values.size () * bits_per_byte) fill (begin (values), end (values), 0);
-                else {
-                    do {
-                        values = RShift (values, n.getint ());
-                        n -= UtxoAfterGenesis
-                                    ? CScriptNum {bsv::bint {INT32_MAX}}
-                                    : CScriptNum {INT32_MAX};
-                    } while (n > 0);
-                }
-
-                Stack->push_back (values);
+                Stack->modify_top ([&n] (bytes &values) {
+                    if (n >= values.size () * bits_per_byte) fill (begin (values), end (values), 0);
+                    else {
+                        integer max = integer {INT32_MAX};
+                        while (n > max) {
+                            values = RShift (values, INT32_MAX);
+                            n -= max;
+                        }
+                        values = RShift (values, static_cast<int32> (uint32 (read_as_uint32_little (n))));
+                    }
+                });
             } break;
 
             case OP_EQUAL:
