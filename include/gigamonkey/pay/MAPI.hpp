@@ -58,17 +58,17 @@ namespace Gigamonkey::nChain::MAPI {
     };
 
     struct fee {
-        satoshi_per_byte MiningFee;
-        satoshi_per_byte RelayFee;
+        satoshis_per_byte MiningFee;
+        satoshis_per_byte RelayFee;
 
         bool valid () const;
 
         bool operator == (const fee &v) const;
 
         fee ();
-        fee (satoshi_per_byte mining, satoshi_per_byte relay);
+        fee (satoshis_per_byte mining, satoshis_per_byte relay);
 
-        satoshi_per_byte get_fee (service z) const;
+        satoshis_per_byte get_fee (service z) const;
     };
 
     struct get_fee_quote {
@@ -365,7 +365,7 @@ namespace Gigamonkey::nChain::MAPI {
         return call (submit_transactions_HTTP_request (r));
     }
 
-    inline fee::fee (satoshi_per_byte mining, satoshi_per_byte relay) :
+    inline fee::fee (satoshis_per_byte mining, satoshis_per_byte relay) :
         MiningFee {mining}, RelayFee {relay} {}
 
     inline fee::fee () : MiningFee {0, 0}, RelayFee {0, 0} {}
@@ -378,7 +378,7 @@ namespace Gigamonkey::nChain::MAPI {
         return MiningFee.valid () && RelayFee.valid ();
     }
     
-    satoshi_per_byte inline fee::get_fee (service z) const {
+    satoshis_per_byte inline fee::get_fee (service z) const {
         return z == mine ? MiningFee : RelayFee;
     }
             

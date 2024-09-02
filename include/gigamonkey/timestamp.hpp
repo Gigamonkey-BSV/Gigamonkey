@@ -20,10 +20,12 @@ namespace Gigamonkey::Bitcoin {
         timestamp ();
         
         explicit timestamp (string_view s);
-        explicit timestamp (const uint32 t);
-        explicit timestamp (const uint32_little t);
-        explicit timestamp (const nonzero<uint32_little> n);
-        explicit timestamp (const uint32_big x);
+        explicit timestamp (uint32 t);
+        explicit timestamp (uint32_little t);
+        explicit timestamp (uint32_big x);
+        explicit timestamp (int);
+        explicit timestamp (time_t);
+        explicit timestamp (nonzero<uint32_little> &&n);
         
         static timestamp now ();
         
@@ -69,10 +71,17 @@ namespace Gigamonkey::Bitcoin {
     inline timestamp::timestamp () : nonzero<uint32_little> {} {}
     
     inline timestamp::timestamp (string_view s) : timestamp {read (s)} {}
-    inline timestamp::timestamp (const uint32 t) : nonzero<uint32_little> {t} {}
-    inline timestamp::timestamp (const uint32_little t) : nonzero<uint32_little> {t} {}
-    inline timestamp::timestamp (const nonzero<uint32_little> n) : nonzero<uint32_little> {n} {}
-    inline timestamp::timestamp (const uint32_big x) : nonzero<uint32_little> {uint32_little {x}} {}
+    inline timestamp::timestamp (uint32 t) : nonzero<uint32_little> {t} {}
+    inline timestamp::timestamp (uint32_little t) : nonzero<uint32_little> {t} {}
+    inline timestamp::timestamp (nonzero<uint32_little> &&n) : nonzero<uint32_little> {n} {}
+    inline timestamp::timestamp (uint32_big x) : nonzero<uint32_little> {uint32_little {x}} {}
+    inline timestamp::timestamp (time_t t) : timestamp (static_cast<uint32> (t)) {
+        if (t < 0 || t > std::numeric_limits<uint32>::max ()) throw exception {} << "time_t out of range";
+    }
+
+    inline timestamp::timestamp (int t) : timestamp (static_cast<uint32> (t)) {
+        if (t < 0 || t > std::numeric_limits<uint32>::max ()) throw exception {} << "int out of range";
+    }
 
     inline timestamp::operator std::chrono::system_clock::time_point () const {
         return std::chrono::system_clock::from_time_t (static_cast<time_t> (uint32 (this->Value)));

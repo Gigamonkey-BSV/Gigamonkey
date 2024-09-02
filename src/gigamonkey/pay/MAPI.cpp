@@ -45,12 +45,12 @@ namespace Gigamonkey::nChain::MAPI {
     
     namespace {
     
-        satoshi_per_byte spb_from_JSON (const JSON& j) {
+        satoshis_per_byte spb_from_JSON (const JSON& j) {
             if (!(j.is_object () &&
                 j.contains ("satoshis") && j["satoshis"].is_number_unsigned () &&
                 j.contains ("bytes") && j["bytes"].is_number_unsigned ())) return {};
             
-            return satoshi_per_byte {satoshi {int64 (j["satoshis"])}, uint64 (j["bytes"])};
+            return satoshis_per_byte {satoshi {int64 (j["satoshis"])}, uint64 (j["bytes"])};
             
         }
         
@@ -58,7 +58,7 @@ namespace Gigamonkey::nChain::MAPI {
             return write_reverse_hex (v);
         }
         
-        JSON to_JSON (const satoshi_per_byte v) {
+        JSON to_JSON (const satoshis_per_byte v) {
             return JSON {{"satoshis", int64 (v.Satoshis)}, {"bytes", v.Bytes}};
         }
     
@@ -280,11 +280,11 @@ namespace Gigamonkey::nChain::MAPI {
                 jf.contains ("feeType") && jf["feeType"].is_string () &&
                 jf.contains ("miningFee") && jf.contains ("relayFee"))) return;
             
-            satoshi_per_byte mf = spb_from_JSON (jf["miningFee"]);
+            satoshis_per_byte mf = spb_from_JSON (jf["miningFee"]);
             
             if (!mf.valid ()) return;
             
-            satoshi_per_byte rf = spb_from_JSON (jf["relayFee"]);
+            satoshis_per_byte rf = spb_from_JSON (jf["relayFee"]);
             
             if (!rf.valid ()) return;
             

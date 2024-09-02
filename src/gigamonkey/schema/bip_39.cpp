@@ -14,11 +14,11 @@
 #include <boost/locale.hpp>
 
 namespace Gigamonkey::HD::BIP_39 {
-    char getBit (int index, bytes bitarray) {
+    char inline getBit (int index, bytes bitarray) {
         return (bitarray[index/8] >> 7 - (index & 0x7)) & 0x1;
     }
 
-    void setBit (int index, int value, bytes &bitarray) {
+    void inline setBit (int index, int value, bytes &bitarray) {
         bitarray[index/8] = bitarray[index/8] | (value  << 7 - (index & 0x7));
     }
     
@@ -62,13 +62,14 @@ namespace Gigamonkey::HD::BIP_39 {
     }
 
     std::string generate (entropy ent, language lang) {
-        if (lang != english)
-            throw data::method::unimplemented ("Non English Language");
+        if (lang != english) throw data::method::unimplemented ("Non English Language");
+
         assert (ent.size () % 4 == 0);
         assert (ent.size () >= 16 && ent.size () <= 32);
+
         byte abDigest[CryptoPP::SHA256::DIGESTSIZE];
         CryptoPP::SHA256 ().CalculateDigest (abDigest, ent.data (), ent.size ());
-        int checksumLength = (ent.size () * 8) /32;
+        int checksumLength = (ent.size () * 8) / 32;
         byte checkByte = abDigest[0];
         byte mask = 1;
         mask = (1 << checksumLength) - 1;
@@ -82,12 +83,9 @@ namespace Gigamonkey::HD::BIP_39 {
             word_indices[i /11]+=getBit (i,ent) << (10 - (i % 11));
 
         cross<std::string> words_ret;
-        const cross<std::string>& wordList = getWordList (lang);
+        const cross<std::string> &wordList = getWordList (lang);
 
-        for(short word_indice : word_indices)
-        {
-            words_ret.emplace_back (wordList[word_indice]);
-        }
+        for (short word_index : word_indices) words_ret.emplace_back (wordList[word_index]);
 
         std::string output = "";
         for (std::string str : words_ret) output += str + getLangSplit (lang);

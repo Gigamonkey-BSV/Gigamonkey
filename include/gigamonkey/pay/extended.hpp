@@ -81,7 +81,7 @@ namespace Gigamonkey::extended {
         Bitcoin::satoshi spent () const;
         Bitcoin::satoshi sent () const;
         Bitcoin::satoshi fee () const;
-        satoshi_per_byte fee_rate () const;
+        satoshis_per_byte fee_rate () const;
     };
 
     writer inline &operator << (writer &w, const input &in) {
@@ -119,8 +119,8 @@ namespace Gigamonkey::extended {
         return spent () - sent ();
     }
 
-    satoshi_per_byte inline transaction::fee_rate () const {
-        return satoshi_per_byte {fee () / serialized_size ()};
+    satoshis_per_byte inline transaction::fee_rate () const {
+        return satoshis_per_byte {fee () / serialized_size ()};
     }
 
     bool inline input::valid () const {

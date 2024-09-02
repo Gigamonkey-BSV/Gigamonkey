@@ -5,6 +5,7 @@
 #ifndef GIGAMONKEY_INTERPRETER_STACK
 #define GIGAMONKEY_INTERPRETER_STACK
 
+//#include <data/tools/store.hpp>
 #include <gigamonkey/types.hpp>
 #include <gigamonkey/script/config.hpp>
 #include <gigamonkey/script/flags.h>

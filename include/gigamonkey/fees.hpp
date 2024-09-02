@@ -74,12 +74,12 @@ namespace Gigamonkey {
         list<Bitcoin::output> Outputs;
         uint32_little LockTime;
 
-        // compare this to a satoshi_per_byte value to see if the fee is good enough.
+        // compare this to a satoshis_per_byte value to see if the fee is good enough.
         uint64 expected_size () const;
         Bitcoin::satoshi spent () const;
         Bitcoin::satoshi sent () const;
         Bitcoin::satoshi fee () const;
-        satoshi_per_byte fee_rate () const;
+        satoshis_per_byte fee_rate () const;
 
         // convert to an incomplete tx for signing.
         explicit operator Bitcoin::incomplete::transaction () const;
@@ -130,8 +130,8 @@ namespace Gigamonkey {
         return spent () - sent ();
     }
 
-    satoshi_per_byte inline transaction_design::fee_rate () const {
-        return satoshi_per_byte {fee () / expected_size ()};
+    satoshis_per_byte inline transaction_design::fee_rate () const {
+        return satoshis_per_byte {fee () / expected_size ()};
     }
 
     // convert to an incomplete tx for signing.

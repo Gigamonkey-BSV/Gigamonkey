@@ -86,7 +86,7 @@ namespace Gigamonkey::HD {
             
             pubkey derive (path l) const;
             pubkey derive (string_view l) const;
-            
+
             explicit operator Bitcoin::address::decoded () const {
                 return address ();
             }
