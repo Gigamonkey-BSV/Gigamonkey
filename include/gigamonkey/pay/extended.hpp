@@ -16,6 +16,9 @@ namespace Gigamonkey::extended {
     struct input;
     struct transaction;
 
+    writer &operator << (writer &o, const input &p);
+    writer &operator << (writer &o, const transaction &p);
+
     std::ostream &operator << (std::ostream &o, const input &p);
     std::ostream &operator << (std::ostream &o, const transaction &p);
 
@@ -158,6 +161,17 @@ namespace Gigamonkey::extended {
     Bitcoin::TXID inline transaction::id () const {
         return Bitcoin::transaction (*this).id ();
     }
+
+    std::ostream inline &operator << (std::ostream &o, const input &p) {
+        return o << "input {Prevout: " << p.Prevout << ", " << p.Reference << ", Script: "
+            << p.Script << ", Sequence: " << p.Sequence << "}";
+    }
+
+    std::ostream inline &operator << (std::ostream &o, const transaction &p) {
+        return o << "transaction {Version: " << p.Version << ", Inputs: " << p.Inputs
+            << ", Outputs: " << p.Outputs << ", LockTime: " << p.LockTime << "}";
+    }
+
 }
 
 #endif
