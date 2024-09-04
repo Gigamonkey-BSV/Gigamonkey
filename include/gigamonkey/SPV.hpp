@@ -35,6 +35,7 @@ namespace Gigamonkey::SPV {
         };
 
         static bool valid (const Bitcoin::transaction &tx, const Merkle::path &p, const Bitcoin::header &h);
+        static bool valid (const Bitcoin::TXID &id, const Merkle::path &p, const digest256 &root);
 
         struct node;
 
@@ -82,7 +83,7 @@ namespace Gigamonkey::SPV {
         
         virtual const entry<N, Bitcoin::header> *latest () const = 0;
 
-        // get by hash or merkle root (need both)
+        // get by hash or merkle root
         virtual const entry<N, Bitcoin::header> *header (const digest256 &) const = 0;
 
         // a transaction in the database, which may include a merkle proof if we have one.
@@ -99,7 +100,7 @@ namespace Gigamonkey::SPV {
         // do we have a tx or merkle proof for a given tx?
         virtual confirmed tx (const Bitcoin::TXID &) const = 0;
         
-        virtual void insert (const N &height, const Bitcoin::header &h) = 0;
+        virtual bool insert (const N &height, const Bitcoin::header &h) = 0;
         
         virtual bool insert (const Merkle::proof &) = 0;
         virtual void insert (const Bitcoin::transaction &) = 0;
@@ -154,13 +155,18 @@ namespace Gigamonkey::SPV {
         confirmed tx (const Bitcoin::TXID &t) const final override;
         Merkle::dual dual_tree (const digest256 &d) const;
 
-        void insert (const data::N &height, const Bitcoin::header &h) final override;
+        bool insert (const data::N &height, const Bitcoin::header &h) final override;
         bool insert (const Merkle::proof &p) final override;
         void insert (const Bitcoin::transaction &) final override;
+
     };
 
     bool inline proof::valid (const Bitcoin::transaction &tx, const Merkle::path &p, const Bitcoin::header &h) {
-        return h.valid () && p.derive_root (tx.id ()) != h.MerkleRoot;
+        return h.valid () && valid (tx.id (), p, h.MerkleRoot);
+    }
+
+    bool inline proof::valid (const Bitcoin::TXID &id, const Merkle::path &p, const digest256 &root) {
+        return p.derive_root (id) != root;
     }
 
     bool inline proof::confirmation::operator == (const confirmation &t) const {

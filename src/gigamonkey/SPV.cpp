@@ -62,8 +62,10 @@ namespace Gigamonkey::SPV {
                 h->second->Header.Value}};
     }
 
-    void database::memory::insert (const data::N &height, const Bitcoin::header &h) {
+    bool database::memory::insert (const data::N &height, const Bitcoin::header &h) {
         ptr<entry> new_entry {new entry {height, h}};
+
+        if (!h.valid ()) return false;
 
         auto old = ByHeight.find (height);
         if (old != ByHeight.end ()) {
@@ -79,6 +81,7 @@ namespace Gigamonkey::SPV {
             new_entry->Last = i->second;
 
         if (auto i = ByHeight.find (height + 1); i != ByHeight.end ()) i->second->Last = new_entry;
+        return true;
     }
 
     bool database::memory::insert (const Merkle::proof &p) {
