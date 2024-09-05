@@ -120,6 +120,7 @@ namespace Gigamonkey::SPV {
 
             entry (data::N n, Bitcoin::header h) : Header {n, h}, Paths {}, Last {nullptr} {}
             entry (data::N n, Bitcoin::header h, Merkle::map tree) : Header {n, h}, Paths {tree}, Last {nullptr} {}
+            entry (Bitcoin::header h, const Merkle::BUMP &bump) : Header {bump.BlockHeight, h}, Paths {bump.paths ()}, Last {nullptr} {}
 
             Merkle::dual dual_tree () const {
                 return Merkle::dual {Paths, Header.Value.MerkleRoot};

@@ -48,6 +48,7 @@ namespace Gigamonkey::Merkle {
     }
 
     BUMP::node::operator JSON () const {
+        if (!valid ()) throw exception {} << "invalid BUMP";
         JSON::object_t j;
         j["offset"] = Offset;
 
@@ -63,7 +64,11 @@ namespace Gigamonkey::Merkle {
         return j;
     }
 
-    BUMP::node::node (const JSON &j): Offset {j["offset"]}, Flag {}, Digest {} {
+    BUMP::node::node (const JSON &j): Offset {}, Flag {}, Digest {} {
+        if (!j.is_object () || !j.contains ("offset")) throw exception {} << "invalid BUMP node JSON format!";
+
+        Offset = j["offset"];
+
         if (j.contains ("duplicate") && bool (j["duplicate"])) {
             Flag = flag::duplicate;
             return;
@@ -120,12 +125,15 @@ namespace Gigamonkey::Merkle {
         }
 
         BUMP::nodes read_paths (const JSON &j) {
+            if (!j.is_array () || j.size () == 0) throw exception {} << "invalid BUMP JSON format!";
+
             list<ordered_list<BUMP::node>> nodes;
             for (const JSON &k : j) {
                 ordered_list<BUMP::node> level;
                 for (auto a = k.rbegin (); a != k.rend (); a++) level <<= BUMP::node {*a};
                 nodes <<= level;
             }
+
             return nodes;
         }
 
@@ -155,6 +163,7 @@ namespace Gigamonkey::Merkle {
     }
 
     BUMP::operator bytes () const {
+        if (!valid ()) throw exception {} << "invalid BUMP";
         bytes b (serialized_size ());
         bytes_writer w {b.begin (), b.end ()};
         w << *this;
@@ -184,7 +193,16 @@ namespace Gigamonkey::Merkle {
 
     BUMP::BUMP (uint64 block_height, const branch &d): BlockHeight {block_height}, Path {to_path (d)} {}
 
-    BUMP::BUMP (const JSON &j): BlockHeight {j["blockHeight"]}, Path {read_paths (j["path"])} {}
+    BUMP::BUMP (const JSON &j): BlockHeight {}, Path {} {
+        if (!j.is_object () || !j.contains ("path") || !j.contains ("blockHeight") || !j["blockHeight"].is_number ())
+            throw exception {} << "invalid BUMP JSON format";
+
+        const JSON &height = j["blockHeight"];
+        if (!height.is_number () || height < 0) throw exception {} << "invalid BUMP JSON format: invalid field 'blockHeight'";
+
+        Path = read_paths (j["path"]);
+        BlockHeight = uint64 (j["blockHeight"]);
+    }
 
     BUMP::BUMP (uint64 block_height, map m): BlockHeight {block_height}, Path {} {
         auto b = m.begin ();
