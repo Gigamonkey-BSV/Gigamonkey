@@ -167,7 +167,7 @@ namespace Gigamonkey::SPV {
     }
 
     bool inline proof::valid (const Bitcoin::TXID &id, const Merkle::path &p, const digest256 &root) {
-        return p.derive_root (id) != root;
+        return p.derive_root (id) == root;
     }
 
     bool inline proof::confirmation::operator == (const confirmation &t) const {
