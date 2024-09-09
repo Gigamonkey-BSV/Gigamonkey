@@ -21,7 +21,9 @@ namespace Gigamonkey {
         sigop (const Bitcoin::secret &k, const Bitcoin::sighash::directive &d) : Key {k}, Directive {d} {}
     };
 
-    // A type representing a redeem function. There could be many such functions depending on the types of scripts that are known.
+    // A type representing a redeem function. This function has the ability to look up
+    // the necessary keys based on an output script and produce the appropriate input script.
+    // There could be many such functions depending on the types of scripts that are known.
     using redeem = function<Bitcoin::script (const Bitcoin::output &, const Bitcoin::sighash::document &, list<sigop>, const bytes &script_code)>;
 
     // default redeem function.

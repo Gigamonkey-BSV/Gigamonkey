@@ -14,9 +14,9 @@ namespace Gigamonkey {
             return {OP_DUP, OP_HASH160, push_size {20, address}, OP_EQUALVERIFY, OP_CHECKSIG};
         }
         
-        static bytes script (const digest160& a) {
+        static bytes script (const digest160 &a) {
             using namespace Bitcoin;
-            return compile (program {OP_DUP, OP_HASH160, bytes_view(a), OP_EQUALVERIFY, OP_CHECKSIG});
+            return compile (program {OP_DUP, OP_HASH160, bytes_view (a), OP_EQUALVERIFY, OP_CHECKSIG});
         }
         
         digest160 Address;

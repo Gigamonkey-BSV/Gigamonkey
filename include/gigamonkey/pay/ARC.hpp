@@ -94,7 +94,7 @@ namespace Gigamonkey::ARC {
         N block_height () const;
         string txid () const;
         string Merkle_path () const;
-        status tx_status () const;
+        status_value tx_status () const;
         string extra_info () const;
 
         status (JSON &&);

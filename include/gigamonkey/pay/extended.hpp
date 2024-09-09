@@ -53,6 +53,7 @@ namespace Gigamonkey::extended {
             const Bitcoin::incomplete::transaction &,
             uint32 input_index,
             uint32 flags = StandardScriptVerifyFlags (true, true)) const;
+
     };
 
     struct transaction {

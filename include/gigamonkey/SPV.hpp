@@ -32,6 +32,10 @@ namespace Gigamonkey::SPV {
             confirmation (Merkle::path p, const N &height, const Bitcoin::header &h): Path {p}, Height {height}, Header {h} {}
             bool operator == (const confirmation &t) const;
             std::strong_ordering operator <=> (const confirmation &t) const;
+
+            bool valid () const {
+                return Header.Timestamp != Bitcoin::timestamp {0};
+            }
         };
 
         static bool valid (const Bitcoin::transaction &tx, const Merkle::path &p, const Bitcoin::header &h);
@@ -89,23 +93,45 @@ namespace Gigamonkey::SPV {
         // a transaction in the database, which may include a merkle proof if we have one.
         struct confirmed {
             ptr<const Bitcoin::transaction> Transaction;
-            maybe<proof::confirmation> Confirmation;
+            proof::confirmation Confirmation;
 
             confirmed (ptr<const Bitcoin::transaction> t, const proof::confirmation &x) : Transaction {t}, Confirmation {x} {}
+            confirmed (ptr<const Bitcoin::transaction> t) : Transaction {t}, Confirmation {} {}
 
             // check the proof if it exists.
-            bool validate () const;
+            bool validate () const {
+                if (!has_proof ()) return false;
+                return proof::valid (*Transaction, Confirmation.Path, Confirmation.Header);
+            }
+
+            bool has_proof () const {
+                return Transaction != nullptr && Confirmation.valid ();
+            }
+
+            bool valid () const {
+                return Transaction != nullptr;
+            }
         };
 
         // do we have a tx or merkle proof for a given tx?
         virtual confirmed tx (const Bitcoin::TXID &) const = 0;
         
         virtual bool insert (const N &height, const Bitcoin::header &h) = 0;
-        
-        virtual bool insert (const Merkle::proof &) = 0;
+
+        // it is allowed to insert a transaction without a merkle proof.
+        // it goes into pending.
         virtual void insert (const Bitcoin::transaction &) = 0;
+
+        // get txids for transactions without Merkle proofs.
+        virtual set<Bitcoin::TXID> pending () = 0;
+
+        // Txs cannot be removed unless they are in pending.
+        virtual void remove (const Bitcoin::TXID &) = 0;
         
-        // an in-memory version of SPV.
+        // providing a merkle proof removes a tx from pending.
+        virtual bool insert (const Merkle::proof &) = 0;
+        
+        // an in-memory implementation of SPV.
         class memory;
 
         virtual ~database () {}
@@ -138,6 +164,7 @@ namespace Gigamonkey::SPV {
         std::map<digest256, ptr<entry>> ByRoot;
         std::map<Bitcoin::TXID, ptr<entry>> ByTXID;
         std::map<Bitcoin::TXID, ptr<const Bitcoin::transaction>> Transactions;
+        set<Bitcoin::TXID> Pending;
         
         memory (const Bitcoin::header &h) {
             insert (0, h);
@@ -160,6 +187,10 @@ namespace Gigamonkey::SPV {
         bool insert (const Merkle::proof &p) final override;
         void insert (const Bitcoin::transaction &) final override;
 
+        set<Bitcoin::TXID> pending () final override;
+
+        void remove (const Bitcoin::TXID &) final override;
+
     };
 
     bool inline proof::valid (const Bitcoin::transaction &tx, const Merkle::path &p, const Bitcoin::header &h) {
@@ -179,8 +210,8 @@ namespace Gigamonkey::SPV {
         return cmp_block == std::strong_ordering::equal ? cmp_block : Path.Index <=> t.Path.Index;
     }
 
-    void inline database::memory::insert (const Bitcoin::transaction &t) {
-        Transactions[t.id ()] = ptr<Bitcoin::transaction> {new Bitcoin::transaction {t}};
+    set<Bitcoin::TXID> inline database::memory::pending () {
+        return Pending;
     }
     
 }

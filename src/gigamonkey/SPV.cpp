@@ -51,32 +51,41 @@ namespace Gigamonkey::SPV {
         return Merkle::dual {h->second->Paths, h->second->Header.Value.MerkleRoot};
     }
 
-    database::confirmed database::memory::tx (const Bitcoin::TXID &t) const {
-        auto tx = Transactions.find (t);
-        ptr<const Bitcoin::transaction> tt {tx == Transactions.end () ? ptr<const Bitcoin::transaction> {} : tx->second};
-        auto h = ByTXID.find (t);
-        return h == ByTXID.end () ? confirmed {tt, proof::confirmation {}} :
-            confirmed {tt, proof::confirmation {
-                Merkle::path (Merkle::dual {h->second->Paths, h->second->Header.Value.MerkleRoot}[t].Branch),
-                h->second->Header.Key,
-                h->second->Header.Value}};
-    }
-
     bool database::memory::insert (const data::N &height, const Bitcoin::header &h) {
-        ptr<entry> new_entry {new entry {height, h}};
 
         if (!h.valid ()) return false;
 
         auto old = ByHeight.find (height);
         if (old != ByHeight.end ()) {
-            // TODO take into account the case of a reorg.
-            // all proofs associated with this block have to be reset.
-        } else ByHeight[height] = new_entry;
+            if (old->second->Header.Value == h) return true;
+            // if we replace one header with another, we assume this is a reorg and replace all subsequent blocks.
+
+            auto o = old;
+            do {
+                for (const auto &e : o->second->Paths) {
+                    // all txs in paths go into pending.
+                    ByTXID.erase (e.Key);
+                    Pending = Pending.insert (e.Key);
+                }
+
+                ByRoot.erase (o->second->Header.Value.MerkleRoot);
+                ByHash.erase (o->second->Header.Value.hash ());
+
+                ByHeight.erase (o++);
+
+            } while (o != ByHeight.end ());
+
+            // this block becomes latest.
+            Latest = nullptr;
+        }
+
+        ptr<entry> new_entry {new entry {height, h}};
+        ByHeight[height] = new_entry;
 
         ByHash[h.hash ()] = new_entry;
         ByRoot[h.MerkleRoot] = new_entry;
 
-        if (height == 0 || Latest->Header.Key < height) Latest = new_entry;
+        if (height == 0 || Latest == nullptr || Latest->Header.Key < height) Latest = new_entry;
         if (height > 0) if (auto i = ByHeight.find (height - 1); i != ByHeight.end ())
             new_entry->Last = i->second;
 
@@ -84,14 +93,15 @@ namespace Gigamonkey::SPV {
         return true;
     }
 
-    bool database::memory::insert (const Merkle::proof &p) {
-        auto h = ByRoot.find (p.Root);
-        if (h == ByRoot.end ()) return false;
-        auto d = Merkle::dual {h->second->Paths, h->second->Header.Value.MerkleRoot} + p;
-        if (!d.valid ()) return false;
-        h->second->Paths = d.Paths;
-        ByTXID[p.Branch.Leaf.Digest] = h->second;
-        return true;
+    database::confirmed database::memory::tx (const Bitcoin::TXID &t) const {
+        auto tx = Transactions.find (t);
+        ptr<const Bitcoin::transaction> tt {tx == Transactions.end () ? ptr<const Bitcoin::transaction> {} : tx->second};
+        auto h = ByTXID.find (t);
+        return h == ByTXID.end () ? confirmed {tt} :
+            confirmed {tt, proof::confirmation {
+                Merkle::path (Merkle::dual {h->second->Paths, h->second->Header.Value.MerkleRoot}[t].Branch),
+                h->second->Header.Key,
+                h->second->Header.Value}};
     }
 
     bool unconfirmed_validate (const proof::node &u, const database *d) {
@@ -144,11 +154,11 @@ namespace Gigamonkey::SPV {
     }
 
     ptr<proof::node> generate_unconfirmed (const database &d, const Bitcoin::TXID &x) {
-        //
+
         database::confirmed n = d.tx (x);
         if (n.Transaction == nullptr) return {};
 
-        if (bool (n.Confirmation)) return ptr<proof::node> {new proof::node {*n.Transaction, *n.Confirmation}};
+        if (n.Confirmation.valid ()) return ptr<proof::node> {new proof::node {*n.Transaction, n.Confirmation}};
 
         map<Bitcoin::TXID, ptr<proof::node>> antecedents;
 
@@ -171,7 +181,7 @@ namespace Gigamonkey::SPV {
 
             Bitcoin::TXID x = b.id ();
             database::confirmed n = d.tx (x);
-            if (bool (n.Confirmation)) continue;
+            if (!n.Confirmation.valid ()) continue;
 
             p.Transactions <<= b;
 
@@ -184,5 +194,31 @@ namespace Gigamonkey::SPV {
         }
 
         return p;
+    }
+
+    void database::memory::insert (const Bitcoin::transaction &t) {
+        auto txid = t.id ();
+        Transactions[txid] = ptr<Bitcoin::transaction> {new Bitcoin::transaction {t}};
+        // Do we have a merkle proof for this tx? If not put it in pending.
+        if (auto e = ByTXID.find (txid); e == ByTXID.end ()) Pending = Pending.insert (txid);
+    }
+
+    bool database::memory::insert (const Merkle::proof &p) {
+        auto h = ByRoot.find (p.Root);
+        if (h == ByRoot.end ()) return false;
+        auto d = Merkle::dual {h->second->Paths, h->second->Header.Value.MerkleRoot} + p;
+        if (!d.valid ()) return false;
+        h->second->Paths = d.Paths;
+        ByTXID[p.Branch.Leaf.Digest] = h->second;
+        // do we have a tx for this proof? If we do, remove from pending.
+        if (auto e = Transactions.find (p.Branch.Leaf.Digest); e == Transactions.end ())
+            Pending = Pending.remove (p.Branch.Leaf.Digest);
+        return true;
+    }
+
+    void database::memory::remove (const Bitcoin::TXID &txid) {
+        if (!Pending.contains (txid)) return;
+        Pending = Pending.remove (txid);
+        Transactions.erase (txid);
     }
 }
