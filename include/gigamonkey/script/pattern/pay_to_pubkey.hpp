@@ -39,6 +39,10 @@ namespace Gigamonkey {
             using namespace Bitcoin;
             return compile (push_data (s));
         }
+
+        constexpr static uint64 redeem_expected_size () {
+            return 1 + Bitcoin::signature::MaxSize;
+        }
     };
     
 } 
