@@ -29,10 +29,6 @@ namespace Gigamonkey::Bitcoin {
         
         static timestamp now ();
         
-        byte* data ();
-        
-        const byte* data () const;
-        
         explicit operator bytes_view () const;
         explicit operator time_t () const;
         explicit operator uint32 () const;
@@ -45,7 +41,6 @@ namespace Gigamonkey::Bitcoin {
         duration operator - (const timestamp &t) const;
 
         explicit operator std::chrono::system_clock::time_point () const;
-
         explicit operator std::tm () const;
 
         uint16 year () const;
@@ -55,6 +50,9 @@ namespace Gigamonkey::Bitcoin {
         byte hour () const;
         byte minute () const;
         byte second () const;
+
+        byte* data ();
+        const byte* data () const;
         
     };
 
