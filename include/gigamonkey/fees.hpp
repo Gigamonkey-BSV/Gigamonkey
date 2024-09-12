@@ -131,7 +131,7 @@ namespace Gigamonkey {
     }
 
     satoshis_per_byte inline transaction_design::fee_rate () const {
-        return satoshis_per_byte {fee () / expected_size ()};
+        return satoshis_per_byte {fee (), expected_size ()};
     }
 
     // convert to an incomplete tx for signing.

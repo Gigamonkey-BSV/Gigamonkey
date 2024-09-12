@@ -124,7 +124,7 @@ namespace Gigamonkey::extended {
     }
 
     satoshis_per_byte inline transaction::fee_rate () const {
-        return satoshis_per_byte {fee () / serialized_size ()};
+        return satoshis_per_byte {fee (), serialized_size ()};
     }
 
     bool inline input::valid () const {

@@ -213,7 +213,7 @@ namespace Gigamonkey::Bitcoin {
         
         static TXID id (bytes_view);
         
-        constexpr static int32 LatestVersion = 2;
+        static constexpr int32 LatestVersion = 2;
         
         int32_little Version;
         list<Bitcoin::input> Inputs;
@@ -247,7 +247,7 @@ namespace Gigamonkey::Bitcoin {
             }, satoshi {0}, Outputs);
         }
 
-        constexpr static p2p::command Command {"tx"};
+        static constexpr p2p::command Command {"tx"};
     };
     
     TXID inline id (const transaction &t) {

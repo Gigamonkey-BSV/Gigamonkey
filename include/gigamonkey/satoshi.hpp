@@ -48,6 +48,9 @@ namespace Gigamonkey {
         Bitcoin::satoshi Satoshis;
         uint64 Bytes;
 
+        satoshis_per_byte (): Satoshis {}, Bytes {0} {}
+        satoshis_per_byte (Bitcoin::satoshi sats, uint64 bytes): Satoshis {sats}, Bytes {bytes} {}
+
         operator double () const;
         bool valid () const;
     };

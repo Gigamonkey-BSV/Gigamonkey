@@ -413,7 +413,7 @@ namespace Gigamonkey {
         }
         
         inline output_script::output_script () : Type {Boost::invalid},
-            MinerPubkeyHash {}, Category {}, UseGeneralPurposeBits{},
+            MinerPubkeyHash {}, Category {}, UseGeneralPurposeBits {},
             Content {}, Target {}, Tag {}, UserNonce {},
             AdditionalData {} {}
             

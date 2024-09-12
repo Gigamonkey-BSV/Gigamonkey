@@ -31,7 +31,7 @@ namespace Gigamonkey::Boost {
             Y ex = uuu.first ();
             
             if (!foo (in, ex)) return false;
-            
+
             uuu = uuu.rest ();
             
             while (!uuu.empty ()) {
@@ -226,6 +226,7 @@ namespace Gigamonkey::Boost {
         
         EXPECT_NE (ContentsA, ContentsB) << "ContentA and ContentB are equal. Contents must be different for negative tests.";
         
+        // very easy target.
         const work::compact Target {32, 0x0080ff};
             
         EXPECT_TRUE (Target.valid ()) << "Target is not valid. ";
@@ -348,8 +349,8 @@ namespace Gigamonkey::Boost {
                 97983, 
                 302203237,
                 InitialKey + 8};
-                
-        // Phase 1: Test whether all the different representations of puzzles have the same values of valid/invalid. 
+
+        // Phase 1: generate solutions and check validity.
                 
         // Here is the list of output scripts. 
         const list<output_script> output_scripts = data::for_each ([] (const test_case t) -> output_script {
@@ -360,8 +361,7 @@ namespace Gigamonkey::Boost {
             return p.valid ();
         }, output_scripts);
         
-        // Phase 2: generate solutions and check validity. 
-        auto proofs = data::for_each ([] (const test_case t) -> work::proof {
+        list<work::proof> proofs = data::for_each ([] (const test_case t) -> work::proof {
             return t.solve ();
         }, test_cases);
         
@@ -378,7 +378,7 @@ namespace Gigamonkey::Boost {
             return input_script {Signature, t.Key.to_public (), i.Solution, t.Script.Type, bool (i.Solution.Share.Bits)};
         }, test_cases, proofs);
         
-        auto proofs_from_scripts = map_thread<work::proof> ([] (output_script o, input_script i) -> work::proof {
+        list<work::proof> proofs_from_scripts = map_thread<work::proof> ([] (output_script o, input_script i) -> work::proof {
             return static_cast<work::proof> (proof {o, i});
         }, output_scripts, input_scripts);
         
