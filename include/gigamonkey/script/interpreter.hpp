@@ -58,7 +58,8 @@ namespace Gigamonkey::Bitcoin {
 
     // note: pay to script hash only applies to scripts that were created before genesis.
     program inline interpreter::full (const program unlock, const program lock, bool support_p2sh) {
-        if (!support_p2sh || !isP2SH (lock) || data::empty (unlock)) return (unlock << OP_CODESEPARATOR) + lock;
+        if (!support_p2sh || !isP2SH (lock) || data::empty (unlock))
+            return (unlock << OP_CODESEPARATOR) + lock;
         // For P2SH scripts. This is a depricated special case that is supported for backwards compatability.
         return (unlock << OP_CODESEPARATOR) + (lock << OP_CODESEPARATOR) + decompile (data::reverse (unlock).first ().data ());
     }

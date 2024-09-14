@@ -29,16 +29,12 @@ namespace Gigamonkey::extended {
     }
 
     bool transaction::valid (uint32 flags) const {
-        std::cout << "   checking extended transaction valid. A " << std::endl;
         if (!(Inputs.size () > 0 && Outputs.size () > 0 && data::valid (Inputs) && data::valid (Outputs) && sent () <= spent ())) return false;
 
-        std::cout << "   checking extended transaction valid. B " << std::endl;
         Bitcoin::incomplete::transaction tx (Bitcoin::transaction (*this));
 
-        std::cout << "   checking extended transaction valid. C " << std::endl;
         uint32 index = 0;
         for (const input &in : Inputs) {
-            std::cout << "    evaluating script " << index << std::endl;
             if (!in.evaluate (tx, index, flags)) return false;
             index ++;
         }

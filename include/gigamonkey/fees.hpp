@@ -60,9 +60,7 @@ namespace Gigamonkey {
             input (Bitcoin::prevout p, uint64 x, uint32_little q = Bitcoin::input::Finalized, bytes z = {});
             uint64 expected_size () const;
 
-            // the script code is the part of the script that gets signed.
-            // it is either the
-            bytes script_code () const;
+            bytes script_so_far () const;
 
             extended::input complete (bytes_view script) const {
                 return extended::input {Prevout, static_cast<const Bitcoin::incomplete::input &> (*this).complete (script)};
@@ -99,9 +97,9 @@ namespace Gigamonkey {
         return 40 + Bitcoin::var_int::size (ExpectedScriptSize) + ExpectedScriptSize;
     }
 
-    bytes inline transaction_design::input::script_code () const {
+    bytes inline transaction_design::input::script_so_far () const {
         return write_bytes (Prevout.Script.size () + InputScriptSoFar.size () + 1,
-                Prevout.Script, byte (OP_CODESEPARATOR), InputScriptSoFar);
+            InputScriptSoFar, byte (OP_CODESEPARATOR), Prevout.Script);
     }
 
     uint64 inline transaction_design::expected_size () const {
@@ -148,7 +146,7 @@ namespace Gigamonkey {
         return data::for_each ([&incomplete, &index] (const input &in) -> Bitcoin::sighash::document {
             return Bitcoin::sighash::document {
                 in.Prevout.Value,
-                Bitcoin::remove_until_last_code_separator (in.script_code ()),
+                Bitcoin::remove_until_last_code_separator (in.script_so_far ()),
                 incomplete,
                 index++};
         }, Inputs);

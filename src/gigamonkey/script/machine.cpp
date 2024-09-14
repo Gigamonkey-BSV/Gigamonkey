@@ -838,8 +838,8 @@ namespace Gigamonkey::Bitcoin {
                 const bytes &pub = Stack->top ();
                 
                 result r = bool (Document) ?
-                    result {verify_signature
-                        (sig, pub, Document->add_script_code (cleanup_script_code (Counter.script_code (), sig)), Config.Flags)} :
+                    result {verify_signature (sig, pub,
+                        Document->add_script_code (cleanup_script_code (Counter.from_last_code_separator (), sig)), Config.Flags)} :
                     result {true};
                 
                 if (r.Error) return r.Error;
@@ -901,7 +901,7 @@ namespace Gigamonkey::Bitcoin {
                 
                 sighash::document *doc = nullptr;
                 if (bool (Document)) {
-                    bytes script_code = Counter.script_code ();
+                    bytes script_code = Counter.from_last_code_separator ();
                     
                     // Remove signature for pre-fork scripts
                     for (auto it = Stack->begin () + 1; it != Stack->begin () + 1 + nSigsCount; it++)

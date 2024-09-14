@@ -140,7 +140,6 @@ namespace Gigamonkey::extended {
     }
 
     Bitcoin::result inline input::evaluate (const Bitcoin::incomplete::transaction &tx, uint32 input_index, uint32 flags) const {
-        std::cout << "    evaluating script " << Bitcoin::decompile (this->Script) << Bitcoin::decompile (Prevout.Script) << std::endl;
         return Bitcoin::evaluate (this->Script, Prevout.Script,
             Bitcoin::redemption_document {Prevout.Value, tx, input_index}, flags);
     }
