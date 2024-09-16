@@ -98,25 +98,6 @@ namespace Gigamonkey {
         return b;
     }
     
-    // lazy bytes writer can be used without knowing the size
-    // of the data to be written beforehand.
-    struct lazy_bytes_writer : data::writer<byte> {
-        list<bytes> Bytes;
-
-        void write (const byte* b, size_t size) override {
-            Bytes = Bytes << bytes (bytes_view {b, size});
-        }
-
-        operator bytes () const {
-            size_t size = 0;
-            for (const bytes &b : Bytes) size += b.size ();
-            bytes z (size);
-            bytes_writer w {z.begin (), z.end ()};
-            for (const bytes &b : Bytes) w << b;
-            return z;
-        }
-    };
-    
 }
 /*
 namespace std {

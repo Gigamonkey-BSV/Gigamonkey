@@ -4,6 +4,7 @@
 #ifndef GIGAMONKEY_SIGHASH
 #define GIGAMONKEY_SIGHASH
 
+#include <data/tools.hpp>
 #include <gigamonkey/hash.hpp>
 #include <gigamonkey/incomplete.hpp>
 

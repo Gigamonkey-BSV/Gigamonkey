@@ -46,12 +46,12 @@
     
 #include <iostream>
 
-[[noreturn]] static void RandFailure() {
+[[noreturn]] static void RandFailure () {
     std::cout << "Failed to read randomness, aborting" << std::endl;
     std::abort();
 }
 
-static inline int64_t GetPerformanceCounter() {
+static inline int64_t GetPerformanceCounter () {
 // Read the hardware time stamp counter when available.
 // See https://en.wikipedia.org/wiki/Time_Stamp_Counter for more information.
 #if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
@@ -64,7 +64,7 @@ static inline int64_t GetPerformanceCounter() {
     return r;
 #elif !defined(_MSC_VER) && (defined(__x86_64__) || defined(__amd64__))
     uint64_t r1 = 0, r2 = 0;
-    __asm__ volatile("rdtsc"
+    __asm__ volatile ("rdtsc"
                      : "=a"(r1),
                        "=d"(r2)); // Constrain r1 to rax and r2 to rdx.
     return (r2 << 32) | r1;
@@ -319,44 +319,42 @@ static void AddDataToRng(void *data, size_t len) {
     memory_cleanse(buf, 64);
 }
 
-void GetStrongRandBytes(uint8_t *out, int num) {
-    assert(num <= 32);
+void GetStrongRandBytes (uint8_t *out, int num) {
+    assert (num <= 32);
     CSHA512 hasher;
     uint8_t buf[64];
 
     // First source: OpenSSL's RNG
-    RandAddSeedPerfmon();
-    GetRandBytes(buf, 32);
-    hasher.Write(buf, 32);
+    RandAddSeedPerfmon ();
+    GetRandBytes (buf, 32);
+    hasher.Write (buf, 32);
 
     // Second source: OS RNG
-    GetOSRand(buf);
-    hasher.Write(buf, 32);
+    GetOSRand (buf);
+    hasher.Write (buf, 32);
 
     // Third source: HW RNG, if available.
-    if (GetHWRand(buf)) {
-        hasher.Write(buf, 32);
+    if (GetHWRand (buf)) {
+        hasher.Write (buf, 32);
     }
 
     // Combine with and update state
     {
-        std::unique_lock<std::mutex> lock(cs_rng_state);
-        hasher.Write(rng_state, sizeof(rng_state));
-        hasher.Write((const uint8_t *)&rng_counter, sizeof(rng_counter));
+        std::unique_lock<std::mutex> lock (cs_rng_state);
+        hasher.Write (rng_state, sizeof (rng_state));
+        hasher.Write ((const uint8_t *)&rng_counter, sizeof (rng_counter));
         ++rng_counter;
-        hasher.Finalize(buf);
-        memcpy(rng_state, buf + 32, 32);
+        hasher.Finalize (buf);
+        memcpy (rng_state, buf + 32, 32);
     }
 
     // Produce output
-    memcpy(out, buf, num);
-    memory_cleanse(buf, 64);
+    memcpy (out, buf, num);
+    memory_cleanse (buf, 64);
 }
 
-uint64_t GetRand(uint64_t nMax) {
-    if (nMax == 0) {
-        return 0;
-    }
+uint64_t GetRand (uint64_t nMax) {
+    if (nMax == 0) return 0;
 
     // The range of the random source must be a multiple of the modulus to give
     // every possible output value an equal possibility
