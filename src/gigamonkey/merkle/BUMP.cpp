@@ -297,7 +297,8 @@ namespace Gigamonkey::Merkle {
     digest256 BUMP::root () const {
         ordered_list<node> current {};
 
-        for (const ordered_list<node> &next : Path) current = step (combine (current, next));
+        for (const ordered_list<node> &next : Path)
+            current = step (combine (current, next));
 
         return data::size (current) == 1 && bool (data::first (current).Digest) ? *data::first (current).Digest : digest256 {};
     }

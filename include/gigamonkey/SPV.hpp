@@ -42,22 +42,28 @@ namespace Gigamonkey::SPV {
         static bool valid (const Bitcoin::TXID &id, const Merkle::path &p, const digest256 &root);
 
         struct node;
+        using map = data::map<Bitcoin::TXID, ptr<node>>;
 
         // an spv proof is a tree whose nodes are txs and whose leaves are all Merkle proofs.
-        using tree = either<confirmation, map<Bitcoin::TXID, ptr<node>>>;
+        using tree = either<confirmation, map>;
 
         struct node {
             Bitcoin::transaction Transaction;
             tree Proof;
 
             node (const Bitcoin::transaction &tx, const confirmation &c) : Transaction {tx}, Proof {c} {}
-            node (const Bitcoin::transaction &tx, map<Bitcoin::TXID, ptr<node>> m) : Transaction {tx}, Proof {m} {}
+            node (const Bitcoin::transaction &tx, map m) : Transaction {tx}, Proof {m} {}
         };
 
-        list<Bitcoin::transaction> Transactions;
-        map<Bitcoin::TXID, ptr<node>> Proof;
+        // the payment is in these transactions.
+        // They do not yet have confirmations.
+        list<Bitcoin::transaction> Payment;
+        // map of txids referenced in the inputs of the transactions
+        // to proofs, which may be further maps back to more transactions
+        // or a merkle proof.
+        map Proof;
 
-        proof (): Transactions {}, Proof {} {}
+        proof (): Payment {}, Proof {} {}
 
         bool valid () const;
 
@@ -69,7 +75,7 @@ namespace Gigamonkey::SPV {
                 return extended::transaction {tx.Version, for_each ([this] (const Bitcoin::input &in) -> extended::input {
                     return extended::input {this->Proof[in.Reference.Digest]->Transaction.Outputs[in.Reference.Index], in};
                 }, tx.Inputs), tx.Outputs, tx.LockTime};
-            }, Transactions);
+            }, Payment);
         }
 
     };
@@ -77,7 +83,7 @@ namespace Gigamonkey::SPV {
     // attempt to generate a given SPV proof for an unconfirmed transaction.
     // this proof can be sent to a merchant who can use it to confirm that
     // the transaction is valid.
-    maybe<proof> generate_proof (const database &d, list<Bitcoin::transaction> b);
+    maybe<proof> generate_proof (const database &d, list<Bitcoin::transaction> payment);
 
     // interface for database containing headers, transactions, and merkle path.
     struct database {

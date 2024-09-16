@@ -79,9 +79,9 @@ namespace Gigamonkey::nChain {
     }
 
     SPV_envelope::SPV_envelope (const SPV::proof &u) {
-        if (u.Transactions.size () != 1)
+        if (u.Payment.size () != 1)
             throw exception {} << "cannot generate SPV envelope from proof containing more than one top transaction.";
-        RawTx = bytes (u.Transactions[0]);
+        RawTx = bytes (u.Payment[0]);
 
         for (const auto &e : u.Proof) Inputs = Inputs.insert (e.Key, to_SPV_envelope (e.Key, *e.Value));
     }
@@ -235,7 +235,7 @@ namespace Gigamonkey::nChain {
 
     SPV::proof SPV_envelope::read_SPV_proof (const SPV::database &db) const {
         SPV::proof p;
-        p.Transactions = {Bitcoin::transaction {RawTx}};
+        p.Payment = {Bitcoin::transaction {RawTx}};
         p.Proof = nChain::read_SPV_proof (Inputs, db);
         return p;
     }

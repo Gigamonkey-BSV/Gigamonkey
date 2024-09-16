@@ -7,6 +7,10 @@
 #include <gigamonkey/SPV.hpp>
 #include <gigamonkey/p2p/var_int.hpp>
 
+// https://bsv.brc.dev/transactions/0062
+
+// BEEF is a format for making payments that includes
+// payment transactions and their merkle proofs.
 namespace Gigamonkey {
     struct BEEF;
 
@@ -68,10 +72,6 @@ namespace Gigamonkey {
         list<transaction> Transactions {};
     };
 
-    bool inline BEEF::valid () const {
-        return (Version > 0xEFBE0000) && data::size (Transactions) > 0 && data::valid (Transactions) && data::valid (BUMPs);
-    }
-
     writer inline &operator << (writer &w, const BEEF &h) {
         return w << h.Version << Bitcoin::var_sequence<Merkle::BUMP> {h.BUMPs} << Bitcoin::var_sequence<BEEF::transaction> {h.Transactions};
     }
@@ -81,8 +81,9 @@ namespace Gigamonkey {
     }
 
     bool inline BEEF::validate (const SPV::database &d) const {
+        if (!valid ()) return false;
         for (const auto &mr : roots ()) if (!d.header (mr)) return false;
-        return false;
+        return true;
     }
 
     uint64 inline BEEF::serialized_size () const {

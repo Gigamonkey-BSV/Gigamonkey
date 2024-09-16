@@ -25,144 +25,166 @@ namespace Gigamonkey {
         return r;
     }
 
-    list<digest256> BEEF::roots () const {
+    bool BEEF::valid () const {
+        if (Version <= 0xEFBE0000 || data::size (Transactions) == 0 || !data::valid (Transactions) || !data::valid (BUMPs))
+            return false;
 
-        list<digest256> result;
-        // the set of BUMP indicies that we have checked already.
-        set<uint64> checked_already;
-        map<digest256, uint32> previous_txs;
+        set<Bitcoin::TXID> previously_read;
 
-        auto index = 0;
         for (const auto &tx : Transactions) {
-            digest256 id = tx.Transaction.id ();
+            Bitcoin::TXID txid = tx.Transaction.id ();
 
-            // does this transaction have a merkle proof?
-            if (bool (tx.BUMPIndex)) {
-                // does the given BUMP have the proof?
-                const auto &bump = BUMPs[*tx.BUMPIndex];
+            // Does this transaction contain the merkle proof?
+            // if not, then we have to check if all prevout txs are among the previous txs.
+            if (!tx.Merkle_proof_included () && !previously_read.contains (txid)) return false;
 
-                bool found = false;
-                for (const auto &n : bump.Path.first ()) if (bool (n.Digest) && id == *n.Digest) {
-                    found = true;
-                    break;
-                }
-
-                if (!found) return {};
-
-                // have we checked the proof already?
-                if (!checked_already.contains (*tx.BUMPIndex)) {
-                    checked_already = checked_already.insert (*tx.BUMPIndex);
-                    auto root = bump.root ();
-                    if (!root.valid ()) return {};
-                    result <<= root;
-                }
-
-                previous_txs = previous_txs.insert (id, index);
-            } else {
-                // does this tx depend on previous txs?
-                list<extended::input> extended_inputs;
-                for (const auto &in : tx.Transaction.Inputs) {
-                    auto p = previous_txs.contains (in.Reference.Digest);
-                    if (!p) return {};
-                    extended_inputs <<= extended::input {Transactions[*p].Transaction.Outputs[in.Reference.Index], in};
-                }
-
-                // check scripts on this tx.
-                if (!extended::transaction {
-                    tx.Transaction.Version,
-                    extended_inputs,
-                    tx.Transaction.Outputs,
-                    tx.Transaction.LockTime}.valid ()) return {};
-            }
-
-            index++;
+            previously_read = previously_read.insert (txid);
         }
 
+        return true;
+    }
+
+    list<digest256> BEEF::roots () const {
+        list<digest256> result;
+        for (const auto &bump : BUMPs) {
+            auto r = bump.root ();
+            if (!r.valid ()) return {};
+            result <<= r;
+        }
         return result;
     }
 
     namespace {
         using namespace Bitcoin;
 
-        struct SPV_proof_reader {
-            BEEF &Beef;
+        using node = SPV::proof::node;
+        using spvmap = SPV::proof::map;
+        using conf = SPV::proof::confirmation;
+        using proof = SPV::proof;
+
+        struct SPV_proof_writer {
+            BEEF Beef;
             map<digest256, uint32> RootToIndex {};
             cross<Merkle::BUMP> Bumps {};
-            SPV_proof_reader (BEEF &beef, const SPV::proof &p);
+            SPV_proof_writer (const proof &p);
         };
 
-        void read_node (const TXID &id, const SPV::proof::node &tx, SPV_proof_reader &spv) {
-            if (std::holds_alternative<SPV::proof::confirmation> (tx.Proof)) {
-                const auto &conf = std::get<SPV::proof::confirmation> (tx.Proof);
+        void read_node (const TXID &id, const node &tx, SPV_proof_writer &spv) {
+            if (tx.Proof.is<conf> ()) {
+                const auto &c = tx.Proof.get<conf> ();
 
                 // do we already have a BUMP for this block?
-                auto i = spv.RootToIndex.contains (conf.Header.MerkleRoot);
-                if (bool (i)) {
-                    spv.Bumps[*i] += Merkle::branch {id, conf.Path};
+                if (auto i = spv.RootToIndex.contains (c.Header.MerkleRoot); bool (i)) {
+                    spv.Bumps[*i] += Merkle::branch {id, c.Path};
                     spv.Beef.Transactions <<= BEEF::transaction {transaction {tx.Transaction}, *i};
                 } else {
-                    uint64 index = spv.Beef.BUMPs.size ();
-                    spv.Bumps.push_back (Merkle::BUMP {uint64 (conf.Height), Merkle::branch {id, conf.Path}});
-                    spv.RootToIndex = spv.RootToIndex.insert (conf.Header.MerkleRoot, index);
+                    uint64 index = spv.Bumps.size ();
+                    spv.Bumps.push_back (Merkle::BUMP {uint64 (c.Height), Merkle::branch {id, c.Path}});
+                    spv.RootToIndex = spv.RootToIndex.insert (c.Header.MerkleRoot, index);
                     spv.Beef.Transactions <<= BEEF::transaction {transaction {tx.Transaction}, index};
                 }
 
             } else {
-                for (const auto &e : std::get<map<TXID, ptr<SPV::proof::node>>> (tx.Proof)) read_node (e.Key, *e.Value, spv);
+                for (const auto &e : std::get<map<TXID, ptr<node>>> (tx.Proof)) read_node (e.Key, *e.Value, spv);
                 spv.Beef.Transactions <<= BEEF::transaction {transaction {tx.Transaction}};
             }
         }
 
-        inline SPV_proof_reader::SPV_proof_reader (BEEF &beef, const SPV::proof &p): Beef {beef} {
-            for (const auto &e: p.Proof) read_node (e.Key, *e.Value, *this);
+        inline SPV_proof_writer::SPV_proof_writer (const proof &p): Beef {} {
+            for (const auto &[txid, nodep]: p.Proof) read_node (txid, *nodep, *this);
+            for (const auto &bump : Bumps) Beef.BUMPs <<= bump;
+            for (const auto &tx : p.Payment) Beef.Transactions <<= BEEF::transaction {tx};
         }
+
+        entry<Bitcoin::TXID, ptr<node>> read_final_SPV_node (
+            const Bitcoin::transaction &tx,
+            std::pair<uint64, Merkle::map> merkle,
+            const SPV::database &db) {
+
+            entry<Bitcoin::TXID, ptr<node>> result {tx.id (), nullptr};
+
+            N height {merkle.first};
+
+            const Bitcoin::header *header = db.header (height);
+
+            if (header == nullptr) return result;
+
+            result.Value = std::make_shared<node> (tx, conf {merkle.second[result.Key], height, *header});
+
+            return result;
+
+        }
+
+        struct SPV_proof_reader {
+            // all merkle maps by block height
+            cross<std::pair<uint64, Merkle::map>> Merks;
+            spvmap Nodes;
+            spvmap Top;
+            proof Proof;
+
+            SPV_proof_reader (const BEEF &beef, const SPV::database &db) {
+                Merks.resize (beef.BUMPs.size ());
+                {
+                    int index = 0;
+                    for (const Merkle::BUMP &b : beef.BUMPs) Merks[index++] = {b.BlockHeight, b.paths ()};
+                }
+
+                for (const auto &tx : beef.Transactions) {
+                    entry<TXID, ptr<node>> node = tx.Merkle_proof_included () ?
+                        read_final_SPV_node (tx.Transaction, Merks[*tx.BUMPIndex], db) :
+                        read_intermediate_SPV_node (tx.Transaction);
+
+                    if (node.Value == nullptr) return;
+
+                    Nodes = Nodes.insert (node);
+                    Top = Top.insert (node);
+                }
+
+                proof p;
+
+                for (const auto &[txid, nodep] : Top) {
+                    p.Payment <<= nodep->Transaction;
+
+                    // top level nodes should maps to earlier transactions.
+                    if (nodep->Proof.is<conf> ()) return;
+
+                    for (const auto &[txid, nodep] : nodep->Proof.get<spvmap> ())
+                        // we merge all the maps and assume that entries with the same txid are equal without checking.
+                        p.Proof.insert (txid, nodep, [] (const ptr<node> &o, const ptr<node> &n) -> ptr<node> {
+                            return o;
+                        });
+
+                }
+
+                Proof = p;
+
+            }
+
+            entry<TXID, ptr<node>> read_intermediate_SPV_node (const transaction &tx) {
+
+                entry<TXID, ptr<node>> result {tx.id (), nullptr};
+
+                spvmap prev;
+
+                for (const auto &in : tx.Inputs) {
+                    const auto *v = Nodes.contains (in.Reference.Digest);
+                    if (v == nullptr) return result;
+                    prev = prev.insert (in.Reference.Digest, *v);
+                    Top = Top.remove (in.Reference.Digest);
+                }
+
+                result.Value = std::make_shared<node> (tx, prev);
+
+                return result;
+
+            }
+        };
     }
 
-    BEEF::BEEF (const SPV::proof &p) {
-        SPV_proof_reader {*this, p};
-    }
+    BEEF::BEEF (const SPV::proof &p) : BEEF {SPV_proof_writer {p}.Beef} {}
 
     SPV::proof BEEF::read_SPV_proof (const SPV::database &db) const {
-
-        // calculate all merkle maps
-        list<entry<uint64, Merkle::map>> merks = for_each ([] (const Merkle::BUMP &b) -> auto {
-            return entry<uint64, Merkle::map> {b.BlockHeight, b.paths ()};
-        }, BUMPs);
-
-        SPV::proof p;
-
-        struct in_progress {
-            Bitcoin::TXID TXID;
-            Bitcoin::transaction Transaction;
-        };
-
-        list<in_progress> all_txs;
-
-        for (const BEEF::transaction &tx : Transactions) {
-            all_txs <<= in_progress {tx.Transaction.id (), tx.Transaction};
-
-            const auto &txid = all_txs[0].TXID;
-
-            if (tx.Merkle_proof_included ()) {
-                const entry<uint64, Merkle::map> &merk = merks[*tx.BUMPIndex];
-                p.Proof = p.Proof.insert (txid,
-                    ptr<SPV::proof::node> {new SPV::proof::node
-                        {tx.Transaction, SPV::proof::confirmation
-                            {merk.Value[txid], merk.Key, *db.header (data::N {merk.Key})}}});
-            } else p.Proof = p.Proof.insert (txid, ptr<SPV::proof::node> {new SPV::proof::node {tx.Transaction, p.Proof}});
-        }
-
-        set<Bitcoin::TXID> spent;
-
-        for (const in_progress &tx : all_txs) {
-            if (spent.contains (tx.TXID)) continue;
-
-            p.Transactions <<= tx.Transaction;
-
-            for (const Bitcoin::input &in : tx.Transaction.Inputs) spent = spent.insert (in.Reference.Digest);
-        }
-
-        return p;
+        return SPV_proof_reader {*this, db}.Proof;
     }
 }
 

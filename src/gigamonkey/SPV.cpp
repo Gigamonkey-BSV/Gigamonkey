@@ -121,7 +121,7 @@ namespace Gigamonkey::SPV {
         for (const entry<Bitcoin::TXID, ptr<proof::node>> &p : u.Proof)
             if (p.Key != p.Value->Transaction.id () || !unconfirmed_validate (*p.Value, d)) return false;
 
-        for (const Bitcoin::transaction &decoded : u.Transactions) {
+        for (const Bitcoin::transaction &decoded : u.Payment) {
 
             if (!decoded.valid ()) return false;
 
@@ -153,17 +153,18 @@ namespace Gigamonkey::SPV {
         return proof_validate (*this, &d);
     }
 
-    ptr<proof::node> generate_unconfirmed (const database &d, const Bitcoin::TXID &x) {
+    ptr<proof::node> generate_proof_node (const database &d, const Bitcoin::TXID &x) {
 
         database::confirmed n = d.tx (x);
-        if (n.Transaction == nullptr) return {};
+        // if we don't know about this tx then we can't construct a proof.
+        if (!n.valid ()) return {};
+        if (n.has_proof ()) return ptr<proof::node> {new proof::node {*n.Transaction, n.Confirmation}};
 
-        if (n.Confirmation.valid ()) return ptr<proof::node> {new proof::node {*n.Transaction, n.Confirmation}};
-
+        std::cout << "    searching for further antecedent transactions" << std::endl;
         map<Bitcoin::TXID, ptr<proof::node>> antecedents;
 
         for (const Bitcoin::input &in : Bitcoin::transaction {x}.Inputs) {
-            ptr<proof::node> u = generate_unconfirmed (d, in.Reference.Digest);
+            ptr<proof::node> u = generate_proof_node (d, in.Reference.Digest);
             if (u == nullptr) return {};
             antecedents = antecedents.insert (in.Reference.Digest, u);
         }
@@ -174,20 +175,26 @@ namespace Gigamonkey::SPV {
     // attempt to generate a given SPV proof for an unconfirmed transaction.
     // this proof can be sent to a merchant who can use it to confirm that
     // the transaction is valid.
-    maybe<proof> generate_proof (const database &d, list<Bitcoin::transaction> bb) {
+    maybe<proof> generate_proof (const database &d, list<Bitcoin::transaction> payment) {
+        std::cout << " generating spv proof for " << payment.size () << " transaction" << std::endl;
         proof p;
 
-        for (const Bitcoin::transaction &b : bb) {
+        for (const Bitcoin::transaction &b : payment) {
 
             Bitcoin::TXID x = b.id ();
-            database::confirmed n = d.tx (x);
-            if (!n.Confirmation.valid ()) continue;
+            std::cout << "  generating proof for tx with id " << x << std::endl;
 
-            p.Transactions <<= b;
+            // the transaction should not have a proof already because
+            // this is supposed to be a payment that is unconfirmed.
+            database::confirmed n = d.tx (x);
+            if (n.has_proof ()) return {};
+
+            p.Payment <<= b;
 
             for (const Bitcoin::input &in : b.Inputs)
                 if (!p.Proof.contains (in.Reference.Digest)) {
-                    ptr<proof::node> u = generate_unconfirmed (d, in.Reference.Digest);
+                    std::cout << "   searching for sub proof with id " << in.Reference.Digest << std::endl;
+                    ptr<proof::node> u = generate_proof_node (d, in.Reference.Digest);
                     if (u == nullptr) return {};
                     p.Proof = p.Proof.insert (in.Reference.Digest, u);
                 }

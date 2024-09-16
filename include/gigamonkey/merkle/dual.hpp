@@ -17,7 +17,7 @@ namespace Gigamonkey::Merkle {
     
     struct tree;
     
-    using map = data::map<digest, path>;
+    struct map : data::tool::base_rb_map<digest, path, map> {};
     
     // dual to the Merkle tree. Prunable. 
     // would be good in a wallet. 
