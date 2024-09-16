@@ -6,7 +6,7 @@
 
 #include <gigamonkey/SPV.hpp>
 
-namespace Gigamonkey::nChain {
+namespace Gigamonkey {
     
     struct proofs_serialization_standard {
 

@@ -123,8 +123,6 @@ namespace Gigamonkey::Merkle {
         
         JSON JSON_format;
         JSON_message >> JSON_format;
-        
-        using namespace nChain;
 
         auto read_binary = proofs_serialization_standard::read_binary (binary_format);
         auto read_JSON = proofs_serialization_standard::read_JSON (JSON_format);

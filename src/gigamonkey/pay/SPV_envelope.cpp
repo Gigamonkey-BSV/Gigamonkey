@@ -1,9 +1,9 @@
 // Copyright (c) 2024 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#include <gigamonkey/pay/SVP_envelope.hpp>
+#include <gigamonkey/pay/SPV_envelope.hpp>
 
-namespace Gigamonkey::nChain {
+namespace Gigamonkey {
     namespace {
         using namespace Bitcoin;
 
@@ -69,13 +69,13 @@ namespace Gigamonkey::nChain {
     }
 
     bool SPV_envelope::valid () const {
-        return nChain::validate (*this, nullptr);
+        return Gigamonkey::validate (*this, nullptr);
     }
 
     // validate means that we actually check all the merkle
     // against the block headers.
     bool SPV_envelope::validate (const SPV::database &h) const {
-        return nChain::validate (*this, &h);
+        return Gigamonkey::validate (*this, &h);
     }
 
     SPV_envelope::SPV_envelope (const SPV::proof &u) {
@@ -236,7 +236,7 @@ namespace Gigamonkey::nChain {
     SPV::proof SPV_envelope::read_SPV_proof (const SPV::database &db) const {
         SPV::proof p;
         p.Payment = {Bitcoin::transaction {RawTx}};
-        p.Proof = nChain::read_SPV_proof (Inputs, db);
+        p.Proof = Gigamonkey::read_SPV_proof (Inputs, db);
         return p;
     }
 

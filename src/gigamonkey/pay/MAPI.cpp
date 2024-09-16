@@ -3,7 +3,7 @@
 
 #include <gigamonkey/pay/MAPI.hpp>
 
-namespace Gigamonkey::nChain::MAPI {
+namespace Gigamonkey::MAPI {
     using namespace Bitcoin;
     
     JSON client::call (const net::HTTP::request &q) {

@@ -10,7 +10,7 @@
 
 // https://tsc.bsvblockchain.org/standards/transaction-ancestors/
 
-namespace Gigamonkey::nChain {
+namespace Gigamonkey {
 
     struct SPV_envelope {
 

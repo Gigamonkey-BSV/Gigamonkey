@@ -4,7 +4,7 @@
 #include <gigamonkey/pay/envelope.hpp>
 #include <gigamonkey/address.hpp>
 
-namespace Gigamonkey::nChain {
+namespace Gigamonkey {
     
     bool JSON_envelope::verify () const {
         if (!valid ()) return false;

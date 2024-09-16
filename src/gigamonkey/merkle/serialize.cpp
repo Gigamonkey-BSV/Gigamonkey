@@ -1,6 +1,6 @@
 #include <gigamonkey/merkle/serialize.hpp>
 
-namespace Gigamonkey::nChain {
+namespace Gigamonkey {
     
     digest256 inline read_digest (const string &x) {
         return digest256 {string {"0x"} + x};

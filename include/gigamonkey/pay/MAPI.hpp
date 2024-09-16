@@ -11,7 +11,7 @@
 
 // https://github.com/bitcoin-sv-specs/brfc-merchantapi 
 
-namespace Gigamonkey::nChain::MAPI {
+namespace Gigamonkey::MAPI {
 
     template <typename T> struct response;
 

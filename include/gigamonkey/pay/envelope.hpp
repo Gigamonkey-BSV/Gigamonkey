@@ -10,7 +10,7 @@
 
 // https://github.com/bitcoin-sv-specs/brfc-misc/tree/master/jsonenvelope
 
-namespace Gigamonkey::nChain {
+namespace Gigamonkey {
 
     struct JSON_envelope {
         enum payload_encoding {
