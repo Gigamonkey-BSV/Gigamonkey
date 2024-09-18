@@ -6,7 +6,7 @@ namespace Gigamonkey::extended {
 
     uint64 transaction::serialized_size () const {
         return 14u + Bitcoin::var_int::size (Inputs.size ()) + Bitcoin::var_int::size (Outputs.size ()) +
-            data::fold ([] (uint64 size, const Bitcoin::input &i) -> uint64 {
+            data::fold ([] (uint64 size, const input &i) -> uint64 {
                 return size + i.serialized_size ();
             }, 0u, Inputs) +
             data::fold ([] (uint64 size, const Bitcoin::output &i) -> uint64 {
