@@ -104,44 +104,31 @@ namespace Gigamonkey::SPV {
                 h->second->Header.Value}};
     }
 
-    bool unconfirmed_validate (const proof::node &u, const database *d) {
-        if (std::holds_alternative<proof::confirmation> (u.Proof)) {
-            const proof::confirmation &conf = std::get<proof::confirmation> (u.Proof);
-            if (d != nullptr && d->header (conf.Header.MerkleRoot) == nullptr) return false;
-            return proof::valid (u.Transaction, conf.Path, conf.Header);
-        }
+    namespace {
 
-        for (const entry<Bitcoin::TXID, ptr<proof::node>> &p : std::get<map<Bitcoin::TXID, ptr<proof::node>>> (u.Proof))
-            if (p.Value == nullptr || p.Key != p.Value->Transaction.id () || !unconfirmed_validate (*p.Value, d)) return false;
-
-        return true;
-    }
-
-    bool proof_validate (const proof &u, const database *d) {
-        for (const entry<Bitcoin::TXID, ptr<proof::node>> &p : u.Proof)
-            if (p.Key != p.Value->Transaction.id () || !unconfirmed_validate (*p.Value, d)) return false;
-
-        for (const Bitcoin::transaction &decoded : u.Payment) {
-
-            if (!decoded.valid ()) return false;
-
-            Bitcoin::satoshi spent {0};
-            for (const Bitcoin::input &in : decoded.Inputs) {
-                Bitcoin::transaction prev {u.Proof[in.Reference.Digest]->Transaction};
-                if (!prev.valid ()) return false;
-
-                const Bitcoin::output &out = prev.Outputs[in.Reference.Index];
-
-                if (!Bitcoin::evaluate (in.Script, out.Script,
-                    Bitcoin::redemption_document {out.Value, Bitcoin::incomplete::transaction {decoded}, in.Reference.Index})) return false;
-
-                spent += out.Value;
+        bool unconfirmed_validate (const proof::node &u, const database *d) {
+            if (u.Proof.is<proof::confirmation> ()) {
+                const proof::confirmation &conf = u.Proof.get<proof::confirmation> ();
+                if (d != nullptr && d->header (conf.Header.MerkleRoot) == nullptr) return false;
+                return proof::valid (u.Transaction, conf.Path, conf.Header);
             }
 
-            if (decoded.sent () > spent) return false;
+            if (!SPV::proof::extended_transactions ({u.Transaction}, u.Proof.get<proof::map> ()).valid ()) return false;
+
+            for (const entry<Bitcoin::TXID, ptr<proof::node>> &p : u.Proof.get<proof::map> ())
+                if (p.Value == nullptr || p.Key != p.Value->Transaction.id () || !unconfirmed_validate (*p.Value, d)) return false;
+
+            return true;
         }
 
-        return true;
+        bool proof_validate (const proof &u, const database *d) {
+            if (!list<extended::transaction> (u).valid ()) return false;
+
+            for (const entry<Bitcoin::TXID, ptr<proof::node>> &p : u.Proof)
+                if (p.Key != p.Value->Transaction.id () || !unconfirmed_validate (*p.Value, d)) return false;
+
+            return true;
+        }
     }
 
     bool proof::valid () const {
@@ -153,23 +140,26 @@ namespace Gigamonkey::SPV {
         return proof_validate (*this, &d);
     }
 
-    ptr<proof::node> generate_proof_node (const database &d, const Bitcoin::TXID &x) {
+    namespace {
 
-        database::confirmed n = d.tx (x);
-        // if we don't know about this tx then we can't construct a proof.
-        if (!n.valid ()) return {};
-        if (n.has_proof ()) return ptr<proof::node> {new proof::node {*n.Transaction, n.Confirmation}};
+        ptr<proof::node> generate_proof_node (const database &d, const Bitcoin::TXID &x) {
 
-        std::cout << "    searching for further antecedent transactions" << std::endl;
-        map<Bitcoin::TXID, ptr<proof::node>> antecedents;
+            database::confirmed n = d.tx (x);
+            // if we don't know about this tx then we can't construct a proof.
+            if (!n.valid ()) return {};
+            if (n.has_proof ()) return ptr<proof::node> {new proof::node {*n.Transaction, n.Confirmation}};
 
-        for (const Bitcoin::input &in : Bitcoin::transaction {x}.Inputs) {
-            ptr<proof::node> u = generate_proof_node (d, in.Reference.Digest);
-            if (u == nullptr) return {};
-            antecedents = antecedents.insert (in.Reference.Digest, u);
+            std::cout << "    searching for further antecedent transactions" << std::endl;
+            map<Bitcoin::TXID, ptr<proof::node>> antecedents;
+
+            for (const Bitcoin::input &in : Bitcoin::transaction {x}.Inputs) {
+                ptr<proof::node> u = generate_proof_node (d, in.Reference.Digest);
+                if (u == nullptr) return {};
+                antecedents = antecedents.insert (in.Reference.Digest, u);
+            }
+
+            return ptr<proof::node> {new proof::node {*n.Transaction, antecedents}};
         }
-
-        return ptr<proof::node> {new proof::node {*n.Transaction, antecedents}};
     }
 
     // attempt to generate a given SPV proof for an unconfirmed transaction.

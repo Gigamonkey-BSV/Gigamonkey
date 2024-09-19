@@ -68,14 +68,19 @@ namespace Gigamonkey::SPV {
         bool valid () const;
 
         // check valid and check that all headers are in our database.
+        // and check all scripts for txs that have no merkle proof.
         bool validate (const database &) const;
 
-        explicit operator list<extended::transaction> () const {
-            return for_each ([this] (const Bitcoin::transaction &tx) -> extended::transaction {
-                return extended::transaction {tx.Version, for_each ([this] (const Bitcoin::input &in) -> extended::input {
-                    return extended::input {this->Proof[in.Reference.Digest]->Transaction.Outputs[in.Reference.Index], in};
+        static list<extended::transaction> extended_transactions (list<Bitcoin::transaction> payment, map proof) {
+            return for_each ([proof] (const Bitcoin::transaction &tx) -> extended::transaction {
+                return extended::transaction {tx.Version, for_each ([proof] (const Bitcoin::input &in) -> extended::input {
+                    return extended::input {proof[in.Reference.Digest]->Transaction.Outputs[in.Reference.Index], in};
                 }, tx.Inputs), tx.Outputs, tx.LockTime};
-            }, Payment);
+            }, payment);
+        }
+
+        explicit operator list<extended::transaction> () const {
+            return extended_transactions (Payment, Proof);
         }
 
     };
