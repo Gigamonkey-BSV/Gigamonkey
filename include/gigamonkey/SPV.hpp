@@ -71,17 +71,7 @@ namespace Gigamonkey::SPV {
         // and check all scripts for txs that have no merkle proof.
         bool validate (const database &) const;
 
-        static list<extended::transaction> extended_transactions (list<Bitcoin::transaction> payment, map proof) {
-            return for_each ([proof] (const Bitcoin::transaction &tx) -> extended::transaction {
-                return extended::transaction {tx.Version, for_each ([proof] (const Bitcoin::input &in) -> extended::input {
-                    return extended::input {proof[in.Reference.Digest]->Transaction.Outputs[in.Reference.Index], in};
-                }, tx.Inputs), tx.Outputs, tx.LockTime};
-            }, payment);
-        }
-
-        explicit operator list<extended::transaction> () const {
-            return extended_transactions (Payment, Proof);
-        }
+        explicit operator list<extended::transaction> () const;
 
     };
 
@@ -89,6 +79,21 @@ namespace Gigamonkey::SPV {
     // this proof can be sent to a merchant who can use it to confirm that
     // the transaction is valid.
     maybe<proof> generate_proof (const database &d, list<Bitcoin::transaction> payment);
+
+    // convert proofs and proof parts to extended transactions.
+    list<extended::transaction> inline extended_transactions (list<Bitcoin::transaction> payment, proof::map proof) {
+        return for_each ([proof] (const Bitcoin::transaction &tx) -> extended::transaction {
+            return extended::transaction {tx.Version, for_each ([proof] (const Bitcoin::input &in) -> extended::input {
+                return extended::input {proof[in.Reference.Digest]->Transaction.Outputs[in.Reference.Index], in};
+            }, tx.Inputs), tx.Outputs, tx.LockTime};
+        }, payment);
+    }
+
+    extended::transaction inline extended_transaction (Bitcoin::transaction tx, proof::map proof) {
+        return extended::transaction {tx.Version, for_each ([proof] (const Bitcoin::input &in) -> extended::input {
+            return extended::input {proof[in.Reference.Digest]->Transaction.Outputs[in.Reference.Index], in};
+        }, tx.Inputs), tx.Outputs, tx.LockTime};
+    }
 
     // interface for database containing headers, transactions, and merkle path.
     struct database {
@@ -223,6 +228,10 @@ namespace Gigamonkey::SPV {
 
     set<Bitcoin::TXID> inline database::memory::pending () {
         return Pending;
+    }
+
+    inline proof::operator list<extended::transaction> () const {
+        return extended_transactions (Payment, Proof);
     }
     
 }

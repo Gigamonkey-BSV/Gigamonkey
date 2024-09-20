@@ -113,7 +113,7 @@ namespace Gigamonkey::SPV {
                 return proof::valid (u.Transaction, conf.Path, conf.Header);
             }
 
-            if (!SPV::proof::extended_transactions ({u.Transaction}, u.Proof.get<proof::map> ()).valid ()) return false;
+            if (!extended_transaction (u.Transaction, u.Proof.get<proof::map> ()).valid ()) return false;
 
             for (const entry<Bitcoin::TXID, ptr<proof::node>> &p : u.Proof.get<proof::map> ())
                 if (p.Value == nullptr || p.Key != p.Value->Transaction.id () || !unconfirmed_validate (*p.Value, d)) return false;

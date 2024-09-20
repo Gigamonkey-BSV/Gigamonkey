@@ -40,21 +40,11 @@ namespace Gigamonkey::ARC {
         maybe<string> extra_info () const;
     };
 
-    // the body of a success query.
-    struct success : JSON {
-        string timestamp () const;
-
-        bool valid () const;
-
-        success (JSON &&);
-        success (const JSON &);
-        static bool valid (const JSON &);
-        static string timestamp (const JSON &);
-    };
-
     struct response : net::HTTP::response {
         maybe<JSON> body () const;
-        bool error () const;
+        bool is_error () const;
+        // return an error if there is one.
+        ARC::error error () const;
 
         // a response is valid if the body is empty and the status is 401
         // or if the body is JSON and Content-Type is set to "application/json"
@@ -66,7 +56,8 @@ namespace Gigamonkey::ARC {
         static maybe<JSON> body (const net::HTTP::response &r);
 
         static bool valid (const net::HTTP::response &r);
-        static bool error (const net::HTTP::response &r);
+        static bool is_error (const net::HTTP::response &r);
+        static ARC::error error (const net::HTTP::response &r);
     };
 
     struct health : JSON {
@@ -76,6 +67,7 @@ namespace Gigamonkey::ARC {
         bool valid () const;
 
         health (JSON &&);
+        health (const JSON &j);
         static bool valid (const JSON &);
     };
 
@@ -85,6 +77,18 @@ namespace Gigamonkey::ARC {
 
         bool valid () const;
         static bool valid (const net::HTTP::response &r);
+        static ARC::health health (const net::HTTP::response &r);
+    };
+
+    // the body of a successful query other than health.
+    struct success : JSON {
+        string timestamp () const;
+        bool valid () const;
+
+        success (JSON &&);
+        success (const JSON &);
+        static bool valid (const JSON &);
+        static string timestamp (const JSON &);
     };
 
     struct policy : JSON {
@@ -95,6 +99,7 @@ namespace Gigamonkey::ARC {
         bool valid () const;
 
         policy (JSON &&);
+        policy (const JSON &);
         static bool valid (const JSON &);
         static uint64 max_script_size_policy (const JSON &);
         static uint64 max_tx_sigops_count_policy (const JSON &);
@@ -104,9 +109,14 @@ namespace Gigamonkey::ARC {
 
     struct policy_response : response {
         using response::response;
-        ARC::policy policy () const;
+
         bool valid () const;
+        string timestamp () const;
+        ARC::policy policy () const;
+
         static bool valid (const net::HTTP::response &r);
+        static string timestamp (const net::HTTP::response &r);
+        static ARC::policy policy (const net::HTTP::response &r);
     };
 
     enum status_value : uint32 {
@@ -142,7 +152,7 @@ namespace Gigamonkey::ARC {
     struct status_response : response {
         using response::response;
         ARC::status status () const;
-        bool vaild () const;
+        bool valid () const;
 
         static ARC::status status (const net::HTTP::response &r);
         static bool valid (const net::HTTP::response &r);
@@ -150,6 +160,7 @@ namespace Gigamonkey::ARC {
 
     enum content_type_option {text, json, octet};
 
+    // parameters for submit methods.
     struct submit {
         content_type_option ContentType {octet};
         maybe<net::URL> CallbackURL {};
@@ -178,7 +189,9 @@ namespace Gigamonkey::ARC {
     struct submit_response : response {
         using response::response;
         bool valid () const;
+        ARC::status status () const;
         static bool valid (const net::HTTP::response &);
+        static ARC::status status (const net::HTTP::response &);
     };
 
     struct submit_txs_request : net::HTTP::REST::request {
@@ -192,7 +205,9 @@ namespace Gigamonkey::ARC {
     struct submit_txs_response : response {
         using response::response;
         bool valid () const;
+        list<ARC::status> status () const;
         static bool valid (const net::HTTP::response &);
+        static list<ARC::status> status (const net::HTTP::response &);
     };
 
     net::HTTP::REST::request inline policy_request () {
@@ -233,16 +248,20 @@ namespace Gigamonkey::ARC {
         return body (*this);
     }
 
-    bool inline response::error () const {
-        return error (*this);
+    bool inline response::is_error () const {
+        return is_error (*this);
     }
 
     bool inline response::valid () const {
         return valid (*this);
     }
 
-    bool inline response::error (const net::HTTP::response &r) {
+    bool inline response::is_error (const net::HTTP::response &r) {
         return r.Status != net::HTTP::status::ok;
+    }
+
+    ARC::error inline response::error () const {
+        return error (*this);
     }
 
     inline success::success (JSON &&j): JSON (j) {}
@@ -265,9 +284,19 @@ namespace Gigamonkey::ARC {
     }
 
     inline health::health (JSON &&j): JSON (j) {}
+    inline health::health (const JSON &j): JSON (j) {}
 
     bool inline health::valid () const {
         return valid (*this);
+    }
+
+    ARC::health inline health_response::health () const {
+        return health (*this);
+    }
+
+    ARC::health inline health_response::health (const net::HTTP::response &r) {
+        if (response::is_error (r)) return JSON (nullptr);
+        else return *response::body (r);
     }
 
     bool inline health_response::valid () const {
@@ -275,6 +304,7 @@ namespace Gigamonkey::ARC {
     }
 
     inline policy::policy (JSON &&j): JSON (j) {}
+    inline policy::policy (const JSON &j): JSON (j) {}
 
     bool inline policy::valid () const {
         return valid (*this);
@@ -298,6 +328,18 @@ namespace Gigamonkey::ARC {
 
     bool inline policy_response::valid () const {
         return valid (*this);
+    }
+
+    string inline policy_response::timestamp () const {
+        return timestamp (*this);
+    }
+
+    ARC::policy inline policy_response::policy () const {
+        return policy (*this);
+    }
+
+    ARC::policy inline policy_response::policy (const net::HTTP::response &r) {
+        return (*response::body (r))["policy"];
     }
 
     bool inline status::valid () const {
@@ -328,6 +370,18 @@ namespace Gigamonkey::ARC {
         return extra_info (*this);
     }
 
+    ARC::status inline status_response::status () const {
+        return status (*this);
+    }
+
+    ARC::status inline status_response::status (const net::HTTP::response &r) {
+        return *response::body (r);
+    }
+
+    bool inline status_response::valid () const {
+        return valid (*this);
+    }
+
     inline submit_request::submit_request (net::HTTP::REST::request &&r): net::HTTP::REST::request (r) {}
 
     inline submit_txs_request::submit_txs_request (net::HTTP::REST::request &&r): net::HTTP::REST::request (r) {}
@@ -338,6 +392,18 @@ namespace Gigamonkey::ARC {
 
     bool inline submit_txs_request::valid () const {
         return valid (*this);
+    }
+
+    ARC::status inline submit_response::status () const {
+        return status (*this);
+    }
+
+    ARC::status inline submit_response::status (const net::HTTP::response &r) {
+        return *response::body (r);
+    }
+
+    list<ARC::status> inline submit_txs_response::status () const {
+        return status (*this);
     }
 
 }

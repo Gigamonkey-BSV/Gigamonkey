@@ -6,8 +6,13 @@
 namespace Gigamonkey::ARC {
     bool response::valid (const net::HTTP::response &r) {
         if (r.Status == net::HTTP::status::unauthorized && r.Body == "") return true;
-        const auto *v = r.Headers.contains (net::HTTP::header::field::content_type);
+        const auto *v = r.Headers.contains (net::HTTP::header::content_type);
         return bool (v) && *v == "appliction/json" && bool (body (r));
+    }
+
+    error response::error (const net::HTTP::response &r) {
+        if (!error (r) || r.Status == net::HTTP::status::unauthorized) return JSON (nullptr);
+        return *body (r);
     }
 
     maybe<JSON> response::body (const net::HTTP::response &r) {
@@ -45,7 +50,7 @@ namespace Gigamonkey::ARC {
         if (!response::valid (r)) return false;
         auto b = response::body (r);
         if (!bool (b)) return true;
-        if (response::error (r)) return error::valid (*b) && r.Status == net::HTTP::status::not_found || r.Status == net::HTTP::status::conflict;
+        if (response::is_error (r)) return error::valid (*b) && r.Status == net::HTTP::status::not_found || r.Status == net::HTTP::status::conflict;
         if (!success::valid (*b)) return false;
         return status::valid (*b);
     }
@@ -71,7 +76,7 @@ namespace Gigamonkey::ARC {
     submit_txs_request::submit_txs_request (list<extended::transaction> txs, submit x) :
         net::HTTP::REST::request {net::HTTP::method::post, "/v1/txs", {}, {}, x.headers ()} {
         switch (x.ContentType) {
-            case (octet): {
+            case octet: {
                 bytes b (fold ([] (size_t so_far, const extended::transaction &G) {
                     return so_far + G.serialized_size ();
                 }, size_t {0}, txs));
@@ -79,7 +84,7 @@ namespace Gigamonkey::ARC {
                 for (const extended::transaction &tx : txs) bb << tx;
                 this->Body = string (b);
             } return;
-            case (json): {
+            case json: {
                 JSON::array_t a (txs.size ());
                 int index = 0;
                 for (const extended::transaction &tx : txs) {
@@ -89,7 +94,7 @@ namespace Gigamonkey::ARC {
                 }
                 this->Body = JSON (a).dump ();
             } return;
-            case (text): {
+            case text: {
                 this->Body = string_join (for_each ([] (const extended::transaction &tx) -> string {
                     return encoding::hex::write (bytes (tx));
                 }, txs), "\n");
@@ -99,17 +104,41 @@ namespace Gigamonkey::ARC {
     }
 
     namespace {
-        ASCII write (content_type_option);
-        ASCII write (status_value);
-        ASCII write (const net::URL &);
-        ASCII write (bool);
-        ASCII write (int);
+        ASCII write (content_type_option x) {
+            switch (x) {
+                case text: return "text/plain";
+                case json: return "application/json";
+                case octet: return "application/octet-stream";
+                default: throw exception {} << "unknown ARC content type";
+            }
+        }
+
+        ASCII write (status_value x) {
+            switch (x) {
+                case RECEIVED : return "RECEIVED";
+                case STORED : return "STORED";
+                case ANNOUNCED_TO_NETWORK : return "ANNOUNCED_TO_NETWORK";
+                case REQUESTED_BY_NETWORK : return "REQUESTED_BY_NETWORK";
+                case SENT_TO_NETWORK : return "SENT_TO_NETWORK";
+                case ACCEPTED_BY_NETWORK : return "ACCEPTED_BY_NETWORK";
+                case SEEN_ON_NETWORK : return "SEEN_ON_NETWORK";
+                default: throw exception {} << "unknown ARC status";
+            }
+        }
+
+        ASCII write (bool b) {
+            return b ? "true" : "false";
+        }
+
+        ASCII write (int i) {
+            return std::to_string (i);
+        }
     }
 
     map<net::HTTP::header, ASCII> submit::headers () const {
         map<net::HTTP::header, ASCII> m {};
-        m = m.insert (net::HTTP::header::field::content_type, write (ContentType));
-        if (bool (CallbackURL)) m = m.insert ("X-CallbackURL", write (*CallbackURL));
+        m = m.insert (net::HTTP::header::content_type, write (ContentType));
+        if (bool (CallbackURL)) m = m.insert ("X-CallbackURL", *CallbackURL);
         if (bool (FullStatusUpdates)) m = m.insert ("X-FullStatusUpdates", write (*FullStatusUpdates));
         if (bool (MaxTimeout)) m = m.insert ("X-MaxTimeout", write (*MaxTimeout));
         if (bool (SkipFeeValidation)) m = m.insert ("X-SkipFeeValidation", write (*SkipFeeValidation));
@@ -119,6 +148,40 @@ namespace Gigamonkey::ARC {
         if (bool (CallbackToken)) m = m.insert ("X-CallbackToken", *CallbackToken);
         if (bool (WaitFor)) m = m.insert ("X-WaitFor", write (*WaitFor));
         return m;
+    }
+
+    bool submit_response::valid (const net::HTTP::response &r) {
+        if (!response::valid (r)) return false;
+        auto b = response::body (r);
+        if (!bool (b)) return true;
+
+        if (response::is_error (r)) return error::valid (*b) &&
+            r.Status == 400 || r.Status == 409 || r.Status == 422 || r.Status == 409 ||
+            (unsigned (r.Status) >= 460 && unsigned (r.Status) <= 469) || r.Status == 473;
+
+        if (!success::valid (*b)) return false;
+        return status::valid (*b);
+    }
+
+    bool submit_txs_response::valid (const net::HTTP::response &r) {
+        if (!response::valid (r)) return false;
+        auto b = response::body (r);
+        if (!bool (b)) return true;
+
+        if (response::is_error (r)) return error::valid (*b) &&
+            r.Status == 400 || r.Status == 409 || r.Status == 409 ||
+            (unsigned (r.Status) >= 460 && unsigned (r.Status) <= 469) || r.Status == 473;
+
+        if (!b->is_array ()) return false;
+        for (const JSON &j : *b) if (!status::valid (j)) return false;
+        return true;
+    }
+
+    list<status> inline submit_txs_response::status (const net::HTTP::response &r) {
+        list<ARC::status> stat;
+        auto b = response::body (r);
+        for (const JSON &j : *b) stat <<= ARC::status {j};
+        return stat;
     }
 
 }
