@@ -13,9 +13,9 @@ namespace Gigamonkey::MAPI {
             static_cast<unsigned int> (r.Status) >= 300)
             throw net::HTTP::exception {q, r, "response code"};
         
-        if (r.Headers[net::HTTP::header::content_type] != "application/json")
+        if (r.Headers[net::HTTP::header::field::content_type] != "application/json")
             throw net::HTTP::exception {q, r, string {"content type is not JSON; it is "} +
-                r.Headers[net::HTTP::header::content_type]};
+                r.Headers[net::HTTP::header::field::content_type]};
 
         JSON res = JSON::parse (r.Body);
         
@@ -217,7 +217,7 @@ namespace Gigamonkey::MAPI {
 
         if (ContentType == application_JSON) {
             return net::HTTP::REST::request {net::HTTP::method::post, "/mapi/tx", {}, {},
-                {{net::HTTP::header::content_type, "application/JSON"}},
+                {{net::HTTP::header::field::content_type, "application/JSON"}},
                 JSON (static_cast<const transaction_submission> (*this))};
         }
         
@@ -227,13 +227,13 @@ namespace Gigamonkey::MAPI {
         
         return net::HTTP::REST::request {net::HTTP::method::post,
             "/mapi/tx", to_url_params (Parameters), {},
-            {{net::HTTP::header::content_type, "application/octet-stream"}}, tx};
+            {{net::HTTP::header::field::content_type, "application/octet-stream"}}, tx};
     }
     
     submit_transactions_request::operator net::HTTP::REST::request () const {
         return net::HTTP::REST::request{net::HTTP::method::post, "/mapi/tx",
             to_url_params (DefaultParameters), {},
-            {{net::HTTP::header::content_type, "application/JSON"}},
+            {{net::HTTP::header::field::content_type, "application/JSON"}},
             to_JSON (Submissions)};
     }
     

@@ -4,18 +4,22 @@
 #ifndef GIGAMONKEY_PAY_ARC
 #define GIGAMONKEY_PAY_ARC
 
+#include <data/net/error.hpp>
+#include <data/net/HTTP_client.hpp>
 #include <gigamonkey/pay/extended.hpp>
 
 // https://bitcoin-sv.github.io/arc/api.html
 namespace Gigamonkey::ARC {
 
+    net::HTTP::REST::request policy_request ();
     struct policy_response;
+    net::HTTP::REST::request health_request ();
     struct health_response;
-    using status_request = Bitcoin::txid;
+    net::HTTP::REST::request status_request (const Bitcoin::TXID &);
     struct status_response;
     struct submit_request;
     struct submit_response;
-    using submit_txs_request = status_response;
+    struct submit_txs_request;
     struct submit_txs_response;
 
     struct client : net::HTTP::client_blocking {
@@ -24,30 +28,63 @@ namespace Gigamonkey::ARC {
         // there are five calls in ARC
         policy_response policy ();
         health_response health ();
-        status_response status (const status_request &);
+        status_response status (const Bitcoin::TXID &);
         submit_response submit (const submit_request &);
         submit_txs_response submit_txs (const submit_txs_request &);
     };
 
-    struct common_response : net::HTTP::response {
-        maybe<string> timestamp () const;
+    // failed queries may contain errors.
+    struct error : net::error {
+        using net::error::error;
+        maybe<Bitcoin::TXID> txid () const;
+        maybe<string> extra_info () const;
+    };
+
+    // the body of a success query.
+    struct success : JSON {
+        string timestamp () const;
 
         bool valid () const;
-        common_response (net::HTTP::response &&);
-        ~common_response () = 0;
+
+        success (JSON &&);
+        success (const JSON &);
+        static bool valid (const JSON &);
+        static string timestamp (const JSON &);
+    };
+
+    struct response : net::HTTP::response {
+        maybe<JSON> body () const;
+        bool error () const;
+
+        // a response is valid if the body is empty and the status is 401
+        // or if the body is JSON and Content-Type is set to "application/json"
+        bool valid () const;
+
+        using net::HTTP::response::response;
+        response (net::HTTP::response &&);
+
+        static maybe<JSON> body (const net::HTTP::response &r);
+
+        static bool valid (const net::HTTP::response &r);
+        static bool error (const net::HTTP::response &r);
     };
 
     struct health : JSON {
         bool healthy () const;
         string reason () const;
 
-        health (JSON &&);
         bool valid () const;
+
+        health (JSON &&);
+        static bool valid (const JSON &);
     };
 
-    struct health_response : common_response {
-        maybe<ARC::health> health () const;
-        health_response (net::HTTP::response &&);
+    struct health_response : response {
+        using response::response;
+        ARC::health health () const;
+
+        bool valid () const;
+        static bool valid (const net::HTTP::response &r);
     };
 
     struct policy : JSON {
@@ -55,14 +92,21 @@ namespace Gigamonkey::ARC {
         uint64 max_tx_sigops_count_policy () const;
         uint64 max_tx_size_policy () const;
         satoshis_per_byte mining_fee () const;
+        bool valid () const;
 
         policy (JSON &&);
-        bool valid () const;
+        static bool valid (const JSON &);
+        static uint64 max_script_size_policy (const JSON &);
+        static uint64 max_tx_sigops_count_policy (const JSON &);
+        static uint64 max_tx_size_policy (const JSON &);
+        static satoshis_per_byte mining_fee (const JSON &);
     };
 
-    struct policy_response : common_response {
-        maybe<ARC::policy> policy () const;
-        policy_response (net::HTTP::response &&);
+    struct policy_response : response {
+        using response::response;
+        ARC::policy policy () const;
+        bool valid () const;
+        static bool valid (const net::HTTP::response &r);
     };
 
     enum status_value : uint32 {
@@ -75,103 +119,226 @@ namespace Gigamonkey::ARC {
         SEEN_ON_NETWORK = 8
     };
 
-    struct error : JSON {
-        string type () const;
-        string title () const;
-        net::HTTP::status status () const;
-        string detail () const;
-        string instance () const;
-        string txid () const;
-        string extra_info () const;
-
-        error (JSON &&);
-        bool valid () const;
-    };
-
-    struct status : JSON {
-        string timestamp () const;
+    struct status : success {
         Bitcoin::TXID block_hash () const;
         N block_height () const;
         string txid () const;
         string Merkle_path () const;
         status_value tx_status () const;
         string extra_info () const;
-
-        status (JSON &&);
         bool valid () const;
+
+        using success::success;
+
+        static bool valid (const JSON &);
+        static Bitcoin::TXID block_hash (const JSON &);
+        static N block_height (const JSON &);
+        static string txid (const JSON &);
+        static string Merkle_path (const JSON &);
+        static status_value tx_status (const JSON &);
+        static string extra_info (const JSON &);
     };
 
-    struct status_response : common_response {
-        status_response (net::HTTP::response &&);
-        maybe<ARC::error> error () const;
-        maybe<ARC::status> status () const;
+    struct status_response : response {
+        using response::response;
+        ARC::status status () const;
+        bool vaild () const;
+
+        static ARC::status status (const net::HTTP::response &r);
+        static bool valid (const net::HTTP::response &r);
     };
 
     enum content_type_option {text, json, octet};
 
-    struct submit_tx_request : net::HTTP::request {
-        submit_tx_request (net::HTTP::request &&);
-        submit_tx_request (const extended::transaction &);
+    struct submit {
+        content_type_option ContentType {octet};
+        maybe<net::URL> CallbackURL {};
+        maybe<bool> FullStatusUpdates {};
+        maybe<int> MaxTimeout {};
+        maybe<bool> SkipFeeValidation {};
+        maybe<bool> SkipScriptValidation {};
+        maybe<bool> SkipTxValidation {};
+        maybe<bool> CumulativeFeeValidation {};
+        maybe<ASCII> CallbackToken {};
+        maybe<status_value> WaitFor {};
+
+        map<net::HTTP::header, ASCII> headers () const;
+    };
+
+    struct submit_request : net::HTTP::REST::request {
+        submit_request (const extended::transaction &, submit = {});
 
         bool valid () const;
 
-        submit_tx_request content_type (content_type_option) const;
-        submit_tx_request callback_url (const net::URL &) const;
-        submit_tx_request full_status_updates (bool) const;
-        submit_tx_request max_timeout (int) const;
-        submit_tx_request skip_fee_validation (bool) const;
-        submit_tx_request skip_script_validation (bool) const;
-        submit_tx_request callback_token (const string &) const;
-        submit_tx_request wait_for_token (status_value) const;
+        submit_request (net::HTTP::REST::request &&);
+        static bool valid (const net::HTTP::REST::request &);
 
     };
 
-    struct submit_txs_request : net::HTTP::request {
-        submit_txs_request (net::HTTP::request &&);
-        submit_txs_request (list<extended::transaction>);
+    struct submit_response : response {
+        using response::response;
+        bool valid () const;
+        static bool valid (const net::HTTP::response &);
+    };
+
+    struct submit_txs_request : net::HTTP::REST::request {
+        submit_txs_request (net::HTTP::REST::request &&);
+        submit_txs_request (list<extended::transaction>, submit = {});
 
         bool valid () const;
-
-        submit_txs_request content_type (content_type_option) const;
-        submit_txs_request callback_url (const net::URL &) const;
-        submit_txs_request full_status_updates (bool) const;
-        submit_txs_request max_timeout (int) const;
-        submit_txs_request skip_fee_validation (bool) const;
-        submit_txs_request skip_script_validation (bool) const;
-        submit_txs_request callback_token (const string &) const;
-        submit_txs_request wait_for_token (status_value) const;
-
+        static bool valid (const net::HTTP::REST::request &);
     };
 
-    struct submit_txs_response : common_response {
-        submit_tx_response (net::HTTP::response &&);
-        maybe<ARC::error> error () const;
-        maybe<list<ARC::status>> status () const;
+    struct submit_txs_response : response {
+        using response::response;
+        bool valid () const;
+        static bool valid (const net::HTTP::response &);
     };
 
-    inline common_response::common_response (net::HTTP::response &&r): net::HTTP::response (r) {}
+    net::HTTP::REST::request inline policy_request () {
+        return net::HTTP::REST::request {net::HTTP::method::get, "/v1/policy"};
+    }
 
-    inline ~common_response () {}
+    net::HTTP::REST::request inline health_request () {
+        return net::HTTP::REST::request {net::HTTP::method::get, "/v1/health"};
+    }
+
+    net::HTTP::REST::request inline status_request (const Bitcoin::TXID &txid) {
+        return net::HTTP::REST::request {net::HTTP::method::get, std::string {"/v1/tx/"} + Gigamonkey::write_reverse_hex (txid)};
+    }
+
+    policy_response inline client::policy () {
+        return this->operator () (this->REST (policy_request ()));
+    }
+
+    health_response inline client::health () {
+        return this->operator () (this->REST (health_request ()));
+    }
+
+    status_response inline client::status (const Bitcoin::TXID &txid) {
+        return this->operator () (this->REST (status_request (txid)));
+    }
+
+    submit_response inline client::submit (const submit_request &x) {
+        return this->operator () (this->REST (x));
+    }
+
+    submit_txs_response inline client::submit_txs (const submit_txs_request &x) {
+        return this->operator () (this->REST (x));
+    }
+
+    inline response::response (net::HTTP::response &&r): net::HTTP::response (r) {}
+
+    maybe<JSON> inline response::body () const {
+        return body (*this);
+    }
+
+    bool inline response::error () const {
+        return error (*this);
+    }
+
+    bool inline response::valid () const {
+        return valid (*this);
+    }
+
+    bool inline response::error (const net::HTTP::response &r) {
+        return r.Status != net::HTTP::status::ok;
+    }
+
+    inline success::success (JSON &&j): JSON (j) {}
+    inline success::success (const JSON &j): JSON (j) {}
+
+    bool inline success::valid () const {
+        return valid (*this);
+    }
+
+    string inline success::timestamp () const {
+        return timestamp (*this);
+    }
+
+    bool inline success::valid (const JSON &j) {
+        return j.is_object () && j.contains ("timestamp");
+    }
+
+    string inline success::timestamp (const JSON &j) {
+        return std::string (j["timestamp"]);
+    }
 
     inline health::health (JSON &&j): JSON (j) {}
 
-    inline health_response::health_response (net::HTTP::response &&r): net::HTTP::response (r) {}
+    bool inline health::valid () const {
+        return valid (*this);
+    }
+
+    bool inline health_response::valid () const {
+        return valid (*this);
+    }
 
     inline policy::policy (JSON &&j): JSON (j) {}
 
-    inline policy_response::policy_response (net::HTTP::response &&r): net::HTTP::response (r) {}
+    bool inline policy::valid () const {
+        return valid (*this);
+    }
 
-    inline error::error (JSON &&j): JSON (j) {}
+    uint64 inline policy::max_script_size_policy () const {
+        return max_script_size_policy (*this);
+    }
 
-    inline status::status (JSON &&j): JSON (j) {}
+    uint64 inline policy::max_tx_sigops_count_policy () const {
+        return max_tx_sigops_count_policy (*this);
+    }
 
-    inline status_response::status_response (net::HTTP::response &&r): net::HTTP::response (r) {}
+    uint64 inline policy::max_tx_size_policy () const {
+        return max_tx_size_policy (*this);
+    }
 
-    inline submit_tx_request::submit_tx_request (net::HTTP::request &&r): net::HTTP::response (r) {}
+    satoshis_per_byte inline policy::mining_fee () const {
+        return mining_fee (*this);
+    }
 
-    inline submit_txs_request::submit_txs_request (net::HTTP::request &&r): net::HTTP::response (r) {}
+    bool inline policy_response::valid () const {
+        return valid (*this);
+    }
 
-    inline submit_txs_response::submit_tx_response (net::HTTP::response &&r): net::HTTP::response (r) {}
+    bool inline status::valid () const {
+        return valid (*this);
+    }
+
+    Bitcoin::TXID inline status::block_hash () const {
+        return block_hash (*this);
+    }
+
+    N inline status::block_height () const {
+        return block_height (*this);
+    }
+
+    string inline status::txid () const {
+        return txid (*this);
+    }
+
+    string inline status::Merkle_path () const {
+        return Merkle_path (*this);
+    }
+
+    status_value inline status::tx_status () const {
+        return tx_status (*this);
+    }
+
+    string inline status::extra_info () const {
+        return extra_info (*this);
+    }
+
+    inline submit_request::submit_request (net::HTTP::REST::request &&r): net::HTTP::REST::request (r) {}
+
+    inline submit_txs_request::submit_txs_request (net::HTTP::REST::request &&r): net::HTTP::REST::request (r) {}
+
+    bool inline submit_request::valid () const {
+        return valid (*this);
+    }
+
+    bool inline submit_txs_request::valid () const {
+        return valid (*this);
+    }
 
 }
 
