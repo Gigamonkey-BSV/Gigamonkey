@@ -78,7 +78,8 @@ namespace Gigamonkey::SPV {
     // attempt to generate a given SPV proof for an unconfirmed transaction.
     // this proof can be sent to a merchant who can use it to confirm that
     // the transaction is valid.
-    maybe<proof> generate_proof (const database &d, list<Bitcoin::transaction> payment);
+    maybe<proof> generate_proof (database &d, list<Bitcoin::transaction> payment);
+    maybe<extended::transaction> extend (database &d, Bitcoin::transaction);
 
     // convert proofs and proof parts to extended transactions.
     list<extended::transaction> inline extended_transactions (list<Bitcoin::transaction> payment, proof::map proof) {
@@ -130,7 +131,7 @@ namespace Gigamonkey::SPV {
         };
 
         // do we have a tx or merkle proof for a given tx?
-        virtual confirmed tx (const Bitcoin::TXID &) const = 0;
+        virtual confirmed tx (const Bitcoin::TXID &) = 0;
         
         virtual bool insert (const N &height, const Bitcoin::header &h) = 0;
 
@@ -196,7 +197,7 @@ namespace Gigamonkey::SPV {
         const Bitcoin::header *header (const data::N &n) const final override;
         const data::entry<data::N, Bitcoin::header> *header (const digest256 &n) const override;
 
-        confirmed tx (const Bitcoin::TXID &t) const final override;
+        confirmed tx (const Bitcoin::TXID &t) final override;
         Merkle::dual dual_tree (const digest256 &d) const;
 
         bool insert (const data::N &height, const Bitcoin::header &h) final override;

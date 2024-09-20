@@ -93,7 +93,7 @@ namespace Gigamonkey::SPV {
         return true;
     }
 
-    database::confirmed database::memory::tx (const Bitcoin::TXID &t) const {
+    database::confirmed database::memory::tx (const Bitcoin::TXID &t) {
         auto tx = Transactions.find (t);
         ptr<const Bitcoin::transaction> tt {tx == Transactions.end () ? ptr<const Bitcoin::transaction> {} : tx->second};
         auto h = ByTXID.find (t);
@@ -142,7 +142,7 @@ namespace Gigamonkey::SPV {
 
     namespace {
 
-        ptr<proof::node> generate_proof_node (const database &d, const Bitcoin::TXID &x) {
+        ptr<proof::node> generate_proof_node (database &d, const Bitcoin::TXID &x) {
 
             database::confirmed n = d.tx (x);
             // if we don't know about this tx then we can't construct a proof.
@@ -165,7 +165,7 @@ namespace Gigamonkey::SPV {
     // attempt to generate a given SPV proof for an unconfirmed transaction.
     // this proof can be sent to a merchant who can use it to confirm that
     // the transaction is valid.
-    maybe<proof> generate_proof (const database &d, list<Bitcoin::transaction> payment) {
+    maybe<proof> generate_proof (database &d, list<Bitcoin::transaction> payment) {
         std::cout << " generating spv proof for " << payment.size () << " transaction" << std::endl;
         proof p;
 
@@ -191,6 +191,17 @@ namespace Gigamonkey::SPV {
         }
 
         return p;
+    }
+
+    maybe<extended::transaction> extend (database &d, Bitcoin::transaction tx) {
+        list<extended::input> inputs;
+        for (const auto &in : tx.Inputs) {
+            auto c = d.tx (in.Reference.Digest);
+            if (!c.valid ()) return {};
+            inputs <<= {c.Transaction->Outputs[in.Reference.Index], in};
+        }
+
+        return extended::transaction {tx.Version, inputs, tx.Outputs, tx.LockTime};
     }
 
     void database::memory::insert (const Bitcoin::transaction &t) {

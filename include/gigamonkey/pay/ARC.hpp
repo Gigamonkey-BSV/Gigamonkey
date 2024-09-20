@@ -63,6 +63,7 @@ namespace Gigamonkey::ARC {
     struct health : JSON {
         bool healthy () const;
         string reason () const;
+        string version () const;
 
         bool valid () const;
 
@@ -135,7 +136,8 @@ namespace Gigamonkey::ARC {
         string txid () const;
         string Merkle_path () const;
         status_value tx_status () const;
-        string extra_info () const;
+        JSON extra_info () const;
+        JSON competing_txs () const;
         bool valid () const;
 
         using success::success;
@@ -146,7 +148,8 @@ namespace Gigamonkey::ARC {
         static string txid (const JSON &);
         static string Merkle_path (const JSON &);
         static status_value tx_status (const JSON &);
-        static string extra_info (const JSON &);
+        static JSON extra_info (const JSON &);
+        static JSON competing_txs (const JSON &);
     };
 
     struct status_response : response {
@@ -177,7 +180,8 @@ namespace Gigamonkey::ARC {
     };
 
     struct submit_request : net::HTTP::REST::request {
-        submit_request (const extended::transaction &, submit = {});
+        submit_request (const extended::transaction &x) : submit_request {x, submit {}} {}
+        submit_request (const extended::transaction &, submit);
 
         bool valid () const;
 
@@ -190,13 +194,15 @@ namespace Gigamonkey::ARC {
         using response::response;
         bool valid () const;
         ARC::status status () const;
+
         static bool valid (const net::HTTP::response &);
         static ARC::status status (const net::HTTP::response &);
     };
 
     struct submit_txs_request : net::HTTP::REST::request {
         submit_txs_request (net::HTTP::REST::request &&);
-        submit_txs_request (list<extended::transaction>, submit = {});
+        submit_txs_request (list<extended::transaction> x) : submit_txs_request {x, submit {}} {}
+        submit_txs_request (list<extended::transaction>, submit);
 
         bool valid () const;
         static bool valid (const net::HTTP::REST::request &);
@@ -290,6 +296,11 @@ namespace Gigamonkey::ARC {
         return valid (*this);
     }
 
+    bool inline health::valid (const JSON &j) {
+        return j.is_object () && j.contains ("healthy") && j["healthy"].is_boolean () && j.contains ("version") &&
+            j["version"].is_string () && j.contains ("reason") && j["reason"].is_string ();
+    }
+
     ARC::health inline health_response::health () const {
         return health (*this);
     }
@@ -342,6 +353,10 @@ namespace Gigamonkey::ARC {
         return (*response::body (r))["policy"];
     }
 
+    string inline policy_response::timestamp (const net::HTTP::response &r) {
+        return (*response::body (r))["timestamp"];
+    }
+
     bool inline status::valid () const {
         return valid (*this);
     }
@@ -366,7 +381,7 @@ namespace Gigamonkey::ARC {
         return tx_status (*this);
     }
 
-    string inline status::extra_info () const {
+    JSON inline status::extra_info () const {
         return extra_info (*this);
     }
 

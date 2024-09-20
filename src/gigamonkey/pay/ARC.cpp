@@ -29,6 +29,13 @@ namespace Gigamonkey::ARC {
         return bool (b) ? health::valid (*b) : true;
     }
 
+    bool policy::valid (const JSON &j) {
+        return j.is_object () && j.contains ("maxscriptsizepolicy") && j["maxscriptsizepolicy"].is_number () &&
+            j.contains ("maxtxsigopscountspolicy") && j["maxtxsigopscountspolicy"].is_number () &&
+            j.contains ("maxtxsizepolicy") && j["maxtxsizepolicy"].is_number () &&
+            j.contains ("miningFee") && j["miningFee"].is_object ();
+    }
+
     bool policy_response::valid (const net::HTTP::response &r) {
         if (!response::valid (r)) return false;
         auto b = response::body (r);
@@ -38,12 +45,12 @@ namespace Gigamonkey::ARC {
     }
 
     bool status::valid (const JSON &j) {
-        if (!j.contains ("blockHash") && !j.contains ("blockHeight") && !j.contains ("txid") &&
-            !j.contains ("merklePath") && !j.contains ("txStatus") && !j.contains ("extraInfo") &&
-            !j.contains ("competingTxs")) return false;
-
         // we could look at these fields in a little more detail but we don't.
-        return true;
+        return j.contains ("blockHash") && j["blockHash"].is_string () &&
+            j.contains ("blockHeight") && j["blockHeight"].is_number_unsigned () &&
+            j.contains ("txid") && j["txid"].is_string () &&
+            j.contains ("merklePath") && j["merklePath"].is_string () &&
+            j.contains ("txStatus") && j["txStatus"].is_string ();
     }
 
     bool status_response::valid (const net::HTTP::response &r) {
@@ -177,7 +184,7 @@ namespace Gigamonkey::ARC {
         return true;
     }
 
-    list<status> inline submit_txs_response::status (const net::HTTP::response &r) {
+    list<status> submit_txs_response::status (const net::HTTP::response &r) {
         list<ARC::status> stat;
         auto b = response::body (r);
         for (const JSON &j : *b) stat <<= ARC::status {j};
