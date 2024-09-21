@@ -15,8 +15,16 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
-      - name: Build Docker image
-        run: docker build -f Dockerfile.test -t test .
+      - name: Set up Docker CLI
+        uses: docker/setup-buildx-action@v3
+      - name: Build and push Docker images
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: "{{defaultContext}}:Dockerfile.test"
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: test
       - name: Run Docker tests
         run: docker run --name test test /home/Gigamonkey/build/test/unit_tests --gtest_output=xml
       - name: Prepare test results
@@ -24,7 +32,7 @@ jobs:
         run: mkdir test_results
       - name: Grab test results
         if: always()
-        run: docker cp test:/home/Gigamonkey/build/test_detail.xml ./test_results/test_detail.xml
+        run: docker cp test:/home/Gigamonkey/test_detail.xml ./test_results/test_detail.xml
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v4
