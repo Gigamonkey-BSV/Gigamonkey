@@ -7,52 +7,29 @@ if (${CMAKE_VERSION} VERSION_LESS 3.12)
 endif ()
 
 include (GoogleTest)
-macro (package_add_test TESTNAME)
-    # create an exectuable in which the tests will be stored
-    add_executable (${TESTNAME} ${ARGN})
-    # link the Google test infrastructure, mocking library, and a default main fuction to
-    # the test executable.  Remove g_test_main if writing your own main function.
-    target_include_directories (${TESTNAME} PUBLIC . ${CMAKE_SOURCE_DIR}/include
-        boost::boost
-        openssl::openssl
-        cryptopp::cryptopp
-        nlohmann_json::nlohmann_json
-        gmp::gmp)
-    target_link_libraries (${TESTNAME} gtest::gtest
-        data::data gigamonkey)
-    # gtest_discover_tests replaces gtest_add_tests,
-    # see https://cmake.org/cmake/help/v3.10/module/GoogleTest.html for more options to pass to it
-    
-    gtest_discover_tests (${TESTNAME}
-        # set a working directory so your project root so that you can find test data via paths relative to the project root
-        SOURCES ${ARGN}
-        WORKING_DIRECTORY ${PROJECT_DIR}
-        PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${PROJECT_DIR}"
-    )
-
-    set_target_properties (${TESTNAME} PROPERTIES FOLDER tests)
-endmacro ()
-
-package_add_test (testBase58Check testBase58Check.cpp)
-package_add_test (testFormat testFormat.cpp)
-package_add_test (testTimestamp testTimestamp.cpp)
-package_add_test (testAddress testAddress.cpp)
-package_add_test (testExpandCompact testExpandCompact.cpp)
-package_add_test (testMerkle testMerkle.cpp)
-package_add_test (testPush testPush.cpp)
-package_add_test (testNumber testNumber.cpp)
-package_add_test (testSignature testSignature.cpp)
-package_add_test (testScript testScript.cpp)
-package_add_test (testTransaction testTransaction.cpp)
-#package_add_test(testGenesis testGenesis.cpp)
-package_add_test (testDifficulty testDifficulty.cpp)
-package_add_test (testWorkString testWorkString.cpp)
-package_add_test (testWork testWork.cpp)
-package_add_test (testBoost testBoost.cpp)
-package_add_test (testBip32 testBip32.cpp)
-package_add_test (testBip32Derivations testBip32Derivations.cpp)
-package_add_test (testBip39 testBip39.cpp)
-package_add_test (testBUMP testBUMP.cpp)
-package_add_test (testBEEF testBEEF.cpp)
-package_add_test (testStratum testStratum.cpp)
-#package_add_test(testRPC testRPC.cpp)
+add_executable(unit_tests 
+testBase58Check.cpp
+testFormat.cpp
+testTimestamp.cpp
+testAddress.cpp
+testExpandCompact.cpp
+testMerkle.cpp
+testPush.cpp
+testNumber.cpp
+testSignature.cpp
+testScript.cpp
+testTransaction.cpp
+testDifficulty.cpp
+testWorkString.cpp
+testWork.cpp
+testBoost.cpp
+testBip32.cpp
+testBip32Derivations.cpp
+testBip39.cpp
+testBUMP.cpp
+testBEEF.cpp
+testStratum.cpp
+)
+target_link_libraries(unit_tests
+PRIVATE gigamonkey Data::data util gtest_main gmock)
+gtest_discover_tests(unit_tests)

@@ -4,6 +4,7 @@ cmake_minimum_required (VERSION 3.1...3.14)
 if (${CMAKE_VERSION} VERSION_LESS 3.12)
     cmake_policy (VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
 endif ()
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake" CACHE STRING "Modules for CMake" FORCE)
 
 project (gigamonkey 	VERSION 0.0.15
 		DESCRIPTION "open-source Bitcoin library in c++"
@@ -14,17 +15,37 @@ project (gigamonkey 	VERSION 0.0.15
 option (PACKAGE_TESTS "Build the tests" ON)
 
 ## Enable testing
+include(FetchContent)
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz)
+FetchContent_MakeAvailable(json)
+
+FetchContent_Declare(argh URL https://github.com/adishavit/argh/archive/refs/tags/v1.3.2.zip)
+FetchContent_MakeAvailable(argh)
+
+FetchContent_Declare(ctre URL https://github.com/hanickadot/compile-time-regular-expressions/archive/refs/tags/v3.9.0.zip)
+FetchContent_MakeAvailable(ctre)
+
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(Cryptopp REQUIRED IMPORTED_TARGET libcrypto++)
+
 
 find_package (data CONFIG REQUIRED)
-find_package (Boost CONFIG REQUIRED)
-find_package (OpenSSL CONFIG REQUIRED)
-find_package (cryptopp CONFIG REQUIRED)
-find_package (nlohmann_json CONFIG REQUIRED)
-find_package (gmp CONFIG REQUIRED)
+# find_package (Boost CONFIG REQUIRED)
+# find_package (OpenSSL CONFIG REQUIRED)
+# find_package (cryptopp CONFIG REQUIRED)
+# find_package (nlohmann_json CONFIG REQUIRED)
+# find_package (gmp CONFIG REQUIRED)
 
 if (PACKAGE_TESTS)
 	include (CTest)
-	find_package (GTest REQUIRED)
+	FetchContent_Declare(
+  googletest
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG v1.14.0
+)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
 	enable_testing ()
 	add_subdirectory (test)
 endif ()
@@ -97,13 +118,15 @@ add_library (gigamonkey STATIC
 )
 
 target_link_libraries (gigamonkey PUBLIC
-data::data 
-util 
-boost::boost 
-openssl::openssl 
-cryptopp::cryptopp 
 nlohmann_json::nlohmann_json 
-gmp::gmp )
+Data::data 
+util 
+# boost::boost 
+# openssl::openssl 
+# cryptopp::cryptopp 
+
+# gmp::gmp 
+)
 
 
 target_include_directories (gigamonkey PUBLIC include)

@@ -9,6 +9,6 @@ RUN cmake --install /tmp/data/build
 
 WORKDIR /home/Gigamonkey
 COPY . .
-RUN cmake -B build -S . -DPACKAGE_TESTS=OFF
-RUN cmake --build .
-RUN cmake --install .
+RUN cmake -B build -S .
+RUN cmake --build build
+CMD ["ctest"]
