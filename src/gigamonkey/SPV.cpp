@@ -51,13 +51,13 @@ namespace Gigamonkey::SPV {
         return Merkle::dual {h->second->Paths, h->second->Header.Value.MerkleRoot};
     }
 
-    bool database::memory::insert (const data::N &height, const Bitcoin::header &h) {
+    const entry<N, Bitcoin::header> *database::memory::insert (const data::N &height, const Bitcoin::header &h) {
 
-        if (!h.valid ()) return false;
+        if (!h.valid ()) return nullptr;
 
         auto old = ByHeight.find (height);
         if (old != ByHeight.end ()) {
-            if (old->second->Header.Value == h) return true;
+            if (old->second->Header.Value == h) return &old->second->Header;
             // if we replace one header with another, we assume this is a reorg and replace all subsequent blocks.
 
             auto o = old;
@@ -90,7 +90,7 @@ namespace Gigamonkey::SPV {
             new_entry->Last = i->second;
 
         if (auto i = ByHeight.find (height + 1); i != ByHeight.end ()) i->second->Last = new_entry;
-        return true;
+        return &new_entry->Header;
     }
 
     database::confirmed database::memory::tx (const Bitcoin::TXID &t) {
@@ -149,7 +149,6 @@ namespace Gigamonkey::SPV {
             if (!n.valid ()) return {};
             if (n.has_proof ()) return ptr<proof::node> {new proof::node {*n.Transaction, n.Confirmation}};
 
-            std::cout << "    searching for further antecedent transactions" << std::endl;
             map<Bitcoin::TXID, ptr<proof::node>> antecedents;
 
             for (const Bitcoin::input &in : Bitcoin::transaction {x}.Inputs) {
@@ -166,13 +165,11 @@ namespace Gigamonkey::SPV {
     // this proof can be sent to a merchant who can use it to confirm that
     // the transaction is valid.
     maybe<proof> generate_proof (database &d, list<Bitcoin::transaction> payment) {
-        std::cout << " generating spv proof for " << payment.size () << " transaction" << std::endl;
         proof p;
 
         for (const Bitcoin::transaction &b : payment) {
 
             Bitcoin::TXID x = b.id ();
-            std::cout << "  generating proof for tx with id " << x << std::endl;
 
             // the transaction should not have a proof already because
             // this is supposed to be a payment that is unconfirmed.
@@ -183,7 +180,6 @@ namespace Gigamonkey::SPV {
 
             for (const Bitcoin::input &in : b.Inputs)
                 if (!p.Proof.contains (in.Reference.Digest)) {
-                    std::cout << "   searching for sub proof with id " << in.Reference.Digest << std::endl;
                     ptr<proof::node> u = generate_proof_node (d, in.Reference.Digest);
                     if (u == nullptr) return {};
                     p.Proof = p.Proof.insert (in.Reference.Digest, u);

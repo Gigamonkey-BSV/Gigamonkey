@@ -133,7 +133,7 @@ namespace Gigamonkey::SPV {
         // do we have a tx or merkle proof for a given tx?
         virtual confirmed tx (const Bitcoin::TXID &) = 0;
         
-        virtual bool insert (const N &height, const Bitcoin::header &h) = 0;
+        virtual const entry<N, Bitcoin::header> *insert (const N &height, const Bitcoin::header &h) = 0;
 
         // it is allowed to insert a transaction without a merkle proof.
         // it goes into pending.
@@ -200,7 +200,7 @@ namespace Gigamonkey::SPV {
         confirmed tx (const Bitcoin::TXID &t) final override;
         Merkle::dual dual_tree (const digest256 &d) const;
 
-        bool insert (const data::N &height, const Bitcoin::header &h) final override;
+        const data::entry<N, Bitcoin::header> *insert (const data::N &height, const Bitcoin::header &h) final override;
         bool insert (const Merkle::proof &p) final override;
         void insert (const Bitcoin::transaction &) final override;
 
