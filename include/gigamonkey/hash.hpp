@@ -84,6 +84,20 @@ namespace Gigamonkey::Bitcoin {
 
 }
 
+// Hash writers for large documents that you don't want to actually
+// write out completely before hashing them. You can write the
+// document to the hash writer incrementally and the hash will be
+// calculated as we go along.
+namespace Gigamonkey {
+    using SHA_2_256_writer = crypto::hash::SHA2<32>;
+    using RIPEMD_160_writer = crypto::hash::RIPEMD<20>;
+}
+
+namespace Gigamonkey::Bitcoin {
+    using Hash160_writer = crypto::hash::Bitcoin<20>;
+    using Hash256_writer = crypto::hash::Bitcoin<32>;
+}
+
 namespace Gigamonkey {
 
     digest256 inline double_SHA2_256 (bytes_view b) {

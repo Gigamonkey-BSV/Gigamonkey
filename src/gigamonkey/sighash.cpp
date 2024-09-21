@@ -35,8 +35,6 @@ namespace Gigamonkey::Bitcoin::sighash {
         return transaction {doc.Transaction.Version, in, out, doc.Transaction.LockTime};
         
     }
-
-    using Hash256_writer = crypto::hash::SHA2<32>;
     
     namespace Amaury {
         
