@@ -79,7 +79,9 @@ namespace Gigamonkey::Stratum::mining {
             return valid (*this);
         }
         
-        friend std::ostream &operator << (std::ostream &, const parameters &);
+        friend std::ostream &operator << (std::ostream &, const parameters &) {
+            throw "unimplemented";
+        }
     };
 }
 
