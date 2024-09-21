@@ -5,10 +5,3 @@ RUN git clone --depth 1 --branch redo_cmake https://github.com/DanielKrawisz/dat
 RUN cmake -B /tmp/data/build -S /tmp/data -DPACKAGE_TESTS=OFF
 RUN cmake --build /tmp/data/build
 RUN cmake --install /tmp/data/build
-
-
-WORKDIR /home/Gigamonkey
-COPY . .
-RUN cmake -B build -S . -DPACKAGE_TESTS=OFF
-RUN cmake --build .
-RUN cmake --install .
