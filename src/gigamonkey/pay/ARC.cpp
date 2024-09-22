@@ -7,7 +7,7 @@ namespace Gigamonkey::ARC {
     bool response::valid (const net::HTTP::response &r) {
         if (r.Status == net::HTTP::status::unauthorized && r.Body == "") return true;
         const auto *v = r.Headers.contains (net::HTTP::header::content_type);
-        return bool (v) && *v == "appliction/json" && bool (body (r));
+        return bool (v) && *v == "application/json" || bool (body (r));
     }
 
     error response::error (const net::HTTP::response &r) {
