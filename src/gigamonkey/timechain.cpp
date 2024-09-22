@@ -4,6 +4,7 @@
 #include <gigamonkey/work/proof.hpp>
 #include <gigamonkey/script.hpp>
 #include <gigamonkey/work/ASICBoost.hpp>
+#include <gigamonkey/script/opcodes.h>
 
 namespace Gigamonkey {
     bool header_valid_work (slice<80> h) {
@@ -269,6 +270,17 @@ namespace Gigamonkey::Bitcoin {
         w << Version << Previous << MerkleRoot << Timestamp << Target << Nonce;
         return x;
     }
-    
+
+    uint64 transaction::sigops () const {
+        uint64 sigops {0};
+        for (const auto &in : Inputs) for (const byte &op : in.Script)
+            if (op == OP_CHECKSIG || op == OP_CHECKSIGVERIFY) sigops++;
+            else if (op == OP_CHECKMULTISIG || op == OP_CHECKMULTISIGVERIFY) sigops += 20;
+        for (const auto &out : Outputs) for (const byte &op : out.Script)
+            if (op == OP_CHECKSIG || op == OP_CHECKSIGVERIFY) sigops++;
+            else if (op == OP_CHECKMULTISIG || op == OP_CHECKMULTISIGVERIFY) sigops += 20;
+        return 0;
+    }
+
 }
 

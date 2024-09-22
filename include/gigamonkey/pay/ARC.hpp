@@ -69,7 +69,12 @@ namespace Gigamonkey::ARC {
 
         health (JSON &&);
         health (const JSON &j);
+
         static bool valid (const JSON &);
+
+        static bool healthy (const JSON &);
+        static string reason (const JSON &);
+        static string version (const JSON &);
     };
 
     struct health_response : response {
@@ -106,6 +111,9 @@ namespace Gigamonkey::ARC {
         static uint64 max_tx_sigops_count_policy (const JSON &);
         static uint64 max_tx_size_policy (const JSON &);
         static satoshis_per_byte mining_fee (const JSON &);
+
+        // does a transaction satisfy the policy?
+        bool satisfies (const extended::transaction &) const;
     };
 
     struct policy_response : response {
@@ -298,14 +306,40 @@ namespace Gigamonkey::ARC {
 
     bool inline health::valid (const JSON &j) {
         return j.is_object () && j.contains ("healthy") && j["healthy"].is_boolean () && j.contains ("version") &&
-            j["version"].is_string () && j.contains ("reason") && j["reason"].is_string ();
+            j["version"].is_string () && j.contains ("reason") && (j["reason"].is_string () || j["reason"].is_null ());
     }
 
-    ARC::health inline health_response::health () const {
+    bool inline health::healthy () const {
+        return healthy (*this);
+    }
+
+    string inline health::reason () const {
+        return reason (*this);
+    }
+
+    string inline health::version () const {
+        return version (*this);
+    }
+
+    bool inline health::healthy (const JSON &j) {
+        return j["healthy"];
+    }
+
+    string inline health::reason (const JSON &j) {
+        auto r = j["reason"];
+        if (!r.is_string ()) return "";
+        return r;
+    }
+
+    string inline health::version (const JSON &j) {
+        return j["version"];
+    }
+
+    health inline health_response::health () const {
         return health (*this);
     }
 
-    ARC::health inline health_response::health (const net::HTTP::response &r) {
+    health inline health_response::health (const net::HTTP::response &r) {
         if (response::is_error (r)) return JSON (nullptr);
         else return *response::body (r);
     }
@@ -335,6 +369,23 @@ namespace Gigamonkey::ARC {
 
     satoshis_per_byte inline policy::mining_fee () const {
         return mining_fee (*this);
+    }
+
+    uint64 inline policy::max_script_size_policy (const JSON &j) {
+        return j["maxscriptsizepolicy"];
+    }
+
+    uint64 inline policy::max_tx_sigops_count_policy (const JSON &j) {
+        return j["maxtxsigopscountspolicy"];
+    }
+
+    uint64 inline policy::max_tx_size_policy (const JSON &j) {
+        return j["maxtxsizepolicy"];
+    }
+
+    Gigamonkey::satoshis_per_byte inline policy::mining_fee (const JSON &j) {
+        auto spb = j["miningFee"];
+        return Gigamonkey::satoshis_per_byte {Bitcoin::satoshi {int64 (j["satoshis"])}, j["bytes"]};
     }
 
     bool inline policy_response::valid () const {

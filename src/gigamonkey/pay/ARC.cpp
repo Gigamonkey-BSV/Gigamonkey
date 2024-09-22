@@ -191,4 +191,23 @@ namespace Gigamonkey::ARC {
         return stat;
     }
 
+    // does a transaction satisfy the policy?
+    bool policy::satisfies (const extended::transaction &tx) const {
+
+        uint64 mxxp = max_script_size_policy ();
+        uint64 mtxxcp = max_tx_sigops_count_policy ();
+        uint64 mtxxp = max_tx_size_policy ();
+        satoshis_per_byte spb = mining_fee ();
+
+        Bitcoin::transaction t = Bitcoin::transaction (tx);
+        if (t.sigops () > mtxxcp ) return false;
+        if (t.serialized_size () > mtxxp) return false;
+        if (tx.fee () < spb) return false;
+
+        for (const auto &in : tx.Inputs) if (in.Script.size () > mxxp) return false;
+        for (const auto &out : tx.Outputs) if (out.Script.size () > mxxp) return false;
+
+        return true;
+    }
+
 }

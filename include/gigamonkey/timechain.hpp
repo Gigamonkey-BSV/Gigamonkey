@@ -239,7 +239,7 @@ namespace Gigamonkey::Bitcoin {
         
         uint64 serialized_size () const;
         
-        uint32 sigops () const;
+        uint64 sigops () const;
         
         satoshi sent () const {
             return fold ([] (satoshi x, const Bitcoin::output &o) -> satoshi {
