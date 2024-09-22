@@ -35,13 +35,13 @@ namespace Gigamonkey {
 
         // validate means that we actually check all the merkle
         // against the block headers.
-        bool validate (const SPV::database &) const;
+        bool validate (SPV::database &) const;
 
         uint64 serialized_size () const;
 
         // NOTE: it is possible for BUMP to contain several unconfirmeed
         // transactions.
-        SPV::proof read_SPV_proof (const SPV::database &) const;
+        SPV::proof read_SPV_proof (SPV::database &) const;
 
         // written out in byte order this is 0100BEEF.
         uint32_little Version {0xEFBE0001};
@@ -80,7 +80,7 @@ namespace Gigamonkey {
         return r >> h.Version >> Bitcoin::var_sequence<Merkle::BUMP> {h.BUMPs} >> Bitcoin::var_sequence<BEEF::transaction> {h.Transactions};
     }
 
-    bool inline BEEF::validate (const SPV::database &d) const {
+    bool inline BEEF::validate (SPV::database &d) const {
         if (!valid ()) return false;
         for (const auto &mr : roots ()) if (!d.header (mr)) return false;
         return true;

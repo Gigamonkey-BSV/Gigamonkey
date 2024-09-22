@@ -321,7 +321,7 @@ namespace Gigamonkey {
     }
 
     // with an SPV database we can check all additional information
-    bool proofs_serialization_standard::validate (const SPV::database &d) const {
+    bool proofs_serialization_standard::validate (SPV::database &d) const {
         if (!valid ()) return false;
 
         Bitcoin::TXID txid = bool (Transaction) ? Bitcoin::transaction::id (*Transaction) : *TXID;

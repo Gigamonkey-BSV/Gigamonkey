@@ -52,9 +52,9 @@ namespace Gigamonkey {
 
         // validate means that we actually check all the merkle
         // against the block headers.
-        bool validate (const SPV::database &) const;
+        bool validate (SPV::database &) const;
 
-        SPV::proof read_SPV_proof (const SPV::database &) const;
+        SPV::proof read_SPV_proof (SPV::database &) const;
     };
 
     inline SPV_envelope::node::node (const bytes &raw, const proofs_serialization_standard &proof, list<MAPI::transaction_status_response> r):

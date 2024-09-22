@@ -23,13 +23,13 @@ namespace Gigamonkey::Bitcoin {
 
 namespace Gigamonkey::SPV {
 
-    const Bitcoin::header *database::memory::header (const N &n) const {
+    const Bitcoin::header *database::memory::header (const N &n) {
         auto h = ByHeight.find (n);
         if (h == ByHeight.end ()) return {};
         return &h->second->Header.Value;
     }
 
-    const data::entry<N, Bitcoin::header> *database::memory::header (const digest256 &n) const {
+    const data::entry<N, Bitcoin::header> *database::memory::header (const digest256 &n) {
         auto h = ByHash.find (n);
 
         if (h == ByHash.end ()) {
@@ -93,12 +93,12 @@ namespace Gigamonkey::SPV {
         return &new_entry->Header;
     }
 
-    database::confirmed database::memory::tx (const Bitcoin::TXID &t) {
+    database::tx database::memory::transaction (const Bitcoin::TXID &t) {
         auto tx = Transactions.find (t);
         ptr<const Bitcoin::transaction> tt {tx == Transactions.end () ? ptr<const Bitcoin::transaction> {} : tx->second};
         auto h = ByTXID.find (t);
-        return h == ByTXID.end () ? confirmed {tt} :
-            confirmed {tt, proof::confirmation {
+        return h == ByTXID.end () ? database::tx {tt} :
+            database::tx {tt, confirmation {
                 Merkle::path (Merkle::dual {h->second->Paths, h->second->Header.Value.MerkleRoot}[t].Branch),
                 h->second->Header.Key,
                 h->second->Header.Value}};
@@ -106,25 +106,25 @@ namespace Gigamonkey::SPV {
 
     namespace {
 
-        bool unconfirmed_validate (const proof::node &u, const database *d) {
-            if (u.Proof.is<proof::confirmation> ()) {
-                const proof::confirmation &conf = u.Proof.get<proof::confirmation> ();
+        bool unconfirmed_validate (const proof::node &u, database *d) {
+            if (u.Proof.is<confirmation> ()) {
+                const confirmation &conf = u.Proof.get<confirmation> ();
                 if (d != nullptr && d->header (conf.Header.MerkleRoot) == nullptr) return false;
                 return proof::valid (u.Transaction, conf.Path, conf.Header);
             }
 
             if (!extended_transaction (u.Transaction, u.Proof.get<proof::map> ()).valid ()) return false;
 
-            for (const entry<Bitcoin::TXID, ptr<proof::node>> &p : u.Proof.get<proof::map> ())
+            for (const entry<Bitcoin::TXID, proof::accepted> &p : u.Proof.get<proof::map> ())
                 if (p.Value == nullptr || p.Key != p.Value->Transaction.id () || !unconfirmed_validate (*p.Value, d)) return false;
 
             return true;
         }
 
-        bool proof_validate (const proof &u, const database *d) {
+        bool proof_validate (const proof &u, database *d) {
             if (!list<extended::transaction> (u).valid ()) return false;
 
-            for (const entry<Bitcoin::TXID, ptr<proof::node>> &p : u.Proof)
+            for (const entry<Bitcoin::TXID, proof::accepted> &p : u.Proof)
                 if (p.Key != p.Value->Transaction.id () || !unconfirmed_validate (*p.Value, d)) return false;
 
             return true;
@@ -136,23 +136,23 @@ namespace Gigamonkey::SPV {
     }
 
     // check valid and check that all headers are in our database.
-    bool proof::validate (const SPV::database &d) const {
+    bool proof::validate (SPV::database &d) const {
         return proof_validate (*this, &d);
     }
 
     namespace {
 
-        ptr<proof::node> generate_proof_node (database &d, const Bitcoin::TXID &x) {
+        proof::accepted generate_proof_node (database &d, const Bitcoin::TXID &x) {
 
-            database::confirmed n = d.tx (x);
+            database::tx n = d.transaction (x);
             // if we don't know about this tx then we can't construct a proof.
             if (!n.valid ()) return {};
-            if (n.has_proof ()) return ptr<proof::node> {new proof::node {*n.Transaction, n.Confirmation}};
+            if (n.confirmed ()) return ptr<proof::node> {new proof::node {*n.Transaction, n.Confirmation}};
 
-            map<Bitcoin::TXID, ptr<proof::node>> antecedents;
+            proof::map antecedents;
 
             for (const Bitcoin::input &in : Bitcoin::transaction {x}.Inputs) {
-                ptr<proof::node> u = generate_proof_node (d, in.Reference.Digest);
+                proof::accepted u = generate_proof_node (d, in.Reference.Digest);
                 if (u == nullptr) return {};
                 antecedents = antecedents.insert (in.Reference.Digest, u);
             }
@@ -173,8 +173,8 @@ namespace Gigamonkey::SPV {
 
             // the transaction should not have a proof already because
             // this is supposed to be a payment that is unconfirmed.
-            database::confirmed n = d.tx (x);
-            if (n.has_proof ()) return {};
+            database::tx n = d.transaction (x);
+            if (n.confirmed ()) return {};
 
             p.Payment <<= b;
 
@@ -192,7 +192,7 @@ namespace Gigamonkey::SPV {
     maybe<extended::transaction> extend (database &d, Bitcoin::transaction tx) {
         list<extended::input> inputs;
         for (const auto &in : tx.Inputs) {
-            auto c = d.tx (in.Reference.Digest);
+            auto c = d.transaction (in.Reference.Digest);
             if (!c.valid ()) return {};
             inputs <<= {c.Transaction->Outputs[in.Reference.Index], in};
         }

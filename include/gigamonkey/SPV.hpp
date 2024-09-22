@@ -15,6 +15,19 @@ namespace Gigamonkey::Bitcoin {
 
 namespace Gigamonkey::SPV {
 
+    struct confirmation {
+        Merkle::path Path;
+        N Height;
+        Bitcoin::header Header;
+
+        confirmation () : Path {}, Height {0}, Header {} {}
+        confirmation (Merkle::path p, const N &height, const Bitcoin::header &h): Path {p}, Height {height}, Header {h} {}
+        bool operator == (const confirmation &t) const;
+        std::strong_ordering operator <=> (const confirmation &t) const;
+
+        bool valid () const;
+    };
+
     // database for storing headers, merkle proofs, and transactions.
     struct database;
 
@@ -23,29 +36,34 @@ namespace Gigamonkey::SPV {
     // this is what you would send to a peer when you wanted to make a payment.
     struct proof {
 
-        struct confirmation {
-            Merkle::path Path;
-            N Height;
-            Bitcoin::header Header;
-
-            confirmation () : Path {}, Height {0}, Header {} {}
-            confirmation (Merkle::path p, const N &height, const Bitcoin::header &h): Path {p}, Height {height}, Header {h} {}
-            bool operator == (const confirmation &t) const;
-            std::strong_ordering operator <=> (const confirmation &t) const;
-
-            bool valid () const {
-                return Header.Timestamp != Bitcoin::timestamp {0};
-            }
-        };
-
         static bool valid (const Bitcoin::transaction &tx, const Merkle::path &p, const Bitcoin::header &h);
         static bool valid (const Bitcoin::TXID &id, const Merkle::path &p, const digest256 &root);
 
         struct node;
-        using map = data::map<Bitcoin::TXID, ptr<node>>;
+
+        // a transaction that has been accepted by the network.
+        struct accepted : ptr<node> {
+            accepted ();
+            accepted (ptr<node> &&);
+            accepted (const ptr<node> &);
+            bool valid () const;
+            explicit operator bool ();
+            bool operator == (const accepted &tx) const;
+            std::partial_ordering operator <=> (const accepted &tx);
+        };
+
+        struct map : tool::base_rb_map<Bitcoin::TXID, accepted, map> {
+            using tool::base_rb_map<Bitcoin::TXID, accepted, map>::base_rb_map;
+            bool operator == (const map &) const;
+            std::partial_ordering operator <=> (const map &) const;
+        };
 
         // an spv proof is a tree whose nodes are txs and whose leaves are all Merkle proofs.
-        using tree = either<confirmation, map>;
+        struct tree : either<confirmation, map> {
+            using either<confirmation, map>::either;
+            std::partial_ordering operator <=> (const tree &t) const;
+            bool valid () const;
+        };
 
         struct node {
             Bitcoin::transaction Transaction;
@@ -69,7 +87,7 @@ namespace Gigamonkey::SPV {
 
         // check valid and check that all headers are in our database.
         // and check all scripts for txs that have no merkle proof.
-        bool validate (const database &) const;
+        bool validate (database &) const;
 
         explicit operator list<extended::transaction> () const;
 
@@ -96,66 +114,63 @@ namespace Gigamonkey::SPV {
         }, tx.Inputs), tx.Outputs, tx.LockTime};
     }
 
-    // interface for database containing headers, transactions, and merkle path.
     struct database {
 
         // get a block header by height.
-        virtual const Bitcoin::header *header (const N &) const = 0;
-        
-        virtual const entry<N, Bitcoin::header> *latest () const = 0;
+        virtual const Bitcoin::header *header (const N &) = 0;
+
+        virtual const entry<N, Bitcoin::header> *latest () = 0;
 
         // get by hash or merkle root
-        virtual const entry<N, Bitcoin::header> *header (const digest256 &) const = 0;
+        virtual const entry<N, Bitcoin::header> *header (const digest256 &) = 0;
 
         // a transaction in the database, which may include a merkle proof if we have one.
-        struct confirmed {
+        struct tx {
             ptr<const Bitcoin::transaction> Transaction;
-            proof::confirmation Confirmation;
+            confirmation Confirmation;
 
-            confirmed (ptr<const Bitcoin::transaction> t, const proof::confirmation &x) : Transaction {t}, Confirmation {x} {}
-            confirmed (ptr<const Bitcoin::transaction> t) : Transaction {t}, Confirmation {} {}
+            tx (ptr<const Bitcoin::transaction> t, const confirmation &x) : Transaction {t}, Confirmation {x} {}
+            tx (ptr<const Bitcoin::transaction> t) : Transaction {t}, Confirmation {} {}
 
+            bool valid () const;
+            // whether a proof is included.
+            bool confirmed () const;
             // check the proof if it exists.
-            bool validate () const {
-                if (!has_proof ()) return false;
-                return proof::valid (*Transaction, Confirmation.Path, Confirmation.Header);
-            }
+            bool validate () const;
 
-            bool has_proof () const {
-                return Transaction != nullptr && Confirmation.valid ();
-            }
-
-            bool valid () const {
-                return Transaction != nullptr;
-            }
         };
 
         // do we have a tx or merkle proof for a given tx?
-        virtual confirmed tx (const Bitcoin::TXID &) = 0;
-        
-        virtual const entry<N, Bitcoin::header> *insert (const N &height, const Bitcoin::header &h) = 0;
+        virtual tx transaction (const Bitcoin::TXID &) = 0;
+
+        // get txids for transactions without Merkle proofs.
+        virtual set<Bitcoin::TXID> unconfirmed () = 0;
+
+        // an in-memory implementation of the database.
+        class memory;
+
+        virtual ~database () {}
+
+    };
+
+    // interface for database containing headers, transactions, and merkle path.
+    struct writable {
 
         // it is allowed to insert a transaction without a merkle proof.
         // it goes into pending.
         virtual void insert (const Bitcoin::transaction &) = 0;
-
-        // get txids for transactions without Merkle proofs.
-        virtual set<Bitcoin::TXID> pending () = 0;
 
         // Txs cannot be removed unless they are in pending.
         virtual void remove (const Bitcoin::TXID &) = 0;
         
         // providing a merkle proof removes a tx from pending.
         virtual bool insert (const Merkle::proof &) = 0;
-        
-        // an in-memory implementation of SPV.
-        class memory;
+        virtual const data::entry<N, Bitcoin::header> *insert (const data::N &height, const Bitcoin::header &h) = 0;
 
-        virtual ~database () {}
-        
+        virtual ~writable () {}
     };
     
-    struct database::memory : database {
+    struct database::memory : virtual database, virtual writable {
         struct entry {
             data::entry<data::N, Bitcoin::header> Header;
             Merkle::map Paths;
@@ -189,23 +204,25 @@ namespace Gigamonkey::SPV {
 
         memory () : memory (Bitcoin::genesis ().Header) {}
         
-        const data::entry<data::N, Bitcoin::header> *latest () const final override {
+        const data::entry<data::N, Bitcoin::header> *latest () final override {
             // always present because we always start with at least one header.
             return &Latest->Header;
         }
         
-        const Bitcoin::header *header (const data::N &n) const final override;
-        const data::entry<data::N, Bitcoin::header> *header (const digest256 &n) const override;
+        const Bitcoin::header *header (const data::N &n) final override;
+        const data::entry<data::N, Bitcoin::header> *header (const digest256 &n) override;
 
-        confirmed tx (const Bitcoin::TXID &t) final override;
+        tx transaction (const Bitcoin::TXID &t) final override;
         Merkle::dual dual_tree (const digest256 &d) const;
 
         const data::entry<N, Bitcoin::header> *insert (const data::N &height, const Bitcoin::header &h) final override;
         bool insert (const Merkle::proof &p) final override;
         void insert (const Bitcoin::transaction &) final override;
 
-        set<Bitcoin::TXID> pending () final override;
+        // all unconfirmed txs in the database.
+        set<Bitcoin::TXID> unconfirmed () final override;
 
+        // only txs in unconfirmed can be removed.
         void remove (const Bitcoin::TXID &) final override;
 
     };
@@ -218,21 +235,42 @@ namespace Gigamonkey::SPV {
         return p.derive_root (id) == root;
     }
 
-    bool inline proof::confirmation::operator == (const confirmation &t) const {
+    bool inline confirmation::operator == (const confirmation &t) const {
         return Header == t.Header && t.Height == Height && Path.Index == t.Path.Index;
     }
 
-    std::strong_ordering inline proof::confirmation::operator <=> (const confirmation &t) const {
+    std::strong_ordering inline confirmation::operator <=> (const confirmation &t) const {
         auto cmp_block = Header <=> Header;
         return cmp_block == std::strong_ordering::equal ? cmp_block : Path.Index <=> t.Path.Index;
     }
 
-    set<Bitcoin::TXID> inline database::memory::pending () {
+    set<Bitcoin::TXID> inline database::memory::unconfirmed () {
         return Pending;
     }
 
     inline proof::operator list<extended::transaction> () const {
         return extended_transactions (Payment, Proof);
+    }
+
+    bool inline database::tx::validate () const {
+        if (!confirmed ()) return false;
+        return proof::valid (*Transaction, Confirmation.Path, Confirmation.Header);
+    }
+
+    bool inline database::tx::confirmed () const {
+        return Transaction != nullptr && Confirmation.valid ();
+    }
+
+    bool inline database::tx::valid () const {
+        return Transaction != nullptr;
+    }
+
+    inline proof::accepted::accepted (): ptr<node> {nullptr} {}
+    inline proof::accepted::accepted (ptr<node> &&n): ptr<node> {n} {}
+    inline proof::accepted::accepted (const ptr<node> &n): ptr<node> {n} {}
+
+    bool inline confirmation::valid () const {
+        return Header.Timestamp != Bitcoin::timestamp {0};
     }
     
 }

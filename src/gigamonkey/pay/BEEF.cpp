@@ -58,8 +58,9 @@ namespace Gigamonkey {
         using namespace Bitcoin;
 
         using node = SPV::proof::node;
+        using accepted = SPV::proof::accepted;
         using spvmap = SPV::proof::map;
-        using conf = SPV::proof::confirmation;
+        using conf = SPV::confirmation;
         using proof = SPV::proof;
 
         struct SPV_proof_writer {
@@ -85,7 +86,7 @@ namespace Gigamonkey {
                 }
 
             } else {
-                for (const auto &e : std::get<map<TXID, ptr<node>>> (tx.Proof)) read_node (e.Key, *e.Value, spv);
+                for (const auto &e : tx.Proof.get<SPV::proof::map> ()) read_node (e.Key, *e.Value, spv);
                 spv.Beef.Transactions <<= BEEF::transaction {transaction {tx.Transaction}};
             }
         }
@@ -96,12 +97,12 @@ namespace Gigamonkey {
             for (const auto &tx : p.Payment) Beef.Transactions <<= BEEF::transaction {tx};
         }
 
-        entry<Bitcoin::TXID, ptr<node>> read_final_SPV_node (
+        entry<Bitcoin::TXID, SPV::proof::accepted> read_final_SPV_node (
             const Bitcoin::transaction &tx,
             std::pair<uint64, Merkle::map> merkle,
-            const SPV::database &db) {
+            SPV::database &db) {
 
-            entry<Bitcoin::TXID, ptr<node>> result {tx.id (), nullptr};
+            entry<Bitcoin::TXID, SPV::proof::accepted> result {tx.id (), SPV::proof::accepted {}};
 
             N height {merkle.first};
 
@@ -122,7 +123,7 @@ namespace Gigamonkey {
             spvmap Top;
             proof Proof;
 
-            SPV_proof_reader (const BEEF &beef, const SPV::database &db) {
+            SPV_proof_reader (const BEEF &beef, SPV::database &db) {
                 Merks.resize (beef.BUMPs.size ());
                 {
                     int index = 0;
@@ -130,7 +131,7 @@ namespace Gigamonkey {
                 }
 
                 for (const auto &tx : beef.Transactions) {
-                    entry<TXID, ptr<node>> node = tx.Merkle_proof_included () ?
+                    entry<TXID, accepted> node = tx.Merkle_proof_included () ?
                         read_final_SPV_node (tx.Transaction, Merks[*tx.BUMPIndex], db) :
                         read_intermediate_SPV_node (tx.Transaction);
 
@@ -150,7 +151,7 @@ namespace Gigamonkey {
 
                     for (const auto &[txid, nodep] : nodep->Proof.get<spvmap> ())
                         // we merge all the maps and assume that entries with the same txid are equal without checking.
-                        p.Proof.insert (txid, nodep, [] (const ptr<node> &o, const ptr<node> &n) -> ptr<node> {
+                        p.Proof.insert (txid, nodep, [] (const accepted &o, const accepted &n) -> accepted {
                             return o;
                         });
 
@@ -160,9 +161,9 @@ namespace Gigamonkey {
 
             }
 
-            entry<TXID, ptr<node>> read_intermediate_SPV_node (const transaction &tx) {
+            entry<TXID, accepted> read_intermediate_SPV_node (const transaction &tx) {
 
-                entry<TXID, ptr<node>> result {tx.id (), nullptr};
+                entry<TXID, accepted> result {tx.id (), accepted {}};
 
                 spvmap prev;
 
@@ -183,7 +184,7 @@ namespace Gigamonkey {
 
     BEEF::BEEF (const SPV::proof &p) : BEEF {SPV_proof_writer {p}.Beef} {}
 
-    SPV::proof BEEF::read_SPV_proof (const SPV::database &db) const {
+    SPV::proof BEEF::read_SPV_proof (SPV::database &db) const {
         return SPV_proof_reader {*this, db}.Proof;
     }
 }

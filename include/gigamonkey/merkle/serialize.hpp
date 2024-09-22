@@ -109,7 +109,7 @@ namespace Gigamonkey {
         digest256 root () const;
 
         // with a headers database we can check all additional information
-        bool validate (const SPV::database &) const;
+        bool validate (SPV::database &) const;
         
     private:
         // Everything below this point is subject to change as 
