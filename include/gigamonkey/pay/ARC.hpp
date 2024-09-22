@@ -50,6 +50,10 @@ namespace Gigamonkey::ARC {
         // or if the body is JSON and Content-Type is set to "application/json"
         bool valid () const;
 
+        operator bool () const {
+            return !is_error ();
+        }
+
         using net::HTTP::response::response;
         response (net::HTTP::response &&);
 
@@ -326,7 +330,7 @@ namespace Gigamonkey::ARC {
     }
 
     string inline health::reason (const JSON &j) {
-        auto r = j["reason"];
+        auto &r = j["reason"];
         if (!r.is_string ()) return "";
         return r;
     }
@@ -384,8 +388,8 @@ namespace Gigamonkey::ARC {
     }
 
     Gigamonkey::satoshis_per_byte inline policy::mining_fee (const JSON &j) {
-        auto spb = j["miningFee"];
-        return Gigamonkey::satoshis_per_byte {Bitcoin::satoshi {int64 (j["satoshis"])}, j["bytes"]};
+        auto &spb = j["miningFee"];
+        return Gigamonkey::satoshis_per_byte {Bitcoin::satoshi {int64 (spb["satoshis"])}, spb["bytes"]};
     }
 
     bool inline policy_response::valid () const {

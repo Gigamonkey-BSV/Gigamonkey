@@ -17,8 +17,7 @@ namespace Gigamonkey::ARC {
 
     maybe<JSON> response::body (const net::HTTP::response &r) {
         try {
-            JSON j = JSON::parse (r.Body);
-            if (success::valid (j)) return j;
+            return JSON::parse (r.Body);
         } catch (JSON::exception) {}
         return {};
     }
