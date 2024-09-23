@@ -225,4 +225,31 @@ namespace Gigamonkey::SPV {
         Pending = Pending.remove (txid);
         Transactions.erase (txid);
     }
+
+    std::partial_ordering SPV::proof::ordering (const data::entry<Bitcoin::TXID, proof::tree> &a, const data::entry<Bitcoin::TXID, proof::tree> &b) {
+        if (a.Key == b.Key) return std::partial_ordering::equivalent;
+
+        if (a.Value.is<confirmation> ()) {
+            return b.Value.is<confirmation> () ?
+                a.Value.get<confirmation> () <=> b.Value.get<confirmation> ():
+                std::partial_ordering::less;
+        }
+
+        if (b.Value.is<confirmation> ()) return std::partial_ordering::greater;
+
+        if (b.Value.get<map> ().contains_branch (a.Key)) return std::partial_ordering::less;
+        if (a.Value.get<map> ().contains_branch (b.Key)) return std::partial_ordering::greater;
+
+        return std::partial_ordering::unordered;
+    }
+
+    bool proof::map::contains_branch (const Bitcoin::TXID &txid) {
+        for (const auto &[k, v] : *this)
+            if (k == txid ||
+                v->Proof.is<map> () &&
+                    v->Proof.get<map> ().contains_branch (txid)) return true;
+
+        return false;
+    }
+
 }

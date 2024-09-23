@@ -229,8 +229,8 @@ namespace Gigamonkey {
     }
 
     namespace {
-        SPV::proof::map read_SPV_proof (map<TXID, SPV_envelope::node> inputs, const SPV::database &db);
-        SPV::proof::map read_SPV_proof (map<TXID, ptr<SPV_envelope::node>> inputs, const SPV::database &db);
+        SPV::proof::map read_SPV_proof (map<TXID, SPV_envelope::node> inputs, SPV::database &db);
+        SPV::proof::map read_SPV_proof (map<TXID, ptr<SPV_envelope::node>> inputs, SPV::database &db);
     }
 
     SPV::proof SPV_envelope::read_SPV_proof (SPV::database &db) const {

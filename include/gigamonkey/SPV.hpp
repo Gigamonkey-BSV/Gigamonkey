@@ -20,8 +20,9 @@ namespace Gigamonkey::SPV {
         N Height;
         Bitcoin::header Header;
 
-        confirmation () : Path {}, Height {0}, Header {} {}
-        confirmation (Merkle::path p, const N &height, const Bitcoin::header &h): Path {p}, Height {height}, Header {h} {}
+        confirmation ();
+        confirmation (Merkle::path p, const N &height, const Bitcoin::header &h);
+
         bool operator == (const confirmation &t) const;
         std::strong_ordering operator <=> (const confirmation &t) const;
 
@@ -44,33 +45,36 @@ namespace Gigamonkey::SPV {
         // a transaction that has been accepted by the network.
         struct accepted : ptr<node> {
             accepted ();
-            accepted (ptr<node> &&);
-            accepted (const ptr<node> &);
+            accepted (ptr<node> &&n);
+            accepted (const ptr<node> &n);
+
             bool valid () const;
-            explicit operator bool ();
             bool operator == (const accepted &tx) const;
-            std::partial_ordering operator <=> (const accepted &tx);
         };
 
         struct map : tool::base_rb_map<Bitcoin::TXID, accepted, map> {
             using tool::base_rb_map<Bitcoin::TXID, accepted, map>::base_rb_map;
             bool operator == (const map &) const;
-            std::partial_ordering operator <=> (const map &) const;
+            bool contains_branch (const Bitcoin::TXID &);
         };
 
         // an spv proof is a tree whose nodes are txs and whose leaves are all Merkle proofs.
-        struct tree : either<confirmation, map> {
-            using either<confirmation, map>::either;
-            std::partial_ordering operator <=> (const tree &t) const;
+        struct tree : either<map, confirmation> {
+            using either<map, confirmation>::either;
             bool valid () const;
         };
+
+        // establish partial ordering of transactions.
+        static std::partial_ordering ordering (const entry<Bitcoin::TXID, tree> &a, const entry<Bitcoin::TXID, tree> &b);
 
         struct node {
             Bitcoin::transaction Transaction;
             tree Proof;
 
-            node (const Bitcoin::transaction &tx, const confirmation &c) : Transaction {tx}, Proof {c} {}
-            node (const Bitcoin::transaction &tx, map m) : Transaction {tx}, Proof {m} {}
+            node (const Bitcoin::transaction &tx, const confirmation &c);
+            node (const Bitcoin::transaction &tx, map m);
+
+            bool operator == (const node &) const;
         };
 
         // the payment is in these transactions.
@@ -93,12 +97,6 @@ namespace Gigamonkey::SPV {
 
     };
 
-    // attempt to generate a given SPV proof for an unconfirmed transaction.
-    // this proof can be sent to a merchant who can use it to confirm that
-    // the transaction is valid.
-    maybe<proof> generate_proof (database &d, list<Bitcoin::transaction> payment);
-    maybe<extended::transaction> extend (database &d, Bitcoin::transaction);
-
     // convert proofs and proof parts to extended transactions.
     list<extended::transaction> inline extended_transactions (list<Bitcoin::transaction> payment, proof::map proof) {
         return for_each ([proof] (const Bitcoin::transaction &tx) -> extended::transaction {
@@ -114,6 +112,12 @@ namespace Gigamonkey::SPV {
         }, tx.Inputs), tx.Outputs, tx.LockTime};
     }
 
+    // attempt to generate a given SPV proof for an unconfirmed transaction.
+    // this proof can be sent to a merchant who can use it to confirm that
+    // the transaction is valid.
+    maybe<proof> generate_proof (database &d, list<Bitcoin::transaction> payment);
+    maybe<extended::transaction> extend (database &d, Bitcoin::transaction);
+
     struct database {
 
         // get a block header by height.
@@ -126,11 +130,12 @@ namespace Gigamonkey::SPV {
 
         // a transaction in the database, which may include a merkle proof if we have one.
         struct tx {
+
             ptr<const Bitcoin::transaction> Transaction;
             confirmation Confirmation;
 
-            tx (ptr<const Bitcoin::transaction> t, const confirmation &x) : Transaction {t}, Confirmation {x} {}
-            tx (ptr<const Bitcoin::transaction> t) : Transaction {t}, Confirmation {} {}
+            tx (ptr<const Bitcoin::transaction> t, const confirmation &x);
+            tx (ptr<const Bitcoin::transaction> t);
 
             bool valid () const;
             // whether a proof is included.
@@ -170,7 +175,7 @@ namespace Gigamonkey::SPV {
         virtual ~writable () {}
     };
     
-    struct database::memory : virtual database, virtual writable {
+    struct database::memory : public virtual database, public virtual writable {
         struct entry {
             data::entry<data::N, Bitcoin::header> Header;
             Merkle::map Paths;
@@ -180,13 +185,9 @@ namespace Gigamonkey::SPV {
             entry (data::N n, Bitcoin::header h, Merkle::map tree) : Header {n, h}, Paths {tree}, Last {nullptr} {}
             entry (Bitcoin::header h, const Merkle::BUMP &bump) : Header {bump.BlockHeight, h}, Paths {bump.paths ()}, Last {nullptr} {}
 
-            Merkle::dual dual_tree () const {
-                return Merkle::dual {Paths, Header.Value.MerkleRoot};
-            }
+            Merkle::dual dual_tree () const;
 
-            Merkle::BUMP BUMP () const {
-                return Merkle::BUMP {uint64 (Header.Key), Paths};
-            }
+            Merkle::BUMP BUMP () const;
         };
 
         ptr<entry> Latest;
@@ -227,13 +228,8 @@ namespace Gigamonkey::SPV {
 
     };
 
-    bool inline proof::valid (const Bitcoin::transaction &tx, const Merkle::path &p, const Bitcoin::header &h) {
-        return h.valid () && valid (tx.id (), p, h.MerkleRoot);
-    }
-
-    bool inline proof::valid (const Bitcoin::TXID &id, const Merkle::path &p, const digest256 &root) {
-        return p.derive_root (id) == root;
-    }
+    inline confirmation::confirmation (): Path {}, Height {0}, Header {} {}
+    inline confirmation::confirmation (Merkle::path p, const N &height, const Bitcoin::header &h): Path {p}, Height {height}, Header {h} {}
 
     bool inline confirmation::operator == (const confirmation &t) const {
         return Header == t.Header && t.Height == Height && Path.Index == t.Path.Index;
@@ -244,6 +240,18 @@ namespace Gigamonkey::SPV {
         return cmp_block == std::strong_ordering::equal ? cmp_block : Path.Index <=> t.Path.Index;
     }
 
+    bool inline confirmation::valid () const {
+        return Header.Timestamp != Bitcoin::timestamp {0};
+    }
+
+    bool inline proof::valid (const Bitcoin::transaction &tx, const Merkle::path &p, const Bitcoin::header &h) {
+        return h.valid () && valid (tx.id (), p, h.MerkleRoot);
+    }
+
+    bool inline proof::valid (const Bitcoin::TXID &id, const Merkle::path &p, const digest256 &root) {
+        return p.derive_root (id) == root;
+    }
+
     set<Bitcoin::TXID> inline database::memory::unconfirmed () {
         return Pending;
     }
@@ -251,6 +259,31 @@ namespace Gigamonkey::SPV {
     inline proof::operator list<extended::transaction> () const {
         return extended_transactions (Payment, Proof);
     }
+
+    inline proof::accepted::accepted (): ptr<node> {nullptr} {}
+    inline proof::accepted::accepted (ptr<node> &&n): ptr<node> {n} {}
+    inline proof::accepted::accepted (const ptr<node> &n): ptr<node> {n} {}
+
+    bool inline proof::accepted::valid () const {
+        return static_cast<ptr<node>> (*this) != nullptr;
+    }
+
+    bool inline proof::accepted::operator == (const accepted &tx) const {
+        if (static_cast<ptr<node>> (*this) == static_cast<ptr<node>> (tx)) return true;
+        return *(*this) == *tx;
+    }
+
+    inline proof::node::node (const Bitcoin::transaction &tx, const confirmation &c) : Transaction {tx}, Proof {c} {}
+
+    inline proof::node::node (const Bitcoin::transaction &tx, map m) : Transaction {tx}, Proof {m} {}
+
+    bool inline proof::tree::valid () const {
+        return this->is<map> () && !data::empty (this->get<map> ()) ||
+            this->is<confirmation> () && this->get<confirmation> ().valid ();
+    }
+
+    inline database::tx::tx (ptr<const Bitcoin::transaction> t, const confirmation &x) : Transaction {t}, Confirmation {x} {}
+    inline database::tx::tx (ptr<const Bitcoin::transaction> t) : Transaction {t}, Confirmation {} {}
 
     bool inline database::tx::validate () const {
         if (!confirmed ()) return false;
@@ -265,14 +298,13 @@ namespace Gigamonkey::SPV {
         return Transaction != nullptr;
     }
 
-    inline proof::accepted::accepted (): ptr<node> {nullptr} {}
-    inline proof::accepted::accepted (ptr<node> &&n): ptr<node> {n} {}
-    inline proof::accepted::accepted (const ptr<node> &n): ptr<node> {n} {}
-
-    bool inline confirmation::valid () const {
-        return Header.Timestamp != Bitcoin::timestamp {0};
+    Merkle::dual inline database::memory::entry::dual_tree () const {
+        return Merkle::dual {Paths, Header.Value.MerkleRoot};
     }
-    
+
+    Merkle::BUMP inline database::memory::entry::BUMP () const {
+        return Merkle::BUMP {uint64 (Header.Key), Paths};
+    }
 }
 
 #endif
