@@ -215,8 +215,9 @@ namespace Gigamonkey::SPV {
         h->second->Paths = d.Paths;
         ByTXID[p.Branch.Leaf.Digest] = h->second;
         // do we have a tx for this proof? If we do, remove from pending.
-        if (auto e = Transactions.find (p.Branch.Leaf.Digest); e == Transactions.end ())
+        if (auto e = Transactions.find (p.Branch.Leaf.Digest); e != Transactions.end ())
             Pending = Pending.remove (p.Branch.Leaf.Digest);
+
         return true;
     }
 
