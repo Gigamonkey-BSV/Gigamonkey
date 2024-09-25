@@ -202,9 +202,13 @@ namespace Gigamonkey::SPV {
 
     void database::memory::insert (const Bitcoin::transaction &t) {
         auto txid = t.id ();
+        auto x = Transactions.find (txid);
+        if (x != Transactions.end ()) return;
         Transactions[txid] = ptr<Bitcoin::transaction> {new Bitcoin::transaction {t}};
         // Do we have a merkle proof for this tx? If not put it in pending.
-        if (auto e = ByTXID.find (txid); e == ByTXID.end ()) Pending = Pending.insert (txid);
+
+        if (auto e = ByTXID.find (txid); e == ByTXID.end ())
+            Pending = Pending.insert (txid);
     }
 
     bool database::memory::insert (const Merkle::proof &p) {
@@ -214,6 +218,7 @@ namespace Gigamonkey::SPV {
         if (!d.valid ()) return false;
         h->second->Paths = d.Paths;
         ByTXID[p.Branch.Leaf.Digest] = h->second;
+
         // do we have a tx for this proof? If we do, remove from pending.
         if (auto e = Transactions.find (p.Branch.Leaf.Digest); e != Transactions.end ())
             Pending = Pending.remove (p.Branch.Leaf.Digest);
