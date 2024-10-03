@@ -21,7 +21,7 @@ namespace Gigamonkey::secp256k1 {
     };
     
     writer &operator << (writer &, const point &);
-    writer &operator >> (writer &, point &);
+    reader &operator >> (reader &, point &);
     
     bool operator == (const point &, const point &);
     bool operator != (const point &, const point &);
@@ -169,8 +169,6 @@ namespace Gigamonkey::secp256k1 {
     bool inline operator != (const point &a, const point &b) {
         return !(a == b);
     }
-    
-    reader &operator >> (reader &r, point &p);
     
     writer inline &operator << (writer &w, const point &p) {
         return w << byte (0x30) <<

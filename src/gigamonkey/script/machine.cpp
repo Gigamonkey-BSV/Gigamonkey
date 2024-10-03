@@ -45,7 +45,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     sighash::document inline *add_script_code (redemption_document &doc, bytes_view script_code) {
-        return new sighash::document (doc.RedeemedValue, script_code, doc.Transaction, doc.InputIndex);
+        return new sighash::document (doc.Transaction, doc.InputIndex, doc.RedeemedValue, script_code);
     }
 
     uint8_t inline make_rshift_mask (size_t n) {

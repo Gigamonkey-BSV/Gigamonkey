@@ -28,7 +28,7 @@ namespace Gigamonkey::Bitcoin {
     
     // possible for sighash::none and sighash::single. 
     bool expect_can_add_input (sighash::directive d) {
-        return sighash::is_anyone_can_pay(d);
+        return sighash::is_anyone_can_pay (d);
     }
     
     bool expect_can_add_code_separator (sighash::directive d) {
@@ -39,58 +39,63 @@ namespace Gigamonkey::Bitcoin {
         return !sighash::has_fork_id (d);
     }
     
-    sighash::document add_input (const sighash::document &doc) {
-        sighash::document x = doc;
-        x.Transaction.Inputs <<= incomplete::input {outpoint {digest256 {uint256 {2}}, 2}};
-        return x;
+    incomplete::transaction add_input (const incomplete::transaction &tx) {
+        return incomplete::transaction {tx.Version,
+            tx.Inputs << incomplete::input {outpoint {digest256 {uint256 {2}}, 2}},
+            tx.Outputs, tx.LockTime};
     }
     
-    output mutate (const output& o) {
-        return output{o.Value + satoshi{1}, pay_to_address::script (digest160 {pay_to_address (o.Script).Address + 1})};
+    output mutate (const output &o) {
+        return output {o.Value + satoshi {1}, pay_to_address::script (digest160 {pay_to_address (o.Script).Address + 1})};
     }
     
-    sighash::document mutate_output (const sighash::document &doc, index i) {
-        sighash::document x = doc;
+    incomplete::transaction mutate_output (const incomplete::transaction &tx, index i) {
         cross<output> outs;
-        for (const output &out : x.Transaction.Outputs) outs.push_back (out);
+        for (const output &out : tx.Outputs) outs.push_back (out);
         outs[i] = mutate (outs[i]);
         list<output> new_outs;
         for (const output &out : outs) new_outs <<= out;
-        x.Transaction.Outputs = new_outs;
-        return x;
+        return incomplete::transaction {tx.Version, tx.Inputs, new_outs, tx.LockTime};
     }
     
     sighash::document add_code_separator (const sighash::document &doc) {
-        return {doc.RedeemedValue, compile (decompile (doc.ScriptCode) << OP_CODESEPARATOR), doc.Transaction, doc.InputIndex};
+        return {doc.Transaction, doc.InputIndex, doc.RedeemedValue, compile (decompile (doc.ScriptCode) << OP_CODESEPARATOR)};
     }
     
     sighash::document change_value (const sighash::document &doc) {
-        return {doc.RedeemedValue + satoshi {1}, doc.ScriptCode, doc.Transaction, doc.InputIndex};
+        return {doc.Transaction, doc.InputIndex, doc.RedeemedValue + satoshi {1}, doc.ScriptCode};
     }
     
     TEST (SignatureTest, TestSighash) {
-        
-        sighash::document doc {
-            satoshi{0xfeee}, 
-            pay_to_address::script (digest160 {uint160 {"0xdddddddddd000000000000000000006767676791"}}),
-            incomplete::transaction {
-                {incomplete::input {
-                    outpoint {digest256 {uint256 {"0xaa00000000000000000000000000000000000000000000555555550707070707"}}, 0xcdcdcdcd},
-                    0xfedcba09}}, {
-                    output {1, pay_to_address::script (digest160 {uint160 {"0xbb00000000000000000000000000006565656575"}})},
-                    output {2, pay_to_address::script (digest160 {uint160 {"0xcc00000000000000000000000000002929292985"}})}},
-                5}, 0};
-        
-        auto doc_mutate_same_output = mutate_output (doc, doc.InputIndex);
-        auto doc_mutate_different_output = mutate_output (doc, doc.InputIndex + 1);
-        auto doc_changed_value = change_value (doc);
-        auto doc_added_code_separator = add_code_separator (doc);
-        auto doc_added_input = add_input (doc);
+        index input_index = 0;
+        satoshi redeemed_value {0xfeee};
+        auto scriptx = pay_to_address::script (digest160 {uint160 {"0xdddddddddd000000000000000000006767676791"}});
+
+        incomplete::transaction txi {
+            {incomplete::input {
+                outpoint {digest256 {uint256 {"0xaa00000000000000000000000000000000000000000000555555550707070707"}}, 0xcdcdcdcd},
+                0xfedcba09}}, {
+                output {1, pay_to_address::script (digest160 {uint160 {"0xbb00000000000000000000000000006565656575"}})},
+                output {2, pay_to_address::script (digest160 {uint160 {"0xcc00000000000000000000000000002929292985"}})}},
+            5};
+
+        incomplete::transaction txi_mutate_same_output = mutate_output (txi, input_index);
+        incomplete::transaction txi_mutate_different_output = mutate_output (txi, input_index + 1);
+        incomplete::transaction txi_added_input = add_input (txi);
+
+        sighash::document doc {txi, input_index, redeemed_value, scriptx};
+        sighash::document doc_mutate_same_output {txi_mutate_same_output, input_index, redeemed_value, scriptx};
+        sighash::document doc_mutate_different_output {txi_mutate_different_output, input_index, redeemed_value, scriptx};
+        sighash::document doc_changed_value = change_value (doc);
+        sighash::document doc_added_code_separator = add_code_separator (doc);
+        sighash::document doc_added_input {txi_added_input, input_index, redeemed_value, scriptx};
         
         for (sighash::directive directive : list<sighash::directive> {
             directive (sighash::all, false, false),
             directive (sighash::all, true, true),
             directive (sighash::none, true, false),
+            directive (sighash::none, true, true),
+            directive (sighash::single, false, false),
             directive (sighash::single, false, true)}) {
             
             auto written = sighash::write (doc, directive);
@@ -104,7 +109,7 @@ namespace Gigamonkey::Bitcoin {
             if (expect_can_mutate_corresponding_output (directive))
                 EXPECT_EQ (written, mutate_same_output);
             else EXPECT_NE (written, mutate_same_output);
-            
+
             if (expect_can_mutate_other_output (directive))
                 EXPECT_EQ (written, mutate_different_output) << "expect \n\t" << written << " to equal \n\t" << mutate_different_output;
             else EXPECT_NE (written, mutate_different_output);

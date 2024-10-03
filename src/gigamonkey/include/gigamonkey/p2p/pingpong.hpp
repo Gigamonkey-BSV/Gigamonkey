@@ -17,7 +17,8 @@ namespace Gigamonkey::Bitcoin::p2p {
         }
     };
 
-    writer &operator << (writer &w, const ping_pong &h);
+    template <writer W>
+    W &operator << (W &w, const ping_pong &h);
 
     struct ping : ping_pong {
         constexpr static command Command ("ping");
@@ -27,7 +28,8 @@ namespace Gigamonkey::Bitcoin::p2p {
         constexpr static command Command ("pong");
     };
 
-    writer inline &operator << (writer &w, const ping_pong &h) {
+    template <writer W>
+    W inline &operator << (W &w, const ping_pong &h) {
         return w << h.Nonce;
     }
 

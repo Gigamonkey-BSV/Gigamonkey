@@ -9,7 +9,7 @@
 #include <secp256k1.h>
 
 namespace Gigamonkey::secp256k1 {
-    
+
     reader &operator >> (reader &r, point &p) {
         byte size;
         byte v;
@@ -19,7 +19,7 @@ namespace Gigamonkey::secp256k1 {
         if (size < 4) throw std::logic_error {"invalid signature format"};
         bytes rest (size);
         r >> rest;
-        bytes_reader rr {rest.data (), rest.data () + size};
+        iterator_reader rr {rest.data (), rest.data () + size};
         rr >> p.R;
         rr >> p.S;
         return r;

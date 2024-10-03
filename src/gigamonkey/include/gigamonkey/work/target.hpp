@@ -134,7 +134,7 @@ namespace Gigamonkey::Bitcoin {
 namespace Gigamonkey::work {
     
     inline hashpower hashpower::operator + (const hashpower &x) const {
-        return hashpower{Value + x.Value};
+        return hashpower {Value + x.Value};
     }
     
     inline hashpower& hashpower::operator += (const hashpower &x) {
@@ -290,7 +290,7 @@ namespace Gigamonkey::work {
 
     inline compact compact::encode (byte e, uint24_little v) {
         compact t;
-        data::iterator_writer<compact::iterator, byte> w (t.begin (), t.end ());
+        iterator_writer w (t.begin (), t.end ());
         w << v << e;
         return t;
     }

@@ -91,7 +91,7 @@ namespace Gigamonkey {
     }
 
     inline BEEF::BEEF (bytes_view b) {
-        bytes_reader r {b.data (), b.data () + b.size ()};
+        iterator_reader r {b.data (), b.data () + b.size ()};
         r >> *this;
     }
 

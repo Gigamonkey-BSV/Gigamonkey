@@ -4,9 +4,9 @@
 #ifndef GIGAMONKEY_SIGHASH
 #define GIGAMONKEY_SIGHASH
 
-#include <data/tools.hpp>
 #include <gigamonkey/hash.hpp>
 #include <gigamonkey/incomplete.hpp>
+#include <data/tools.hpp>
 
 namespace Gigamonkey::Bitcoin {
     namespace sighash {
@@ -62,8 +62,15 @@ namespace Gigamonkey::Bitcoin {
         
         // the document containing the information that is signed. 
         struct document {
+            // the incomplete transaction that will contain this signature
+            // in one of its input scripts.
+            incomplete::transaction &Transaction;
+
+            // the index of the input containing the signature.
+            index InputIndex;
+
             // the amount being redeemed. This is ignored in the original hash
-            // algorithm and is only relevant for Amaury hash with fork_id. 
+            // algorithm and is only relevant for Amaury hash with fork_id.
             satoshi RedeemedValue;
         
             // the script code contains the previous output script with the 
@@ -71,19 +78,12 @@ namespace Gigamonkey::Bitcoin {
             // being evaluated and everything earlier removed.
             script ScriptCode; 
             
-            // the incomplete transaction that will contain this signature 
-            // in one of its input scripts. 
-            incomplete::transaction Transaction; 
-            
-            // the index of the input containing the signature. 
-            index InputIndex;
-            
             bool valid () const {
                 return RedeemedValue >= 0 && InputIndex < Transaction.Inputs.size ();
             }
             
-            document (satoshi r, bytes_view script_code, incomplete::transaction tx, index i) :
-                RedeemedValue {r}, ScriptCode {script_code}, Transaction {tx}, InputIndex {i} {}
+            document (incomplete::transaction &tx, index i, satoshi r, bytes_view script_code) :
+                Transaction {tx}, InputIndex {i}, RedeemedValue {r}, ScriptCode {script_code} {}
             
         };
         
@@ -146,9 +146,42 @@ namespace Gigamonkey::Bitcoin {
                 Amaury::write (w, doc, d);
                 return w;
             }
+
+            digest256 inline hash_prevouts (const incomplete::transaction &tx) {
+                Hash256_writer w;
+                for (const incomplete::input &in : tx.Inputs) w << in.Reference;
+                return w.complete ();
+            }
+
+            digest256 inline hash_sequence (const incomplete::transaction &tx) {
+                Hash256_writer w;
+                for (const incomplete::input &in : tx.Inputs) w << in.Sequence;
+                return w.complete ();
+            }
+
+            digest256 inline hash_outputs (const incomplete::transaction &tx) {
+                Hash256_writer w;
+                for (const output &out : tx.Outputs) w << out;
+                return w.complete ();
+            }
             
         }
         
+    }
+
+    const digest256 inline &incomplete::transaction::hash_prevouts () {
+        if (Cached.HashPrevouts == nullptr) Cached.HashPrevouts = new digest256 {sighash::Amaury::hash_prevouts (*this)};
+        return *Cached.HashPrevouts;
+    }
+
+    const digest256 inline &incomplete::transaction::hash_sequence () {
+        if (Cached.HashSequence == nullptr) Cached.HashSequence = new digest256 {sighash::Amaury::hash_sequence (*this)};
+        return *Cached.HashSequence;
+    }
+
+    const digest256 inline &incomplete::transaction::hash_outputs () {
+        if (Cached.HashOutputs == nullptr) Cached.HashOutputs = new digest256 {sighash::Amaury::hash_outputs (*this)};
+        return *Cached.HashOutputs;
     }
     
 }

@@ -86,7 +86,8 @@ namespace Gigamonkey::ARC {
                 bytes b (fold ([] (size_t so_far, const extended::transaction &G) {
                     return so_far + G.serialized_size ();
                 }, size_t {0}, txs));
-                bytes_writer bb {b.begin (), b.end ()};
+
+                iterator_writer bb {b.begin (), b.end ()};
                 for (const extended::transaction &tx : txs) bb << tx;
                 this->Body = string (b);
             } return;

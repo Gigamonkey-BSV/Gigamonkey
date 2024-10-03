@@ -125,6 +125,8 @@ namespace Gigamonkey::Bitcoin {
     size_t size (const instruction &o);
     
     std::ostream &operator << (std::ostream &, const instruction &);
+
+    writer &operator << (writer &w, const instruction &i);
     
     instruction push_data (int);
     instruction push_data (const Z &z);
@@ -231,8 +233,6 @@ namespace Gigamonkey::Bitcoin {
     inline instruction::instruction (op p, const integer &d) : Op {p}, Data {d} {}
     
     inline instruction::instruction (op p) : Op {p}, Data {} {}
-    
-    writer &operator << (writer &w, const instruction &i);
     
     instruction inline instruction::op_code (op o) {
         return instruction {o};

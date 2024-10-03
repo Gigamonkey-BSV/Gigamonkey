@@ -27,11 +27,12 @@ namespace Gigamonkey::Bitcoin::incomplete {
     };
     
     // an incomplete transaction is a transaction with no input scripts. 
+    // everything is const because some data can be cached for signature verification.
     struct transaction {
-        int32_little Version;
-        list<input> Inputs;
-        list<output> Outputs;
-        uint32_little LockTime;
+        const int32_little Version;
+        const list<input> Inputs;
+        const list<output> Outputs;
+        const uint32_little LockTime;
         
         transaction (int32_little v, list<input> i, list<output> o, uint32_little l = 0) : 
             Version {v}, Inputs {i}, Outputs {o}, LockTime {l} {}
@@ -41,7 +42,7 @@ namespace Gigamonkey::Bitcoin::incomplete {
         
         transaction (const Bitcoin::transaction &tx) : 
             Version {tx.Version}, Outputs {tx.Outputs}, Inputs {
-                data::for_each ([] (const Bitcoin::input& i) -> input {
+                data::for_each ([] (const Bitcoin::input &i) -> input {
                     return input {i};
                 }, tx.Inputs)}, LockTime {tx.LockTime} {}
         
@@ -49,7 +50,31 @@ namespace Gigamonkey::Bitcoin::incomplete {
         explicit transaction (bytes_view);
         
         Bitcoin::transaction complete (list<bytes> scripts) const;
-        
+
+        // the stuff below is only used in the Amaury hash algorithm.
+        const digest256 &hash_prevouts ();
+        const digest256 &hash_sequence ();
+        const digest256 &hash_outputs ();
+
+        struct cached {
+            ~cached () {
+                delete HashPrevouts;
+                delete HashSequence;
+                delete HashOutputs;
+            }
+
+            static const digest256 &zero () {
+                static digest256 Zero {};
+                return Zero;
+            }
+
+            digest256 *HashPrevouts {nullptr};
+            digest256 *HashSequence {nullptr};
+            digest256 *HashOutputs {nullptr};
+        };
+
+    private:
+        cached Cached;
     };
     
     std::ostream &operator << (std::ostream &, const input &);

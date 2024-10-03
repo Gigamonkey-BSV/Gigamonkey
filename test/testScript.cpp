@@ -75,17 +75,16 @@ namespace Gigamonkey::Bitcoin {
     }
     
     TEST (SignatureTest, TestMultisig) {
-        
-        redemption_document doc {
-            satoshi {0xfeee},
-            incomplete::transaction {
-                {incomplete::input {
-                    outpoint {
-                        digest256 {uint256 {"0xaa00000000000000000000000000000000000000000000555555550707070707"}}, 0xcdcdcdcd},
-                        0xfedcba09}}, {
-                    output {1, pay_to_address::script (digest160 {uint160 {"0xbb00000000000000000000000000006565656575"}})},
-                    output {2, pay_to_address::script (digest160 {uint160 {"0xcc00000000000000000000000000002929292985"}})}},
-                5}, 0};
+        incomplete::transaction tx {
+            {incomplete::input {
+                outpoint {
+                    digest256 {uint256 {"0xaa00000000000000000000000000000000000000000000555555550707070707"}}, 0xcdcdcdcd},
+                    0xfedcba09}}, {
+                output {1, pay_to_address::script (digest160 {uint160 {"0xbb00000000000000000000000000006565656575"}})},
+                output {2, pay_to_address::script (digest160 {uint160 {"0xcc00000000000000000000000000002929292985"}})}},
+            5};
+
+        redemption_document doc {tx, 0, satoshi {0xfeee}};
         
         auto k1 = secp256k1::secret (uint256 {123456});
         auto k2 = secp256k1::secret (uint256 {789012});
@@ -101,11 +100,11 @@ namespace Gigamonkey::Bitcoin {
             redemption_document Doc;
             bytes Test;
             
-            result run() {
+            result run () {
                 return evaluate ({}, Test, Doc, 0);
             }
             
-            void test() {
+            void test () {
                 result r = run ();
                 EXPECT_EQ (bool (r), Expected) << Number << ": script " << decompile (Test) << " expect " << Expected << "; results in " << r;
             }

@@ -24,8 +24,8 @@ namespace Gigamonkey::Bitcoin::p2p {
         { w << m } -> std::same_as<writer &>;
     }
 
-    template <message msg>
-    writer &write_message (writer &w, const magic n, const msg &m) {
+    template <writer W, message msg>
+    W &write_message (W &w, const magic n, const msg &m) {
         w << uint32_little {n} << m::Command << uint32_little {m.serialized_size ()};
         base58::check::writer cz {};
         cz << m;

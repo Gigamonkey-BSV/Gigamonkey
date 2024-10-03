@@ -19,11 +19,15 @@ namespace Gigamonkey::Bitcoin {
         for (const output &out : Outputs) outs <<= out;
         return bytes (Bitcoin::transaction {Version, ins, outs, LockTime});
     }
-    
-    incomplete::transaction::transaction (bytes_view b) {
-        auto tx = Bitcoin::transaction {b};
-        if (!tx.valid ()) throw std::invalid_argument {"invalid transaction"};
-        *this = transaction {tx};
+
+    namespace {
+        transaction read_from_bytes (bytes_view b) {
+            auto tx = Bitcoin::transaction {b};
+            if (!tx.valid ()) throw std::invalid_argument {"invalid transaction"};
+            return transaction {tx};
+        }
     }
+    
+    incomplete::transaction::transaction (bytes_view b) : transaction {read_from_bytes (b)} {}
 
 }

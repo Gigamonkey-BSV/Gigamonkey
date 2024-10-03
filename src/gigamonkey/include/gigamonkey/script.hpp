@@ -59,14 +59,18 @@ namespace Gigamonkey::Bitcoin {
     };
     
     struct redemption_document {
-        satoshi RedeemedValue;
         
-        incomplete::transaction Transaction;
+        incomplete::transaction &Transaction;
         
         index InputIndex;
+
+        satoshi RedeemedValue;
+
+        redemption_document (incomplete::transaction &tx, index x, satoshi v):
+            Transaction {tx}, InputIndex {x}, RedeemedValue {v} {}
         
         sighash::document add_script_code (bytes_view script_code) const {
-            return sighash::document {RedeemedValue, script_code, Transaction, InputIndex};
+            return sighash::document {Transaction, InputIndex, RedeemedValue, script_code};
         }
         
         // holdovers from Bitcoin Core. 

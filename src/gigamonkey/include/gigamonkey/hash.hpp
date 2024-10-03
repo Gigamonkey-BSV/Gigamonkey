@@ -10,7 +10,7 @@
 namespace Gigamonkey {
 
     template<size_t size>
-    using digest = crypto::hash::digest<size>;
+    using digest = crypto::digest<size>;
 
     // because of a bug in bitcoind long ago, many bitcoin
     // applications expect hashes to be provided backwards.
@@ -56,7 +56,7 @@ namespace Gigamonkey::Bitcoin {
     
     // bitcoin hash functions.
     digest160 inline Hash160 (bytes_view b) {
-        return RIPEMD_160 (SHA2_256 (b));
+        return crypto::RIPEMD_160 (SHA2_256 (b));
     }
 
     digest256 inline Hash256 (bytes_view b) {
@@ -101,7 +101,7 @@ namespace Gigamonkey::Bitcoin {
 namespace Gigamonkey {
 
     digest256 inline double_SHA2_256 (bytes_view b) {
-        return SHA2_256 (SHA2_256 (b));
+        return crypto::SHA2_256 (SHA2_256 (b));
     }
 
     template <size_t size>

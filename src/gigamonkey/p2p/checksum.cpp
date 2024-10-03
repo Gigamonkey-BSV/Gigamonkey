@@ -10,7 +10,7 @@ namespace Gigamonkey::Bitcoin {
     bytes append_checksum (bytes_view b) {
 
         bytes checked (b.size () + 4);
-        bytes_writer w (checked.begin (), checked.end ());
+        iterator_writer w (checked.begin (), checked.end ());
         w << b << checksum (b);
         return checked;
 

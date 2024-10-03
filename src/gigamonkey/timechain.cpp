@@ -81,7 +81,7 @@ namespace Gigamonkey::Bitcoin {
 
     input::input (bytes_view b) : input {} {
         try {
-            bytes_reader r {b.begin (), b.end ()};
+            iterator_reader r {b.begin (), b.end ()};
             r >> *this;
         } catch (data::end_of_stream n) {
             *this = input {};
@@ -90,7 +90,7 @@ namespace Gigamonkey::Bitcoin {
     
     transaction::transaction (bytes_view b) : transaction {} {
         try {
-            bytes_reader r {b.begin (), b.end ()};
+            iterator_reader r {b.begin (), b.end ()};
             r >> *this;
         } catch (data::end_of_stream n) {
             *this = transaction {};
@@ -99,7 +99,7 @@ namespace Gigamonkey::Bitcoin {
         
     block::block (bytes_view b) : block {} {
         try {
-            bytes_reader r {b.begin (), b.end()};
+            iterator_reader r {b.begin (), b.end()};
             r >> *this;
         } catch (data::end_of_stream n) {
             *this = block {};
@@ -110,27 +110,27 @@ namespace Gigamonkey::Bitcoin {
 
     input::operator bytes () const {
         bytes b (serialized_size ());
-        bytes_writer w {b.begin (), b.end ()};
+        iterator_writer w {b.begin (), b.end ()};
         w << *this;
         return b;
     }
     
     output::operator bytes () const {
         bytes b (serialized_size ());
-        bytes_writer w {b.begin (), b.end ()};
+        iterator_writer w {b.begin (), b.end ()};
         w << *this;
         return b;
     }
     
     transaction::operator bytes () const {
         bytes b (serialized_size ());
-        bytes_writer w {b.begin (), b.end ()};
+        iterator_writer w {b.begin (), b.end ()};
         w << *this;
         return b;
     }
     
     std::vector<bytes_view> block::transactions (bytes_view b) {
-        bytes_reader r (b.data (), b.data () + b.size ());
+        iterator_reader r (b.data (), b.data () + b.size ());
         Bitcoin::header h;
         var_int num_txs; 
         r >> h >> num_txs;
@@ -147,7 +147,6 @@ namespace Gigamonkey::Bitcoin {
         return x;
     }
     
-    template <typename reader>
     bool read_transaction_version (reader &r, int32_little &v) {
         r >> v;
         if (v == 1) return true;
@@ -159,14 +158,14 @@ namespace Gigamonkey::Bitcoin {
         return false;
     }
     
-    template <typename reader>
     bool to_transaction_inputs (reader &r) {
         int32_little v;
         if (!read_transaction_version (r, v)) return false;
         return true;
     }
 
-    void scan_input (bytes_reader &r, bytes_view &i) {
+    template <typename it>
+    void scan_input (iterator_reader<it> &r, bytes_view &i) {
         const byte *begin = r.Begin;
         outpoint o;
         var_int script_size;
@@ -175,8 +174,8 @@ namespace Gigamonkey::Bitcoin {
         i = bytes_view {begin, script_size + 40 + var_int::size (script_size)};
     }
 
-    template <typename reader>
-    bool to_transaction_outputs (reader &r) {
+    template <typename it>
+    bool to_transaction_outputs (iterator_reader<it> &r) {
         if (!to_transaction_inputs (r)) return false;
         auto inputs = var_int::read (r);
         bytes_view in;
@@ -184,7 +183,8 @@ namespace Gigamonkey::Bitcoin {
         return true;
     }
     
-    void scan_output (bytes_reader &r, bytes_view &o) {
+    template <typename it>
+    void scan_output (iterator_reader<it> &r, bytes_view &o) {
         satoshi value;
         const byte *begin = r.Begin;
         var_int script_size; 
@@ -194,7 +194,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     bytes_view transaction::input (bytes_view b, index i) {
-        bytes_reader r {b.begin (), b.end ()};
+        iterator_reader r {b.begin (), b.end ()};
         try {
             if (!to_transaction_inputs (r)) return {};
             var_int num_outputs;
@@ -213,7 +213,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     bytes_view transaction::output (bytes_view b, index i) {
-        bytes_reader r {b.begin (), b.end ()};
+        iterator_reader r {b.begin (), b.end ()};
         try {
             if (!to_transaction_outputs (r)) return {};
             var_int num_outputs;
@@ -232,7 +232,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     output::output (bytes_view b) {
-        bytes_reader r {b.begin (), b.end ()};
+        iterator_reader r {b.begin (), b.end ()};
         try {
             r >> Value >> var_string {Script};
         } catch (data::end_of_stream) {
@@ -242,7 +242,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     satoshi output::value (bytes_view z) {
-        bytes_reader r {z.begin (), z.end ()};
+        iterator_reader r {z.begin (), z.end ()};
         satoshi Value;
         try {
             r >> Value;
@@ -253,7 +253,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     bytes_view output::script (bytes_view z) {
-        bytes_reader r {z.begin (), z.end ()};
+        iterator_reader r {z.begin (), z.end ()};
         satoshi Value;
         try {
             var_int script_size; 
@@ -263,10 +263,10 @@ namespace Gigamonkey::Bitcoin {
             return {};
         }
     }
-    
+
     byte_array<80> header::write () const {
         byte_array<80> x; 
-        bytes_writer w {x.begin (), x.end ()};
+        iterator_writer w {x.begin (), x.end ()};
         w << Version << Previous << MerkleRoot << Timestamp << Target << Nonce;
         return x;
     }

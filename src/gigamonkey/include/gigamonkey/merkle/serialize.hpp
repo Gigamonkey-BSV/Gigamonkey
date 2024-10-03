@@ -278,7 +278,7 @@ namespace Gigamonkey {
     }
     
     maybe<digest256> inline proofs_serialization_standard::block_hash (const JSON &j) {
-        if (j.contains ("targetType") && j["targetType"] == "hash") return {digest256 {string {"0x"} + string (j["target"])}};
+        if (j.contains ("targetType") && j["targetType"] == "hash") return {digest256 {string {"0x"} + string {std::string (j["target"])}}};
         return {};
     }
         

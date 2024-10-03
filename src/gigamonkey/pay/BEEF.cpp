@@ -6,13 +6,6 @@
 
 namespace Gigamonkey {
 
-    BEEF::operator bytes () const {
-        bytes b (serialized_size ());
-        bytes_writer w {b.begin (), b.end ()};
-        w << *this;
-        return b;
-    }
-
     reader &operator >> (reader &r, BEEF::transaction &h) {
         r >> h.Transaction;
         byte has_bump;
@@ -23,6 +16,13 @@ namespace Gigamonkey {
             h.BUMPIndex = bump_index.Value;
         } else h.BUMPIndex = maybe<uint64> {};
         return r;
+    }
+
+    BEEF::operator bytes () const {
+        bytes b (serialized_size ());
+        iterator_writer w {b.begin (), b.end ()};
+        w << *this;
+        return b;
     }
 
     bool BEEF::valid () const {

@@ -4,7 +4,7 @@ cmake_minimum_required (VERSION 3.1...3.14)
 if (${CMAKE_VERSION} VERSION_LESS 3.12)
     cmake_policy (VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
 endif ()
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake" CACHE STRING "Modules for CMake" FORCE)
+set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake" CACHE STRING "Modules for CMake" FORCE)
 
 project (gigamonkey 	VERSION 0.0.15
 		DESCRIPTION "open-source Bitcoin library in c++"
@@ -15,15 +15,15 @@ project (gigamonkey 	VERSION 0.0.15
 option (PACKAGE_TESTS "Build the tests" ON)
 
 ## Enable testing
-include(FetchContent)
-FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz)
-FetchContent_MakeAvailable(json)
+include (FetchContent)
+FetchContent_Declare (json URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz)
+FetchContent_MakeAvailable (json)
 
-FetchContent_Declare(argh URL https://github.com/adishavit/argh/archive/refs/tags/v1.3.2.zip)
-FetchContent_MakeAvailable(argh)
+FetchContent_Declare (argh URL https://github.com/adishavit/argh/archive/refs/tags/v1.3.2.zip)
+FetchContent_MakeAvailable (argh)
 
-FetchContent_Declare(ctre URL https://github.com/hanickadot/compile-time-regular-expressions/archive/refs/tags/v3.9.0.zip)
-FetchContent_MakeAvailable(ctre)
+FetchContent_Declare (ctre URL https://github.com/hanickadot/compile-time-regular-expressions/archive/refs/tags/v3.9.0.zip)
+FetchContent_MakeAvailable (ctre)
 
 
 find_package(PkgConfig REQUIRED)

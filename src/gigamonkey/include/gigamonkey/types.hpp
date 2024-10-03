@@ -65,31 +65,28 @@ namespace Gigamonkey {
     
     template <size_t size>
     using slice = data::slice<byte, size>;
-    
+
     using writer = data::writer<byte>;
     using reader = data::reader<byte>;
     
-    using bytes_writer = data::iterator_writer<bytes::iterator, byte>;
-    using bytes_reader = data::iterator_reader<const byte*, byte>;
-    
-    template <typename X> 
+    template <typename X>
     writer inline &write (writer &b, X x) {
         return b << x;
     }
     
-    template <typename X, typename ... P> 
+    template <typename X, typename ... P>
     writer inline &write (writer &b, X x, P... p) {
         return write (write (b, x), p...);
     }
 
     template <typename ... P> inline bytes write (size_t size, P... p) {
         bytes x (size);
-        bytes_writer w {x.begin (), x.end ()};
+        iterator_writer w {x.begin (), x.end ()};
         write (w, p...);
         return x;
     }
     
-    template <typename X>  
+    template <typename X>
     writer inline &write (writer &b, list<X> ls) {
         while (!ls.empty ()) {
             b << ls.first ();
@@ -99,14 +96,5 @@ namespace Gigamonkey {
     }
     
 }
-/*
-namespace std {
-    // See Effective C++ Third Edition Item 25 "Consider Support for a non-throwing Swap"
-    template <> void inline swap<Gigamonkey::Bitcoin::integer> (Gigamonkey::Bitcoin::integer &a, Gigamonkey::Bitcoin::integer &b) noexcept {
-        Gigamonkey::Bitcoin::integer i = a;
-        a = b;
-        b = i;
-    }
-}*/
 
 #endif

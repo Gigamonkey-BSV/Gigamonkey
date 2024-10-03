@@ -341,7 +341,7 @@ namespace Gigamonkey::Bitcoin {
         return o << "output {Value : " << p.Value << ", Script : " << ASM (p.Script) << "}";
     }
 
-    std::ostream inline &operator << (std::ostream &o, const transaction& p) {
+    std::ostream inline &operator << (std::ostream &o, const transaction &p) {
         return o << "transaction {Version : " << p.Version << ", Inputs : "
             << p.Inputs << ", Outputs: " << p.Outputs << ", " << p.LockTime << "}";
     }

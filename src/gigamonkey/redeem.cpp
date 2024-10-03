@@ -36,8 +36,16 @@ namespace Gigamonkey {
     }
 
     extended::transaction redeemable_transaction::redeem (const Gigamonkey::redeem &r) const {
+        Bitcoin::incomplete::transaction incomplete (*this);
+
+        uint32 index = 0;
+        list<Bitcoin::sighash::document> docs;
+        for (const input &in : this->Inputs)
+            docs <<= Bitcoin::sighash::document {
+                incomplete, index++, in.Prevout.Value,
+                Bitcoin::remove_until_last_code_separator (in.script_so_far ())};
+
         auto inputs = this->Inputs;
-        auto docs = this->documents ();
         auto sigs = Signatures;
         list<bytes> input_scripts {};
 

@@ -47,11 +47,12 @@ namespace Gigamonkey::Bitcoin {
         bytes script_p2pkh_compressed = pay_to_address::script (pubkey_hash_compressed);
         bytes script_p2pkh_uncompressed = pay_to_address::script (pubkey_hash_uncompressed);
         
-        redemption_document doc {redeemed_value,
-            incomplete::transaction {
-                transaction::LatestVersion, 
-                list<incomplete::input> {incomplete::input {outpoint {Bitcoin::TXID {307}, 7}}},
-                list<output> {}, 0}, 0};
+        incomplete::transaction tx {
+            transaction::LatestVersion,
+            list<incomplete::input> {incomplete::input {outpoint {Bitcoin::TXID {307}, 7}}},
+            list<output> {}, 0};
+
+        redemption_document doc {tx, 0, redeemed_value};
         
         sighash::directive directive = sighash::all | sighash::fork_id;
         

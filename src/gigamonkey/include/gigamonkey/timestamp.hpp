@@ -11,6 +11,13 @@
 
 namespace Gigamonkey::Bitcoin {
     
+    struct timestamp;
+
+    std::ostream &operator << (std::ostream &o, const timestamp &s);
+
+    writer &operator << (writer &w, const timestamp &s);
+    reader &operator >> (reader &r, timestamp &s);
+
     using duration = double;
     
     struct timestamp : nonzero<uint32_little> {

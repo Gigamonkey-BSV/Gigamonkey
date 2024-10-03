@@ -82,9 +82,6 @@ namespace Gigamonkey {
         // convert to an incomplete tx for signing.
         explicit operator Bitcoin::incomplete::transaction () const;
 
-        // construct the documents for each input (the documents represent the data structure that gets signed).
-        list<Bitcoin::sighash::document> documents () const;
-
         extended::transaction complete (list<Bitcoin::script> redeem) const;
 
     };
@@ -137,19 +134,6 @@ namespace Gigamonkey {
         return Bitcoin::incomplete::transaction {Version, data::for_each ([] (const input &in) -> Bitcoin::incomplete::input {
             return in;
         }, Inputs), Outputs, LockTime};
-    }
-
-    // construct the documents for each input (the documents represent the data structure that gets signed).
-    list<Bitcoin::sighash::document> inline transaction_design::documents () const {
-        Bitcoin::incomplete::transaction incomplete (*this);
-        uint32 index = 0;
-        return data::for_each ([&incomplete, &index] (const input &in) -> Bitcoin::sighash::document {
-            return Bitcoin::sighash::document {
-                in.Prevout.Value,
-                Bitcoin::remove_until_last_code_separator (in.script_so_far ()),
-                incomplete,
-                index++};
-        }, Inputs);
     }
 
     extended::transaction inline transaction_design::complete (list<Bitcoin::script> scripts) const {

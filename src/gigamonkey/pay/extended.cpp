@@ -16,14 +16,14 @@ namespace Gigamonkey::extended {
 
     input::operator bytes () const {
         bytes b (serialized_size ());
-        bytes_writer w {b.begin (), b.end ()};
+        iterator_writer w {b.begin (), b.end ()};
         w << *this;
         return b;
     }
 
     transaction::operator bytes () const {
         bytes b (serialized_size ());
-        bytes_writer w {b.begin (), b.end ()};
+        iterator_writer w {b.begin (), b.end ()};
         w << *this;
         return b;
     }

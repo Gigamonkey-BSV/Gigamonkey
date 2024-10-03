@@ -5,22 +5,6 @@
 
 namespace Gigamonkey::Merkle {
 
-    uint32 inline next_offset (uint32 offset) {
-        return ((offset & ~2) | (~offset & 2)) >> 1;
-    }
-
-    uint64 BUMP::serialized_size () const {
-        uint64 size = Bitcoin::var_int::size (BlockHeight) + 1;
-
-        for (const ordered_list<node> &nnn : Path) {
-            size += Bitcoin::var_int::size (data::size (nnn));
-
-            for (const node &n : nnn) size += n.serialized_size ();
-        }
-
-        return size;
-    }
-
     writer &operator << (writer &w, const BUMP::node &h) {
         w << Bitcoin::var_int {h.Offset};
         w << byte (h.Flag);
@@ -45,6 +29,55 @@ namespace Gigamonkey::Merkle {
 
         return r;
 
+    }
+
+    writer &operator << (writer &w, const BUMP &h) {
+        w << Bitcoin::var_int {h.BlockHeight};
+
+        w << h.depth ();
+
+        for (const auto &level : h.Path)
+            Bitcoin::var_sequence<BUMP::node>::write (w, level);
+
+        return w;
+    }
+
+    reader &operator >> (reader &r, BUMP &h) {
+        Bitcoin::var_int block_height;
+        r >> block_height;
+        byte depth;
+        r >> depth;
+
+        list<ordered_list<BUMP::node>> tree;
+        for (int i = 0; i < depth; i++) {
+            stack<BUMP::node> nodes;
+
+            Bitcoin::var_sequence<BUMP::node>::read (r, nodes);
+
+            ordered_list<BUMP::node> nnnn;
+            for (const BUMP::node &n : nodes) nnnn <<= n;
+            tree <<= nnnn;
+        }
+
+        h = BUMP {block_height.Value, tree};
+
+        return r;
+    }
+
+    uint32 inline next_offset (uint32 offset) {
+        return ((offset & ~2) | (~offset & 2)) >> 1;
+    }
+
+    uint64 BUMP::serialized_size () const {
+        uint64 size = Bitcoin::var_int::size (BlockHeight) + 1;
+
+        for (const ordered_list<node> &nnn : Path) {
+            size += Bitcoin::var_int::size (data::size (nnn));
+
+            for (const node &n : nnn) size += n.serialized_size ();
+        }
+
+        return size;
     }
 
     BUMP::node::operator JSON () const {
@@ -77,38 +110,6 @@ namespace Gigamonkey::Merkle {
         Digest = Gigamonkey::read_reverse_hex<32> (std::string (j["hash"]));
 
         Flag = j.contains ("txid") && bool (j["txid"]) ? flag::client : flag::intermediate;
-    }
-
-    writer &operator << (writer &w, const BUMP &h) {
-        w << Bitcoin::var_int {h.BlockHeight};
-
-        w << h.depth ();
-
-        for (const auto &level : h.Path) Bitcoin::var_sequence<BUMP::node>::write<ordered_list<BUMP::node>> (w, level);
-
-        return w;
-    }
-
-    reader &operator >> (reader &r, BUMP &h) {
-        Bitcoin::var_int block_height;
-        r >> block_height;
-        byte depth;
-        r >> depth;
-
-        list<ordered_list<BUMP::node>> tree;
-        for (int i = 0; i < depth; i++) {
-            stack<BUMP::node> nodes;
-
-            Bitcoin::var_sequence<BUMP::node>::read<stack<BUMP::node>> (r, nodes);
-
-            ordered_list<BUMP::node> nnnn;
-            for (const BUMP::node &n : nodes) nnnn <<= n;
-            tree <<= nnnn;
-        }
-
-        h = BUMP {block_height.Value, tree};
-
-        return r;
     }
 
     namespace {
@@ -165,19 +166,18 @@ namespace Gigamonkey::Merkle {
     BUMP::operator bytes () const {
         if (!valid ()) throw exception {} << "invalid BUMP";
         bytes b (serialized_size ());
-        bytes_writer w {b.begin (), b.end ()};
+        iterator_writer w {b.begin (), b.end ()};
         w << *this;
         return b;
     }
 
     BUMP::BUMP (const bytes &b) {
         try {
-            bytes_reader r {b.data (), b.data () + b.size ()};
+            iterator_reader r {b.data (), b.data () + b.size ()};
             r >> *this;
         } catch (data::end_of_stream n) {
             *this = BUMP {};
         }
-
     }
 
     BUMP::operator JSON () const {

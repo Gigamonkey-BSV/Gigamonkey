@@ -8,7 +8,7 @@ namespace Gigamonkey::Bitcoin {
     bytes find_and_delete (bytes_view script_code, bytes_view instruction) {
         program_counter p {script_code};
         bytes r (script_code.size ());
-        bytes_writer w {r.begin (), r.end ()};
+        iterator_writer w {r.begin (), r.end ()};
         int bytes_written = 0;
 
         while (true) {

@@ -576,7 +576,7 @@ namespace Gigamonkey::Boost {
         
         // the inputs for the boost input (unlocking) script. 
         encoding::hex::string given_signature {"300602010a02010b41"};
-        encoding::hex::string given_miner_pubkey{"020000000000000000000000000000000000000000000000000000000000000007"};
+        encoding::hex::string given_miner_pubkey {"020000000000000000000000000000000000000000000000000000000000000007"};
         encoding::hex::string given_nonce_v1 {"f8fc1600"};
         encoding::hex::string given_nonce_v2{"04670400"};
         encoding::hex::string given_extra_nonce_1 {"02000000"};

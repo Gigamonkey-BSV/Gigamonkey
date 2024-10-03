@@ -182,7 +182,7 @@ namespace Gigamonkey {
             proofs_serialization_standard x;
             
             byte flags;
-            bytes_reader r {b.data (), b.data () + b.size ()};
+            iterator_reader r {b.data (), b.data () + b.size ()};
             Bitcoin::var_int index; 
             r >> flags >> index;
             x.Path.Index = index;
@@ -270,7 +270,7 @@ namespace Gigamonkey {
         bytes b (size);
         
         // write flags and index. 
-        bytes_writer w {b.begin (), b.end ()};
+        iterator_writer w {b.begin (), b.end ()};
         w << flags() << Bitcoin::var_int {index ()};
         
         if (tx_included) write_transaction (w, *Transaction);
