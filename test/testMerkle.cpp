@@ -15,7 +15,7 @@ namespace Gigamonkey::Merkle {
         EXPECT_FALSE (tree {}.valid ());
         EXPECT_FALSE (dual {}.valid ());
         
-        list<std::string> transactions ("a", "b", "c", "d", "e", "f", "g", "h");
+        list<std::string> transactions {"a", "b", "c", "d", "e", "f", "g", "h"};
         
         list<digest256> leaves = take (for_each ([] (const std::string x) -> digest256 {
             return Bitcoin::Hash256 (x);

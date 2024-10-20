@@ -165,11 +165,11 @@ namespace Gigamonkey::HD {
             return BIP_32::derive (*this, read_path (l));
         }
 
-        secret inline derive (const secret& x, string_view p) {
+        secret inline derive (const secret &x, string_view p) {
             return derive (x, read_path (p));
         }
         
-        pubkey inline derive (const pubkey& x, string_view p) {
+        pubkey inline derive (const pubkey &x, string_view p) {
             return derive (x, read_path (p));
         }
 
@@ -190,14 +190,14 @@ namespace Gigamonkey::HD {
         key_source (uint32 i, const BIP_32::secret &s) :
             Index {i}, Key {s} {}
         
-        key_source (const BIP_32::secret& s) : key_source {1, s} {}
+        key_source (const BIP_32::secret &s) : key_source {1, s} {}
         
         Bitcoin::secret next () override {
-            return Bitcoin::secret (Key.derive (Index++));
+            return Bitcoin::secret (Key.derive ({Index++}));
         }
         
         Bitcoin::secret first () const {
-            return Bitcoin::secret (Key.derive (Index));
+            return Bitcoin::secret (Key.derive ({Index}));
         }
         
         key_source rest () const {
@@ -209,17 +209,17 @@ namespace Gigamonkey::HD {
         uint32 Index;
         BIP_32::pubkey Key;
         
-        address_source (uint32 i, const BIP_32::pubkey& s) :
+        address_source (uint32 i, const BIP_32::pubkey &s) :
             Index {i}, Key {s} {}
         
-        address_source (const BIP_32::pubkey& s) : address_source {1, s} {}
+        address_source (const BIP_32::pubkey &s) : address_source {1, s} {}
         
         Bitcoin::address::decoded next () override {
-            return Key.derive (Index++).address ();
+            return Key.derive ({Index++}).address ();
         }
         
         Bitcoin::address::decoded first () const {
-            return Key.derive (Index).address ();
+            return Key.derive ({Index}).address ();
         }
         
         address_source rest () const {
