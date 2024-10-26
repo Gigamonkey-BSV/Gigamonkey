@@ -20,10 +20,7 @@ namespace Gigamonkey::Bitcoin {
     
     bool operator == (const outpoint &, const outpoint &);
     
-    bool operator > (const outpoint &, const outpoint &);
-    bool operator < (const outpoint &, const outpoint &);
-    bool operator >= (const outpoint &, const outpoint &);
-    bool operator <= (const outpoint &, const outpoint &);
+    std::strong_ordering operator <=> (const outpoint &, const outpoint &);
     
     writer &operator << (writer &w, const outpoint &h);
     reader &operator >> (reader &r, outpoint &h);
@@ -410,20 +407,8 @@ namespace Gigamonkey::Bitcoin {
         return Bitcoin::id (*this);
     }
     
-    inline bool operator > (const outpoint &a, const outpoint &b) {
-        return a.Digest == b.Digest ? a.Index > b.Index : a.Digest > b.Digest;
-    }
-    
-    inline bool operator < (const outpoint &a, const outpoint &b) {
-        return a.Digest == b.Digest ? a.Index < b.Index : a.Digest < b.Digest;
-    }
-    
-    inline bool operator >= (const outpoint &a, const outpoint &b) {
-        return a.Digest == b.Digest ? a.Index >= b.Index : a.Digest >= b.Digest;
-    }
-    
-    inline bool operator <= (const outpoint &a, const outpoint &b) {
-        return a.Digest == b.Digest ? a.Index <= b.Index : a.Digest <= b.Digest;
+    std::strong_ordering inline operator <=> (const outpoint &a, const outpoint &b) {
+        return a.Digest == b.Digest ? a.Index <=> b.Index : a.Digest <=> b.Digest;
     }
     
     std::strong_ordering inline operator <=> (const header &a, const header &b) {

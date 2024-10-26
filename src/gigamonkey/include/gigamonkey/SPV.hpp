@@ -8,6 +8,7 @@
 #include <gigamonkey/pay/extended.hpp>
 #include <gigamonkey/merkle/BUMP.hpp>
 #include <data/either.hpp>
+#include <data/tools/base_map.hpp>
 
 namespace Gigamonkey::Bitcoin {
     Bitcoin::block genesis ();
@@ -52,8 +53,8 @@ namespace Gigamonkey::SPV {
             bool operator == (const accepted &tx) const;
         };
 
-        struct map : tool::base_rb_map<Bitcoin::TXID, accepted, map> {
-            using tool::base_rb_map<Bitcoin::TXID, accepted, map>::base_rb_map;
+        struct map : data::base_map<Bitcoin::TXID, accepted, map> {
+            using base_map<Bitcoin::TXID, accepted, map>::base_map;
             bool operator == (const map &) const;
             bool contains_branch (const Bitcoin::TXID &);
         };

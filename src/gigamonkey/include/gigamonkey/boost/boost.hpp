@@ -308,20 +308,8 @@ namespace Gigamonkey {
                         && Value == p.Value;
                 }
                 
-                bool operator < (const prevout &p) const {
-                    return static_cast<const Bitcoin::outpoint &> (*this) < static_cast<const Bitcoin::outpoint &> (p);
-                }
-                
-                bool operator > (const prevout &p) const {
-                    return static_cast<const Bitcoin::outpoint &> (*this) > static_cast<const Bitcoin::outpoint &> (p);
-                }
-                
-                bool operator <= (const prevout &p) const {
-                    return static_cast<const Bitcoin::outpoint &> (*this) <= static_cast<const Bitcoin::outpoint &> (p);
-                }
-                
-                bool operator >= (const prevout &p) const {
-                    return static_cast<const Bitcoin::outpoint &> (*this) >= static_cast<const Bitcoin::outpoint &> (p);
+                std::strong_ordering operator <=> (const prevout &p) const {
+                    return static_cast<const Bitcoin::outpoint &> (*this) <=> static_cast<const Bitcoin::outpoint &> (p);
                 }
                 
             };

@@ -26,8 +26,8 @@ FetchContent_Declare (ctre URL https://github.com/hanickadot/compile-time-regula
 FetchContent_MakeAvailable (ctre)
 
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(Cryptopp REQUIRED IMPORTED_TARGET libcrypto++)
+find_package (PkgConfig REQUIRED)
+pkg_check_modules (Cryptopp REQUIRED IMPORTED_TARGET libcrypto++)
 
 
 find_package (data CONFIG REQUIRED)
