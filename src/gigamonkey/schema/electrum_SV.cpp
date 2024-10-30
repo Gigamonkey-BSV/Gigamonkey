@@ -15,7 +15,7 @@ namespace Gigamonkey::HD::Electrum_SV {
 
     byte_array<64> read (const unicode &words, const unicode &passphrase) {
         return crypto::PKCS5_PBKDF2_HMAC<64, CryptoPP::SHA512>
-            (bytes (normalize_text (words) + UTF8 {"electrum"} + normalize_text (passphrase)), 2048);
+            (normalize_text (words) + UTF8 {"electrum"} + normalize_text (passphrase), 2048);
     }
 
 
