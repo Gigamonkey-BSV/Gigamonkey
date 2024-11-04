@@ -47,7 +47,7 @@ namespace Gigamonkey::work {
         }
     };
     
-    uint256 expand (const compact&);
+    uint256 expand (const compact &);
     
     const compact SuccessHalf {33, 0x8000};
     const compact SuccessQuarter {32, 0x400000};

@@ -81,6 +81,7 @@ namespace Gigamonkey::SPV {
         // the payment is in these transactions.
         // They do not yet have confirmations.
         list<Bitcoin::transaction> Payment;
+
         // map of txids referenced in the inputs of the transactions
         // to proofs, which may be further maps back to more transactions
         // or a merkle proof.
@@ -119,6 +120,7 @@ namespace Gigamonkey::SPV {
     maybe<proof> generate_proof (database &d, list<Bitcoin::transaction> payment);
     maybe<extended::transaction> extend (database &d, Bitcoin::transaction);
 
+    // interface for database containing headers, transactions, and merkle paths.
     struct database {
 
         // get a block header by height.
@@ -159,7 +161,6 @@ namespace Gigamonkey::SPV {
 
     };
 
-    // interface for database containing headers, transactions, and merkle path.
     struct writable {
 
         // it is allowed to insert a transaction without a merkle proof.

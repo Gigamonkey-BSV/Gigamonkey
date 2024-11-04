@@ -38,7 +38,6 @@ namespace Gigamonkey::Merkle {
         return t.root ();
     }
     
-    
     inline bool operator == (const tree &a, const tree &b) {
         return a.Width == b.Width && a.Height == b.Height && static_cast<data::tree<digest>> (a) == static_cast<data::tree<digest>> (b);
     }
