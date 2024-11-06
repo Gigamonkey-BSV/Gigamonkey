@@ -107,9 +107,11 @@ namespace Gigamonkey::SPV {
     namespace {
 
         bool unconfirmed_validate (const proof::node &u, database *d) {
+
             if (u.Proof.is<confirmation> ()) {
                 const confirmation &conf = u.Proof.get<confirmation> ();
                 if (d != nullptr && d->header (conf.Header.MerkleRoot) == nullptr) return false;
+
                 return proof::valid (u.Transaction, conf.Path, conf.Header);
             }
 
@@ -124,8 +126,8 @@ namespace Gigamonkey::SPV {
         bool proof_validate (const proof &u, database *d) {
             if (!list<extended::transaction> (u).valid ()) return false;
 
-            for (const entry<Bitcoin::TXID, proof::accepted> &p : u.Proof)
-                if (p.Key != p.Value->Transaction.id () || !unconfirmed_validate (*p.Value, d)) return false;
+            for (const auto &[txid, accepted] : u.Proof)
+                if (txid != accepted->Transaction.id () || !unconfirmed_validate (*accepted, d)) return false;
 
             return true;
         }

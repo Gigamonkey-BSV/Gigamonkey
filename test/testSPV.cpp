@@ -45,14 +45,40 @@ namespace Gigamonkey {
 
     Bitcoin::header make_next_fake_block (const digest256 &merkle_root, crypto::random &r);
 
+    Bitcoin::prevout inline get_prevout (const Bitcoin::transaction &t, uint32_little i) {
+        return Bitcoin::prevout {Bitcoin::outpoint {t.id (), i}, t.Outputs[i]};
+    }
+
     void test_case (list<Bitcoin::transaction> payment, SPV::database &d) {
         // generate SPV proof.
-        // check SPV proof
+        maybe<SPV::proof> proof = SPV::generate_proof (d, payment);
+        EXPECT_TRUE (bool (proof)) << "proof should have been generated but was not";
+
         // make extended transactions
+        list<extended::transaction> extended;
+        EXPECT_NO_THROW (extended = list<extended::transaction> (*proof));
+
         // check extended transactions
+        for (const extended::transaction &extx : extended) {
+            auto extended_result = extx.valid ();
+            EXPECT_TRUE (bool (extended_result)) << "extended transactions must be valid; result is " << extended_result;
+        }
+
+        // check SPV proof
+        EXPECT_TRUE (proof->valid ()) << "proof should be valid but is not";
+
         // make BEEF
+        BEEF beef {*proof};
+
         // check BEEF
+        EXPECT_TRUE (beef.valid ());
+        EXPECT_TRUE (beef.validate (d));
+
+        // bytes and back
+        EXPECT_EQ (beef, BEEF (bytes (beef)));
+
         // regenerate SPV proof.
+        //EXPECT_EQ (*proof, beef.read_SPV_proof (d));
     }
 
     TEST (SPVTest, TestSPV) {
@@ -95,10 +121,16 @@ namespace Gigamonkey {
         list<Bitcoin::transaction> Payment;
 
         // case 1: D - depth 0, one leaf A
+        Payment <<= make_fake_node_tx ({get_prevout (tx_A, 3)}, 1, r);
 
         // case 2: E - depth 0, one leaf but two inputs that redeem from B.
+        //Payment <<= make_fake_node_tx ({get_prevout (tx_B, 2), get_prevout (tx_B, 5)}, 1, r);
+
         // case 3: F - depth 0, two leaves A and B.
+        //Payment <<= make_fake_node_tx ({get_prevout (tx_A, 1), get_prevout (tx_B, 6)}, 1, r);
+
         // case 4: G - depth 0, two leaves B and C.
+        //Payment <<= make_fake_node_tx ({get_prevout (tx_B, 3), get_prevout (tx_C, 2)}, 1, r);
 
         // define transactions H, I, J deriving from C, A and C, and B and C
         // respectively.
@@ -122,19 +154,19 @@ namespace Gigamonkey {
     uint256 next_key {"0x00000600f00007000010e00080000200d0000003090000050000c00000400fc5"};
 
     // all keys that have been generated so far.
-    std::map<Bitcoin::address, Bitcoin::secret> keys;
+    std::map<digest160, Bitcoin::secret> keys;
 
     Bitcoin::secret get_next_key () {
         Bitcoin::secret key {Bitcoin::secret::test, secp256k1::secret {next_key}};
-        keys[key.address ()] = key;
+        keys[key.address ().Digest] = key;
         next_key++;
         return key;
     }
 
-    Bitcoin::address get_next_address () {
+    digest160 get_next_address () {
         Bitcoin::secret key {Bitcoin::secret::test, secp256k1::secret {next_key}};
-        Bitcoin::address address = key.address ();
-        keys[key.address ()] = key;
+        digest160 address = key.address ().Digest;
+        keys[address] = key;
         next_key++;
         return address;
     }
@@ -162,7 +194,7 @@ namespace Gigamonkey {
 
 
         for (uint32 i = 0; i < num_outputs; i++)
-            out <<= Bitcoin::output {random_sats (r), pay_to_address::script (get_next_address ().digest ())};
+            out <<= Bitcoin::output {random_sats (r), pay_to_address::script (get_next_address ())};
 
 
         return Bitcoin::transaction {1, in, out, 0};
@@ -196,6 +228,34 @@ namespace Gigamonkey {
         Bitcoin::header h {1, previous, merkle_root, Bitcoin::timestamp {1}, work::compact::max (), 0};
         Blocks = Blocks << h;
         return h;
+    }
+
+    Bitcoin::sighash::directive directive = Bitcoin::directive (Bitcoin::sighash::all);
+
+    Bitcoin::transaction make_fake_node_tx (list<Bitcoin::prevout> inputs, uint32 num_outputs, crypto::random &r) {
+        list<Bitcoin::output> out;
+        list<Bitcoin::incomplete::input> in;
+
+        for (const Bitcoin::prevout &p : inputs)
+            in <<= Bitcoin::incomplete::input {p.outpoint ()};
+
+        for (uint32 i = 0; i < num_outputs; i++)
+            out <<= Bitcoin::output {random_sats (r), pay_to_address::script (get_next_address ())};
+
+        Bitcoin::incomplete::transaction tx {1, in, out, 0};
+
+        list<bytes> scripts;
+
+        uint32_little i = 0;
+        for (const Bitcoin::prevout &p : inputs) {
+            auto key = keys[pay_to_address {p.script ()}.Address];
+            auto doc = Bitcoin::sighash::document {tx, i, p.value (), p.script ()};
+            auto sig = key.sign (doc, directive);
+            scripts <<= pay_to_address::redeem (sig, key.to_public ());
+            i++;
+        }
+
+        return tx.complete (scripts);
     }
 }
 

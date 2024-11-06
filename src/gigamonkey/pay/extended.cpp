@@ -28,14 +28,15 @@ namespace Gigamonkey::extended {
         return b;
     }
 
-    bool transaction::valid (uint32 flags) const {
+    Bitcoin::result transaction::valid (uint32 flags) const {
+
         if (!(Inputs.size () > 0 && Outputs.size () > 0 && data::valid (Inputs) && data::valid (Outputs) && sent () <= spent ())) return false;
 
         Bitcoin::incomplete::transaction tx (Bitcoin::transaction (*this));
 
         uint32 index = 0;
         for (const input &in : Inputs) {
-            if (!in.evaluate (tx, index, flags)) return false;
+            if (auto r = in.evaluate (tx, index, flags); !bool (r)) return r;
             index ++;
         }
 

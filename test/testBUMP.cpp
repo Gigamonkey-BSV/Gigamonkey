@@ -78,7 +78,7 @@ namespace Gigamonkey::Merkle {
         "00" // offset VarInt
         "00" // flags
         "af8764ce7e1cc132ab5ed2229a005c87201c9a5ee15c0f91dd53eff31ab30cd4" // hash
-        ;
+    ;
 
     std::string JSON_BUMP_string = R"({
         "blockHeight": 813706,

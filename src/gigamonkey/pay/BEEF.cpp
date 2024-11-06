@@ -30,13 +30,14 @@ namespace Gigamonkey {
             return false;
 
         set<Bitcoin::TXID> previously_read;
-
         for (const auto &tx : Transactions) {
             Bitcoin::TXID txid = tx.Transaction.id ();
 
-            // Does this transaction contain the merkle proof?
+            // Does this BEEF contain the merkle proof?
             // if not, then we have to check if all prevout txs are among the previous txs.
-            if (!tx.Merkle_proof_included () && !previously_read.contains (txid)) return false;
+            if (!tx.Merkle_proof_included ())
+                for (const Bitcoin::input &in : tx.Transaction.Inputs)
+                    if (!previously_read.contains (in.Reference.Digest)) return false;
 
             previously_read = previously_read.insert (txid);
         }

@@ -51,7 +51,7 @@ namespace Gigamonkey {
         EXPECT_EQ (to_bytes, beef_bytes);
         // it seems that the signature in this BEEF is not valid.
 
-        //EXPECT_TRUE (beef.valid ());
+        EXPECT_TRUE (beef.valid ());
     }
 
 }

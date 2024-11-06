@@ -74,7 +74,7 @@ namespace Gigamonkey::Merkle {
             }
 
             bool operator == (const node &n) const {
-                return Offset == n.Offset && Flag == n.Flag;
+                return Offset == n.Offset && Flag == n.Flag && Digest == n.Digest;
             }
 
             // encode JSON
@@ -99,6 +99,10 @@ namespace Gigamonkey::Merkle {
 
         BUMP (): BlockHeight {0}, Path {} {}
         BUMP (uint64 block_height, nodes path): BlockHeight {block_height}, Path {path} {}
+
+        bool operator == (const BUMP &b) const {
+            return BlockHeight == b.BlockHeight && Path == b.Path;
+        }
 
     };
 

@@ -12,7 +12,7 @@ namespace Gigamonkey::Bitcoin {
     namespace sighash {
         
         // The sighash directive is the last byte of a Bitcoin signature. 
-        // It determines what parts of a transaction were signed. 
+        // It determines what parts of a transaction are signed.
         // By default you would use fork_id | all, until fork_id becomes
         // depricated and then you would just use all. 
         using directive = byte;

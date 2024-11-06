@@ -55,8 +55,8 @@ namespace Gigamonkey::SPV {
 
         struct map : data::base_map<Bitcoin::TXID, accepted, map> {
             using base_map<Bitcoin::TXID, accepted, map>::base_map;
-            bool operator == (const map &) const;
             bool contains_branch (const Bitcoin::TXID &);
+            bool operator == (const map &m) const;
         };
 
         // an spv proof is a tree whose nodes are txs and whose leaves are all Merkle proofs.
@@ -75,7 +75,7 @@ namespace Gigamonkey::SPV {
             node (const Bitcoin::transaction &tx, const confirmation &c);
             node (const Bitcoin::transaction &tx, map m);
 
-            bool operator == (const node &) const;
+            bool operator == (const node &n) const;
         };
 
         // the payment is in these transactions.
@@ -97,22 +97,13 @@ namespace Gigamonkey::SPV {
 
         explicit operator list<extended::transaction> () const;
 
+        bool operator == (const proof &p) const;
+
     };
 
     // convert proofs and proof parts to extended transactions.
-    list<extended::transaction> inline extended_transactions (list<Bitcoin::transaction> payment, proof::map proof) {
-        return for_each ([proof] (const Bitcoin::transaction &tx) -> extended::transaction {
-            return extended::transaction {tx.Version, for_each ([proof] (const Bitcoin::input &in) -> extended::input {
-                return extended::input {proof[in.Reference.Digest]->Transaction.Outputs[in.Reference.Index], in};
-            }, tx.Inputs), tx.Outputs, tx.LockTime};
-        }, payment);
-    }
-
-    extended::transaction inline extended_transaction (Bitcoin::transaction tx, proof::map proof) {
-        return extended::transaction {tx.Version, for_each ([proof] (const Bitcoin::input &in) -> extended::input {
-            return extended::input {proof[in.Reference.Digest]->Transaction.Outputs[in.Reference.Index], in};
-        }, tx.Inputs), tx.Outputs, tx.LockTime};
-    }
+    list<extended::transaction> extended_transactions (list<Bitcoin::transaction> payment, proof::map proof);
+    extended::transaction extended_transaction (Bitcoin::transaction tx, proof::map proof);
 
     // attempt to generate a given SPV proof for an unconfirmed transaction.
     // this proof can be sent to a merchant who can use it to confirm that
@@ -230,6 +221,20 @@ namespace Gigamonkey::SPV {
 
     };
 
+    list<extended::transaction> inline extended_transactions (list<Bitcoin::transaction> payment, proof::map proof) {
+        return for_each ([proof] (const Bitcoin::transaction &tx) -> extended::transaction {
+            return extended::transaction {tx.Version, for_each ([proof] (const Bitcoin::input &in) -> extended::input {
+                return extended::input {proof[in.Reference.Digest]->Transaction.Outputs[in.Reference.Index], in};
+            }, tx.Inputs), tx.Outputs, tx.LockTime};
+        }, payment);
+    }
+
+    extended::transaction inline extended_transaction (Bitcoin::transaction tx, proof::map proof) {
+        return extended::transaction {tx.Version, for_each ([proof] (const Bitcoin::input &in) -> extended::input {
+            return extended::input {proof[in.Reference.Digest]->Transaction.Outputs[in.Reference.Index], in};
+        }, tx.Inputs), tx.Outputs, tx.LockTime};
+    }
+
     inline confirmation::confirmation (): Path {}, Height {0}, Header {} {}
     inline confirmation::confirmation (Merkle::path p, const N &height, const Bitcoin::header &h): Path {p}, Height {height}, Header {h} {}
 
@@ -306,6 +311,18 @@ namespace Gigamonkey::SPV {
 
     Merkle::BUMP inline database::memory::entry::BUMP () const {
         return Merkle::BUMP {uint64 (Header.Key), Paths};
+    }
+
+    bool inline proof::map::operator == (const map &m) const {
+        return static_cast<data::map<Bitcoin::TXID, accepted>> (*this) == static_cast<data::map<Bitcoin::TXID, accepted>> (m);
+    }
+
+    bool inline proof::node::operator == (const node &n) const {
+        return Transaction == n.Transaction && Proof == n.Proof;
+    }
+
+    bool inline proof::operator == (const proof &p) const {
+        return Payment == p.Payment && Proof == p.Proof;
     }
 }
 

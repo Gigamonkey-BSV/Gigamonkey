@@ -74,7 +74,7 @@ namespace Gigamonkey::extended {
             transaction {int32_little {Bitcoin::transaction::LatestVersion}, i, o, l} {}
 
         // check all scripts and check that the fee is non-negative.
-        bool valid (uint32 flags = StandardScriptVerifyFlags (true, true)) const;
+        Bitcoin::result valid (uint32 flags = StandardScriptVerifyFlags (true, true)) const;
 
         explicit operator Bitcoin::transaction () const;
 

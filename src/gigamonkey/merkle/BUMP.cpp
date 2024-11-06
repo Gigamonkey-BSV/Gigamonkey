@@ -139,11 +139,12 @@ namespace Gigamonkey::Merkle {
         }
 
         BUMP::nodes to_path (const branch &b) {
-            uint32 path_index = (b.Leaf.Index & ~1) | (~b.Leaf.Index & 1);
 
             digest last = b.Leaf.Digest;
             list<ordered_list<BUMP::node>> nodes;
             ordered_list<BUMP::node> level {BUMP::node {b.Leaf.Index, BUMP::flag::client, b.Leaf.Digest}};
+
+            uint32 path_index = (b.Leaf.Index & ~1) | (~b.Leaf.Index & 1);
 
             for (const maybe<digest> &next : b.Digests) {
                 if (bool (next)) {

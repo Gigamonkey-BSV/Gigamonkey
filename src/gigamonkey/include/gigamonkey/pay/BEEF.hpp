@@ -67,9 +67,17 @@ namespace Gigamonkey {
             bool Merkle_proof_included () const {
                 return bool (BUMPIndex);
             }
+
+            bool operator == (const transaction &tx) const {
+                return Transaction == tx.Transaction && BUMPIndex == tx.BUMPIndex;
+            }
         };
 
         list<transaction> Transactions {};
+
+        bool operator == (const BEEF &beef) const {
+            return BUMPs == beef.BUMPs && Transactions == beef.Transactions;
+        }
     };
 
     writer inline &operator << (writer &w, const BEEF &h) {
