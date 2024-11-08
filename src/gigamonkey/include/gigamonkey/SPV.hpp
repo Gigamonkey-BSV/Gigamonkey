@@ -162,7 +162,7 @@ namespace Gigamonkey::SPV {
         virtual void remove (const Bitcoin::TXID &) = 0;
         
         // providing a merkle proof removes a tx from pending.
-        virtual bool insert (const Merkle::proof &) = 0;
+        virtual bool insert (const Merkle::dual &) = 0;
         virtual const data::entry<N, Bitcoin::header> *insert (const data::N &height, const Bitcoin::header &h) = 0;
 
         virtual ~writable () {}
@@ -210,7 +210,7 @@ namespace Gigamonkey::SPV {
         Merkle::dual dual_tree (const digest256 &d) const;
 
         const data::entry<N, Bitcoin::header> *insert (const data::N &height, const Bitcoin::header &h) final override;
-        bool insert (const Merkle::proof &p) final override;
+        bool insert (const Merkle::dual &p) final override;
         void insert (const Bitcoin::transaction &) final override;
 
         // all unconfirmed txs in the database.
@@ -284,9 +284,21 @@ namespace Gigamonkey::SPV {
 
     inline proof::node::node (const Bitcoin::transaction &tx, map m) : Transaction {tx}, Proof {m} {}
 
+    bool inline proof::node::operator == (const node &n) const {
+        return Transaction == n.Transaction && Proof == n.Proof;
+    }
+
     bool inline proof::tree::valid () const {
         return this->is<map> () && !data::empty (this->get<map> ()) ||
             this->is<confirmation> () && this->get<confirmation> ().valid ();
+    }
+
+    bool inline proof::map::operator == (const map &m) const {
+        return static_cast<data::map<Bitcoin::TXID, accepted>> (*this) == static_cast<data::map<Bitcoin::TXID, accepted>> (m);
+    }
+
+    bool inline proof::operator == (const proof &p) const {
+        return Payment == p.Payment && Proof == p.Proof;
     }
 
     inline database::tx::tx (ptr<const Bitcoin::transaction> t, const confirmation &x) : Transaction {t}, Confirmation {x} {}
@@ -311,18 +323,6 @@ namespace Gigamonkey::SPV {
 
     Merkle::BUMP inline database::memory::entry::BUMP () const {
         return Merkle::BUMP {uint64 (Header.Key), Paths};
-    }
-
-    bool inline proof::map::operator == (const map &m) const {
-        return static_cast<data::map<Bitcoin::TXID, accepted>> (*this) == static_cast<data::map<Bitcoin::TXID, accepted>> (m);
-    }
-
-    bool inline proof::node::operator == (const node &n) const {
-        return Transaction == n.Transaction && Proof == n.Proof;
-    }
-
-    bool inline proof::operator == (const proof &p) const {
-        return Payment == p.Payment && Proof == p.Proof;
     }
 }
 

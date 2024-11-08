@@ -213,17 +213,20 @@ namespace Gigamonkey::SPV {
             Pending = Pending.insert (txid);
     }
 
-    bool database::memory::insert (const Merkle::proof &p) {
+    bool database::memory::insert (const Merkle::dual &p) {
         auto h = ByRoot.find (p.Root);
         if (h == ByRoot.end ()) return false;
         auto d = Merkle::dual {h->second->Paths, h->second->Header.Value.MerkleRoot} + p;
         if (!d.valid ()) return false;
         h->second->Paths = d.Paths;
-        ByTXID[p.Branch.Leaf.Digest] = h->second;
 
-        // do we have a tx for this proof? If we do, remove from pending.
-        if (auto e = Transactions.find (p.Branch.Leaf.Digest); e != Transactions.end ())
-            Pending = Pending.remove (p.Branch.Leaf.Digest);
+        for (const auto &[txid, _]: p.Paths) {
+            ByTXID[txid] = h->second;
+
+            // do we have a tx for this proof? If we do, remove from pending.
+            if (auto e = Transactions.find (txid); e != Transactions.end ())
+                Pending = Pending.remove (txid);
+        }
 
         return true;
     }

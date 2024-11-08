@@ -39,7 +39,7 @@ namespace Gigamonkey {
 
     Bitcoin::transaction make_fake_root_tx (uint32 num_inputs, uint32 num_outputs, crypto::random &r);
 
-    Bitcoin::transaction make_fake_node_tx (list<Bitcoin::prevout> inputs, uint32 num_outputs, crypto::random &r);
+    Bitcoin::transaction make_fake_node_tx (list<Bitcoin::prevout> inputs, uint32 num_outputs, Bitcoin::satoshi sats_per_output, crypto::random &r);
 
     Merkle::dual make_fake_merkle (uint32 txs_in_block, map<uint32, digest256> roots, crypto::random &r);
 
@@ -69,7 +69,6 @@ namespace Gigamonkey {
 
         // make BEEF
         BEEF beef {*proof};
-
         // check BEEF
         EXPECT_TRUE (beef.valid ());
         EXPECT_TRUE (beef.validate (d));
@@ -78,7 +77,7 @@ namespace Gigamonkey {
         EXPECT_EQ (beef, BEEF (bytes (beef)));
 
         // regenerate SPV proof.
-        //EXPECT_EQ (*proof, beef.read_SPV_proof (d));
+        EXPECT_EQ (*proof, beef.read_SPV_proof (d));
     }
 
     TEST (SPVTest, TestSPV) {
@@ -121,30 +120,44 @@ namespace Gigamonkey {
         list<Bitcoin::transaction> Payment;
 
         // case 1: D - depth 0, one leaf A
-        Payment <<= make_fake_node_tx ({get_prevout (tx_A, 3)}, 1, r);
-
+        Payment <<= make_fake_node_tx ({get_prevout (tx_A, 3)}, 1, 100000000, r);
+/*
         // case 2: E - depth 0, one leaf but two inputs that redeem from B.
-        //Payment <<= make_fake_node_tx ({get_prevout (tx_B, 2), get_prevout (tx_B, 5)}, 1, r);
+        Payment <<= make_fake_node_tx ({get_prevout (tx_B, 2), get_prevout (tx_B, 5)}, 1, 100000000, r);
 
         // case 3: F - depth 0, two leaves A and B.
-        //Payment <<= make_fake_node_tx ({get_prevout (tx_A, 1), get_prevout (tx_B, 6)}, 1, r);
+        Payment <<= make_fake_node_tx ({get_prevout (tx_A, 1), get_prevout (tx_B, 6)}, 1, 100000000, r);
 
         // case 4: G - depth 0, two leaves B and C.
-        //Payment <<= make_fake_node_tx ({get_prevout (tx_B, 3), get_prevout (tx_C, 2)}, 1, r);
+        Payment <<= make_fake_node_tx ({get_prevout (tx_B, 3), get_prevout (tx_C, 2)}, 1, 100000000, r);
 
         // define transactions H, I, J deriving from C, A and C, and B and C
         // respectively.
 
+        Bitcoin::transaction tx_H = make_fake_node_tx ({get_prevout (tx_C, 1)}, 1, 90000000, r);
+        Bitcoin::transaction tx_I = make_fake_node_tx ({get_prevout (tx_C, 3), get_prevout (tx_A, 2)}, 2, 90000000, r);
+        Bitcoin::transaction tx_J = make_fake_node_tx ({get_prevout (tx_C, 4), get_prevout (tx_B, 4)}, 3, 60000000, r);
+
         // case 5: K - depth 1, one node H, one leaf.
+        Payment <<= make_fake_node_tx ({get_prevout (tx_H, 0)}, 1, 80000000, r);
+
         // case 6: L - depth 1, one node I, two leaves.
+        Payment <<= make_fake_node_tx ({get_prevout (tx_I, 0)}, 1, 80000000, r);
+
         // case 7: M - depth 1, one node J, two leaves.
+        Payment <<= make_fake_node_tx ({get_prevout (tx_J, 0)}, 1, 50000000, r);
 
         // define transactions N, O, P deriving from I, J, J respectively.
+        Bitcoin::transaction tx_N = make_fake_node_tx ({get_prevout (tx_I, 1)}, 2, 30000000, r);
+        Bitcoin::transaction tx_O = make_fake_node_tx ({get_prevout (tx_J, 1)}, 1, 50000000, r);
+        Bitcoin::transaction tx_P = make_fake_node_tx ({get_prevout (tx_J, 2)}, 1, 50000000, r);
 
         // case 8: Q - depth 2, nodes N, O
+        Payment <<= make_fake_node_tx ({get_prevout (tx_N, 0), get_prevout (tx_O, 0)}, 1, 70000000, r);
         // case 9: R - depth 2, nodes N, P
+        Payment <<= make_fake_node_tx ({get_prevout (tx_N, 1), get_prevout (tx_P, 0)}, 1, 70000000, r);
 
-        for (Bitcoin::transaction t : Payment) test_case ({t}, db);
+        for (Bitcoin::transaction t : Payment) test_case ({t}, db);*/
 
         // case 10: all the previous cases together.
         test_case (Payment, db);
@@ -171,18 +184,15 @@ namespace Gigamonkey {
         return address;
     }
 
-    Bitcoin::satoshi random_sats (crypto::random &r) {
-        return Bitcoin::satoshi {100000000}; // good enough
-    }
-
     Bitcoin::input random_input (crypto::random &r) {
         digest256 d;
         r >> d;
         uint32_little i;
         r >> i;
-        bytes b (15);
-        r >> b;
-        return Bitcoin::input {Bitcoin::outpoint {d, i}, b};
+
+        bytes Script = Bitcoin::compile (Bitcoin::program {OP_1});
+
+        return Bitcoin::input {Bitcoin::outpoint {d, i}, Script};
     }
 
     Bitcoin::transaction make_fake_root_tx (uint32 num_inputs, uint32 num_outputs, crypto::random &r) {
@@ -190,12 +200,10 @@ namespace Gigamonkey {
         list<Bitcoin::input> in;
 
         for (uint32 i = 0; i < num_inputs; i++)
-            in <<= Bitcoin::input {random_input (r)};
-
+            in <<= random_input (r);
 
         for (uint32 i = 0; i < num_outputs; i++)
-            out <<= Bitcoin::output {random_sats (r), pay_to_address::script (get_next_address ())};
-
+            out <<= Bitcoin::output {100000000, pay_to_address::script (get_next_address ())};
 
         return Bitcoin::transaction {1, in, out, 0};
     }
@@ -232,7 +240,7 @@ namespace Gigamonkey {
 
     Bitcoin::sighash::directive directive = Bitcoin::directive (Bitcoin::sighash::all);
 
-    Bitcoin::transaction make_fake_node_tx (list<Bitcoin::prevout> inputs, uint32 num_outputs, crypto::random &r) {
+    Bitcoin::transaction make_fake_node_tx (list<Bitcoin::prevout> inputs, uint32 num_outputs, Bitcoin::satoshi sats_per_output, crypto::random &r) {
         list<Bitcoin::output> out;
         list<Bitcoin::incomplete::input> in;
 
@@ -240,7 +248,7 @@ namespace Gigamonkey {
             in <<= Bitcoin::incomplete::input {p.outpoint ()};
 
         for (uint32 i = 0; i < num_outputs; i++)
-            out <<= Bitcoin::output {random_sats (r), pay_to_address::script (get_next_address ())};
+            out <<= Bitcoin::output {sats_per_output, pay_to_address::script (get_next_address ())};
 
         Bitcoin::incomplete::transaction tx {1, in, out, 0};
 

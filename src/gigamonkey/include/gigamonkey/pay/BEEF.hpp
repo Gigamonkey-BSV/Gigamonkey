@@ -39,7 +39,7 @@ namespace Gigamonkey {
 
         uint64 serialized_size () const;
 
-        // NOTE: it is possible for BUMP to contain several unconfirmeed
+        // NOTE: it is possible for BUMP to contain several unconfirmed
         // transactions.
         SPV::proof read_SPV_proof (SPV::database &) const;
 
@@ -52,24 +52,24 @@ namespace Gigamonkey {
 
         list<Merkle::BUMP> BUMPs {};
 
-        struct transaction {
-            Bitcoin::transaction Transaction;
+        struct transaction : Bitcoin::transaction {
             maybe<uint64> BUMPIndex;
 
-            transaction (): Transaction {}, BUMPIndex {} {}
-            transaction (const Bitcoin::transaction &tx) : Transaction {tx}, BUMPIndex {} {}
-            transaction (const Bitcoin::transaction &tx, uint64 index) : Transaction {tx}, BUMPIndex {index} {}
+            transaction (): Bitcoin::transaction {}, BUMPIndex {} {}
+            transaction (const Bitcoin::transaction &tx) : Bitcoin::transaction {tx}, BUMPIndex {} {}
+            transaction (const Bitcoin::transaction &tx, uint64 index) : Bitcoin::transaction {tx}, BUMPIndex {index} {}
+
+            uint64 serialized_size () const;
 
             friend writer &operator << (writer &w, const transaction &h);
             friend reader &operator >> (reader &r, transaction &h);
-            uint64 serialized_size () const;
 
             bool Merkle_proof_included () const {
                 return bool (BUMPIndex);
             }
 
             bool operator == (const transaction &tx) const {
-                return Transaction == tx.Transaction && BUMPIndex == tx.BUMPIndex;
+                return static_cast<Bitcoin::transaction> (*this) == static_cast<Bitcoin::transaction> (tx) && BUMPIndex == tx.BUMPIndex;
             }
         };
 
@@ -78,6 +78,10 @@ namespace Gigamonkey {
         bool operator == (const BEEF &beef) const {
             return BUMPs == beef.BUMPs && Transactions == beef.Transactions;
         }
+
+        // note: the official specs do not define a JSON representation of
+        // a BEEF. Thus, the version we provide is an unofficial extension.
+        explicit operator JSON () const;
     };
 
     writer inline &operator << (writer &w, const BEEF &h) {
@@ -104,11 +108,11 @@ namespace Gigamonkey {
     }
 
     uint64 inline BEEF::transaction::serialized_size () const {
-        return Transaction.serialized_size () + 1 + (bool (BUMPIndex) ? Bitcoin::var_int::size (*BUMPIndex) : 0);
+        return static_cast<Bitcoin::transaction> (*this).serialized_size () + 1 + (bool (BUMPIndex) ? Bitcoin::var_int::size (*BUMPIndex) : 0);
     }
 
     writer inline &operator << (writer &w, const BEEF::transaction &h) {
-        w << h.Transaction;
+        w << static_cast<Bitcoin::transaction> (h);
         if (bool (h.BUMPIndex))
         return w << byte (1) << Bitcoin::var_int {*h.BUMPIndex};
         return w << byte (0);

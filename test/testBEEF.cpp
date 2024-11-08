@@ -43,8 +43,8 @@ namespace Gigamonkey {
         EXPECT_EQ (beef.serialized_size (), beef_bytes.size ());
         EXPECT_EQ (beef.BUMPs.size (), 1);
         EXPECT_EQ (beef.Transactions.size (), 2);
-        EXPECT_EQ (beef.Transactions[0].Transaction.Version, 1);
-        EXPECT_EQ (beef.Transactions[1].Transaction.Version, 1);
+        EXPECT_EQ (beef.Transactions[0].Version, 1);
+        EXPECT_EQ (beef.Transactions[1].Version, 1);
 
         bytes to_bytes = bytes (beef);
 

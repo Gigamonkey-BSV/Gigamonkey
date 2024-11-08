@@ -154,7 +154,7 @@ namespace Gigamonkey::Bitcoin {
         static bytes_view script (bytes_view);
         static uint32_little sequence (bytes_view);
         
-        outpoint Reference; 
+        outpoint Reference;
         Bitcoin::script Script;
         uint32_little Sequence;
         
