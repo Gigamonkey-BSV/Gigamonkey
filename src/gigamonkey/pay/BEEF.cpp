@@ -102,6 +102,7 @@ namespace Gigamonkey {
             const Bitcoin::transaction &tx,
             std::pair<uint64, Merkle::map> merkle,
             SPV::database &db) {
+
             entry<Bitcoin::TXID, SPV::proof::accepted> result {tx.id (), SPV::proof::accepted {}};
 
             // check if the block header referenced by the proof exists.
@@ -166,6 +167,7 @@ namespace Gigamonkey {
             }
 
             entry<TXID, accepted> read_SPV_proof_node (const transaction &tx) {
+
                 entry<TXID, accepted> result {tx.id (), accepted {}};
 
                 spvmap prev;
@@ -174,7 +176,10 @@ namespace Gigamonkey {
                     const auto *v = Nodes.contains (in.Reference.Digest);
                     if (v == nullptr) return result;
 
-                    prev = prev.insert (in.Reference.Digest, *v);
+                    prev = prev.insert (in.Reference.Digest, *v, [] (const proof::accepted &a, const proof::accepted &b) {
+                        return a;
+                    });
+
                     // we know now that the prevout is not a root node, so we remove it.
                     Roots = Roots.remove (in.Reference.Digest);
                 }

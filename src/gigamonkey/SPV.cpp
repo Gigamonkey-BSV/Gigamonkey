@@ -182,9 +182,8 @@ namespace Gigamonkey::SPV {
 
             for (const Bitcoin::input &in : b.Inputs)
                 if (!p.Proof.contains (in.Reference.Digest)) {
-                    ptr<proof::node> u = generate_proof_node (d, in.Reference.Digest);
-                    if (u == nullptr) return {};
-                    p.Proof = p.Proof.insert (in.Reference.Digest, u);
+                    if (ptr<proof::node> u = generate_proof_node (d, in.Reference.Digest); u == nullptr) return {};
+                    else p.Proof = p.Proof.insert (in.Reference.Digest, u);
                 }
         }
 
