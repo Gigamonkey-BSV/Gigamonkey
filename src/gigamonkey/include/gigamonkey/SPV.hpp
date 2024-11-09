@@ -80,7 +80,7 @@ namespace Gigamonkey::SPV {
 
         // the payment is in these transactions.
         // They do not yet have confirmations.
-        list<Bitcoin::transaction> Payment;
+        stack<Bitcoin::transaction> Payment;
 
         // map of txids referenced in the inputs of the transactions
         // to proofs, which may be further maps back to more transactions

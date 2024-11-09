@@ -45,7 +45,7 @@ namespace Gigamonkey {
         return true;
     }
 
-    list<digest256> BEEF::roots () const {
+    stack<digest256> BEEF::roots () const {
         list<digest256> result;
         for (const auto &bump : BUMPs) {
             auto r = bump.root ();
@@ -92,10 +92,12 @@ namespace Gigamonkey {
             }
         }
 
+        // create a BEEF from an SPV proof.
         inline SPV_proof_writer::SPV_proof_writer (const proof &p): Beef {} {
             for (const auto &[txid, nodep]: p.Proof) read_node (txid, *nodep, *this);
-            for (const auto &bump : Bumps) Beef.BUMPs <<= bump;
             for (const auto &tx : p.Payment) Beef.Transactions <<= BEEF::transaction {tx};
+            Beef.Transactions = data::reverse (Beef.Transactions);
+            for (auto b = Bumps.rbegin (); b != Bumps.rend (); b++) Beef.BUMPs <<= *b;
         }
 
         entry<Bitcoin::TXID, SPV::proof::accepted> read_SPV_proof_leaf (
@@ -119,13 +121,16 @@ namespace Gigamonkey {
         struct SPV_proof_reader {
             // all merkle maps by block height
             cross<std::pair<uint64, Merkle::map>> Merks;
+            // list of node txids in order.
+            list<Bitcoin::TXID> NodeTXIDs;
             // all nodes to be found in this proof.
             spvmap Nodes;
             // the root nodes.
-            spvmap Roots;
+            set<Bitcoin::TXID> Roots;
             proof Proof;
 
             SPV_proof_reader (const BEEF &beef, SPV::database &db) {
+
                 // reconstruct all merkle paths by block height.
                 Merks.resize (beef.BUMPs.size ());
                 {
@@ -141,14 +146,18 @@ namespace Gigamonkey {
                     if (node.Value == nullptr) return;
 
                     Nodes = Nodes.insert (node);
-                    // this will be removed later if
-                    Roots = Roots.insert (node);
                 }
 
                 proof p;
 
                 // go through remaining roots and make them the payment.
-                for (const auto &[txid, nodep] : Roots) {
+                for (const auto &txid : NodeTXIDs) {
+                    // skip all non-root nodes.
+                    if (!Roots.contains (txid)) continue;
+
+                    // retrieve the node.
+                    auto nodep = Nodes[txid];
+
                     p.Payment <<= nodep->Transaction;
 
                     // top level nodes should maps to earlier transactions.
@@ -161,6 +170,8 @@ namespace Gigamonkey {
                         });
 
                 }
+
+                p.Payment = data::reverse (p.Payment);
 
                 Proof = p;
 
@@ -185,6 +196,8 @@ namespace Gigamonkey {
                 }
 
                 result.Value = std::make_shared<node> (tx, prev);
+                NodeTXIDs <<= result.Key;
+                Roots = Roots.insert (result.Key);
 
                 return result;
 

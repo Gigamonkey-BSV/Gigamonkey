@@ -49,7 +49,7 @@ namespace Gigamonkey {
         return Bitcoin::prevout {Bitcoin::outpoint {t.id (), i}, t.Outputs[i]};
     }
 
-    void test_case (list<Bitcoin::transaction> payment, SPV::database &d) {
+    void test_case (stack<Bitcoin::transaction> payment, SPV::database &d) {
         // generate SPV proof.
         maybe<SPV::proof> proof = SPV::generate_proof (d, payment);
         EXPECT_TRUE (bool (proof)) << "proof should have been generated but was not";
@@ -74,7 +74,9 @@ namespace Gigamonkey {
         EXPECT_TRUE (beef.validate (d));
 
         // bytes and back
-        EXPECT_EQ (beef, BEEF (bytes (beef)));
+        bytes beef_bytes = bytes (beef);
+        BEEF read_from_bytes {beef_bytes};
+        EXPECT_EQ (beef, read_from_bytes);
 
         // regenerate SPV proof.
         EXPECT_EQ (*proof, beef.read_SPV_proof (d));
@@ -163,7 +165,7 @@ namespace Gigamonkey {
         // NOTE there is a bug here which means that an SPV proof is read
         // differently from how it was written because the payment comes
         // out in a different order.
-        //test_case (Payment, db);
+        test_case (Payment, db);
     }
 
     // We start with a secret key.

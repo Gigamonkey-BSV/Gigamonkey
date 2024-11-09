@@ -135,8 +135,10 @@ namespace Gigamonkey::Bitcoin {
         for (int i = 0; i < size; i++) {
             X x;
             r >> x;
-            l = l << x;
+            l = data::prepend (l, x);
         }
+
+        l = data::reverse (l);
 
         return r;
     }

@@ -31,7 +31,7 @@ namespace Gigamonkey {
         // if this BEEF is valid, then this list should
         // be nonempty and full of merkle roots of valid
         // blocks.
-        list<digest256> roots () const;
+        stack<digest256> roots () const;
 
         // validate means that we actually check all the merkle
         // against the block headers.
@@ -50,7 +50,7 @@ namespace Gigamonkey {
             return Version - 0xEFBE0000;
         }
 
-        list<Merkle::BUMP> BUMPs {};
+        stack<Merkle::BUMP> BUMPs {};
 
         struct transaction : Bitcoin::transaction {
             maybe<uint64> BUMPIndex;
@@ -73,7 +73,7 @@ namespace Gigamonkey {
             }
         };
 
-        list<transaction> Transactions {};
+        stack<transaction> Transactions {};
 
         bool operator == (const BEEF &beef) const {
             return BUMPs == beef.BUMPs && Transactions == beef.Transactions;
@@ -89,7 +89,8 @@ namespace Gigamonkey {
     }
 
     reader inline &operator >> (reader &r, BEEF &h) {
-        return r >> h.Version >> Bitcoin::var_sequence<Merkle::BUMP> {h.BUMPs} >> Bitcoin::var_sequence<BEEF::transaction> {h.Transactions};
+        return Bitcoin::var_sequence<BEEF::transaction>::read
+            (Bitcoin::var_sequence<Merkle::BUMP>::read (r >> h.Version, h.BUMPs), h.Transactions);
     }
 
     bool inline BEEF::validate (SPV::database &d) const {
