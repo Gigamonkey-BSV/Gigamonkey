@@ -32,6 +32,8 @@ namespace Gigamonkey {
         set<Bitcoin::TXID> previously_read;
         for (const auto &tx : Transactions) {
             Bitcoin::TXID txid = tx.id ();
+            // all txs in list must be unique.
+            if (previously_read.contains (txid)) return false;
 
             // Does this BEEF contain the merkle proof?
             // if not, then we have to check if all prevout txs are among the previous txs.
@@ -66,6 +68,7 @@ namespace Gigamonkey {
 
         struct SPV_proof_writer {
             BEEF Beef;
+            set<Bitcoin::TXID> TXIDs;
             map<digest256, uint32> RootToIndex {};
             cross<Merkle::BUMP> Bumps {};
             SPV_proof_writer (const proof &p);
@@ -94,7 +97,12 @@ namespace Gigamonkey {
 
         // create a BEEF from an SPV proof.
         inline SPV_proof_writer::SPV_proof_writer (const proof &p): Beef {} {
-            for (const auto &[txid, nodep]: p.Proof) read_node (txid, *nodep, *this);
+            for (const auto &[txid, nodep]: p.Proof) {
+                if (TXIDs.contains (txid)) continue;
+                TXIDs = TXIDs.insert (txid);
+                read_node (txid, *nodep, *this);
+            }
+
             for (const auto &tx : p.Payment) Beef.Transactions <<= BEEF::transaction {tx};
             Beef.Transactions = data::reverse (Beef.Transactions);
             for (auto b = Bumps.rbegin (); b != Bumps.rend (); b++) Beef.BUMPs <<= *b;
@@ -139,13 +147,16 @@ namespace Gigamonkey {
                 }
 
                 for (const auto &tx : beef.Transactions) {
+
                     entry<TXID, accepted> node = tx.Merkle_proof_included () ?
                         read_SPV_proof_leaf (tx, Merks[*tx.BUMPIndex], db) :
                         read_SPV_proof_node (tx);
 
                     if (node.Value == nullptr) return;
 
-                    Nodes = Nodes.insert (node);
+                    Nodes = Nodes.insert (node.Key, node.Value, [] (const accepted &, const accepted &) -> accepted {
+                        throw exception {} << "duplicate tx found in BEEF";
+                    });
                 }
 
                 proof p;
@@ -200,7 +211,6 @@ namespace Gigamonkey {
                 Roots = Roots.insert (result.Key);
 
                 return result;
-
             }
         };
     }

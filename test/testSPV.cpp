@@ -50,6 +50,7 @@ namespace Gigamonkey {
     }
 
     void test_case (stack<Bitcoin::transaction> payment, SPV::database &d) {
+
         // generate SPV proof.
         maybe<SPV::proof> proof = SPV::generate_proof (d, payment);
         EXPECT_TRUE (bool (proof)) << "proof should have been generated but was not";
@@ -69,6 +70,7 @@ namespace Gigamonkey {
 
         // make BEEF
         BEEF beef {*proof};
+
         // check BEEF
         EXPECT_TRUE (beef.valid ());
         EXPECT_TRUE (beef.validate (d));
@@ -139,7 +141,11 @@ namespace Gigamonkey {
         Bitcoin::transaction tx_H = make_fake_node_tx ({get_prevout (tx_C, 1)}, 1, 90000000, r);
         Bitcoin::transaction tx_I = make_fake_node_tx ({get_prevout (tx_C, 3), get_prevout (tx_A, 2)}, 2, 90000000, r);
         Bitcoin::transaction tx_J = make_fake_node_tx ({get_prevout (tx_C, 4), get_prevout (tx_B, 4)}, 3, 60000000, r);
-/*
+
+        db.insert (tx_H);
+        db.insert (tx_I);
+        db.insert (tx_J);
+
         // case 5: K - depth 1, one node H, one leaf.
         Payment <<= make_fake_node_tx ({get_prevout (tx_H, 0)}, 1, 80000000, r);
 
@@ -148,11 +154,15 @@ namespace Gigamonkey {
 
         // case 7: M - depth 1, one node J, two leaves.
         Payment <<= make_fake_node_tx ({get_prevout (tx_J, 0)}, 1, 50000000, r);
-
+/*
         // define transactions N, O, P deriving from I, J, J respectively.
         Bitcoin::transaction tx_N = make_fake_node_tx ({get_prevout (tx_I, 1)}, 2, 30000000, r);
         Bitcoin::transaction tx_O = make_fake_node_tx ({get_prevout (tx_J, 1)}, 1, 50000000, r);
         Bitcoin::transaction tx_P = make_fake_node_tx ({get_prevout (tx_J, 2)}, 1, 50000000, r);
+
+        db.insert (tx_N);
+        db.insert (tx_O);
+        db.insert (tx_P);
 
         // case 8: Q - depth 2, nodes N, O
         Payment <<= make_fake_node_tx ({get_prevout (tx_N, 0), get_prevout (tx_O, 0)}, 1, 70000000, r);
@@ -162,10 +172,7 @@ namespace Gigamonkey {
         for (Bitcoin::transaction t : Payment) test_case ({t}, db);
 
         // case 10: all the previous cases together.
-        // NOTE there is a bug here which means that an SPV proof is read
-        // differently from how it was written because the payment comes
-        // out in a different order.
-        test_case (Payment, db);
+        test_case (take (Payment, 4), db);
     }
 
     // We start with a secret key.

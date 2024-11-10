@@ -151,9 +151,12 @@ namespace Gigamonkey::SPV {
             if (!n.valid ()) return {};
             if (n.confirmed ()) return ptr<proof::node> {new proof::node {*n.Transaction, n.Confirmation}};
 
+            database::tx tx = d.transaction (x);
+            if (!tx.valid ()) return {};
+
             proof::map antecedents;
 
-            for (const Bitcoin::input &in : Bitcoin::transaction {x}.Inputs) {
+            for (const Bitcoin::input &in : tx.Transaction->Inputs) {
                 proof::accepted u = generate_proof_node (d, in.Reference.Digest);
                 if (u == nullptr) return {};
                 antecedents = antecedents.insert (in.Reference.Digest, u);
