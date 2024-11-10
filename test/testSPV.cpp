@@ -81,7 +81,7 @@ namespace Gigamonkey {
         EXPECT_EQ (beef, read_from_bytes);
 
         // regenerate SPV proof.
-        EXPECT_EQ (*proof, beef.read_SPV_proof (d));
+        EXPECT_NO_THROW (EXPECT_EQ (*proof, beef.read_SPV_proof (d)));
     }
 
     TEST (SPVTest, TestSPV) {
@@ -154,7 +154,7 @@ namespace Gigamonkey {
 
         // case 7: M - depth 1, one node J, two leaves.
         Payment <<= make_fake_node_tx ({get_prevout (tx_J, 0)}, 1, 50000000, r);
-/*
+
         // define transactions N, O, P deriving from I, J, J respectively.
         Bitcoin::transaction tx_N = make_fake_node_tx ({get_prevout (tx_I, 1)}, 2, 30000000, r);
         Bitcoin::transaction tx_O = make_fake_node_tx ({get_prevout (tx_J, 1)}, 1, 50000000, r);
@@ -168,11 +168,11 @@ namespace Gigamonkey {
         Payment <<= make_fake_node_tx ({get_prevout (tx_N, 0), get_prevout (tx_O, 0)}, 1, 70000000, r);
         // case 9: R - depth 2, nodes N, P
         Payment <<= make_fake_node_tx ({get_prevout (tx_N, 1), get_prevout (tx_P, 0)}, 1, 70000000, r);
-*/
+
         for (Bitcoin::transaction t : Payment) test_case ({t}, db);
 
         // case 10: all the previous cases together.
-        test_case (take (Payment, 4), db);
+        test_case (Payment, db);
     }
 
     // We start with a secret key.

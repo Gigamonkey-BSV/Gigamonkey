@@ -124,6 +124,14 @@ namespace Gigamonkey::SPV {
         }
 
         bool proof_validate (const proof &u, database *d) {
+            //check that all txs are unique.
+            auto pp = u.Payment;
+            while (!data::empty (pp)) {
+                auto x = pp.first ();
+                pp = pp.rest ();
+                for (const auto &p : pp) if (x == p) return false;
+            }
+
             if (!list<extended::transaction> (u).valid ()) return false;
 
             for (const auto &[txid, accepted] : u.Proof)

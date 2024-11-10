@@ -72,36 +72,35 @@ namespace Gigamonkey {
             map<digest256, uint32> RootToIndex {};
             cross<Merkle::BUMP> Bumps {};
             SPV_proof_writer (const proof &p);
-        };
 
-        void read_node (const TXID &id, const node &tx, SPV_proof_writer &spv) {
-            if (tx.Proof.is<conf> ()) {
-                const auto &c = tx.Proof.get<conf> ();
+            void read_node (const TXID &id, const node &tx, SPV_proof_writer &spv) {
+                if (TXIDs.contains (id)) return;
+                TXIDs = TXIDs.insert (id);
 
-                // do we already have a BUMP for this block?
-                if (auto i = spv.RootToIndex.contains (c.Header.MerkleRoot); bool (i)) {
-                    spv.Bumps[*i] += Merkle::branch {id, c.Path};
-                    spv.Beef.Transactions <<= BEEF::transaction {tx.Transaction, *i};
+                if (tx.Proof.is<conf> ()) {
+                    const auto &c = tx.Proof.get<conf> ();
+
+                    // do we already have a BUMP for this block?
+                    if (auto i = spv.RootToIndex.contains (c.Header.MerkleRoot); bool (i)) {
+                        spv.Bumps[*i] += Merkle::branch {id, c.Path};
+                        spv.Beef.Transactions <<= BEEF::transaction {tx.Transaction, *i};
+                    } else {
+                        uint64 index = spv.Bumps.size ();
+                        spv.Bumps.push_back (Merkle::BUMP {uint64 (c.Height), Merkle::branch {id, c.Path}});
+                        spv.RootToIndex = spv.RootToIndex.insert (c.Header.MerkleRoot, index);
+                        spv.Beef.Transactions <<= BEEF::transaction {tx.Transaction, index};
+                    }
+
                 } else {
-                    uint64 index = spv.Bumps.size ();
-                    spv.Bumps.push_back (Merkle::BUMP {uint64 (c.Height), Merkle::branch {id, c.Path}});
-                    spv.RootToIndex = spv.RootToIndex.insert (c.Header.MerkleRoot, index);
-                    spv.Beef.Transactions <<= BEEF::transaction {tx.Transaction, index};
+                    for (const auto &e : tx.Proof.get<SPV::proof::map> ()) read_node (e.Key, *e.Value, spv);
+                    spv.Beef.Transactions <<= BEEF::transaction {tx.Transaction};
                 }
-
-            } else {
-                for (const auto &e : tx.Proof.get<SPV::proof::map> ()) read_node (e.Key, *e.Value, spv);
-                spv.Beef.Transactions <<= BEEF::transaction {tx.Transaction};
             }
-        }
+        };
 
         // create a BEEF from an SPV proof.
         inline SPV_proof_writer::SPV_proof_writer (const proof &p): Beef {} {
-            for (const auto &[txid, nodep]: p.Proof) {
-                if (TXIDs.contains (txid)) continue;
-                TXIDs = TXIDs.insert (txid);
-                read_node (txid, *nodep, *this);
-            }
+            for (const auto &[txid, nodep]: p.Proof) read_node (txid, *nodep, *this);
 
             for (const auto &tx : p.Payment) Beef.Transactions <<= BEEF::transaction {tx};
             Beef.Transactions = data::reverse (Beef.Transactions);
