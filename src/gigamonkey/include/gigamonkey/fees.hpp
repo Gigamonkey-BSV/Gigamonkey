@@ -96,7 +96,7 @@ namespace Gigamonkey {
 
     bytes inline transaction_design::input::script_so_far () const {
         return write_bytes (Prevout.Script.size () + InputScriptSoFar.size () + 1,
-            InputScriptSoFar, byte (OP_CODESEPARATOR), Prevout.Script);
+            InputScriptSoFar, byte (Bitcoin::OP_CODESEPARATOR), Prevout.Script);
     }
 
     uint64 inline transaction_design::expected_size () const {

@@ -89,11 +89,13 @@ namespace Gigamonkey::SPV {
 
         proof (): Payment {}, Proof {} {}
 
+        // check all merkle proofs, do not check scripts (because we don't know when these transactions happened)
         bool valid () const;
 
         // check valid and check that all headers are in our database.
         // and check all scripts for txs that have no merkle proof.
-        bool validate (database &) const;
+        bool validate (database &,
+            math::signed_limit<Bitcoin::timestamp> genesis_upgrade_time = math::signed_limit<Bitcoin::timestamp>::negative_infinity ()) const;
 
         explicit operator list<extended::transaction> () const;
 

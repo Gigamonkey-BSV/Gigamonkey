@@ -133,12 +133,12 @@ namespace Gigamonkey::Bitcoin {
     
     }
 
-    ScriptError instruction::verify (uint32 flags) const {
+    ScriptError instruction::verify (flag flags) const {
         auto script_error = verify_instruction (*this);
         if (script_error != SCRIPT_ERR_OK) return script_error;
-
-        if (flags & SCRIPT_VERIFY_MINIMALDATA && !is_minimal_push (Op, Data)) return SCRIPT_ERR_MINIMALDATA;
-
+        
+        if (verify_minimal_push (flags) && !is_minimal_push (Op, Data)) return SCRIPT_ERR_MINIMALDATA;
+        
         return SCRIPT_ERR_OK;
     }
 
@@ -324,7 +324,7 @@ namespace Gigamonkey::Bitcoin {
             instruction i {};
             r = r >> i;
             
-            if (auto err = i.verify (0); err != SCRIPT_ERR_OK) throw invalid_program {err};
+            if (auto err = i.verify (flag {}); err != SCRIPT_ERR_OK) throw invalid_program {err};
             
             if (i.Op == OP_ENDIF) {
                 if (Control.empty ()) throw invalid_program {SCRIPT_ERR_UNBALANCED_CONDITIONAL};
@@ -346,26 +346,28 @@ namespace Gigamonkey::Bitcoin {
         return p;
     }
     
-    ScriptError valid_program (program p, stack<op> x, uint32 flags) {
+    // TODO need to take into account OP_VER etc
+    ScriptError valid_program (program p, stack<op> x, flag flags) {
         
         if (data::empty (p)) {
             if (x.empty ()) return SCRIPT_ERR_OK;
             return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
         }
         
-        bool utxo_after_genesis = (flags & SCRIPT_UTXO_AFTER_GENESIS) != 0;
-        
         const instruction &i = p.first ();
         
         auto script_error = i.verify (flags);
         if (script_error != SCRIPT_ERR_OK) return script_error;
         
-        if ((flags & SCRIPT_VERIFY_MINIMALDATA) && !is_minimal (i)) return SCRIPT_ERR_MINIMALDATA;
+        if ((verify_minimal_push (flags)) && !is_minimal (i)) return SCRIPT_ERR_MINIMALDATA;
         
         op o = i.Op;
         
+        // prior to genesis, OP_RETURN is not allowed to appear in a
+        // normal script. It must be in a script consisting only of
+        // itself.
         if (o == OP_RETURN) {
-            if (!utxo_after_genesis) return SCRIPT_ERR_OP_RETURN;
+            if (!safe_return_data (flags)) return SCRIPT_ERR_OP_RETURN;
             if (data::empty (x) && p.size () == 1) return SCRIPT_ERR_OK;
             if (i.Data.size () != 0) return SCRIPT_ERR_OP_RETURN;
         }
@@ -387,16 +389,11 @@ namespace Gigamonkey::Bitcoin {
         return valid_program (p.rest (), x, flags);
     }
 
-    ScriptError pre_verify (program p, uint32 flags) {
-        bool script_genesis = (flags & SCRIPT_GENESIS) != 0;
-        bool utxo_after_genesis = (flags & SCRIPT_UTXO_AFTER_GENESIS) != 0;
-
-        if (utxo_after_genesis && !script_genesis) return SCRIPT_ERR_IMPOSSIBLE_ENCODING;
-
+    ScriptError pre_verify (program p, flag flags) {
         if (data::empty (p)) return SCRIPT_ERR_OK;
 
         // first we check for OP_RETURN data.
-        if (script_genesis && utxo_after_genesis) {
+        if (safe_return_data (flags)) {
             if (p.size () == 2 && p.first ().Op == OP_FALSE && p.first ().valid () && p.rest ().first ().Op == OP_RETURN)
                 return SCRIPT_ERR_OK;
         } else if (p.size () == 1 && p.first ().Op == OP_RETURN) return SCRIPT_ERR_OK;

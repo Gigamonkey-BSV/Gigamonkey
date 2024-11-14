@@ -14,6 +14,8 @@
 
 namespace Gigamonkey {
 
+    // TODO include an INCORRECT script to ensure that scripts are being checked.
+
     // We test extended format, SPV proof format, and BEEF format.
 
     // Bitcoin SPV proofs are in general a DAG. There are txs I will call
@@ -197,14 +199,16 @@ namespace Gigamonkey {
     }
 
     Bitcoin::input random_input (crypto::random &r) {
+        using namespace Bitcoin;
+
         digest256 d;
         r >> d;
         uint32_little i;
         r >> i;
 
-        bytes Script = Bitcoin::compile (Bitcoin::program {OP_1});
+        bytes Script = compile (program {OP_1});
 
-        return Bitcoin::input {Bitcoin::outpoint {d, i}, Script};
+        return input {outpoint {d, i}, Script};
     }
 
     Bitcoin::transaction make_fake_root_tx (uint32 num_inputs, uint32 num_outputs, crypto::random &r) {

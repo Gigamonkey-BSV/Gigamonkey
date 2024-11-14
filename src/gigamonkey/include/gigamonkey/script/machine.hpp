@@ -37,7 +37,7 @@ namespace Gigamonkey::Bitcoin {
         maybe<result> step (const program_counter &Counter);
 
         machine (maybe<redemption_document> doc = {}, const script_config &conf = {}):
-            machine (conf.utxo_after_genesis () ?
+            machine (enable_genesis_stack (conf.Flags) ?
                 std::static_pointer_cast<two_stack> (std::make_shared<limited_two_stack<true>> (conf.MaxStackMemoryUsage)) :
                 std::static_pointer_cast<two_stack> (std::make_shared<limited_two_stack<false>> ()), doc, conf) {}
 

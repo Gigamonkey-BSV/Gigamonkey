@@ -12,6 +12,7 @@
 #include <gigamonkey/script/config.hpp>
 #include <gigamonkey/sighash.hpp>
 #include <gigamonkey/satoshi.hpp>
+#include <gigamonkey/signature.hpp>
 
 namespace Gigamonkey::Bitcoin { 
     
@@ -75,7 +76,7 @@ namespace Gigamonkey::Bitcoin {
     };
 
     // the signature verification algorithm used by the script interpreter.
-    result verify_signature (bytes_view sig, bytes_view pub, const sighash::document &doc, uint32 flags);
+    result verify_signature (bytes_view sig, bytes_view pub, const sighash::document &doc, flag flags);
 
     // depricated script type that is supported for backwards compatibilty.
     bool is_P2SH (bytes_view);

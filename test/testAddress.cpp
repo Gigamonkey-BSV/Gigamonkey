@@ -88,8 +88,8 @@ namespace Gigamonkey::Bitcoin {
             EXPECT_EQ (pubkey_compressed, pubkey_uncompressed.compress ());
             EXPECT_EQ (pubkey_uncompressed, pubkey_compressed.decompress ());
 
-            uint32 flag_original = SCRIPT_VERIFY_NONE;
-            uint32 flag_fork_id = SCRIPT_ENABLE_SIGHASH_FORKID;
+            flag flag_original = flag::VERIFY_NONE;
+            flag flag_fork_id = flag::ENABLE_SIGHASH_FORKID;
 
             // note: we need to use the right flags to support the original signature algorithm.
             auto evaluate_p2pk_compressed_fork_id = evaluate (redeem_p2pk_compressed_fork_id,
@@ -194,8 +194,8 @@ namespace Gigamonkey::Bitcoin {
             bytes redeem_p2sh_p2pkh_uncompressed_original = compile (decompile (redeem_p2pkh_uncompressed_original) <<
                 push_data (script_p2pkh_uncompressed));
 
-            uint32 flag_p2sh = SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_CLEANSTACK;
-            uint32 flag_no_p2sh = SCRIPT_VERIFY_CLEANSTACK;
+            flag flag_p2sh = flag::VERIFY_P2SH | flag::VERIFY_CLEANSTACK;
+            flag flag_no_p2sh = flag::VERIFY_CLEANSTACK;
 
             EXPECT_TRUE (evaluate (redeem_p2sh_p2pk_compressed_original, p2sh_p2pk_compressed, flag_p2sh));
             EXPECT_TRUE (evaluate (redeem_p2sh_p2pk_uncompressed_original, p2sh_p2pk_uncompressed, flag_p2sh));

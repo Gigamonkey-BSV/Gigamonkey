@@ -11,6 +11,7 @@ namespace Gigamonkey {
     // an obsolete pattern that was introduced by Gavin. 
     struct pay_to_script_hash {
         static Gigamonkey::pattern pattern (bytes &hash) {
+            using namespace Bitcoin;
             return {OP_HASH160, push_size {20, hash}, OP_EQUAL};
         }
         

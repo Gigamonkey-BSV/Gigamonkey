@@ -123,7 +123,9 @@ namespace Gigamonkey::SPV {
             return true;
         }
 
-        bool proof_validate (const proof &u, database *d) {
+        bool proof_validate (const proof &u, database *d,
+            math::signed_limit<Bitcoin::timestamp> genesis_upgrade_time = math::signed_limit<Bitcoin::timestamp>::negative_infinity ()) {
+
             //check that all txs are unique.
             auto pp = u.Payment;
             while (!data::empty (pp)) {
@@ -132,8 +134,11 @@ namespace Gigamonkey::SPV {
                 for (const auto &p : pp) if (x == p) return false;
             }
 
+            // TODO need to verify scripts here.
+            // need something that's extended + timestamps of earlier txs.
             if (!list<extended::transaction> (u).valid ()) return false;
 
+            // TODO return some error
             for (const auto &[txid, accepted] : u.Proof)
                 if (txid != accepted->Transaction.id () || !unconfirmed_validate (*accepted, d)) return false;
 
@@ -146,8 +151,8 @@ namespace Gigamonkey::SPV {
     }
 
     // check valid and check that all headers are in our database.
-    bool proof::validate (SPV::database &d) const {
-        return proof_validate (*this, &d);
+    bool proof::validate (SPV::database &d, math::signed_limit<Bitcoin::timestamp> genesis_upgrade_time) const {
+        return proof_validate (*this, &d, genesis_upgrade_time);
     }
 
     namespace {

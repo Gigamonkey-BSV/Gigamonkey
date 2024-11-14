@@ -27,7 +27,7 @@ namespace Gigamonkey::extended {
         w << *this;
         return b;
     }
-
+/*
     Bitcoin::result transaction::valid (uint32 flags) const {
 
         if (!(Inputs.size () > 0 && Outputs.size () > 0 && data::valid (Inputs) && data::valid (Outputs) && sent () <= spent ())) return false;
@@ -41,5 +41,5 @@ namespace Gigamonkey::extended {
         }
 
         return true;
-    }
+    }*/
 }

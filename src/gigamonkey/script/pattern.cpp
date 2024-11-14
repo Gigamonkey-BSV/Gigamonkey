@@ -9,17 +9,20 @@ namespace Gigamonkey {
     // We already know that o has size at least 1 
     // when we call this function. 
     uint32 next_instruction_size (bytes_view o) {
-        opcodetype op = opcodetype (o[0]);
-        if (op == OP_INVALIDOPCODE) return 0;
-        if (!Bitcoin::is_push_data (opcodetype (op))) return 1;
-        if (op <= Bitcoin::OP_PUSHSIZE75) return (op + 1);
+        using namespace Bitcoin;
 
-        if (op == OP_PUSHDATA1) {
+        op O = op (o[0]);
+
+        if (O == OP_INVALIDOPCODE) return 0;
+        if (!is_push_data (op (O))) return 1;
+        if (O <= OP_PUSHSIZE75) return (O + 1);
+
+        if (O == OP_PUSHDATA1) {
             if (o.size () < 2) return 0;
             return o[1] + 2;
         }
 
-        if (op == OP_PUSHDATA2) {
+        if (O == OP_PUSHDATA2) {
             if (o.size () < 3) return 0;
             return boost::endian::load_little_u16 (&o[1]) + 3;
         }
@@ -30,10 +33,13 @@ namespace Gigamonkey {
     }
     
     bytes_view pattern::atom::scan (bytes_view p) const {
+        using namespace Bitcoin;
+
         if (p.size () == 0) throw fail {};
         if (p[0] != Instruction.Op) throw fail {};
+
         uint32 size = next_instruction_size (p);
-        if (p.size () < size || Instruction != Bitcoin::instruction::read (p.substr (0, size))) throw fail {};
+        if (p.size () < size || Instruction != instruction::read (p.substr (0, size))) throw fail {};
         return p.substr (size);
     }
     
@@ -50,7 +56,7 @@ namespace Gigamonkey {
         return p.substr (size);
     }
     
-    bytes_view push::scan(bytes_view p) const {
+    bytes_view push::scan (bytes_view p) const {
         if (p.size () == 0) throw fail {};
         uint32 size = next_instruction_size (p);
         if (size == 0) throw fail {};
@@ -61,7 +67,7 @@ namespace Gigamonkey {
         return p.substr (size);
     }
     
-    bytes_view push_size::scan(bytes_view p) const {
+    bytes_view push_size::scan (bytes_view p) const {
         if (p.size () == 0) throw fail {};
         uint32 size = next_instruction_size (p);
 
@@ -72,16 +78,17 @@ namespace Gigamonkey {
     }
     
     bytes_view op_return_data::scan (bytes_view p) const {
-        if (p.size() == 0) throw fail {};
+        using namespace Bitcoin;
+        if (p.size () == 0) throw fail {};
         if (p[0] != OP_RETURN) throw fail {};
         return pattern::scan (p.substr (1));
     }
     
     bool push::match (const Bitcoin::instruction &i) const {
         switch (Type) {
-            case any : 
+            case any :
                 return Bitcoin::is_push (i.Op);
-            case value : 
+            case value :
                 return Bitcoin::is_push (i.Op) && Value == Bitcoin::integer (i.push_data ());
             case data : 
                 return Bitcoin::is_push (i.Op) && Data == static_cast<bytes> (i.push_data ());

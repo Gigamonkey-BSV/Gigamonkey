@@ -12,8 +12,8 @@
 
 namespace Gigamonkey::Bitcoin {
 
-    script_config::script_config (uint32 flags, bool consensus): Flags {flags} {
-        if (!utxo_after_genesis ()) {
+    script_config::script_config (flag flags, bool consensus): Flags {flags} {
+        if (!custom_script_limits (flags)) {
             MaxOpsPerScript = MAX_OPS_PER_SCRIPT_BEFORE_GENESIS;
             MaxPubKeysPerMultiSig = MAX_PUBKEYS_PER_MULTISIG_BEFORE_GENESIS;
             // concept of max stack memory usage is not defined before genesis
@@ -36,7 +36,7 @@ namespace Gigamonkey::Bitcoin {
         }
     }
 
-    script_config::script_config (uint32 flags,
+    script_config::script_config (flag flags,
         uint64 maxOpsPerScript,
         uint64 maxPubKeysPerMultiSig,
         uint64 maxStackMemoryUsage,
@@ -48,7 +48,7 @@ namespace Gigamonkey::Bitcoin {
         MaxScriptNumLength {maxScriptNumLength},
         MaxScriptSize {maxScriptSize} {
 
-        if (!utxo_after_genesis () && (MaxOpsPerScript != MAX_OPS_PER_SCRIPT_BEFORE_GENESIS ||
+        if (!custom_script_limits (Flags) && (MaxOpsPerScript != MAX_OPS_PER_SCRIPT_BEFORE_GENESIS ||
             MaxPubKeysPerMultiSig != MAX_PUBKEYS_PER_MULTISIG_BEFORE_GENESIS ||
             MaxStackMemoryUsage != INT64_MAX ||
             MaxScriptSize != MAX_SCRIPT_SIZE_BEFORE_GENESIS ||
@@ -75,5 +75,17 @@ namespace Gigamonkey::Bitcoin {
             throw std::invalid_argument {"Policy value for max script size must not exceed consensus limit of " +
                 std::to_string (MAX_SCRIPT_SIZE_AFTER_GENESIS) + "."};
 
+    }
+
+    bool script_config::disabled (op) const {
+        // 3 stages
+        // bitcoin core
+        // bitcoin cash
+        // monolith update
+        // genesis update
+        // chronicle
+
+        // TODO
+        return false;
     }
 }

@@ -46,7 +46,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
             program p = decompile (*b);
             ASSERT_TRUE (p.size () == 1) << "decompiled " << x.Bytes << " as " << p << "; size is " << p.size ();
             instruction i = p.first ();
-            ASSERT_TRUE (i.verify (0) == SCRIPT_ERR_OK) << x.Bytes << " failed to verify";
+            ASSERT_TRUE (i.verify ({}) == SCRIPT_ERR_OK) << x.Bytes << " failed to verify";
             EXPECT_TRUE (is_minimal (i) == x.Expected) << "expect " << x.Expected << " for " << x.Bytes << "\n\t";
         }
         

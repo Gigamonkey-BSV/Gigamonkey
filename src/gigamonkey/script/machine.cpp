@@ -12,8 +12,8 @@ namespace Gigamonkey::Bitcoin {
 
     machine::machine (ptr<two_stack> stack, maybe<redemption_document> doc, const script_config &conf):
         Halt {false}, Result {false}, Config {conf},
-        UtxoAfterGenesis {Config.utxo_after_genesis ()},
-        RequireMinimal {Config.verify_minimal_data ()},
+        UtxoAfterGenesis {static_cast<uint32> (Config.Flags & flag::ENABLE_GENESIS_OPCODES)},
+        RequireMinimal {Config.verify_minimal_push ()},
         Document {doc}, Stack {stack}, Exec {}, Else {}, OpCount {0} {}
 
     bool inline IsValidMaxOpsPerScript (uint64_t nOpCount, const script_config &config) {
@@ -22,20 +22,6 @@ namespace Gigamonkey::Bitcoin {
 
     bool inline machine::increment_operation () {
         return IsValidMaxOpsPerScript (++OpCount, Config);
-    }
-
-    static bool IsOpcodeDisabled (opcodetype opcode) {
-        switch (opcode) {
-            case OP_2MUL:
-            case OP_2DIV:
-                // Disabled opcodes.
-                return true;
-
-            default:
-                break;
-        }
-
-        return false;
     }
     
     program inline cleanup_script_code (program script_code, bytes_view sig) {
@@ -164,7 +150,7 @@ namespace Gigamonkey::Bitcoin {
     maybe<result> machine::step (const program_counter &Counter) {
         
         if (Counter.Next == bytes_view {}) {
-            if ((Config.verify_clean_stack () != 0) && (Stack->size () != 1)) return SCRIPT_ERR_CLEANSTACK;
+            if (Config.verify_clean_stack () && (Stack->size () != 1)) return SCRIPT_ERR_CLEANSTACK;
             if (Stack->size () == 0) return false;
             return nonzero (Stack->top ());
         }
@@ -183,8 +169,7 @@ namespace Gigamonkey::Bitcoin {
         if (!executed) return {};
 
         // Some opcodes are disabled.
-        if (IsOpcodeDisabled (Op) && (!UtxoAfterGenesis || executed ))
-            return SCRIPT_ERR_DISABLED_OPCODE;
+        if (Config.disabled (Op) && executed) return SCRIPT_ERR_DISABLED_OPCODE;
         
         if (executed && 0 <= Op && Op <= OP_PUSHDATA4) Stack->push_back (get_push_data (Counter.Next));
         else switch (Op) {
@@ -224,7 +209,7 @@ namespace Gigamonkey::Bitcoin {
             case OP_CHECKLOCKTIMEVERIFY: {
                 if (Config.check_locktime ()) {
                     // not enabled; treat as a NOP2
-                    if (Config.Flags & SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS)
+                    if (verify_discourage_upgradable_NOPs (Config.Flags))
                         return SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS;
 
                     break;
@@ -264,7 +249,9 @@ namespace Gigamonkey::Bitcoin {
             case OP_CHECKSEQUENCEVERIFY: {
                 if (Config.check_sequence ()) {
                     // not enabled; treat as a NOP3
-                    if (Config.Flags & SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS) return SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS;
+                    if (verify_discourage_upgradable_NOPs (Config.Flags))
+                        return SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS;
+
                     break;
                 }
 
@@ -300,7 +287,7 @@ namespace Gigamonkey::Bitcoin {
             case OP_NOP8:
             case OP_NOP9:
             case OP_NOP10: {
-                if (Config.Flags & SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS)
+                if (verify_discourage_upgradable_NOPs (Config.Flags))
                     return SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS;
             } break;
 
@@ -313,7 +300,7 @@ namespace Gigamonkey::Bitcoin {
                     if (Stack->size () < 1) return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
 
                     auto &vch = Stack->top ();
-                    if (Config.Flags & SCRIPT_VERIFY_MINIMALIF)
+                    if (verify_minimal_if (Config.Flags))
                         if (vch.size () > 1 || vch.size () == 1 && vch[0] != 1)
                             return SCRIPT_ERR_MINIMALIF;
 
@@ -949,7 +936,7 @@ namespace Gigamonkey::Bitcoin {
                 while (i-- > 1) {
                     // If the operation failed, we require that all
                     // signatures must be empty vector
-                    if (!fSuccess && (Config.Flags & SCRIPT_VERIFY_NULLFAIL) &&
+                    if (!fSuccess && (verify_null_fail (Config.Flags)) &&
                         !ikey2 && Stack->top ().size ()) {
                         return SCRIPT_ERR_SIG_NULLFAIL;
                     }
@@ -967,7 +954,7 @@ namespace Gigamonkey::Bitcoin {
                 // to zero prior to removing it from the stack.
                 if (Stack->size () < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 
-                if ((Config.Flags & SCRIPT_VERIFY_NULLDUMMY) &&
+                if ((verify_null_dummy (Config.Flags)) &&
                     Stack->top ().size ()) return SCRIPT_ERR_SIG_NULLDUMMY;
                 
                 Stack->pop_back ();

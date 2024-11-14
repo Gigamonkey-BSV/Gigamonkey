@@ -7,101 +7,13 @@
 #ifndef GIGAMONKEY_SCRIPT_INSTRUCTION
 #define GIGAMONKEY_SCRIPT_INSTRUCTION
 
-#include <gigamonkey/script/opcodes.h>
-#include <gigamonkey/script/flags.h>
+#include <gigamonkey/script/config.hpp>
 #include <gigamonkey/script/error.h>
 //#include <sv/policy/policy.h>
 
 #include <gigamonkey/hash.hpp>
 
 namespace Gigamonkey::Bitcoin { 
-    
-    using op = opcodetype;
-    
-    // instructions which can appear in script programs but which 
-    // do not have names in the original Satoshi client. 
-    const op OP_PUSHSIZE1 = op (0x01);
-    const op OP_PUSHSIZE2 = op (0x02);
-    const op OP_PUSHSIZE3 = op (0x03);
-    const op OP_PUSHSIZE4 = op (0x04);
-    const op OP_PUSHSIZE5 = op (0x05);
-    const op OP_PUSHSIZE6 = op (0x06);
-    const op OP_PUSHSIZE7 = op (0x07);
-    const op OP_PUSHSIZE8 = op (0x08);
-    const op OP_PUSHSIZE9 = op (0x09);
-    
-    const op OP_PUSHSIZE10 = op (0x0a); 
-    const op OP_PUSHSIZE11 = op (0x0b);
-    const op OP_PUSHSIZE12 = op (0x0c);
-    const op OP_PUSHSIZE13 = op (0x0d);
-    const op OP_PUSHSIZE14 = op (0x0e);
-    const op OP_PUSHSIZE15 = op (0x0f);
-    const op OP_PUSHSIZE16 = op (0x10);
-    const op OP_PUSHSIZE17 = op (0x11);
-    const op OP_PUSHSIZE18 = op (0x12);
-    const op OP_PUSHSIZE19 = op (0x13);
-    
-    const op OP_PUSHSIZE20 = op (0x14);
-    const op OP_PUSHSIZE21 = op (0x15);
-    const op OP_PUSHSIZE22 = op (0x16);
-    const op OP_PUSHSIZE23 = op (0x17);
-    const op OP_PUSHSIZE24 = op (0x18);
-    const op OP_PUSHSIZE25 = op (0x19);
-    const op OP_PUSHSIZE26 = op (0x1a);
-    const op OP_PUSHSIZE27 = op (0x1b);
-    const op OP_PUSHSIZE28 = op (0x1c);
-    const op OP_PUSHSIZE29 = op (0x1d);
-
-    const op OP_PUSHSIZE30 = op (0x1e);
-    const op OP_PUSHSIZE31 = op (0x1f);
-    const op OP_PUSHSIZE32 = op (0x20);
-    const op OP_PUSHSIZE33 = op (0x21);
-    const op OP_PUSHSIZE34 = op (0x22);
-    const op OP_PUSHSIZE35 = op (0x23);
-    const op OP_PUSHSIZE36 = op (0x24);
-    const op OP_PUSHSIZE37 = op (0x25);
-    const op OP_PUSHSIZE38 = op (0x26);
-    const op OP_PUSHSIZE39 = op (0x27);
-    
-    const op OP_PUSHSIZE40 = op (0x28);
-    const op OP_PUSHSIZE41 = op (0x29);
-    const op OP_PUSHSIZE42 = op (0x2a);
-    const op OP_PUSHSIZE43 = op (0x2b);
-    const op OP_PUSHSIZE44 = op (0x2c);
-    const op OP_PUSHSIZE45 = op (0x2d);
-    const op OP_PUSHSIZE46 = op (0x2e);
-    const op OP_PUSHSIZE47 = op (0x2f);
-    const op OP_PUSHSIZE48 = op (0x30);
-    const op OP_PUSHSIZE49 = op (0x31);
-    
-    const op OP_PUSHSIZE50 = op (0x32);
-    const op OP_PUSHSIZE51 = op (0x33);
-    const op OP_PUSHSIZE52 = op (0x34);
-    const op OP_PUSHSIZE53 = op (0x35);
-    const op OP_PUSHSIZE54 = op (0x36);
-    const op OP_PUSHSIZE55 = op (0x37);
-    const op OP_PUSHSIZE56 = op (0x38);
-    const op OP_PUSHSIZE57 = op (0x39);
-    const op OP_PUSHSIZE58 = op (0x3a);
-    const op OP_PUSHSIZE59 = op (0x3b);
-    
-    const op OP_PUSHSIZE60 = op (0x3c);
-    const op OP_PUSHSIZE61 = op (0x3d);
-    const op OP_PUSHSIZE62 = op (0x3e);
-    const op OP_PUSHSIZE63 = op (0x3f);
-    const op OP_PUSHSIZE64 = op (0x40);
-    const op OP_PUSHSIZE65 = op (0x41);
-    const op OP_PUSHSIZE66 = op (0x42);
-    const op OP_PUSHSIZE67 = op (0x43);
-    const op OP_PUSHSIZE68 = op (0x44);
-    const op OP_PUSHSIZE69 = op (0x45);
-    
-    const op OP_PUSHSIZE70 = op (0x46);
-    const op OP_PUSHSIZE71 = op (0x47);
-    const op OP_PUSHSIZE72 = op (0x48);
-    const op OP_PUSHSIZE73 = op (0x49);
-    const op OP_PUSHSIZE74 = op (0x4a);
-    const op OP_PUSHSIZE75 = op (0x4b);
 
     bool inline is_push (op o) {
         return o <= OP_16 && o != OP_RESERVED;
@@ -149,10 +61,10 @@ namespace Gigamonkey::Bitcoin {
         
         integer push_data () const;
         
-        ScriptError verify (uint32 flags = 0) const;
+        ScriptError verify (flag flags) const;
         
         bool valid () const {
-            return verify () == SCRIPT_ERR_OK;
+            return verify (genesis_profile ()) == SCRIPT_ERR_OK;
         };
         
         uint32 serialized_size () const;
@@ -181,7 +93,7 @@ namespace Gigamonkey::Bitcoin {
     bool is_push (program);
 
     // check flags that can be checked without running the program.
-    ScriptError pre_verify (program, uint32 flags = 0);
+    ScriptError pre_verify (program, flag flags);
 
     // delete the script up to and including the last instance of OP_CODESEPARATOR.
     // if no OP_CODESEPARATOR is found, nothing is removed.
@@ -199,7 +111,7 @@ namespace Gigamonkey::Bitcoin {
     bool is_P2SH (const program p);
 
     bool inline valid (program p) {
-        return pre_verify (p) == SCRIPT_ERR_OK;
+        return pre_verify (p, genesis_profile ()) == SCRIPT_ERR_OK;
     };
 
     bytes compile (program p);

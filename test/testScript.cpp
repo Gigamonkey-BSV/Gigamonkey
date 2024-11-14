@@ -3,9 +3,9 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <gigamonkey/script/pattern/pay_to_address.hpp>
-#include <gigamonkey/address.hpp>
 #include <gigamonkey/script/interpreter.hpp>
 #include <data/crypto/NIST_DRBG.hpp>
+#include <gigamonkey/address.hpp>
 #include <data/encoding/hex.hpp>
 #include "gtest/gtest.h"
 #include <iostream>
@@ -58,6 +58,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     void success (result r, string explanation = "") {
+        EXPECT_TRUE (r.valid ()) << r;
         EXPECT_TRUE (bool (r)) << explanation;
     }
 
@@ -75,88 +76,88 @@ namespace Gigamonkey::Bitcoin {
     // stack has to have one element at the end or else it's an error.
     TEST (ScriptTest, TestCleanStack) {
 
-        success (evaluate (bytes {}, bytes {OP_1}, SCRIPT_VERIFY_CLEANSTACK), "Clean stack 1");
-        success (evaluate (bytes {}, bytes {OP_2}, SCRIPT_VERIFY_CLEANSTACK), "Clean stack 2");
-        success (evaluate (bytes {}, bytes {OP_3}, SCRIPT_VERIFY_CLEANSTACK), "Clean stack 3");
+        success (evaluate (bytes {}, bytes {OP_1}, flag::VERIFY_CLEANSTACK), "Clean stack A1");
+        success (evaluate (bytes {}, bytes {OP_2}, flag::VERIFY_CLEANSTACK), "Clean stack A2");
+        success (evaluate (bytes {}, bytes {OP_3}, flag::VERIFY_CLEANSTACK), "Clean stack A3");
 
-        success (evaluate (bytes {OP_0}, bytes {OP_1}, 0), "Clean stack 1");
-        success (evaluate (bytes {OP_0}, bytes {OP_2}, 0), "Clean stack 2");
-        success (evaluate (bytes {OP_0}, bytes {OP_3}, 0), "Clean stack 3");
+        success (evaluate (bytes {OP_0}, bytes {OP_1}, flag {}), "Clean stack B1");
+        success (evaluate (bytes {OP_0}, bytes {OP_2}, flag {}), "Clean stack B2");
+        success (evaluate (bytes {OP_0}, bytes {OP_3}, flag {}), "Clean stack B3");
 
-        error (evaluate (bytes {}, bytes {}, SCRIPT_VERIFY_CLEANSTACK), "Clean stack 0");
-        error (evaluate (bytes {OP_0}, bytes {OP_1}, SCRIPT_VERIFY_CLEANSTACK), "Clean stack 1");
-        error (evaluate (bytes {OP_0}, bytes {OP_2}, SCRIPT_VERIFY_CLEANSTACK), "Clean stack 2");
-        error (evaluate (bytes {OP_0}, bytes {OP_3}, SCRIPT_VERIFY_CLEANSTACK), "Clean stack 3");
+        error (evaluate (bytes {}, bytes {}, flag::VERIFY_CLEANSTACK), "Clean stack C0");
+        error (evaluate (bytes {OP_0}, bytes {OP_1}, flag::VERIFY_CLEANSTACK), "Clean stack C1");
+        error (evaluate (bytes {OP_0}, bytes {OP_2}, flag::VERIFY_CLEANSTACK), "Clean stack C2");
+        error (evaluate (bytes {OP_0}, bytes {OP_3}, flag::VERIFY_CLEANSTACK), "Clean stack C3");
 
     }
 
     TEST (ScriptTest, TestMinimalPush) {
 
-        failure (evaluate (bytes {OP_FALSE}, bytes {}, SCRIPT_VERIFY_MINIMALDATA), "OP_FALSE require minimal");
-        failure (evaluate (bytes {OP_FALSE}, bytes {}, 0), "OP_FALSE");
+        failure (evaluate (bytes {OP_FALSE}, bytes {}, flag::VERIFY_MINIMALDATA), "OP_FALSE require minimal");
+        failure (evaluate (bytes {OP_FALSE}, bytes {}, flag {}), "OP_FALSE");
 
         // other ways of pushing an empty string to the stack.
-        error (evaluate (bytes {OP_PUSHDATA1, 0x00}, bytes {}, SCRIPT_VERIFY_MINIMALDATA), "empty push 2");
-        error (evaluate (bytes {OP_PUSHDATA2, 0x00, 0x00}, bytes {}, SCRIPT_VERIFY_MINIMALDATA), "empty push 3");
-        error (evaluate (bytes {OP_PUSHDATA4, 0x00, 0x00, 0x00, 0x00}, bytes {}, SCRIPT_VERIFY_MINIMALDATA), "empty push 4");
+        error (evaluate (bytes {OP_PUSHDATA1, 0x00}, bytes {}, flag::VERIFY_MINIMALDATA), "empty push 2");
+        error (evaluate (bytes {OP_PUSHDATA2, 0x00, 0x00}, bytes {}, flag::VERIFY_MINIMALDATA), "empty push 3");
+        error (evaluate (bytes {OP_PUSHDATA4, 0x00, 0x00, 0x00, 0x00}, bytes {}, flag::VERIFY_MINIMALDATA), "empty push 4");
 
         // but they are all ok when we stop worrying about minimal data.
-        failure (evaluate (bytes {OP_PUSHDATA1, 0x00}, bytes {}, 0), "empty push 2");
-        failure (evaluate (bytes {OP_PUSHDATA2, 0x00, 0x00}, bytes {}, 0), "empty push 3");
-        failure (evaluate (bytes {OP_PUSHDATA4, 0x00, 0x00, 0x00, 0x00}, bytes {}, 0), "empty push 4");
+        failure (evaluate (bytes {OP_PUSHDATA1, 0x00}, bytes {}, flag {}), "empty push 2");
+        failure (evaluate (bytes {OP_PUSHDATA2, 0x00, 0x00}, bytes {}, flag {}), "empty push 3");
+        failure (evaluate (bytes {OP_PUSHDATA4, 0x00, 0x00, 0x00, 0x00}, bytes {}, flag {}), "empty push 4");
 
-        success (evaluate (bytes {OP_1NEGATE}, bytes {}, SCRIPT_VERIFY_MINIMALDATA));
-        success (evaluate (bytes {OP_1}, bytes {}, SCRIPT_VERIFY_MINIMALDATA));
-        success (evaluate (bytes {OP_16}, bytes {}, SCRIPT_VERIFY_MINIMALDATA));
+        success (evaluate (bytes {OP_1NEGATE}, bytes {}, flag::VERIFY_MINIMALDATA));
+        success (evaluate (bytes {OP_1}, bytes {}, flag::VERIFY_MINIMALDATA));
+        success (evaluate (bytes {OP_16}, bytes {}, flag::VERIFY_MINIMALDATA));
 
-        success (evaluate (bytes {OP_1NEGATE}, bytes {}, 0));
-        success (evaluate (bytes {OP_1}, bytes {}, 0));
-        success (evaluate (bytes {OP_16}, bytes {}, 0));
+        success (evaluate (bytes {OP_1NEGATE}, bytes {}, flag {}));
+        success (evaluate (bytes {OP_1}, bytes {}, flag {}));
+        success (evaluate (bytes {OP_16}, bytes {}, flag {}));
 
         // Non-minimal ways of pushing -1, 1, and 16
-        error (evaluate (bytes {OP_PUSHSIZE1, 0x81}, bytes {}, SCRIPT_VERIFY_MINIMALDATA));
-        error (evaluate (bytes {OP_PUSHSIZE1, 0x01}, bytes {}, SCRIPT_VERIFY_MINIMALDATA));
-        error (evaluate (bytes {OP_PUSHSIZE1, 0x10}, bytes {}, SCRIPT_VERIFY_MINIMALDATA));
+        error (evaluate (bytes {OP_PUSHSIZE1, 0x81}, bytes {}, flag::VERIFY_MINIMALDATA));
+        error (evaluate (bytes {OP_PUSHSIZE1, 0x01}, bytes {}, flag::VERIFY_MINIMALDATA));
+        error (evaluate (bytes {OP_PUSHSIZE1, 0x10}, bytes {}, flag::VERIFY_MINIMALDATA));
 
-        error (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x81}, bytes {}, SCRIPT_VERIFY_MINIMALDATA));
-        error (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x01}, bytes {}, SCRIPT_VERIFY_MINIMALDATA));
-        error (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x10}, bytes {}, SCRIPT_VERIFY_MINIMALDATA));
+        error (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x81}, bytes {}, flag::VERIFY_MINIMALDATA));
+        error (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x01}, bytes {}, flag::VERIFY_MINIMALDATA));
+        error (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x10}, bytes {}, flag::VERIFY_MINIMALDATA));
 
-        error (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x81}, bytes {}, SCRIPT_VERIFY_MINIMALDATA));
-        error (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x01}, bytes {}, SCRIPT_VERIFY_MINIMALDATA));
-        error (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x10}, bytes {}, SCRIPT_VERIFY_MINIMALDATA));
+        error (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x81}, bytes {}, flag::VERIFY_MINIMALDATA));
+        error (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x01}, bytes {}, flag::VERIFY_MINIMALDATA));
+        error (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x10}, bytes {}, flag::VERIFY_MINIMALDATA));
 
-        error (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x81}, bytes {}, SCRIPT_VERIFY_MINIMALDATA));
-        error (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x01}, bytes {}, SCRIPT_VERIFY_MINIMALDATA));
-        error (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x10}, bytes {}, SCRIPT_VERIFY_MINIMALDATA));
+        error (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x81}, bytes {}, flag::VERIFY_MINIMALDATA));
+        error (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x01}, bytes {}, flag::VERIFY_MINIMALDATA));
+        error (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x10}, bytes {}, flag::VERIFY_MINIMALDATA));
 
-        success (evaluate (bytes {OP_PUSHSIZE1, 0x81}, bytes {}, 0));
-        success (evaluate (bytes {OP_PUSHSIZE1, 0x01}, bytes {}, 0));
-        success (evaluate (bytes {OP_PUSHSIZE1, 0x10}, bytes {}, 0));
+        success (evaluate (bytes {OP_PUSHSIZE1, 0x81}, bytes {}, flag {}));
+        success (evaluate (bytes {OP_PUSHSIZE1, 0x01}, bytes {}, flag {}));
+        success (evaluate (bytes {OP_PUSHSIZE1, 0x10}, bytes {}, flag {}));
 
-        success (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x81}, bytes {}, 0));
-        success (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x01}, bytes {}, 0));
-        success (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x10}, bytes {}, 0));
+        success (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x81}, bytes {}, flag {}));
+        success (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x01}, bytes {}, flag {}));
+        success (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x10}, bytes {}, flag {}));
 
-        success (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x81}, bytes {}, 0));
-        success (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x01}, bytes {}, 0));
-        success (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x10}, bytes {}, 0));
+        success (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x81}, bytes {}, flag {}));
+        success (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x01}, bytes {}, flag {}));
+        success (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x10}, bytes {}, flag {}));
 
-        success (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x81}, bytes {}, 0));
-        success (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x01}, bytes {}, 0));
-        success (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x10}, bytes {}, 0));
+        success (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x81}, bytes {}, flag {}));
+        success (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x01}, bytes {}, flag {}));
+        success (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x10}, bytes {}, flag {}));
 
-        success (evaluate (bytes {OP_PUSHSIZE1, 0x20}, bytes {}, SCRIPT_VERIFY_MINIMALDATA));
-        success (evaluate (bytes {OP_PUSHSIZE1, 0x20}, bytes {}, 0));
+        success (evaluate (bytes {OP_PUSHSIZE1, 0x20}, bytes {}, flag::VERIFY_MINIMALDATA));
+        success (evaluate (bytes {OP_PUSHSIZE1, 0x20}, bytes {}, flag {}));
 
-        error (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x20}, bytes {}, SCRIPT_VERIFY_MINIMALDATA));
-        success (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x20}, bytes {}, 0));
+        error (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x20}, bytes {}, flag::VERIFY_MINIMALDATA));
+        success (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x20}, bytes {}, flag {}));
 
-        error (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x20}, bytes {}, SCRIPT_VERIFY_MINIMALDATA));
-        success (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x20}, bytes {}, 0));
+        error (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x20}, bytes {}, flag::VERIFY_MINIMALDATA));
+        success (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x20}, bytes {}, flag {}));
 
-        error (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x20}, bytes {}, SCRIPT_VERIFY_MINIMALDATA));
-        success (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x20}, bytes {}, 0));
+        error (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x20}, bytes {}, flag::VERIFY_MINIMALDATA));
+        success (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x20}, bytes {}, flag {}));
 
         // we could have a lot more here but we don't.
 
@@ -166,265 +167,265 @@ namespace Gigamonkey::Bitcoin {
 
         error (evaluate (bytes {}, bytes {}), "empty script");
 
-        success (evaluate (bytes {OP_TRUE}, bytes {}, 0), "OP_TRUE");
-        success (evaluate (bytes {OP_7}, bytes {}, 0), "OP_7");
+        success (evaluate (bytes {OP_TRUE}, bytes {}, flag {}), "OP_TRUE");
+        success (evaluate (bytes {OP_7}, bytes {}, flag {}), "OP_7");
 
-        success (evaluate (bytes {OP_PUSHSIZE1, 0x01}, bytes {}, 0), "40");
-        failure (evaluate (bytes {OP_PUSHSIZE1, 0x00}, bytes {}, 0), "50");
-        failure (evaluate (bytes {OP_PUSHSIZE1, 0x80}, bytes {}, 0), "60");
-        success (evaluate (bytes {OP_PUSHSIZE2, 0x01, 0x00}, bytes {}, 0), "70");
-        success (evaluate (bytes {OP_PUSHSIZE3, 0x01, 0x00, 0x00}, bytes {}, 0), "80");
-        failure (evaluate (bytes {OP_PUSHSIZE1, 0x00}, bytes {}, 0), "90");
-        failure (evaluate (bytes {OP_PUSHSIZE2, 0x00, 0x00}, bytes {}, 0), "100");
+        success (evaluate (bytes {OP_PUSHSIZE1, 0x01}, bytes {}, flag {}), "40");
+        failure (evaluate (bytes {OP_PUSHSIZE1, 0x00}, bytes {}, flag {}), "50");
+        failure (evaluate (bytes {OP_PUSHSIZE1, 0x80}, bytes {}, flag {}), "60");
+        success (evaluate (bytes {OP_PUSHSIZE2, 0x01, 0x00}, bytes {}, flag {}), "70");
+        success (evaluate (bytes {OP_PUSHSIZE3, 0x01, 0x00, 0x00}, bytes {}, flag {}), "80");
+        failure (evaluate (bytes {OP_PUSHSIZE1, 0x00}, bytes {}, flag {}), "90");
+        failure (evaluate (bytes {OP_PUSHSIZE2, 0x00, 0x00}, bytes {}, flag {}), "100");
         failure (evaluate (bytes {OP_PUSHSIZE3, 0x00, 0x00, 0x00}, bytes {}), "110");
 
-        error (evaluate (bytes {OP_PUSHSIZE1}, bytes {}, 0), "invalid PUSHSIZE1");
-        error (evaluate (bytes {OP_PUSHSIZE2, 0x01}, bytes {}, 0), "invalid PUSHSIZE2");
-        error (evaluate (bytes {OP_PUSHSIZE3, 0x01, 0x00}, bytes {}, 0), "invalid PUSHSIZE3");
+        error (evaluate (bytes {OP_PUSHSIZE1}, bytes {}, flag {}), "invalid PUSHSIZE1");
+        error (evaluate (bytes {OP_PUSHSIZE2, 0x01}, bytes {}, flag {}), "invalid PUSHSIZE2");
+        error (evaluate (bytes {OP_PUSHSIZE3, 0x01, 0x00}, bytes {}, flag {}), "invalid PUSHSIZE3");
 
-        failure (evaluate (bytes {OP_PUSHDATA1, 0x00}, bytes {}, 0), "PUSHDATA1 empty push");
-        success (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x01}, bytes {}, 0), "160");
-        success (evaluate (bytes {OP_PUSHDATA1, 0x02, 0x00, 0x01}, bytes {}, 0), "170");
-        success (evaluate (bytes {OP_PUSHDATA1, 0x03, 0x00, 0x00, 0x01}, bytes {}, 0), "180");
-        error (evaluate (bytes {OP_PUSHDATA1, 0x01}, bytes {}, 0), "PUSHDATA1 invalid push 1");
-        error (evaluate (bytes {OP_PUSHDATA1, 0x02, 0x01}, bytes {}, 0), "PUSHDATA1 invalid push 2");
-        error (evaluate (bytes {OP_PUSHDATA1, 0x03, 0x00, 0x01}, bytes {}, 0), "PUSHDATA1 invalid push 3");
+        failure (evaluate (bytes {OP_PUSHDATA1, 0x00}, bytes {}, flag {}), "PUSHDATA1 empty push");
+        success (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x01}, bytes {}, flag {}), "160");
+        success (evaluate (bytes {OP_PUSHDATA1, 0x02, 0x00, 0x01}, bytes {}, flag {}), "170");
+        success (evaluate (bytes {OP_PUSHDATA1, 0x03, 0x00, 0x00, 0x01}, bytes {}, flag {}), "180");
+        error (evaluate (bytes {OP_PUSHDATA1, 0x01}, bytes {}, flag {}), "PUSHDATA1 invalid push 1");
+        error (evaluate (bytes {OP_PUSHDATA1, 0x02, 0x01}, bytes {}, flag {}), "PUSHDATA1 invalid push 2");
+        error (evaluate (bytes {OP_PUSHDATA1, 0x03, 0x00, 0x01}, bytes {}, flag {}), "PUSHDATA1 invalid push 3");
 
-        failure (evaluate (bytes {OP_PUSHDATA2, 0x00, 0x00}, bytes {}, 0), "PUSHDATA2 empty push");
-        success (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x01}, bytes {}, 0), "210");
-        success (evaluate (bytes {OP_PUSHDATA2, 0x02, 0x00, 0x00, 0x01}, bytes {}, 0), "220");
-        success (evaluate (bytes {OP_PUSHDATA2, 0x03, 0x00, 0x00, 0x00, 0x01}, bytes {}, 0), "230");
-        error (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00}, bytes {}, 0), "PUSHDATA2 invalid push");
+        failure (evaluate (bytes {OP_PUSHDATA2, 0x00, 0x00}, bytes {}, flag {}), "PUSHDATA2 empty push");
+        success (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x01}, bytes {}, flag {}), "210");
+        success (evaluate (bytes {OP_PUSHDATA2, 0x02, 0x00, 0x00, 0x01}, bytes {}, flag {}), "220");
+        success (evaluate (bytes {OP_PUSHDATA2, 0x03, 0x00, 0x00, 0x00, 0x01}, bytes {}, flag {}), "230");
+        error (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00}, bytes {}, flag {}), "PUSHDATA2 invalid push");
 
-        failure (evaluate (bytes {OP_PUSHDATA4, 0x00, 0x00, 0x00, 0x00}, bytes {}, 0), "PUSHDATA4 empty push");
-        success (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x01}, bytes {}, 0), "PUSHDATA4 size 1");
-        success (evaluate (bytes {OP_PUSHDATA4, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00}, bytes {}, 0), "PUSHDATA4 size 2");
-        success (evaluate (bytes {OP_PUSHDATA4, 0x03, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00}, bytes {}, 0), "PUSHDATA4 size 3");
+        failure (evaluate (bytes {OP_PUSHDATA4, 0x00, 0x00, 0x00, 0x00}, bytes {}, flag {}), "PUSHDATA4 empty push");
+        success (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x01}, bytes {}, flag {}), "PUSHDATA4 size 1");
+        success (evaluate (bytes {OP_PUSHDATA4, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00}, bytes {}, flag {}), "PUSHDATA4 size 2");
+        success (evaluate (bytes {OP_PUSHDATA4, 0x03, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00}, bytes {}, flag {}), "PUSHDATA4 size 3");
 
-        error (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00}, bytes {}, 0), "PUSHDATA4 invalid push");
+        error (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00}, bytes {}, flag {}), "PUSHDATA4 invalid push");
     }
 
     TEST (ScriptTest, TestUnlockPushOnly) {
 
-        success (evaluate (bytes {}, bytes {OP_TRUE}, 0));
-        success (evaluate (bytes {}, bytes {OP_TRUE}, SCRIPT_VERIFY_SIGPUSHONLY));
+        success (evaluate (bytes {}, bytes {OP_TRUE}, flag {}));
+        success (evaluate (bytes {}, bytes {OP_TRUE}, flag::VERIFY_SIGPUSHONLY));
 
-        success (evaluate (bytes {OP_TRUE}, bytes {}, 0));
-        success (evaluate (bytes {OP_TRUE}, bytes {}, SCRIPT_VERIFY_SIGPUSHONLY));
+        success (evaluate (bytes {OP_TRUE}, bytes {}, flag {}));
+        success (evaluate (bytes {OP_TRUE}, bytes {}, flag::VERIFY_SIGPUSHONLY));
 
-        success (evaluate (bytes {OP_0, OP_0, OP_EQUAL}, bytes {}, 0));
-        error (evaluate (bytes {OP_0, OP_0, OP_EQUAL}, bytes {}, SCRIPT_VERIFY_SIGPUSHONLY));
+        success (evaluate (bytes {OP_0, OP_0, OP_EQUAL}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_0, OP_0, OP_EQUAL}, bytes {}, flag::VERIFY_SIGPUSHONLY));
 
-        success (evaluate (bytes {OP_0, OP_0}, bytes {OP_EQUAL}, 0));
-        success (evaluate (bytes {OP_0, OP_0}, bytes {OP_EQUAL}, SCRIPT_VERIFY_SIGPUSHONLY));
+        success (evaluate (bytes {OP_0, OP_0}, bytes {OP_EQUAL}, flag {}));
+        success (evaluate (bytes {OP_0, OP_0}, bytes {OP_EQUAL}, flag::VERIFY_SIGPUSHONLY));
 
     }
 
     TEST (ScriptTest, TestInvalidStack) {
 
         // ops requiring at least one argument.
-        error (evaluate (bytes {OP_IF}, bytes {}, 0), "OP_IF");
-        error (evaluate (bytes {OP_NOTIF}, bytes {}, 0), "OP_NOTIF");
-        error (evaluate (bytes {OP_VERIF}, bytes {}, 0), "OP_VERIF");
-        error (evaluate (bytes {OP_VER}, bytes {}, 0), "OP_VER");
-        error (evaluate (bytes {OP_VERNOTIF}, bytes {}, 0), "OP_VERNOTIF");
-        error (evaluate (bytes {OP_ELSE}, bytes {}, 0), "OP_ELSE");
-        error (evaluate (bytes {OP_ENDIF}, bytes {}, 0), "OP_ENDIF");
+        error (evaluate (bytes {OP_IF}, bytes {}, flag {}), "OP_IF");
+        error (evaluate (bytes {OP_NOTIF}, bytes {}, flag {}), "OP_NOTIF");
+        error (evaluate (bytes {OP_VERIF}, bytes {}, flag {}), "OP_VERIF");
+        error (evaluate (bytes {OP_VER}, bytes {}, flag {}), "OP_VER");
+        error (evaluate (bytes {OP_VERNOTIF}, bytes {}, flag {}), "OP_VERNOTIF");
+        error (evaluate (bytes {OP_ELSE}, bytes {}, flag {}), "OP_ELSE");
+        error (evaluate (bytes {OP_ENDIF}, bytes {}, flag {}), "OP_ENDIF");
 
-        error (evaluate (bytes {OP_TOALTSTACK}, bytes {}, 0), "OP_TOALTSTACK");
-        error (evaluate (bytes {OP_FROMALTSTACK}, bytes {}, 0), "OP_FROMALTSTACK");
+        error (evaluate (bytes {OP_TOALTSTACK}, bytes {}, flag {}), "OP_TOALTSTACK");
+        error (evaluate (bytes {OP_FROMALTSTACK}, bytes {}, flag {}), "OP_FROMALTSTACK");
 
-        error (evaluate (bytes {OP_VERIFY}, bytes {}, 0), "OP_VERIFY");
+        error (evaluate (bytes {OP_VERIFY}, bytes {}, flag {}), "OP_VERIFY");
 
-        error (evaluate (bytes {OP_IFDUP}, bytes {}, 0), "OP_IFDUP");
+        error (evaluate (bytes {OP_IFDUP}, bytes {}, flag {}), "OP_IFDUP");
 
-        error (evaluate (bytes {OP_DROP}, bytes {}, 0), "OP_DROP");
-        error (evaluate (bytes {OP_DUP}, bytes {}, 0), "OP_DUP");
-        error (evaluate (bytes {OP_NIP}, bytes {}, 0), "OP_NIP");
-        error (evaluate (bytes {OP_OVER}, bytes {}, 0));
-        error (evaluate (bytes {OP_PICK}, bytes {}, 0));
-        error (evaluate (bytes {OP_ROLL}, bytes {}, 0));
-        error (evaluate (bytes {OP_ROT}, bytes {}, 0));
-        error (evaluate (bytes {OP_SWAP}, bytes {}, 0));
-        error (evaluate (bytes {OP_TUCK}, bytes {}, 0));
+        error (evaluate (bytes {OP_DROP}, bytes {}, flag {}), "OP_DROP");
+        error (evaluate (bytes {OP_DUP}, bytes {}, flag {}), "OP_DUP");
+        error (evaluate (bytes {OP_NIP}, bytes {}, flag {}), "OP_NIP");
+        error (evaluate (bytes {OP_OVER}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_PICK}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_ROLL}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_ROT}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_SWAP}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_TUCK}, bytes {}, flag {}));
 
-        error (evaluate (bytes {OP_2DROP}, bytes {}, 0));
-        error (evaluate (bytes {OP_2DUP}, bytes {}, 0));
-        error (evaluate (bytes {OP_3DUP}, bytes {}, 0));
-        error (evaluate (bytes {OP_2OVER}, bytes {}, 0));
-        error (evaluate (bytes {OP_2ROT}, bytes {}, 0));
-        error (evaluate (bytes {OP_2SWAP}, bytes {}, 0));
+        error (evaluate (bytes {OP_2DROP}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_2DUP}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_3DUP}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_2OVER}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_2ROT}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_2SWAP}, bytes {}, flag {}));
 
-        error (evaluate (bytes {OP_CAT}, bytes {}, 0));
-        error (evaluate (bytes {OP_SPLIT}, bytes {}, 0), "OP_SPLIT");
-        error (evaluate (bytes {OP_NUM2BIN}, bytes {}, 0));
-        error (evaluate (bytes {OP_BIN2NUM}, bytes {}, 0));
-        error (evaluate (bytes {OP_SIZE}, bytes {}, 0));
+        error (evaluate (bytes {OP_CAT}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_SPLIT}, bytes {}, flag {}), "OP_SPLIT");
+        error (evaluate (bytes {OP_NUM2BIN}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_BIN2NUM}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_SIZE}, bytes {}, flag {}));
 
-        error (evaluate (bytes {OP_INVERT}, bytes {}, 0), "OP_INVERT");
-        error (evaluate (bytes {OP_AND}, bytes {}, 0));
-        error (evaluate (bytes {OP_OR}, bytes {}, 0), "OP_OR");
-        error (evaluate (bytes {OP_XOR}, bytes {}, 0));
-        error (evaluate (bytes {OP_EQUAL}, bytes {}, 0));
-        error (evaluate (bytes {OP_EQUALVERIFY}, bytes {}, 0));
-        error (evaluate (bytes {OP_1ADD}, bytes {}, 0));
-        error (evaluate (bytes {OP_1SUB}, bytes {}, 0));
-        error (evaluate (bytes {OP_2MUL}, bytes {}, 0));
-        error (evaluate (bytes {OP_2DIV}, bytes {}, 0));
-        error (evaluate (bytes {OP_NEGATE}, bytes {}, 0));
-        error (evaluate (bytes {OP_ABS}, bytes {}, 0));
-        error (evaluate (bytes {OP_NOT}, bytes {}, 0));
-        error (evaluate (bytes {OP_0NOTEQUAL}, bytes {}, 0));
-        error (evaluate (bytes {OP_ADD}, bytes {}, 0));
-        error (evaluate (bytes {OP_SUB}, bytes {}, 0));
-        error (evaluate (bytes {OP_MUL}, bytes {}, 0));
-        error (evaluate (bytes {OP_DIV}, bytes {}, 0));
-        error (evaluate (bytes {OP_MOD}, bytes {}, 0));
-        error (evaluate (bytes {OP_LSHIFT}, bytes {}, 0));
-        error (evaluate (bytes {OP_RSHIFT}, bytes {}, 0));
+        error (evaluate (bytes {OP_INVERT}, bytes {}, flag {}), "OP_INVERT");
+        error (evaluate (bytes {OP_AND}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_OR}, bytes {}, flag {}), "OP_OR");
+        error (evaluate (bytes {OP_XOR}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_EQUAL}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_EQUALVERIFY}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_1ADD}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_1SUB}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_2MUL}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_2DIV}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_NEGATE}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_ABS}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_NOT}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_0NOTEQUAL}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_ADD}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_SUB}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_MUL}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_DIV}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_MOD}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_LSHIFT}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_RSHIFT}, bytes {}, flag {}));
 
-        error (evaluate (bytes {OP_BOOLAND}, bytes {}, 0));
-        error (evaluate (bytes {OP_BOOLOR}, bytes {}, 0), "OP_BOOLOR");
-        error (evaluate (bytes {OP_NUMEQUAL}, bytes {}, 0));
-        error (evaluate (bytes {OP_NUMEQUALVERIFY}, bytes {}, 0));
-        error (evaluate (bytes {OP_NUMNOTEQUAL}, bytes {}, 0));
-        error (evaluate (bytes {OP_LESSTHAN}, bytes {}, 0));
-        error (evaluate (bytes {OP_GREATERTHAN}, bytes {}, 0));
-        error (evaluate (bytes {OP_LESSTHANOREQUAL}, bytes {}, 0));
-        error (evaluate (bytes {OP_GREATERTHANOREQUAL}, bytes {}, 0));
-        error (evaluate (bytes {OP_MIN}, bytes {}, 0));
-        error (evaluate (bytes {OP_MAX}, bytes {}, 0));
+        error (evaluate (bytes {OP_BOOLAND}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_BOOLOR}, bytes {}, flag {}), "OP_BOOLOR");
+        error (evaluate (bytes {OP_NUMEQUAL}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_NUMEQUALVERIFY}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_NUMNOTEQUAL}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_LESSTHAN}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_GREATERTHAN}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_LESSTHANOREQUAL}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_GREATERTHANOREQUAL}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_MIN}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_MAX}, bytes {}, flag {}));
 
-        error (evaluate (bytes {OP_WITHIN}, bytes {}, 0));
+        error (evaluate (bytes {OP_WITHIN}, bytes {}, flag {}));
 
-        error (evaluate (bytes {OP_SHA1}, bytes {}, 0));
-        error (evaluate (bytes {OP_RIPEMD160}, bytes {}, 0));
-        error (evaluate (bytes {OP_SHA256}, bytes {}, 0));
-        error (evaluate (bytes {OP_HASH160}, bytes {}, 0));
-        error (evaluate (bytes {OP_HASH256}, bytes {}, 0));
+        error (evaluate (bytes {OP_SHA1}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_RIPEMD160}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_SHA256}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_HASH160}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_HASH256}, bytes {}, flag {}));
 
-        error (evaluate (bytes {OP_CHECKSIG}, bytes {}, 0), "OP_CHECKSIG");
-        error (evaluate (bytes {OP_CHECKSIGVERIFY}, bytes {}, 0));
-        error (evaluate (bytes {OP_CHECKMULTISIG}, bytes {}, 0));
-        error (evaluate (bytes {OP_CHECKMULTISIGVERIFY}, bytes {}, 0));
+        error (evaluate (bytes {OP_CHECKSIG}, bytes {}, flag {}), "OP_CHECKSIG");
+        error (evaluate (bytes {OP_CHECKSIGVERIFY}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_CHECKMULTISIG}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_CHECKMULTISIGVERIFY}, bytes {}, flag {}));
 
-        //error (evaluate (bytes {OP_SUBSTR}, bytes {}, 0));
-        //error (evaluate (bytes {OP_LEFT}, bytes {}, 0));
-        //error (evaluate (bytes {OP_RIGHT}, bytes {}, 0));
+        //error (evaluate (bytes {OP_SUBSTR}, bytes {}, flag {}));
+        //error (evaluate (bytes {OP_LEFT}, bytes {}, flag {}));
+        //error (evaluate (bytes {OP_RIGHT}, bytes {}, flag {}));
 
         // ops requiring at least 2 arguments.
 
-        error (evaluate (bytes {OP_6}, bytes {OP_NIP}, 0));
-        error (evaluate (bytes {OP_7}, bytes {OP_OVER}, 0));
-        error (evaluate (bytes {OP_10}, bytes {OP_ROT}, 0));
-        error (evaluate (bytes {OP_11}, bytes {OP_SWAP}, 0));
-        error (evaluate (bytes {OP_12}, bytes {OP_TUCK}, 0));
+        error (evaluate (bytes {OP_6}, bytes {OP_NIP}, flag {}));
+        error (evaluate (bytes {OP_7}, bytes {OP_OVER}, flag {}));
+        error (evaluate (bytes {OP_10}, bytes {OP_ROT}, flag {}));
+        error (evaluate (bytes {OP_11}, bytes {OP_SWAP}, flag {}));
+        error (evaluate (bytes {OP_12}, bytes {OP_TUCK}, flag {}));
 
-        error (evaluate (bytes {OP_0}, bytes {OP_2DROP}, 0));
-        error (evaluate (bytes {OP_1}, bytes {OP_2DUP}, 0));
-        error (evaluate (bytes {OP_2}, bytes {OP_3DUP}, 0));
-        error (evaluate (bytes {OP_3}, bytes {OP_2OVER}, 0));
-        error (evaluate (bytes {OP_4}, bytes {OP_2ROT}, 0));
-        error (evaluate (bytes {OP_5}, bytes {OP_2SWAP}, 0));
+        error (evaluate (bytes {OP_0}, bytes {OP_2DROP}, flag {}));
+        error (evaluate (bytes {OP_1}, bytes {OP_2DUP}, flag {}));
+        error (evaluate (bytes {OP_2}, bytes {OP_3DUP}, flag {}));
+        error (evaluate (bytes {OP_3}, bytes {OP_2OVER}, flag {}));
+        error (evaluate (bytes {OP_4}, bytes {OP_2ROT}, flag {}));
+        error (evaluate (bytes {OP_5}, bytes {OP_2SWAP}, flag {}));
 
-        error (evaluate (bytes {OP_8}, bytes {OP_CAT}, 0));
-        error (evaluate (bytes {OP_9}, bytes {OP_SPLIT}, 0));
+        error (evaluate (bytes {OP_8}, bytes {OP_CAT}, flag {}));
+        error (evaluate (bytes {OP_9}, bytes {OP_SPLIT}, flag {}));
 
-        //error (evaluate (bytes {OP_3}, bytes {OP_SUBSTR}, 0), "OP_SUBSTR 2");
-        //error (evaluate (bytes {OP_4}, bytes {OP_LEFT}, 0));
-        //error (evaluate (bytes {OP_5}, bytes {OP_RIGHT}, 0));
+        //error (evaluate (bytes {OP_3}, bytes {OP_SUBSTR}, flag {}), "OP_SUBSTR 2");
+        //error (evaluate (bytes {OP_4}, bytes {OP_LEFT}, flag {}));
+        //error (evaluate (bytes {OP_5}, bytes {OP_RIGHT}, flag {}));
 
-        error (evaluate (bytes {OP_13}, bytes {OP_AND}, 0));
-        error (evaluate (bytes {OP_14}, bytes {OP_OR}, 0));
-        error (evaluate (bytes {OP_15}, bytes {OP_XOR}, 0));
-        error (evaluate (bytes {OP_16}, bytes {OP_EQUAL}, 0));
-        error (evaluate (bytes {OP_0}, bytes {OP_EQUALVERIFY}, 0));
-        error (evaluate (bytes {OP_1}, bytes {OP_ADD}, 0));
-        error (evaluate (bytes {OP_2}, bytes {OP_SUB}, 0), "OP_SUB 2");
+        error (evaluate (bytes {OP_13}, bytes {OP_AND}, flag {}));
+        error (evaluate (bytes {OP_14}, bytes {OP_OR}, flag {}));
+        error (evaluate (bytes {OP_15}, bytes {OP_XOR}, flag {}));
+        error (evaluate (bytes {OP_16}, bytes {OP_EQUAL}, flag {}));
+        error (evaluate (bytes {OP_0}, bytes {OP_EQUALVERIFY}, flag {}));
+        error (evaluate (bytes {OP_1}, bytes {OP_ADD}, flag {}));
+        error (evaluate (bytes {OP_2}, bytes {OP_SUB}, flag {}), "OP_SUB 2");
 
-        error (evaluate (bytes {OP_3}, bytes {OP_MUL}, 0));
-        error (evaluate (bytes {OP_4}, bytes {OP_DIV}, 0));
-        error (evaluate (bytes {OP_5}, bytes {OP_MOD}, 0));
-        error (evaluate (bytes {OP_6}, bytes {OP_LSHIFT}, 0));
-        error (evaluate (bytes {OP_7}, bytes {OP_RSHIFT}, 0));
+        error (evaluate (bytes {OP_3}, bytes {OP_MUL}, flag {}));
+        error (evaluate (bytes {OP_4}, bytes {OP_DIV}, flag {}));
+        error (evaluate (bytes {OP_5}, bytes {OP_MOD}, flag {}));
+        error (evaluate (bytes {OP_6}, bytes {OP_LSHIFT}, flag {}));
+        error (evaluate (bytes {OP_7}, bytes {OP_RSHIFT}, flag {}));
 
-        error (evaluate (bytes {OP_8}, bytes {OP_BOOLAND}, 0));
-        error (evaluate (bytes {OP_9}, bytes {OP_BOOLOR}, 0));
-        error (evaluate (bytes {OP_10}, bytes {OP_NUMEQUAL}, 0));
-        error (evaluate (bytes {OP_11}, bytes {OP_NUMEQUALVERIFY}, 0));
-        error (evaluate (bytes {OP_12}, bytes {OP_NUMNOTEQUAL}, 0));
-        error (evaluate (bytes {OP_13}, bytes {OP_LESSTHAN}, 0));
-        error (evaluate (bytes {OP_14}, bytes {OP_GREATERTHAN}, 0));
-        error (evaluate (bytes {OP_15}, bytes {OP_LESSTHANOREQUAL}, 0));
-        error (evaluate (bytes {OP_16}, bytes {OP_GREATERTHANOREQUAL}, 0));
-        error (evaluate (bytes {OP_0}, bytes {OP_MIN}, 0));
-        error (evaluate (bytes {OP_1}, bytes {OP_MAX}, 0), "OP_MAX 2");
+        error (evaluate (bytes {OP_8}, bytes {OP_BOOLAND}, flag {}));
+        error (evaluate (bytes {OP_9}, bytes {OP_BOOLOR}, flag {}));
+        error (evaluate (bytes {OP_10}, bytes {OP_NUMEQUAL}, flag {}));
+        error (evaluate (bytes {OP_11}, bytes {OP_NUMEQUALVERIFY}, flag {}));
+        error (evaluate (bytes {OP_12}, bytes {OP_NUMNOTEQUAL}, flag {}));
+        error (evaluate (bytes {OP_13}, bytes {OP_LESSTHAN}, flag {}));
+        error (evaluate (bytes {OP_14}, bytes {OP_GREATERTHAN}, flag {}));
+        error (evaluate (bytes {OP_15}, bytes {OP_LESSTHANOREQUAL}, flag {}));
+        error (evaluate (bytes {OP_16}, bytes {OP_GREATERTHANOREQUAL}, flag {}));
+        error (evaluate (bytes {OP_0}, bytes {OP_MIN}, flag {}));
+        error (evaluate (bytes {OP_1}, bytes {OP_MAX}, flag {}), "OP_MAX 2");
 
-        error (evaluate (bytes {OP_2}, bytes {OP_WITHIN}, 0));
-        error (evaluate (bytes {OP_8}, bytes {OP_NUM2BIN}, 0));
+        error (evaluate (bytes {OP_2}, bytes {OP_WITHIN}, flag {}));
+        error (evaluate (bytes {OP_8}, bytes {OP_NUM2BIN}, flag {}));
 
-        error (evaluate (bytes {OP_6}, bytes {OP_CHECKSIG}, 0));
-        error (evaluate (bytes {OP_7}, bytes {OP_CHECKSIGVERIFY}, 0));
-        error (evaluate (bytes {OP_8}, bytes {OP_CHECKMULTISIG}, 0));
-        error (evaluate (bytes {OP_9}, bytes {OP_CHECKMULTISIGVERIFY}, 0));
+        error (evaluate (bytes {OP_6}, bytes {OP_CHECKSIG}, flag {}));
+        error (evaluate (bytes {OP_7}, bytes {OP_CHECKSIGVERIFY}, flag {}));
+        error (evaluate (bytes {OP_8}, bytes {OP_CHECKMULTISIG}, flag {}));
+        error (evaluate (bytes {OP_9}, bytes {OP_CHECKMULTISIGVERIFY}, flag {}));
 
         // taking at least 3 arguments.
-        error (evaluate (bytes {OP_10, OP_11}, bytes {OP_ROT}, 0));
-        error (evaluate (bytes {OP_12, OP_13}, bytes {OP_3DUP}, 0));
-        error (evaluate (bytes {OP_14, OP_15}, bytes {OP_2OVER}, 0));
-        error (evaluate (bytes {OP_16, OP_0}, bytes {OP_2ROT}, 0));
-        error (evaluate (bytes {OP_1, OP_2}, bytes {OP_2SWAP}, 0));
-        error (evaluate (bytes {OP_3, OP_4}, bytes {OP_WITHIN}, 0), "OP_WITHIN 3");
-        //error (evaluate (bytes {OP_6, OP_7}, bytes {OP_SUBSTR}, 0), "OP_SUBSTR 3");
+        error (evaluate (bytes {OP_10, OP_11}, bytes {OP_ROT}, flag {}));
+        error (evaluate (bytes {OP_12, OP_13}, bytes {OP_3DUP}, flag {}));
+        error (evaluate (bytes {OP_14, OP_15}, bytes {OP_2OVER}, flag {}));
+        error (evaluate (bytes {OP_16, OP_0}, bytes {OP_2ROT}, flag {}));
+        error (evaluate (bytes {OP_1, OP_2}, bytes {OP_2SWAP}, flag {}));
+        error (evaluate (bytes {OP_3, OP_4}, bytes {OP_WITHIN}, flag {}), "OP_WITHIN 3");
+        //error (evaluate (bytes {OP_6, OP_7}, bytes {OP_SUBSTR}, flag {}), "OP_SUBSTR 3");
 
         // at least 4
-        error (evaluate (bytes {OP_5, OP_6, OP_7}, bytes {OP_2OVER}, 0));
-        error (evaluate (bytes {OP_8, OP_9, OP_10}, bytes {OP_2ROT}, 0));
-        error (evaluate (bytes {OP_11, OP_12, OP_13}, bytes {OP_2SWAP}, 0));
+        error (evaluate (bytes {OP_5, OP_6, OP_7}, bytes {OP_2OVER}, flag {}));
+        error (evaluate (bytes {OP_8, OP_9, OP_10}, bytes {OP_2ROT}, flag {}));
+        error (evaluate (bytes {OP_11, OP_12, OP_13}, bytes {OP_2SWAP}, flag {}));
 
         // at least 6
-        error (evaluate (bytes {OP_14, OP_15, OP_16, OP_0}, bytes {OP_2ROT}, 0));
-        error (evaluate (bytes {OP_1, OP_2, OP_3, OP_4, OP_5}, bytes {OP_2ROT}, 0));
+        error (evaluate (bytes {OP_14, OP_15, OP_16, OP_0}, bytes {OP_2ROT}, flag {}));
+        error (evaluate (bytes {OP_1, OP_2, OP_3, OP_4, OP_5}, bytes {OP_2ROT}, flag {}));
 
     }
 
     TEST (ScriptTest, TestOpcodes) {
 
         // OP_NOP
-        failure (evaluate (bytes {OP_NOP}, bytes {}, 0), "OP_NOP 1");
-        success (evaluate (bytes {OP_1, OP_NOP}, bytes {}, 0), "OP_NOP 2");
-        failure (evaluate (bytes {OP_0, OP_NOP}, bytes {}, 0), "OP_NOP 3");
+        failure (evaluate (bytes {OP_NOP}, bytes {}, flag {}), "OP_NOP 1");
+        success (evaluate (bytes {OP_1, OP_NOP}, bytes {}, flag {}), "OP_NOP 2");
+        failure (evaluate (bytes {OP_0, OP_NOP}, bytes {}, flag {}), "OP_NOP 3");
 
         // OP_VERIFY
-        error (evaluate (bytes {OP_FALSE}, bytes {OP_VERIFY}, 0), "OP_VERIFY 1");
-        failure (evaluate (bytes {OP_TRUE}, bytes {OP_VERIFY}, 0), "OP_VERIFY 2");
+        error (evaluate (bytes {OP_FALSE}, bytes {OP_VERIFY}, flag {}), "OP_VERIFY 1");
+        failure (evaluate (bytes {OP_TRUE}, bytes {OP_VERIFY}, flag {}), "OP_VERIFY 2");
 
         // OP_DEPTH
-        failure (evaluate (bytes {}, bytes {OP_DEPTH}, 0), "OP DEPTH 1");
-        success (evaluate (bytes {OP_FALSE}, bytes {OP_DEPTH}, 0), "OP DEPTH 2");
+        failure (evaluate (bytes {}, bytes {OP_DEPTH}, flag {}), "OP DEPTH 1");
+        success (evaluate (bytes {OP_FALSE}, bytes {OP_DEPTH}, flag {}), "OP DEPTH 2");
 
         // OP_EQUAL
         success (evaluate (bytes {OP_FALSE, OP_FALSE}, bytes {OP_EQUAL}), "EQUAL 1");
-        failure (evaluate (bytes {OP_FALSE, OP_PUSHSIZE1, 0x00}, bytes {OP_EQUAL}, 0), "EQUAL 2");
+        failure (evaluate (bytes {OP_FALSE, OP_PUSHSIZE1, 0x00}, bytes {OP_EQUAL}, flag {}), "EQUAL 2");
 
         // OP_EQUALVERIFY
-        failure (evaluate (bytes {OP_FALSE, OP_FALSE}, bytes {OP_EQUALVERIFY}, 0), "EQUALVERIFY 1");
-        error (evaluate (bytes {OP_FALSE, OP_TRUE}, bytes {OP_EQUALVERIFY}, 0), "EQUALVERIFY 2");
-        success (evaluate (bytes {OP_FALSE, OP_FALSE}, bytes {OP_EQUALVERIFY, OP_1}, SCRIPT_VERIFY_CLEANSTACK), "EQUALVERIFY 3");
+        failure (evaluate (bytes {OP_FALSE, OP_FALSE}, bytes {OP_EQUALVERIFY}, flag {}), "EQUALVERIFY 1");
+        error (evaluate (bytes {OP_FALSE, OP_TRUE}, bytes {OP_EQUALVERIFY}, flag {}), "EQUALVERIFY 2");
+        success (evaluate (bytes {OP_FALSE, OP_FALSE}, bytes {OP_EQUALVERIFY, OP_1}, flag::VERIFY_CLEANSTACK), "EQUALVERIFY 3");
 
         // OP_SIZE
-        success (evaluate (bytes {OP_0, OP_SIZE}, bytes {OP_0, OP_EQUAL}, 0));
-        success (evaluate (bytes {OP_1, OP_SIZE}, bytes {OP_1, OP_EQUAL}, 0));
-        success (evaluate (bytes {OP_16, OP_SIZE}, bytes {OP_1, OP_EQUAL}, 0));
-        success (evaluate (bytes {OP_PUSHSIZE3, 0x11, 0x12, 0x13, OP_SIZE}, bytes {OP_3, OP_EQUAL}, 0));
+        success (evaluate (bytes {OP_0, OP_SIZE}, bytes {OP_0, OP_EQUAL}, flag {}));
+        success (evaluate (bytes {OP_1, OP_SIZE}, bytes {OP_1, OP_EQUAL}, flag {}));
+        success (evaluate (bytes {OP_16, OP_SIZE}, bytes {OP_1, OP_EQUAL}, flag {}));
+        success (evaluate (bytes {OP_PUSHSIZE3, 0x11, 0x12, 0x13, OP_SIZE}, bytes {OP_3, OP_EQUAL}, flag {}));
 
     }
 
     TEST (ScriptTest, TestAltStack) {
         // OP_TOALTSTACK
-        failure (evaluate (bytes {OP_1}, bytes {OP_TOALTSTACK}, 0), "alt stack 1");
+        failure (evaluate (bytes {OP_1}, bytes {OP_TOALTSTACK}, flag {}), "alt stack 1");
         // OP_FROMALTSTACK
-        success (evaluate (bytes {OP_1}, bytes {OP_TOALTSTACK, OP_FROMALTSTACK}, 0), "alt stack 2");
+        success (evaluate (bytes {OP_1}, bytes {OP_TOALTSTACK, OP_FROMALTSTACK}, flag {}), "alt stack 2");
     }
 
     template <typename X>
@@ -451,12 +452,12 @@ namespace Gigamonkey::Bitcoin {
 
     template <typename X>
     void test_op_error (op Op, list<X> start, string explanation) {
-        error (evaluate (compile (stack_initialize<X> (start)), bytes {Op}, 0), explanation);
+        error (evaluate (compile (stack_initialize<X> (start)), bytes {Op}, flag {}), explanation);
     }
 
     template <typename X>
     void test_op (op Op, list<X> start, list<X> expected, string explanation = "") {
-        success (evaluate (compile (stack_initialize<X> (start) << Op), compile (stack_equal<X> (expected)), 0), explanation);
+        success (evaluate (compile (stack_initialize<X> (start) << Op), compile (stack_equal<X> (expected)), flag {}), explanation);
     }
 
     void test_pick_roll_error (list<int> start, string explanation) {
@@ -517,8 +518,8 @@ namespace Gigamonkey::Bitcoin {
     }
 
     void test_hash_op (op Op, bytes_view input, bytes_view result, bool expected = true) {
-        if (expected) success (evaluate (compile (push_data (input)), compile (program {Op, push_data (result), OP_EQUAL}), 0));
-        else failure (evaluate (compile (push_data (input)), compile (program {Op, push_data (result), OP_EQUAL}), 0));
+        if (expected) success (evaluate (compile (push_data (input)), compile (program {Op, push_data (result), OP_EQUAL}), {}));
+        else failure (evaluate (compile (push_data (input)), compile (program {Op, push_data (result), OP_EQUAL}), {}));
     }
 
     TEST (ScriptTest, TestHashOps) {
@@ -760,21 +761,21 @@ namespace Gigamonkey::Bitcoin {
                     bytes right = data::first (right_set);
                     right_set = data::rest (right_set);
 
-                    success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_NUMEQUAL}, 0));
-                    success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_NUMEQUAL}, 0));
+                    success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_NUMEQUAL}, flag {}));
+                    success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_NUMEQUAL}, flag {}));
 
-                    failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_NUMNOTEQUAL}, 0));
-                    failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_NUMNOTEQUAL}, 0));
+                    failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_NUMNOTEQUAL}, flag {}));
+                    failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_NUMNOTEQUAL}, flag {}));
 
-                    failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_LESSTHAN}, 0));
-                    failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_GREATERTHAN}, 0));
-                    failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_LESSTHAN}, 0));
-                    failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_GREATERTHAN}, 0));
+                    failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_LESSTHAN}, flag {}));
+                    failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_GREATERTHAN}, flag {}));
+                    failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_LESSTHAN}, flag {}));
+                    failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_GREATERTHAN}, flag {}));
 
-                    success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_LESSTHANOREQUAL}, 0));
-                    success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_GREATERTHANOREQUAL}, 0));
-                    success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_LESSTHANOREQUAL}, 0));
-                    success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_GREATERTHANOREQUAL}, 0));
+                    success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_LESSTHANOREQUAL}, flag {}));
+                    success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_GREATERTHANOREQUAL}, flag {}));
+                    success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_LESSTHANOREQUAL}, flag {}));
+                    success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_GREATERTHANOREQUAL}, flag {}));
 
                 }
 
@@ -787,21 +788,21 @@ namespace Gigamonkey::Bitcoin {
                         bytes right = data::first (right_set);
                         right_set = data::rest (right_set);
 
-                        failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_NUMEQUAL}, 0));
-                        failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_NUMEQUAL}, 0));
+                        failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_NUMEQUAL}, flag {}));
+                        failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_NUMEQUAL}, flag {}));
 
-                        success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_NUMNOTEQUAL}, 0));
-                        success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_NUMNOTEQUAL}, 0));
+                        success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_NUMNOTEQUAL}, flag {}));
+                        success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_NUMNOTEQUAL}, flag {}));
 
-                        success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_LESSTHAN}, 0));
-                        failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_GREATERTHAN}, 0));
-                        failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_LESSTHAN}, 0));
-                        success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_GREATERTHAN}, 0));
+                        success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_LESSTHAN}, flag {}));
+                        failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_GREATERTHAN}, flag {}));
+                        failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_LESSTHAN}, flag {}));
+                        success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_GREATERTHAN}, flag {}));
 
-                        success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_LESSTHANOREQUAL}, 0));
-                        failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_GREATERTHANOREQUAL}, 0));
-                        failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_LESSTHANOREQUAL}, 0));
-                        success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_GREATERTHANOREQUAL}, 0));
+                        success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_LESSTHANOREQUAL}, flag {}));
+                        failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_GREATERTHANOREQUAL}, flag {}));
+                        failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_LESSTHANOREQUAL}, flag {}));
+                        success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_GREATERTHANOREQUAL}, flag {}));
 
                     }
                 }
@@ -872,7 +873,7 @@ namespace Gigamonkey::Bitcoin {
         return multisig_script (doc, s, p, OP_0);
     }
     
-    TEST (SignatureTest, TestMultisig) {
+    TEST (ScriptTest, TestMultisig) {
         incomplete::transaction tx {
             {incomplete::input {
                 outpoint {
@@ -899,7 +900,7 @@ namespace Gigamonkey::Bitcoin {
             bytes Test;
             
             result run () {
-                return evaluate ({}, Test, Doc, 0);
+                return evaluate ({}, Test, Doc, flag {});
             }
             
             void test () {

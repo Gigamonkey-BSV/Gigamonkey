@@ -31,11 +31,12 @@ namespace Gigamonkey::Bitcoin {
 
     result step_through (interpreter &m);
 
+    // evaluate with real signatures.
     result inline evaluate (const script &unlock, const script &lock, const redemption_document &doc, const script_config &conf) {
         return interpreter (unlock, lock, doc, conf).run ();
     }
 
-    // if the redemption document is not provided, all signature operations will succeed.
+    // if the redemption document is not provided, all signature operations will succeed automatically.
     result inline evaluate (const script &unlock, const script &lock, const script_config &conf) {
         return interpreter (unlock, lock, conf).run ();
     }
