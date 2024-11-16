@@ -6,17 +6,16 @@
 #include <gigamonkey/work/ASICBoost.hpp>
 #include <gigamonkey/script/opcodes.h>
 
-namespace Gigamonkey {
-    bool header_valid_work (slice<80> h) {
-        return work::string::valid (h);
-    }
-    
-    bool header_valid (const Bitcoin::header &h) {
-        return h.Version >= 1 && h.MerkleRoot.valid () && h.Timestamp != Bitcoin::timestamp {};
-    }
-}
-
 namespace Gigamonkey::Bitcoin {
+    namespace {
+        bool header_valid_work (slice<80> h) {
+            return work::string::valid (h);
+        }
+
+        bool header_valid (const Bitcoin::header &h) {
+            return h.Version >= 1 && h.MerkleRoot.valid () && h.Timestamp != Bitcoin::timestamp {};
+        }
+    }
     
     int32_little header::version (const slice<80> x) {
         int32_little version;
@@ -59,7 +58,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     bool output::valid () const {
-        return Value < 2100000000000000 && decompile (Script) != program {};
+        return Value < 2100000000000000 && (Value > 0 || provably_unspendable (Script));
     }
     
     uint64 transaction::serialized_size () const {

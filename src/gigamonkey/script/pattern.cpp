@@ -71,7 +71,7 @@ namespace Gigamonkey {
         return p.substr (size);
     }
     
-    bytes_view op_return_data::scan(bytes_view p) const {
+    bytes_view op_return_data::scan (bytes_view p) const {
         if (p.size() == 0) throw fail {};
         if (p[0] != OP_RETURN) throw fail {};
         return pattern::scan (p.substr (1));

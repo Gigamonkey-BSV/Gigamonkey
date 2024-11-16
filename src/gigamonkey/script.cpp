@@ -44,10 +44,10 @@ namespace Gigamonkey::Bitcoin {
         return false;
     }
 
-    bytes_view remove_until_last_code_separator (bytes_view b) {
+    program remove_after_last_code_separator (bytes_view b) {
         program_counter counter {b};
         while (counter.Next.size () > 0) counter = counter.next ();
-        return counter.from_last_code_separator ();
+        return counter.to_last_code_separator ();
     }
     
     bool redemption_document::check_locktime (const uint32_little &nLockTime) const {

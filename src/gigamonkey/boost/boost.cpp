@@ -421,7 +421,7 @@ namespace Gigamonkey::Boost {
                 const incomplete::input &i, 
                 const prevout &prev) -> input {
                 return input {i.Reference, input_script {
-                    sk.sign (sighash::document {incomplete, index++, prev.Value, script}, directive (sighash::all)),
+                    sk.sign (sighash::document {incomplete, index++, prev.Value, decompile (script)}, directive (sighash::all)),
                 pk, solution, boost_type, category_mask}.write (), i.Sequence};
             }, incomplete_inputs, Prevouts.values ()), outs, 0});
         

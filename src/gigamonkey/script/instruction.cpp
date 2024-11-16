@@ -11,7 +11,7 @@ namespace Gigamonkey::Bitcoin {
             if (i.Op <= OP_PUSHSIZE75) w << static_cast<byte> (i.Op);
             else if (i.Op == OP_PUSHDATA1) w << static_cast<byte> (OP_PUSHDATA1) << static_cast<byte> (i.Data.size ());
             else if (i.Op == OP_PUSHDATA2) w << static_cast<byte> (OP_PUSHDATA2) << static_cast<uint16_little> (i.Data.size ());
-            else w << static_cast<byte> (OP_PUSHDATA2) << static_cast<uint32_little> (i.Data.size ());
+            else w << static_cast<byte> (OP_PUSHDATA4) << static_cast<uint32_little> (i.Data.size ());
             return w << i.Data;
         }
 
@@ -21,7 +21,11 @@ namespace Gigamonkey::Bitcoin {
     namespace {
     
         ScriptError verify_instruction (const instruction &i) {
-            if (i.Op == OP_INVALIDOPCODE || i.Op == OP_RESERVED || i.Op >= FIRST_UNDEFINED_OP_VALUE) return SCRIPT_ERR_BAD_OPCODE;
+            if (i.Op == OP_INVALIDOPCODE ||
+                i.Op == OP_RESERVED ||
+                i.Op == OP_RESERVED1 ||
+                i.Op == OP_RESERVED2 ||
+                i.Op >= FIRST_UNDEFINED_OP_VALUE) return SCRIPT_ERR_BAD_OPCODE;
             
             size_t size = i.Data.size ();
             if (!is_push_data (i.Op)) {
@@ -64,7 +68,7 @@ namespace Gigamonkey::Bitcoin {
         template <typename W>
         script_writer (W &w) -> script_writer<W>;
     
-        template<typename R> R read_push (R read, instruction &rest) {
+        template <typename R> R read_push (R read, instruction &rest) {
             
             uint32 size;
             R r = read;
@@ -87,10 +91,8 @@ namespace Gigamonkey::Bitcoin {
                 size = x;
             }
             
-            if ((r.End - r.Begin) < size) {
-                rest = {};
-                return read;
-            }
+            if ((r.End - r.Begin) < size)
+                throw invalid_program {SCRIPT_ERR_PUSH_SIZE};
             
             rest.Data = bytes (size);
             r >> rest.Data;
@@ -102,10 +104,8 @@ namespace Gigamonkey::Bitcoin {
             R Reader;
 
             script_reader operator >> (instruction &i) {
-                if ((Reader.End - Reader.Begin) == 0) {
-                    i = {};
-                    return *this;
-                }
+                if ((Reader.End - Reader.Begin) == 0)
+                    throw invalid_program {SCRIPT_ERR_UNKNOWN_ERROR};
                 
                 byte next;
                 Reader >> next;
@@ -136,12 +136,12 @@ namespace Gigamonkey::Bitcoin {
     ScriptError instruction::verify (uint32 flags) const {
         auto script_error = verify_instruction (*this);
         if (script_error != SCRIPT_ERR_OK) return script_error;
-        
+
         if (flags & SCRIPT_VERIFY_MINIMALDATA && !is_minimal_push (Op, Data)) return SCRIPT_ERR_MINIMALDATA;
-        
+
         return SCRIPT_ERR_OK;
     }
-    
+
     bool is_minimal (const instruction &i) {
         return verify_instruction (i) == SCRIPT_ERR_OK && is_minimal_push (i.Op, i.Data);
     }
@@ -202,11 +202,6 @@ namespace Gigamonkey::Bitcoin {
         }
 
         return ss.str ();
-    }
-    
-    bool is_minimal (bytes_view b) {
-        for (const instruction &i : decompile (b)) if (!is_minimal (i)) return false;
-        return true;
     }
 
     std::ostream &write_op_code (std::ostream &o, op x) {
@@ -325,30 +320,24 @@ namespace Gigamonkey::Bitcoin {
         
         stack<op> Control;
         
-        while(!r.empty ()) {
+        while (!r.empty ()) {
             instruction i {};
             r = r >> i;
             
-            if (i.verify (0) != SCRIPT_ERR_OK) return {};
-        
-            if (i.Op == OP_RETURN)
-                if (data::empty (Control)) {
-                    i.Data = r.read_all ();
-                    return p << i;
-                };
+            if (auto err = i.verify (0); err != SCRIPT_ERR_OK) throw invalid_program {err};
             
             if (i.Op == OP_ENDIF) {
-                if (Control.empty ()) return {};
+                if (Control.empty ()) throw invalid_program {SCRIPT_ERR_UNBALANCED_CONDITIONAL};
                 op prev = Control.first ();
                 Control = Control.rest ();
 
                 if (prev == OP_ELSE) {
-                    if (Control.empty ()) return {};
+                    if (Control.empty ()) throw invalid_program {SCRIPT_ERR_UNBALANCED_CONDITIONAL};
                     prev = Control.first ();
                     Control = Control.rest ();
                 }
 
-                if (prev != OP_IF && prev != OP_NOTIF) return {};
+                if (prev != OP_IF && prev != OP_NOTIF) invalid_program {SCRIPT_ERR_UNBALANCED_CONDITIONAL};
             } else if (i.Op == OP_ELSE || i.Op == OP_IF || i.Op == OP_NOTIF) Control = Control << i.Op;
             
             p = p << i;
@@ -428,6 +417,12 @@ namespace Gigamonkey::Bitcoin {
         // For P2SH scripts. This is a depricated special case that is supported for backwards compatability.
         return (data::reverse (data::rest (reversed)) << OP_CODESEPARATOR) +
             (decompile (push_redeem.push_data ()) << OP_VERIFY << push_redeem) + lock;
+    }
+
+    program find_and_delete (program p, const instruction &sig) {
+        program q;
+        for (const instruction &i : p) if (i != sig) q <<= i;
+        return q;
     }
     
 }

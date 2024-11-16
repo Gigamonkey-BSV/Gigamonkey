@@ -21,7 +21,7 @@
 namespace Gigamonkey::Bitcoin {
 
     sighash::document inline add_script_code (const redemption_document &doc, bytes script_code) {
-        return sighash::document {doc.Transaction, doc.InputIndex, doc.RedeemedValue, script_code};
+        return sighash::document {doc.Transaction, doc.InputIndex, doc.RedeemedValue, decompile (script_code)};
     }
 
     struct test_standard_scripts {

@@ -69,25 +69,18 @@ namespace Gigamonkey::Bitcoin {
         redemption_document (incomplete::transaction &tx, index x, satoshi v):
             Transaction {tx}, InputIndex {x}, RedeemedValue {v} {}
         
-        sighash::document add_script_code (bytes_view script_code) const {
-            return sighash::document {Transaction, InputIndex, RedeemedValue, script_code};
-        }
-        
         // holdovers from Bitcoin Core. 
         bool check_locktime (const uint32_little &) const;
         bool check_sequence (const uint32_little &) const;
     };
-
-    // delete the script up to and including the last instance of OP_CODESEPARATOR.
-    // if no OP_CODESEPARATOR is found, nothing is removed.
-    // this function is needed for correctly checking and generating signatures.
-    bytes_view remove_until_last_code_separator (bytes_view);
 
     // the signature verification algorithm used by the script interpreter.
     result verify_signature (bytes_view sig, bytes_view pub, const sighash::document &doc, uint32 flags);
 
     // depricated script type that is supported for backwards compatibilty.
     bool is_P2SH (bytes_view);
+
+    bool provably_unspendable (bytes_view, bool after_genesis = true);
     
     bool inline operator == (const result &a, const result &b) {
         return a.Success == b.Success && a.Error == b.Error;

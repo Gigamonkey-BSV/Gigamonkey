@@ -24,9 +24,6 @@ namespace Gigamonkey::Bitcoin {
 
         program unread () const;
 
-    private:
-
-        interpreter (maybe<redemption_document> doc, const program unlock, const program lock, const script_config &);
     };
 
     std::ostream &operator << (std::ostream &, const interpreter &);
@@ -41,12 +38,6 @@ namespace Gigamonkey::Bitcoin {
     result inline evaluate (const script &unlock, const script &lock, const script_config &conf) {
         return interpreter (unlock, lock, conf).run ();
     }
-
-    inline interpreter::interpreter (const script &unlock, const script &lock, const redemption_document &doc, const script_config &conf) :
-        interpreter {{doc}, decompile (unlock), decompile (lock), conf} {}
-
-    inline interpreter::interpreter (const script &unlock, const script &lock, const script_config &conf) :
-        interpreter {{}, decompile (unlock), decompile (lock), conf} {}
 
     program inline interpreter::unread () const {
         return decompile (bytes_view {Counter.Script}.substr (Counter.Counter));

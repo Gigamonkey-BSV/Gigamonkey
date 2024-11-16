@@ -194,13 +194,14 @@ namespace Gigamonkey::secp256k1 {
         context (int flags) : Context {nullptr}, Flags {flags} {}
         
         secp256k1_context* operator () () const {
-            if (Context == nullptr) Context = secp256k1_context_create(Flags);
+            if (Context == nullptr) Context = secp256k1_context_create (Flags);
             return Context;
         }
         
         ~context () {
             if (Context != nullptr) secp256k1_context_destroy (Context);
         }
+
     } Verification {SECP256K1_CONTEXT_VERIFY}, Signing {SECP256K1_CONTEXT_SIGN};
     
     bool signature::normalized (const bytes_view vchSig) {
@@ -209,8 +210,8 @@ namespace Gigamonkey::secp256k1 {
         return (!secp256k1_ecdsa_signature_normalize (Verification (), nullptr, &sig));
     }
     
-    bool secret::valid(bytes_view sk) {
-        return secp256k1_ec_seckey_verify (Verification (), sk.data()) == 1;
+    bool secret::valid (bytes_view sk) {
+        return secp256k1_ec_seckey_verify (Verification (), sk.data ()) == 1;
     }
     
     bool pubkey::valid (bytes_view pk) {
@@ -218,7 +219,7 @@ namespace Gigamonkey::secp256k1 {
         return secp256k1_ec_pubkey_parse (Verification (), &pubkey, pk.data (), pk.size ());
     }
     
-    bool serialize (const secp256k1_context* context, bytes &p, const secp256k1_pubkey& pubkey) {
+    bool serialize (const secp256k1_context *context, bytes &p, const secp256k1_pubkey &pubkey) {
         auto size = p.size ();
         secp256k1_ec_pubkey_serialize (context, p.data (), &size, &pubkey,
             size == pubkey::CompressedSize ? SECP256K1_EC_COMPRESSED : SECP256K1_EC_UNCOMPRESSED);
@@ -239,7 +240,7 @@ namespace Gigamonkey::secp256k1 {
         return secp256k1_ec_pubkey_create (context, &pubkey, sk.data ()) == 1 && serialize (context, p, pubkey) ? p : bytes {};
     }
     
-    bool parse(const secp256k1_context* context, secp256k1_pubkey& out, bytes_view pk) {
+    bool parse (const secp256k1_context *context, secp256k1_pubkey &out, bytes_view pk) {
         return secp256k1_ec_pubkey_parse (context, &out, pk.data (), pk.size ()) == 1;
     }
     
@@ -276,7 +277,7 @@ namespace Gigamonkey::secp256k1 {
         return v;
     }
     
-    signature secret::sign (bytes_view sk, const digest& d) {
+    signature secret::sign (bytes_view sk, const digest &d) {
         secp256k1_ecdsa_signature x;
         auto context = Signing ();
         if (secp256k1_ecdsa_sign (context, &x, d.data (), sk.data (),
@@ -337,7 +338,7 @@ namespace Gigamonkey::secp256k1 {
         const auto context = Verification ();
         secp256k1_pubkey pubkey;
         secp256k1_pubkey b;
-        secp256k1_pubkey* keys[1];
+        secp256k1_pubkey *keys[1];
         keys[0] = &b;
         if (!parse (context, b, pk_b)) return bytes {};
         

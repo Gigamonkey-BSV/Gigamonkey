@@ -6,8 +6,7 @@
 
 namespace Gigamonkey::Bitcoin::sighash {
     
-    bytes remove_code_separators (bytes_view script_code) {
-        program p = decompile (script_code);
+    bytes remove_code_separators (program p) {
         program r;
         for (const instruction &i : p) if (i.Op != OP_CODESEPARATOR) r = r << i;
         return compile (r);
@@ -57,7 +56,7 @@ namespace Gigamonkey::Bitcoin::sighash {
             // amount). The prevout may already be contained in hashPrevout, and the
             // nSequence may already be contain in hashSequence.
             << doc.Transaction.Inputs[doc.InputIndex].Reference
-            << var_string {doc.ScriptCode}
+            << var_string {compile (doc.ScriptCode)}
             << doc.RedeemedValue
             << doc.Transaction.Inputs[doc.InputIndex].Sequence
 

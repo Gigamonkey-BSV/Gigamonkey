@@ -59,7 +59,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     sighash::document add_code_separator (const sighash::document &doc) {
-        return {doc.Transaction, doc.InputIndex, doc.RedeemedValue, compile (decompile (doc.ScriptCode) << OP_CODESEPARATOR)};
+        return {doc.Transaction, doc.InputIndex, doc.RedeemedValue, doc.ScriptCode << OP_CODESEPARATOR};
     }
     
     sighash::document change_value (const sighash::document &doc) {
@@ -69,7 +69,7 @@ namespace Gigamonkey::Bitcoin {
     TEST (SignatureTest, TestSighash) {
         index input_index = 0;
         satoshi redeemed_value {0xfeee};
-        auto scriptx = pay_to_address::script (digest160 {uint160 {"0xdddddddddd000000000000000000006767676791"}});
+        auto scriptx = decompile (pay_to_address::script (digest160 {uint160 {"0xdddddddddd000000000000000000006767676791"}}));
 
         incomplete::transaction txi {
             {incomplete::input {
@@ -153,19 +153,16 @@ namespace Gigamonkey::Bitcoin {
         auto push_sig1 = instruction::push (sig1);
         auto push_sig2 = instruction::push (sig2);
         
-        auto sig1p = compile (push_sig1);
-        auto sig2p = compile (push_sig2);
+        auto t1_1 = program {OP_DUP, push_sig1, OP_ROLL};
+        auto t1_2 = program {push_sig1, OP_DUP, OP_ROLL};
+        auto t1_3 = program {OP_DUP, OP_ROLL, push_sig1};
+        auto t1_4 = program {push_sig1, OP_DUP, OP_ROLL, push_sig1};
+        auto t1 = program {OP_DUP, OP_ROLL};
         
-        auto t1_1 = compile (program {OP_DUP, push_sig1, OP_ROLL});
-        auto t1_2 = compile (program {push_sig1, OP_DUP, OP_ROLL});
-        auto t1_3 = compile (program {OP_DUP, OP_ROLL, push_sig1});
-        auto t1_4 = compile (program {push_sig1, OP_DUP, OP_ROLL, push_sig1});
-        auto t1 = compile (program {OP_DUP, OP_ROLL});
-        
-        EXPECT_TRUE (find_and_delete (t1_1, sig1p) == t1);
-        EXPECT_TRUE (find_and_delete (t1_2, sig1p) == t1);
-        EXPECT_TRUE (find_and_delete (t1_3, sig1p) == t1);
-        EXPECT_TRUE (find_and_delete (t1_4, sig1p) == t1);
+        EXPECT_TRUE (find_and_delete (t1_1, push_sig1) == t1);
+        EXPECT_TRUE (find_and_delete (t1_2, push_sig1) == t1);
+        EXPECT_TRUE (find_and_delete (t1_3, push_sig1) == t1);
+        EXPECT_TRUE (find_and_delete (t1_4, push_sig1) == t1);
         
     }
 

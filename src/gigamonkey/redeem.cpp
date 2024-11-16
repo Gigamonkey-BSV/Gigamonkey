@@ -43,7 +43,7 @@ namespace Gigamonkey {
         for (const input &in : this->Inputs)
             docs <<= Bitcoin::sighash::document {
                 incomplete, index++, in.Prevout.Value,
-                Bitcoin::remove_until_last_code_separator (in.script_so_far ())};
+                Bitcoin::remove_after_last_code_separator (in.script_so_far ())};
 
         auto inputs = this->Inputs;
         auto sigs = Signatures;

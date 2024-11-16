@@ -38,14 +38,13 @@ namespace Gigamonkey::Bitcoin {
         return false;
     }
     
-    bytes inline cleanup_script_code (bytes_view script_code, bytes_view sig) {
-        return sighash::has_fork_id (signature::directive (sig)) ?
-            bytes (script_code) :
-            find_and_delete (script_code, compile (instruction::push (sig)));
+    program inline cleanup_script_code (program script_code, bytes_view sig) {
+        return sighash::has_fork_id (signature::directive (sig)) ? script_code :
+            find_and_delete (script_code, instruction::push (sig));
     }
     
-    sighash::document inline *add_script_code (redemption_document &doc, bytes_view script_code) {
-        return new sighash::document (doc.Transaction, doc.InputIndex, doc.RedeemedValue, script_code);
+    sighash::document inline *add_script_code (redemption_document &doc, program script_code) {
+        return new sighash::document {doc.Transaction, doc.InputIndex, doc.RedeemedValue, script_code};
     }
 
     uint8_t inline make_rshift_mask (size_t n) {
@@ -165,7 +164,7 @@ namespace Gigamonkey::Bitcoin {
     maybe<result> machine::step (const program_counter &Counter) {
         
         if (Counter.Next == bytes_view {}) {
-            if ((Config.verify_clean_stack ()) != 0 && Stack->size () != 1) return SCRIPT_ERR_CLEANSTACK;
+            if ((Config.verify_clean_stack () != 0) && (Stack->size () != 1)) return SCRIPT_ERR_CLEANSTACK;
             if (Stack->size () == 0) return false;
             return nonzero (Stack->top ());
         }
@@ -838,10 +837,12 @@ namespace Gigamonkey::Bitcoin {
                 const bytes &sig = Stack->top (-2);
                 const bytes &pub = Stack->top ();
                 
-                result r = bool (Document) ?
-                    result {verify_signature (sig, pub,
-                        Document->add_script_code (cleanup_script_code (Counter.from_last_code_separator (), sig)), Config.Flags)} :
-                    result {true};
+                result r;
+                if (bool (Document)) {
+                    auto doc = add_script_code (*Document, cleanup_script_code (Counter.to_last_code_separator (), sig));
+                    r = result {verify_signature (sig, pub, *doc, Config.Flags)};
+                    delete doc;
+                } else r = result {true};
                 
                 if (r.Error) return r.Error;
                 
@@ -902,7 +903,7 @@ namespace Gigamonkey::Bitcoin {
                 
                 sighash::document *doc = nullptr;
                 if (bool (Document)) {
-                    bytes script_code = Counter.from_last_code_separator ();
+                    program script_code = Counter.to_last_code_separator ();
                     
                     // Remove signature for pre-fork scripts
                     for (auto it = Stack->begin () + 1; it != Stack->begin () + 1 + nSigsCount; it++)

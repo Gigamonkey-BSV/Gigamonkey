@@ -6,8 +6,7 @@
 #include <iosfwd>
 
 /** Script opcodes */
-enum opcodetype 
-{
+enum opcodetype : unsigned char {
     // push value
     OP_0 = 0x00,
     OP_FALSE = OP_0,
@@ -143,9 +142,12 @@ enum opcodetype
     OP_NOP2 = OP_CHECKLOCKTIMEVERIFY,
     OP_CHECKSEQUENCEVERIFY = 0xb2,
     OP_NOP3 = OP_CHECKSEQUENCEVERIFY,
-    OP_NOP4 = 0xb3,
-    OP_NOP5 = 0xb4,
-    OP_NOP6 = 0xb5,
+    OP_SUBSTR = 0xb3,
+    OP_NOP4 = OP_SUBSTR,
+    OP_LEFT = 0xb4,
+    OP_NOP5 = OP_LEFT,
+    OP_RIGHT = 0xb5,
+    OP_NOP6 = OP_RIGHT,
     OP_NOP7 = 0xb6,
     OP_NOP8 = 0xb7,
     OP_NOP9 = 0xb8,
@@ -164,5 +166,5 @@ enum opcodetype
 };
 
 const char *GetOpName (opcodetype);
-std::ostream& operator << (std::ostream &, const opcodetype &);
+std::ostream &operator << (std::ostream &, const opcodetype &);
 

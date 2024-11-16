@@ -252,7 +252,10 @@ namespace Gigamonkey {
 
     Bitcoin::sighash::directive directive = Bitcoin::directive (Bitcoin::sighash::all);
 
-    Bitcoin::transaction make_fake_node_tx (list<Bitcoin::prevout> inputs, uint32 num_outputs, Bitcoin::satoshi sats_per_output, crypto::random &r) {
+    Bitcoin::transaction make_fake_node_tx (
+        list<Bitcoin::prevout> inputs, uint32 num_outputs,
+        Bitcoin::satoshi sats_per_output, crypto::random &r) {
+
         list<Bitcoin::output> out;
         list<Bitcoin::incomplete::input> in;
 
@@ -269,7 +272,7 @@ namespace Gigamonkey {
         uint32_little i = 0;
         for (const Bitcoin::prevout &p : inputs) {
             auto key = keys[pay_to_address {p.script ()}.Address];
-            auto doc = Bitcoin::sighash::document {tx, i, p.value (), p.script ()};
+            auto doc = Bitcoin::sighash::document {tx, i, p.value (), Bitcoin::decompile (p.script ())};
             auto sig = key.sign (doc, directive);
             scripts <<= pay_to_address::redeem (sig, key.to_public ());
             i++;

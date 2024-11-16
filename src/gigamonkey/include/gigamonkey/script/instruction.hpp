@@ -175,13 +175,22 @@ namespace Gigamonkey::Bitcoin {
     private:
         instruction (op p, const integer &d);
     };
-    
+
     using program = list<instruction>;
 
     bool is_push (program);
 
     // check flags that can be checked without running the program.
     ScriptError pre_verify (program, uint32 flags = 0);
+
+    // delete the script up to and including the last instance of OP_CODESEPARATOR.
+    // if no OP_CODESEPARATOR is found, nothing is removed.
+    // this function is needed for correctly checking and generating signatures.
+    program remove_after_last_code_separator (bytes_view);
+
+    // used in the original sighash algorithm to remove instances of the same
+    // signature that might have been used previously in the script.
+    program find_and_delete (program script_code, const instruction &sig);
 
     // make the full program from the two scripts.
     program full (const program unlock, const program lock, bool support_p2sh);
@@ -192,13 +201,21 @@ namespace Gigamonkey::Bitcoin {
     bool inline valid (program p) {
         return pre_verify (p) == SCRIPT_ERR_OK;
     };
-    
-    bytes compile (program p); 
-    
-    bytes compile (instruction i); 
-    
-    program decompile (bytes_view); 
-    
+
+    bytes compile (program p);
+
+    bytes compile (instruction i);
+
+    program decompile (bytes_view);
+
+    // thrown if you try to decompile an invalid program.
+    struct invalid_program : exception {
+        ScriptError Error;
+        invalid_program (ScriptError err): Error {err} {
+            *this << "program is invalid: " << err;
+        }
+    };
+
     size_t serialized_size (program p);
 
     bool inline is_P2SH (bytes_view script) {
@@ -206,7 +223,6 @@ namespace Gigamonkey::Bitcoin {
             script[1] == 0x14 && script[22] == OP_EQUAL;
     }
 
-    // not really an efficient way to accomplish this.
     bool inline is_P2SH (const program p) {
         return is_P2SH (compile (p));
     }
@@ -223,6 +239,11 @@ namespace Gigamonkey::Bitcoin {
     
     size_t inline serialized_size (const instruction &o) {
         return o.serialized_size ();
+    }
+
+    bool inline provably_unspendable (bytes_view script, bool after_genesis) {
+        if (after_genesis) return script.size () >= 2 && script[0] == OP_FALSE && script[1] == OP_RETURN;
+        return script.size () >= 1 && script[0] == OP_RETURN;
     }
     
     bool inline operator == (const instruction &a, const instruction &b) {
@@ -266,6 +287,11 @@ namespace Gigamonkey::Bitcoin {
     template <bool is_signed, boost::endian::order o, std::size_t size>
     instruction inline push_data (const arithmetic::endian_integral<is_signed, o, size> &x) {
         return push_data (bytes_view (x));
+    }
+
+    bool inline is_minimal (bytes_view b) {
+        for (const instruction &i : decompile (b)) if (!is_minimal (i)) return false;
+        return true;
     }
 }
 

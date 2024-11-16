@@ -6,6 +6,7 @@
 
 #include <gigamonkey/hash.hpp>
 #include <gigamonkey/incomplete.hpp>
+#include <gigamonkey/script/instruction.hpp>
 #include <data/tools.hpp>
 
 namespace Gigamonkey::Bitcoin {
@@ -19,15 +20,21 @@ namespace Gigamonkey::Bitcoin {
     
         enum type : byte {
             unsupported = 0,
+
             // all outputs are signed
             all = 1,
+
             // no outputs are signed, meaning they can be changed and the signature is still valid.
             none = 2, 
+
             // the output with the same index number as the input in which this sig
             single = 3, 
+
             // added in Bitcoin Cash, used to implement replace protection. The signature algorithm 
             // is different when enabled. Will be depricated eventually. 
+
             fork_id = 0x40,
+
             // If enabled, inputs are not signed, meaning anybody can add new inputs to this tx.
             anyone_can_pay = 0x80
         };
@@ -76,13 +83,13 @@ namespace Gigamonkey::Bitcoin {
             // the script code contains the previous output script with the 
             // latest instance of OP_CODESEPARATOR before the signature operation 
             // being evaluated and everything earlier removed.
-            script ScriptCode; 
+            program ScriptCode;
             
             bool valid () const {
                 return RedeemedValue >= 0 && InputIndex < Transaction.Inputs.size ();
             }
             
-            document (incomplete::transaction &tx, index i, satoshi r, bytes_view script_code) :
+            document (incomplete::transaction &tx, index i, satoshi r, program script_code) :
                 Transaction {tx}, InputIndex {i}, RedeemedValue {r}, ScriptCode {script_code} {}
             
         };
