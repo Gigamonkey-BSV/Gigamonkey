@@ -34,7 +34,7 @@ namespace Gigamonkey::Bitcoin {
         bool increment_operation ();
         uint64 max_pubkeys_per_multisig () const;
 
-        result step (const program_counter &Counter);
+        maybe<result> step (const program_counter &Counter);
 
         machine (maybe<redemption_document> doc = {}, const script_config &conf = {}):
             machine (conf.utxo_after_genesis () ?

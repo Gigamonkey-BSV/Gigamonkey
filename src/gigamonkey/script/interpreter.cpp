@@ -13,7 +13,7 @@ namespace Gigamonkey::Bitcoin {
         program p = full (unlock, lock, conf.support_P2SH ());
 
         if (conf.verify_sig_push_only () && !is_push (unlock)) Machine.Result = SCRIPT_ERR_SIG_PUSHONLY;
-        else if (conf.support_P2SH () && isP2SH (lock)) {
+        else if (conf.support_P2SH () && is_P2SH (lock)) {
             if (data::empty (unlock)) Machine.Result =  SCRIPT_ERR_INVALID_STACK_OPERATION;
             else if (!is_push (unlock)) Machine.Result = SCRIPT_ERR_SIG_PUSHONLY;
         } else Machine.Result = pre_verify (p, conf.Flags);
@@ -51,21 +51,22 @@ namespace Gigamonkey::Bitcoin {
         return m.Machine.Result;
     }
 
-    result machine_step (machine &x, program_counter &p) {
+    maybe<result> machine_step (machine &x, program_counter &p) {
         auto r = x.step (p);
-        if (!r.Error && !r.Success) ++p;
+        if (!bool (r)) ++p;
         return r;
     }
 
     result machine_run (machine &x, program_counter &p) {
         while (true) {
             auto r = x.step (p);
-            if (r.Error || r.Success) return r;
+            if (bool (r)) return *r;
             else ++p;
         }
     }
 
-    result catch_all_errors (result (*fn) (machine &, program_counter &), machine &x, program_counter &p) {
+    template <typename R>
+    R catch_all_errors (R (*fn) (machine &, program_counter &), machine &x, program_counter &p) {
         try {
             return fn (x, p);
         } catch (script_exception &err) {
@@ -85,15 +86,15 @@ namespace Gigamonkey::Bitcoin {
 
     void interpreter::step () {
         if (Machine.Halt) return;
-        auto err = catch_all_errors (machine_step, Machine, Counter);
-        if (err.Error || err.Success) {
+        auto r = catch_all_errors<maybe<result>> (machine_step, Machine, Counter);
+        if (bool (r)) {
             Machine.Halt = true;
-            Machine.Result = err;
+            Machine.Result = *r;
         }
     }
 
     result interpreter::run () {
-        Machine.Result = catch_all_errors (machine_run, Machine, Counter);
+        Machine.Result = catch_all_errors<result> (machine_run, Machine, Counter);
         Machine.Halt = true;
         return Machine.Result;
     }

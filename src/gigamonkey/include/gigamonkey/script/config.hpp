@@ -42,7 +42,7 @@ namespace Gigamonkey::Bitcoin {
         }
 
         bool support_P2SH () const {
-            return !utxo_after_genesis ();
+            return !utxo_after_genesis () && (Flags & SCRIPT_VERIFY_P2SH);
         }
 
         bool verify_sig_push_only () const {

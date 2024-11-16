@@ -14,7 +14,7 @@ namespace Gigamonkey {
             return {OP_HASH160, push_size {20, hash}, OP_EQUAL};
         }
         
-        static bytes script (const digest160& a) {
+        static bytes script (const digest160 &a) {
             using namespace Bitcoin;
             return compile (program {OP_HASH160, bytes_view (a), OP_EQUAL});
         }
@@ -33,7 +33,7 @@ namespace Gigamonkey {
             using namespace Bitcoin;
             bytes hash {20};
             if (!pattern (hash).match (script)) return;
-            std::copy (hash.begin (), hash.end (), Hash.Value.begin ());
+            std::copy (hash.begin (), hash.end (), Hash.begin ());
         }
         
         static bytes redeem (const bytes_view s) {

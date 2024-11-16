@@ -162,11 +162,12 @@ namespace Gigamonkey::Bitcoin {
         return static_cast<const integer &> (span);
     }
     
-    result machine::step (const program_counter &Counter) {
+    maybe<result> machine::step (const program_counter &Counter) {
         
         if (Counter.Next == bytes_view {}) {
             if ((Config.verify_clean_stack ()) != 0 && Stack->size () != 1) return SCRIPT_ERR_CLEANSTACK;
-            return true;
+            if (Stack->size () == 0) return false;
+            return nonzero (Stack->top ());
         }
         
         op Op = op (Counter.Next[0]);
@@ -180,7 +181,7 @@ namespace Gigamonkey::Bitcoin {
         // whether this op code will be executed. 
         // need to take into account OP_RETURN
         bool executed = !count (Exec.begin (), Exec.end (), false);
-        if (!executed) return SCRIPT_ERR_OK;
+        if (!executed) return {};
 
         // Some opcodes are disabled.
         if (IsOpcodeDisabled (Op) && (!UtxoAfterGenesis || executed ))
@@ -1081,7 +1082,7 @@ namespace Gigamonkey::Bitcoin {
             }
         }
         
-        return SCRIPT_ERR_OK;
+        return {};
         
     }
     

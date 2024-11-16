@@ -167,7 +167,7 @@ namespace Gigamonkey::Bitcoin {
         return instruction {OP_PUSHDATA4, integer (data)};
     }
     
-    integer instruction::data () const {
+    integer instruction::push_data () const {
         if (is_push_data (Op) || Op == OP_RETURN) return Data;
         if (!is_push (Op)) return {};
         if (Op == OP_1NEGATE) return {0x81};
@@ -413,6 +413,21 @@ namespace Gigamonkey::Bitcoin {
         } else if (p.size () == 1 && p.first ().Op == OP_RETURN) return SCRIPT_ERR_OK;
 
         return valid_program (p, {}, flags);
+    }
+
+    // note: pay to script hash only applies to scripts that were created before genesis.
+    program full (const program unlock, const program lock, bool support_p2sh) {
+        if (!support_p2sh || !is_P2SH (lock) || data::empty (unlock))
+            // TODO the code separator should only go here if
+            // there is no code separator in the unlocking script.
+            return (unlock << OP_CODESEPARATOR) + lock;
+
+        auto reversed = data::reverse (unlock);
+        const instruction &push_redeem = data::first (reversed);
+
+        // For P2SH scripts. This is a depricated special case that is supported for backwards compatability.
+        return (data::reverse (data::rest (reversed)) << OP_CODESEPARATOR) +
+            (decompile (push_redeem.push_data ()) << OP_VERIFY << push_redeem) + lock;
     }
     
 }

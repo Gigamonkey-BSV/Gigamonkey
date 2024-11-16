@@ -82,12 +82,12 @@ namespace Gigamonkey {
             case any : 
                 return Bitcoin::is_push (i.Op);
             case value : 
-                return Bitcoin::is_push (i.Op) && Value == Bitcoin::integer (i.data ());
+                return Bitcoin::is_push (i.Op) && Value == Bitcoin::integer (i.push_data ());
             case data : 
-                return Bitcoin::is_push (i.Op) && Data == static_cast<bytes> (i.data ());
+                return Bitcoin::is_push (i.Op) && Data == static_cast<bytes> (i.push_data ());
             case read : 
                 if (!Bitcoin::is_push (i.Op)) return false;
-                Read = i.data ();
+                Read = i.push_data ();
                 return true;
             default: 
                 return false;
@@ -95,7 +95,7 @@ namespace Gigamonkey {
     }
     
     bool push_size::match (const Bitcoin::instruction& i) const {
-        bytes Data = i.data ();
+        bytes Data = i.push_data ();
         if (Data.size () != Size) return false;
         if (Reader) Read = Data;
         return true;

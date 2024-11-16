@@ -247,7 +247,7 @@ namespace Gigamonkey::secp256k1 {
         return a.Value != b.Value;
     }
     
-    signature inline secret::sign (const digest& d) const {
+    signature inline secret::sign (const digest &d) const {
         return sign (Value, d);
     }
     
@@ -259,11 +259,11 @@ namespace Gigamonkey::secp256k1 {
         return secret {negate (this->Value)};
     }
     
-    secret inline secret::operator + (const secret& s) const {
+    secret inline secret::operator + (const secret &s) const {
         return secret {secret::plus(this->Value, s.Value)};
     }
     
-    secret inline secret::operator * (const secret& s) const {
+    secret inline secret::operator * (const secret &s) const {
         return secret {secret::times (this->Value, s.Value)};
     }
     

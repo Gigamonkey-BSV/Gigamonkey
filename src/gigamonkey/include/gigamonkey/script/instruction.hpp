@@ -122,7 +122,7 @@ namespace Gigamonkey::Bitcoin {
     bool operator == (const instruction &, const instruction &);
     bool operator != (const instruction &, const instruction &);
     
-    size_t size (const instruction &o);
+    size_t serialized_size (const instruction &o);
     
     std::ostream &operator << (std::ostream &, const instruction &);
 
@@ -147,7 +147,7 @@ namespace Gigamonkey::Bitcoin {
         instruction (op p);
         instruction (bytes_view d) : instruction {push (d)} {}
         
-        integer data () const;
+        integer push_data () const;
         
         ScriptError verify (uint32 flags = 0) const;
         
@@ -163,9 +163,6 @@ namespace Gigamonkey::Bitcoin {
         static instruction op_code (op o);
         static instruction read (bytes_view b);
         static instruction push (bytes_view d);
-        static instruction op_return_data (const integer &data) {
-            return instruction (OP_RETURN, data);
-        }
         
         static size_t min_push_size (bytes_view b) {
             auto x = b.size ();
@@ -181,8 +178,16 @@ namespace Gigamonkey::Bitcoin {
     
     using program = list<instruction>;
 
+    bool is_push (program);
+
     // check flags that can be checked without running the program.
     ScriptError pre_verify (program, uint32 flags = 0);
+
+    // make the full program from the two scripts.
+    program full (const program unlock, const program lock, bool support_p2sh);
+
+    // pay to script hash only applies to scripts that were created before genesis.
+    bool is_P2SH (const program p);
 
     bool inline valid (program p) {
         return pre_verify (p) == SCRIPT_ERR_OK;
@@ -196,20 +201,28 @@ namespace Gigamonkey::Bitcoin {
     
     size_t serialized_size (program p);
 
-    bool is_push (program);
-    
-    size_t inline serialized_size (const instruction &o) {
-        return o.serialized_size ();
+    bool inline is_P2SH (bytes_view script) {
+        return script.size () == 23 && script[0] == OP_HASH160 &&
+            script[1] == 0x14 && script[22] == OP_EQUAL;
     }
-    
+
+    // not really an efficient way to accomplish this.
+    bool inline is_P2SH (const program p) {
+        return is_P2SH (compile (p));
+    }
+
     size_t inline serialized_size (program p) {
         if (data::empty (p)) return 0;
         return serialized_size (p.first ()) + serialized_size (p.rest ());
     }
-    
+
     bool inline is_push (program p) {
         if (data::empty (p)) return true;
         return is_push (p.first ().Op) && is_push (p.rest ());
+    }
+    
+    size_t inline serialized_size (const instruction &o) {
+        return o.serialized_size ();
     }
     
     bool inline operator == (const instruction &a, const instruction &b) {

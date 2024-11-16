@@ -85,6 +85,9 @@ namespace Gigamonkey::Bitcoin {
 
     // the signature verification algorithm used by the script interpreter.
     result verify_signature (bytes_view sig, bytes_view pub, const sighash::document &doc, uint32 flags);
+
+    // depricated script type that is supported for backwards compatibilty.
+    bool is_P2SH (bytes_view);
     
     bool inline operator == (const result &a, const result &b) {
         return a.Success == b.Success && a.Error == b.Error;
