@@ -1,15 +1,14 @@
-FROM nekosune/gigamonkey-bitcoin-sv-base:latest
-LABEL maintainer="Katrina Knight <kat.knight@newgaea.net>"
+FROM gigamonkey/gigamonkey-base-dev:v2.1
 
-WORKDIR /tmp/build/
-COPY . /tmp/gigamonkey
-RUN cmake \
-        -DJOBS=${BUILD_JOBS} \
-        -DBOOST_ROOT=/usr/bsv/ \
-        -DCHAIN_SRC_ROOT=/tmp/bitcoin-sv-1.0.4/ \
-        -DCHAIN_EXTRA_FLAGS=--with-boost=/usr/bsv \
-        -DCMAKE_INSTALL_PREFIX=/usr/bsv/ \
-        -DCMAKE_PREFIX_PATH=/usr/bsv/ \
-        /tmp/gigamonkey
-RUN make
-CMD ["ctest -E \"(autocompact_test)|(corruption_test)|(db_test)|(dbformat_test)\""]
+ADD https://api.github.com/repos/DanielKrawisz/data/git/refs/heads/master /root/data_version.json
+RUN git clone --depth 1 --branch master https://github.com/DanielKrawisz/data.git /tmp/data
+RUN cmake -G Ninja -B /tmp/data/build -S /tmp/data -DPACKAGE_TESTS=OFF
+RUN cmake --build /tmp/data/build -j 4
+RUN cmake --install /tmp/data/build
+
+
+WORKDIR /home/Gigamonkey
+COPY . .
+RUN cmake -G Ninja -B build -S . -DPACKAGE_TESTS=OFF
+RUN cmake --build . -j 4
+RUN cmake --install .

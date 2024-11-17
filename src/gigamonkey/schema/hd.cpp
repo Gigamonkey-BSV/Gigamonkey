@@ -4,7 +4,7 @@
 #include <gigamonkey/p2p/checksum.hpp>
 #include <gigamonkey/schema/hd.hpp>
 #include <data/encoding/base58.hpp>
-#include <data/encoding/endian/endian.hpp>
+#include <data/arithmetic/endian.hpp>
 #include <data/io/unimplemented.hpp>
 #include <cryptopp/cryptlib.h>
 #include <cryptopp/hmac.h>
@@ -167,17 +167,17 @@ namespace Gigamonkey::HD::BIP_32 {
         if (prv != check)
             return secret ();
 
-        bytes_reader reader (view.begin () + 3, view.end ());
+        iterator_reader r (view.begin () + 3, view.end ());
         
-        data::endian::arithmetic<false, endian::big, 1> depth;
-        reader >> depth;
+        byte depth;
+        r >> depth;
         secret1.Depth = depth;
-        data::endian::arithmetic<false, endian::big, 4> parent;
-        reader >> parent;
+        uint32_big parent;
+        r >> parent;
         secret1.Parent = parent;
-        data::endian::arithmetic<false, endian::big, 4> sequence;
+        uint32_big sequence;
         
-        reader >> sequence;
+        r >> sequence;
         secret1.Sequence = sequence;
         bytes_view chain_code = view.substr (12, 32);
         bytes_view key = view.substr (12 + 32 + 1);
@@ -311,33 +311,32 @@ namespace Gigamonkey::HD::BIP_32 {
         pubkey pubkey1;
         if (!tmp.valid ()) return pubkey ();
         auto view = tmp.payload ();
-        if (view.length() != 77) return pubkey ();
+        if (view.length () != 77) return pubkey ();
 
         pubkey1.Net = main;
         bytes prv = bytes ({0x88, 0xB2, 0x1E});
         auto check = view.substr (0, 3);
         if (prv != check) return pubkey ();
-        bytes_reader reader (view.begin () + 3, view.end());
+        iterator_reader r (view.begin () + 3, view.end ());
         
-        data::endian::arithmetic<false, endian::big, 1> depth;
-        reader >> depth;
+        byte depth;
+        r >> depth;
         pubkey1.Depth = depth;
-        data::endian::arithmetic<false, endian::big, 4> parent;
-        reader >> parent;
+        uint32_big parent;
+        r >> parent;
         pubkey1.Parent = parent;
-        data::endian::arithmetic<false, endian::big, 4> sequence;
+        uint32_big sequence;
         
-        reader >> sequence;
+        r >> sequence;
         pubkey1.Sequence = sequence;
         //sequence |= view[12] & 0xff;
         bytes_view chain_code = view.substr (12, 32);
         bytes_view key = view.substr (12 + 32);
 
-        uint<33> keyuint;
-        std::copy (key.begin (), key.end (), keyuint.begin ());
-        pubkey1.ChainCode = bytes (32);
+        pubkey1.Pubkey.resize (33);
+        std::copy (key.begin (), key.end (), pubkey1.Pubkey.begin ());
+        pubkey1.ChainCode.resize (32);
         std::copy (chain_code.begin (), chain_code.end (), pubkey1.ChainCode.begin ());
-        pubkey1.Pubkey = secp256k1::pubkey{keyuint};
         return pubkey1;
     }
 

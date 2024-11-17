@@ -4,14 +4,13 @@
 #include <gigamonkey/signature.hpp>
 
 namespace Gigamonkey::Bitcoin {
-
-    using Hash256_writer = crypto::hash::Bitcoin<32>;
     
     digest256 signature::hash (const sighash::document &doc, sighash::directive d) {
         if (!doc.valid () || (sighash::base (d) == sighash::single && doc.InputIndex >= doc.Transaction.Outputs.size ())) return {};
-        Hash256_writer w;
+        //Hash256_writer w;
+        lazy_bytes_writer w;
         sighash::write (w, doc, d);
-        return w.finalize ();
+        return Hash256 (w.complete ());
     }
 
 }

@@ -5,25 +5,29 @@
 
 namespace Gigamonkey::Bitcoin {
     
-    Bitcoin::transaction incomplete::transaction::complete(list<bytes> scripts) const {
-        if (scripts.size() != Inputs.size()) throw std::logic_error{"need one script for each input."};
-        return Bitcoin::transaction{Version, data::map_thread([](const input &in, const bytes &script) -> Bitcoin::input {
-            return in.complete(script);
-        }, Inputs, scripts), Outputs, Locktime};
+    transaction incomplete::transaction::complete (list<bytes> scripts) const {
+        if (scripts.size () != Inputs.size ()) throw std::logic_error {"need one script for each input."};
+        return Bitcoin::transaction {Version, data::map_thread ([] (const input &in, const bytes &script) -> Bitcoin::input {
+            return in.complete (script);
+        }, Inputs, scripts), Outputs, LockTime};
     }
     
-    incomplete::transaction::operator bytes() const {
+    incomplete::transaction::operator bytes () const {
         list<Bitcoin::input> ins;
-        for (const input &in : Inputs) ins <<= Bitcoin::input{in.Reference, {}, in.Sequence};
+        for (const input &in : Inputs) ins <<= Bitcoin::input {in.Reference, {}, in.Sequence};
         list<output> outs;
         for (const output &out : Outputs) outs <<= out;
-        return bytes(Bitcoin::transaction{Version, ins, outs, Locktime});
+        return bytes (Bitcoin::transaction {Version, ins, outs, LockTime});
+    }
+
+    namespace {
+        transaction read_from_bytes (bytes_view b) {
+            auto tx = Bitcoin::transaction {b};
+            if (!tx.valid ()) throw std::invalid_argument {"invalid transaction"};
+            return transaction {tx};
+        }
     }
     
-    incomplete::transaction::transaction(bytes_view b) {
-        auto tx = Bitcoin::transaction{b};
-        if (!tx.valid()) throw std::invalid_argument{"invalid transaction"};
-        *this = transaction{tx};
-    }
+    incomplete::transaction::transaction (bytes_view b) : transaction {read_from_bytes (b)} {}
 
 }

@@ -15,7 +15,7 @@ namespace Gigamonkey::Merkle {
         EXPECT_FALSE (tree {}.valid ());
         EXPECT_FALSE (dual {}.valid ());
         
-        list<std::string> transactions ("a", "b", "c", "d", "e", "f", "g", "h");
+        list<std::string> transactions {"a", "b", "c", "d", "e", "f", "g", "h"};
         
         list<digest256> leaves = take (for_each ([] (const std::string x) -> digest256 {
             return Bitcoin::Hash256 (x);
@@ -56,7 +56,7 @@ namespace Gigamonkey::Merkle {
             
             dual ReconstructedLeft {};
             
-            for (const leaf& j : Dual.leaves ()) {
+            for (const leaf &j : Dual.leaves ()) {
                 proof p = Dual[j.Digest];
                 
                 EXPECT_TRUE (p.valid ());
@@ -74,9 +74,6 @@ namespace Gigamonkey::Merkle {
                 q.Root = fail;
                 EXPECT_FALSE (q.valid ());
                 
-                JSON serialized = ReconstructedLeft.serialize ();
-                auto DeserializedLeft = dual::deserialize (serialized);
-                ASSERT_EQ (ReconstructedLeft, DeserializedLeft);
             }
             
             EXPECT_EQ (Dual, ReconstructedLeft);
@@ -126,8 +123,6 @@ namespace Gigamonkey::Merkle {
         
         JSON JSON_format;
         JSON_message >> JSON_format;
-        
-        using namespace BitcoinAssociation;
 
         auto read_binary = proofs_serialization_standard::read_binary (binary_format);
         auto read_JSON = proofs_serialization_standard::read_JSON (JSON_format);

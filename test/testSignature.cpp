@@ -6,7 +6,6 @@
 #include <gigamonkey/script/pattern/pay_to_address.hpp>
 #include <gigamonkey/wif.hpp>
 #include <gigamonkey/script/machine.hpp>
-#include <sv/script/script.h>
 #include "gtest/gtest.h"
 
 namespace Gigamonkey::Bitcoin {
@@ -29,7 +28,7 @@ namespace Gigamonkey::Bitcoin {
     
     // possible for sighash::none and sighash::single. 
     bool expect_can_add_input (sighash::directive d) {
-        return sighash::is_anyone_can_pay(d);
+        return sighash::is_anyone_can_pay (d);
     }
     
     bool expect_can_add_code_separator (sighash::directive d) {
@@ -40,58 +39,63 @@ namespace Gigamonkey::Bitcoin {
         return !sighash::has_fork_id (d);
     }
     
-    sighash::document add_input (const sighash::document &doc) {
-        sighash::document x = doc;
-        x.Transaction.Inputs <<= incomplete::input {outpoint {digest256 {uint256 {2}}, 2}};
-        return x;
+    incomplete::transaction add_input (const incomplete::transaction &tx) {
+        return incomplete::transaction {tx.Version,
+            tx.Inputs << incomplete::input {outpoint {digest256 {uint256 {2}}, 2}},
+            tx.Outputs, tx.LockTime};
     }
     
-    output mutate (const output& o) {
-        return output{o.Value + satoshi{1}, pay_to_address::script (digest160 {pay_to_address (o.Script).Address + 1})};
+    output mutate (const output &o) {
+        return output {o.Value + satoshi {1}, pay_to_address::script (digest160 {pay_to_address (o.Script).Address + 1})};
     }
     
-    sighash::document mutate_output (const sighash::document &doc, index i) {
-        sighash::document x = doc;
+    incomplete::transaction mutate_output (const incomplete::transaction &tx, index i) {
         cross<output> outs;
-        for (const output &out : x.Transaction.Outputs) outs.push_back (out);
+        for (const output &out : tx.Outputs) outs.push_back (out);
         outs[i] = mutate (outs[i]);
         list<output> new_outs;
         for (const output &out : outs) new_outs <<= out;
-        x.Transaction.Outputs = new_outs;
-        return x;
+        return incomplete::transaction {tx.Version, tx.Inputs, new_outs, tx.LockTime};
     }
     
     sighash::document add_code_separator (const sighash::document &doc) {
-        return {doc.RedeemedValue, compile (decompile (doc.ScriptCode) << OP_CODESEPARATOR), doc.Transaction, doc.InputIndex};
+        return {doc.Transaction, doc.InputIndex, doc.RedeemedValue, compile (decompile (doc.ScriptCode) << OP_CODESEPARATOR)};
     }
     
     sighash::document change_value (const sighash::document &doc) {
-        return {doc.RedeemedValue + satoshi {1}, doc.ScriptCode, doc.Transaction, doc.InputIndex};
+        return {doc.Transaction, doc.InputIndex, doc.RedeemedValue + satoshi {1}, doc.ScriptCode};
     }
     
     TEST (SignatureTest, TestSighash) {
-        
-        sighash::document doc{
-            satoshi{0xfeee}, 
-            pay_to_address::script (digest160 {uint160 {"0xdddddddddd000000000000000000006767676791"}}),
-            incomplete::transaction {
-                {incomplete::input {
-                    outpoint {digest256 {uint256 {"0xaa00000000000000000000000000000000000000000000555555550707070707"}}, 0xcdcdcdcd},
-                    0xfedcba09}}, {
-                    output {1, pay_to_address::script (digest160 {uint160 {"0xbb00000000000000000000000000006565656575"}})},
-                    output {2, pay_to_address::script (digest160 {uint160 {"0xcc00000000000000000000000000002929292985"}})}},
-                5}, 0};
-        
-        auto doc_mutate_same_output = mutate_output (doc, doc.InputIndex);
-        auto doc_mutate_different_output = mutate_output (doc, doc.InputIndex + 1);
-        auto doc_changed_value = change_value (doc);
-        auto doc_added_code_separator = add_code_separator (doc);
-        auto doc_added_input = add_input (doc);
+        index input_index = 0;
+        satoshi redeemed_value {0xfeee};
+        auto scriptx = pay_to_address::script (digest160 {uint160 {"0xdddddddddd000000000000000000006767676791"}});
+
+        incomplete::transaction txi {
+            {incomplete::input {
+                outpoint {digest256 {uint256 {"0xaa00000000000000000000000000000000000000000000555555550707070707"}}, 0xcdcdcdcd},
+                0xfedcba09}}, {
+                output {1, pay_to_address::script (digest160 {uint160 {"0xbb00000000000000000000000000006565656575"}})},
+                output {2, pay_to_address::script (digest160 {uint160 {"0xcc00000000000000000000000000002929292985"}})}},
+            5};
+
+        incomplete::transaction txi_mutate_same_output = mutate_output (txi, input_index);
+        incomplete::transaction txi_mutate_different_output = mutate_output (txi, input_index + 1);
+        incomplete::transaction txi_added_input = add_input (txi);
+
+        sighash::document doc {txi, input_index, redeemed_value, scriptx};
+        sighash::document doc_mutate_same_output {txi_mutate_same_output, input_index, redeemed_value, scriptx};
+        sighash::document doc_mutate_different_output {txi_mutate_different_output, input_index, redeemed_value, scriptx};
+        sighash::document doc_changed_value = change_value (doc);
+        sighash::document doc_added_code_separator = add_code_separator (doc);
+        sighash::document doc_added_input {txi_added_input, input_index, redeemed_value, scriptx};
         
         for (sighash::directive directive : list<sighash::directive> {
             directive (sighash::all, false, false),
             directive (sighash::all, true, true),
             directive (sighash::none, true, false),
+            directive (sighash::none, true, true),
+            directive (sighash::single, false, false),
             directive (sighash::single, false, true)}) {
             
             auto written = sighash::write (doc, directive);
@@ -105,7 +109,7 @@ namespace Gigamonkey::Bitcoin {
             if (expect_can_mutate_corresponding_output (directive))
                 EXPECT_EQ (written, mutate_same_output);
             else EXPECT_NE (written, mutate_same_output);
-            
+
             if (expect_can_mutate_other_output (directive))
                 EXPECT_EQ (written, mutate_different_output) << "expect \n\t" << written << " to equal \n\t" << mutate_different_output;
             else EXPECT_NE (written, mutate_different_output);
@@ -158,30 +162,21 @@ namespace Gigamonkey::Bitcoin {
         auto t1_4 = compile (program {push_sig1, OP_DUP, OP_ROLL, push_sig1});
         auto t1 = compile (program {OP_DUP, OP_ROLL});
         
-        EXPECT_TRUE (interpreter::find_and_delete (t1_1, sig1p) == t1);
-        EXPECT_TRUE (interpreter::find_and_delete (t1_2, sig1p) == t1);
-        EXPECT_TRUE (interpreter::find_and_delete (t1_3, sig1p) == t1);
-        EXPECT_TRUE (interpreter::find_and_delete (t1_4, sig1p) == t1);
+        EXPECT_TRUE (find_and_delete (t1_1, sig1p) == t1);
+        EXPECT_TRUE (find_and_delete (t1_2, sig1p) == t1);
+        EXPECT_TRUE (find_and_delete (t1_3, sig1p) == t1);
+        EXPECT_TRUE (find_and_delete (t1_4, sig1p) == t1);
         
-        auto xsig1 = CScript (sig1);
-        auto xsig2 = CScript (sig2);
-        
-        auto x1_1 = CScript (t1_1.begin (), t1_1.end ());
-        auto x1_2 = CScript (t1_2.begin (), t1_2.end ());
-        auto x1_3 = CScript (t1_3.begin (), t1_3.end ());
-        auto x1_4 = CScript (t1_4.begin (), t1_4.end ());
-        auto x1 = CScript (t1.begin (), t1.end ());
-        
-        x1_1.FindAndDelete (xsig1);
-        x1_2.FindAndDelete (xsig1);
-        x1_3.FindAndDelete (xsig1);
-        x1_4.FindAndDelete (xsig1);
-        
-        EXPECT_TRUE (x1_1 == x1) << x1_1 << " vs " << x1;
-        EXPECT_TRUE (x1_2 == x1) << x1_2 << " vs " << x1;
-        EXPECT_TRUE (x1_3 == x1) << x1_3 << " vs " << x1;
-        EXPECT_TRUE (x1_4 == x1) << x1_4 << " vs " << x1;
-        
+    }
+
+    TEST (SignatureTest, TestFlags) {
+        // compressed pubkey
+        // strict encoding
+        // invalid sighash
+        // fork id
+        // DER
+        // low S
+        // null fail
     }
 
 }

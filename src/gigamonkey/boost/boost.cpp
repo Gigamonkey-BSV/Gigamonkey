@@ -1,6 +1,6 @@
 #include <gigamonkey/boost/boost.hpp>
 #include <gigamonkey/script/pattern.hpp>
-#include <data/encoding/halves.hpp>
+#include <data/arithmetic/halves.hpp>
 #include <gigamonkey/p2p/var_int.hpp>
 #include <iostream>
 
@@ -306,7 +306,7 @@ namespace Gigamonkey::Boost {
         if (t == Boost::invalid || !x.valid () || (!category_mask && x.Share.Bits)) return in;
         
         in = t == Boost::bounty ? 
-            input_script::bounty (signature, pubkey, x.Share.Nonce, x.Share.Timestamp, x.Share.ExtraNonce2, x.ExtraNonce1, Hash160(pubkey)) :
+            input_script::bounty (signature, pubkey, x.Share.Nonce, x.Share.Timestamp, x.Share.ExtraNonce2, x.ExtraNonce1, Hash160 (pubkey)) :
             input_script::contract (signature, pubkey, x.Share.Nonce, x.Share.Timestamp, x.Share.ExtraNonce2, x.ExtraNonce1);
         
         if (category_mask) in.GeneralPurposeBits = x.Share.Bits ? *x.Share.Bits : int32_little {0};
@@ -421,7 +421,7 @@ namespace Gigamonkey::Boost {
                 const incomplete::input &i, 
                 const prevout &prev) -> input {
                 return input {i.Reference, input_script {
-                    sk.sign (sighash::document {prev.Value, script, incomplete, index++}, directive (sighash::all)),
+                    sk.sign (sighash::document {incomplete, index++, prev.Value, script}, directive (sighash::all)),
                 pk, solution, boost_type, category_mask}.write (), i.Sequence};
             }, incomplete_inputs, Prevouts.values ()), outs, 0});
         

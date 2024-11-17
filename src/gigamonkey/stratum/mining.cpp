@@ -19,7 +19,7 @@ namespace Gigamonkey::Stratum::mining {
             return encoding::hex::write (z, hex_case::lower);
         }
         
-        bool read(const JSON &j, uint256 &x) {
+        bool read (const JSON &j, uint256 &x) {
             if (!j.is_string ()) return false;
             string str (j);
             if (str.size () != 64) return false;
@@ -42,12 +42,12 @@ namespace Gigamonkey::Stratum::mining {
             return true;
         }
         
-        parameters write (const Merkle::digests& x) {
+        parameters write (const Merkle::digests &x) {
             parameters p;
             Merkle::digests n;
             p.resize (x.size ());
             for (auto it = p.rbegin (); it != p.rend (); ++it) {
-                *it = write (n.first ());
+                *it = write (*n.first ());
                 n = n.rest ();
             }
             return p;
@@ -64,7 +64,7 @@ namespace Gigamonkey::Stratum::mining {
             return true;
         }
         
-        encoding::hex::fixed<4> inline write (const int32_little& x) {
+        encoding::hex::fixed<4> inline write (const int32_little &x) {
             return encoding::hex::write (x, hex_case::lower);
         }
         
@@ -81,13 +81,13 @@ namespace Gigamonkey::Stratum::mining {
         }
         
         encoding::hex::fixed<4> inline write (const work::compact &x) {
-            return encoding::hex::write(uint32_big{static_cast<uint32_little>(x)}, hex_case::lower);
+            return encoding::hex::write (uint32_big {static_cast<uint32_little> (x)}, hex_case::lower);
         }
         
         bool read (const JSON &j, work::compact &x) {
-            if (!j.is_string()) return false;
-            string str(j);
-            if (str.size() != 8) return false;
+            if (!j.is_string ()) return false;
+            string str (j);
+            if (str.size () != 8) return false;
             maybe<bytes> b = encoding::hex::read (str);
             if (!bool (b)) return false;
             uint32_big n;
@@ -96,11 +96,11 @@ namespace Gigamonkey::Stratum::mining {
             return true;
         }
         
-        encoding::hex::fixed<4> inline write (const Bitcoin::timestamp& x) {
-            return encoding::hex::write (uint32_big {x}, hex_case::lower);
+        encoding::hex::fixed<4> inline write (const Bitcoin::timestamp &x) {
+            return encoding::hex::write (uint32_big {x.Value}, hex_case::lower);
         }
         
-        bool read(const JSON &j, Bitcoin::timestamp &x) {
+        bool read (const JSON &j, Bitcoin::timestamp &x) {
             if (!j.is_string ()) return false;
             string str (j);
             if (str.size () != 8) return false;

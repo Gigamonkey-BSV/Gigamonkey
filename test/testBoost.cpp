@@ -1,5 +1,5 @@
 #include <gigamonkey/boost/boost.hpp>
-#include <gigamonkey/script/machine.hpp>
+#include <gigamonkey/script/interpreter.hpp>
 #include <gigamonkey/address.hpp>
 #include <gigamonkey/wif.hpp>
 #include <gigamonkey/stratum/job.hpp>
@@ -13,7 +13,7 @@ struct scripts {
     data::bytes output_script;
 };
     
-std::ostream& operator << (std::ostream& o, scripts x) {
+std::ostream &operator << (std::ostream &o, scripts x) {
     return o << "{InputScript: " << x.input_script << ", OutputScript: " << x.output_script << "}";
 }
 
@@ -21,7 +21,7 @@ namespace Gigamonkey::Boost {
 
     template <typename f, typename X, typename Y>
     bool dot_cross (f foo, list<X> x, list<Y> y) {
-        if (x.size () != y.size()) return false;
+        if (x.size () != y.size ()) return false;
         if (x.size () == 0) return true;
         list<X> input = x;
         list<Y> expected = y;
@@ -30,8 +30,8 @@ namespace Gigamonkey::Boost {
             X in = input.first ();
             Y ex = uuu.first ();
             
-            if(!foo (in, ex)) return false;
-            
+            if (!foo (in, ex)) return false;
+
             uuu = uuu.rest ();
             
             while (!uuu.empty ()) {
@@ -49,14 +49,14 @@ namespace Gigamonkey::Boost {
     }
     
     template <typename X>
-    static bool test_orthogonal(list<X> a, list<X> b) {
-        return dot_cross ([](X a, X b) -> bool {
+    static bool test_orthogonal (list<X> a, list<X> b) {
+        return dot_cross ([] (X a, X b) -> bool {
             return a == b;
         }, a, b);
     }
     
     template <typename X>
-    static bool test_equal(list<X> a, list<X> b) {
+    static bool test_equal (list<X> a, list<X> b) {
         if (a.size () != b.size ()) return false;
         while (!a.empty ()) {
             if (a.first () != b.first ()) return false;
@@ -90,24 +90,24 @@ namespace Gigamonkey::Boost {
     
     class test_case {
         test_case (
-            const output_script& x, 
+            const output_script &x,
             Stratum::session_id n1, 
-            const bytes& n2, 
+            const bytes &n2,
             Bitcoin::timestamp start, 
             Bitcoin::secret key) : 
             Script {x}, ExtraNonce1 {n1}, ExtraNonce2 {n2}, Start {start}, Key {key}, Bits {} {}
             
         test_case (
-            const output_script& x, 
+            const output_script &x,
             Stratum::session_id n1, 
-            const bytes& n2, 
+            const bytes &n2,
             Bitcoin::timestamp start, 
             Bitcoin::secret key, 
             int32_little bits) : 
             Script {x}, ExtraNonce1 {n1}, ExtraNonce2 {n2}, Start {start}, Key {key}, Bits {bits} {}
         
         static test_case build (
-            const output_script& o, 
+            const output_script &o,
             Bitcoin::timestamp start, 
             Stratum::session_id n1, 
             uint64_big n2, uint64 key) {
@@ -120,11 +120,11 @@ namespace Gigamonkey::Boost {
         }
         
         static test_case build (Boost::type type,
-            const uint256& content, 
+            const uint256 &content,
             work::compact target, 
-            const bytes& tag, 
+            const bytes &tag,
             uint32_little user_nonce, 
-            const bytes& data, 
+            const bytes &data,
             Bitcoin::timestamp start, 
             Stratum::session_id n1,  
             uint64_big n2, 
@@ -143,17 +143,17 @@ namespace Gigamonkey::Boost {
         }
         
         static test_case build (Boost::type type,
-            const uint256& content, 
+            const uint256 &content,
             work::compact target, 
-            const bytes& tag, 
+            const bytes &tag,
             uint32_little user_nonce, 
-            const bytes& data, 
+            const bytes &data,
             int32_little bits, 
             Bitcoin::timestamp start, 
             Stratum::session_id n1, 
             uint64_big n2, 
             uint64 key) { 
-            Bitcoin::secret s (Bitcoin::secret::main, secp256k1::secret(uint256(key)));
+            Bitcoin::secret s (Bitcoin::secret::main, secp256k1::secret (uint256 (key)));
             digest160 address = Bitcoin::Hash160 (s.to_public ());
             
             output_script o = type == contract ? 
@@ -161,7 +161,7 @@ namespace Gigamonkey::Boost {
                 output_script::bounty (1, content, target, tag, user_nonce, data, true);
                 
             bytes extra_nonce_2 (8);
-            std::copy (n2.begin (), n2.end(), extra_nonce_2.begin ());
+            std::copy (n2.begin (), n2.end (), extra_nonce_2.begin ());
             
             return test_case (o, n1, extra_nonce_2, start, s, bits);
         }
@@ -226,6 +226,7 @@ namespace Gigamonkey::Boost {
         
         EXPECT_NE (ContentsA, ContentsB) << "ContentA and ContentB are equal. Contents must be different for negative tests.";
         
+        // very easy target.
         const work::compact Target {32, 0x0080ff};
             
         EXPECT_TRUE (Target.valid ()) << "Target is not valid. ";
@@ -270,7 +271,8 @@ namespace Gigamonkey::Boost {
             test_case { // contract v1
                 Boost::contract, 
                 ContentsA, 
-                Target, bytes_view (Tag),
+                Target,
+                bytes_view (Tag),
                 UserNonce + 1, 
                 AdditionalData, 
                 Start, 
@@ -280,7 +282,8 @@ namespace Gigamonkey::Boost {
             test_case { // bounty v1
                 Boost::bounty, 
                 ContentsB, 
-                Target, bytes_view (Tag),
+                Target,
+                bytes_view (Tag),
                 UserNonce + 2, 
                 AdditionalData,
                 Start, 
@@ -290,7 +293,8 @@ namespace Gigamonkey::Boost {
             test_case { // contract v1
                 Boost::contract, 
                 ContentsB, 
-                Target, bytes_view (Tag),
+                Target,
+                bytes_view (Tag),
                 UserNonce + 3, 
                 AdditionalData,
                 Start, 
@@ -312,7 +316,8 @@ namespace Gigamonkey::Boost {
             test_case { // contract v2
                 Boost::contract, 
                 ContentsA, 
-                Target, bytes_view (Tag),
+                Target,
+                bytes_view (Tag),
                 UserNonce + 1, 
                 AdditionalData, 
                 0xabcd,
@@ -323,7 +328,8 @@ namespace Gigamonkey::Boost {
             test_case { // bounty v2
                 Boost::bounty, 
                 ContentsB, 
-                Target, bytes_view (Tag),
+                Target,
+                bytes_view (Tag),
                 UserNonce + 2, 
                 AdditionalData,
                 0xabcd,
@@ -334,7 +340,8 @@ namespace Gigamonkey::Boost {
             test_case { // contract v2
                 Boost::contract, 
                 ContentsB, 
-                Target, bytes_view (Tag),
+                Target,
+                bytes_view (Tag),
                 UserNonce + 3, 
                 AdditionalData,
                 0xabcd,
@@ -342,8 +349,8 @@ namespace Gigamonkey::Boost {
                 97983, 
                 302203237,
                 InitialKey + 8};
-                
-        // Phase 1: Test whether all the different representations of puzzles have the same values of valid/invalid. 
+
+        // Phase 1: generate solutions and check validity.
                 
         // Here is the list of output scripts. 
         const list<output_script> output_scripts = data::for_each ([] (const test_case t) -> output_script {
@@ -354,8 +361,7 @@ namespace Gigamonkey::Boost {
             return p.valid ();
         }, output_scripts);
         
-        // Phase 2: generate solutions and check validity. 
-        auto proofs = data::for_each ([] (const test_case t) -> work::proof {
+        list<work::proof> proofs = data::for_each ([] (const test_case t) -> work::proof {
             return t.solve ();
         }, test_cases);
         
@@ -372,7 +378,7 @@ namespace Gigamonkey::Boost {
             return input_script {Signature, t.Key.to_public (), i.Solution, t.Script.Type, bool (i.Solution.Share.Bits)};
         }, test_cases, proofs);
         
-        auto proofs_from_scripts = map_thread<work::proof> ([] (output_script o, input_script i) -> work::proof {
+        list<work::proof> proofs_from_scripts = map_thread<work::proof> ([] (output_script o, input_script i) -> work::proof {
             return static_cast<work::proof> (proof {o, i});
         }, output_scripts, input_scripts);
         
@@ -408,7 +414,7 @@ namespace Gigamonkey::Boost {
         list<scripts> list_of_scripts = map_thread<scripts> ([] (const bytes in, const bytes out) -> scripts {
             return scripts {in, out};
         }, serialized_input_scripts, serialized_output_scripts);
-        
+
         bool check_scripts = dot_cross ([] (bytes_view in, bytes_view out) {
             return Bitcoin::evaluate (in, out);
         }, serialized_input_scripts.rest (), serialized_output_scripts.rest ());
@@ -570,7 +576,7 @@ namespace Gigamonkey::Boost {
         
         // the inputs for the boost input (unlocking) script. 
         encoding::hex::string given_signature {"300602010a02010b41"};
-        encoding::hex::string given_miner_pubkey{"020000000000000000000000000000000000000000000000000000000000000007"};
+        encoding::hex::string given_miner_pubkey {"020000000000000000000000000000000000000000000000000000000000000007"};
         encoding::hex::string given_nonce_v1 {"f8fc1600"};
         encoding::hex::string given_nonce_v2{"04670400"};
         encoding::hex::string given_extra_nonce_1 {"02000000"};

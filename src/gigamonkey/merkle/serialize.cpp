@@ -1,13 +1,13 @@
-#include<gigamonkey/merkle/serialize.hpp>
+#include <gigamonkey/merkle/serialize.hpp>
 
-namespace Gigamonkey::BitcoinAssociation {
+namespace Gigamonkey {
     
     digest256 inline read_digest (const string &x) {
         return digest256 {string {"0x"} + x};
     }
 
-    string inline write_digest (const digest256 &x) {
-        return write_backwards_hex (x);
+    std::string inline write_digest (const digest256 &x) {
+        return write_reverse_hex (x);
     }
     
     Bitcoin::header read_header (const string &x) {
@@ -20,44 +20,27 @@ namespace Gigamonkey::BitcoinAssociation {
         return encoding::hex::write (h.write ());
     }
     
-    Merkle::digests read_path (const JSON::array_t &j, Merkle::leaf l) {
+    Merkle::digests read_path (const JSON::array_t &j) {
         Merkle::digests d;
 
-        for (const JSON &n : j) {
-            digest256 next = (n == "*" ? l.Digest : read_digest (n));
-            d = d << next;
-            l = l.next (next);
-        }
+        for (const JSON &n : j) d = d << (n == "*" ? maybe<digest256> {} : maybe<digest256> {read_digest (n)});
 
         return data::reverse (d);
-    }
-    
-    list<maybe<digest256>> generate_path (Merkle::branch b) {
-        list<maybe<digest256>> l;
-
-        while (b.Digests.size () > 0) {
-            if (b.Leaf.Digest == b.Digests.first ()) l = l << maybe<digest256> {};
-            else l = l << maybe<digest256> {b.Digests.first ()};
-            b = b.rest ();
-        }
-
-        return l;
     }
     
     JSON write_path (Merkle::branch b) {
         JSON::array_t nodes (b.Digests.size ());
 
         for (JSON& j : nodes) {
-            if (b.Leaf.Digest == b.Digests.first ()) j = "*";
-            else j = write_digest (b.Digests.first ());
-            b = b.rest();
+            j = bool (b.Digests.first ()) ? write_digest (*b.Digests.first ()) : std::string {"*"};
+            b = b.rest ();
         }
 
         return nodes;
     }
     
     bool proofs_serialization_standard::valid () const {
-        if ((bool (Transaction) && bool (Txid)) || (!bool (Transaction) && !bool (Txid))) return false;
+        if ((bool (Transaction) && bool (TXID)) || (!bool (Transaction) && !bool (TXID))) return false;
         if (bool (BlockHash)) return !bool (BlockHeader) && !bool (MerkleRoot);
         if (bool (BlockHeader)) return !bool (BlockHash) && !bool (MerkleRoot);
         if (bool (MerkleRoot)) return !bool (BlockHeader) && !bool (BlockHash);
@@ -104,8 +87,8 @@ namespace Gigamonkey::BitcoinAssociation {
         j["index"] = Path.Index;
         j["nodes"] = write_path (branch ());
         
-        if (bool (Txid)) {
-            j["txOrId"] = write_digest (*Txid);
+        if (bool (TXID)) {
+            j["txOrId"] = write_digest (*TXID);
         } else {
             j["txOrId"] = encoding::hex::write (*Transaction);
         }
@@ -139,13 +122,13 @@ namespace Gigamonkey::BitcoinAssociation {
         proofs_serialization_standard x;
         if (!proofs_serialization_standard::valid (j)) return {};
         
-        if (string (j["txOrId"]).size () == 64) x.Txid = read_digest (j["txOrId"]);
+        if (string (j["txOrId"]).size () == 64) x.TXID = read_digest (j["txOrId"]);
         // we know this is ok because we checked valid earlier.
         else x.Transaction = *encoding::hex::read (string (j["txOrId"]));
         
         x.Path.Index = j["index"];
 
-        x.Path.Digests = read_path (j["nodes"], x.leaf ());
+        x.Path.Digests = read_path (j["nodes"]);
         
         if (!j.contains ("targetType")) {
             x.BlockHash = read_digest (j["target"]);
@@ -178,20 +161,19 @@ namespace Gigamonkey::BitcoinAssociation {
         return r;
     }
     
-    reader &read_path (reader &r, digest256 leaf, Merkle::path &p) {
+    reader &read_path (reader &r, Merkle::digests &p) {
 
         Bitcoin::var_int size; 
         r >> size;
         Merkle::digests d;
-        Merkle::leaf l {leaf, p.Index};
+
         for (int i = 0; i < size; i++) {
-            maybe<digest256> Next;
-            r = read_node (r, Next);
-            digest256& next = bool (Next) ? *Next : l.Digest;
+            maybe<digest256> next;
+            r = read_node (r, next);
             d = d << next;
-            l = l.next (next);
         }
-        p.Digests = data::reverse (d);
+
+        p = data::reverse (d);
         return r;
     }
     
@@ -200,7 +182,7 @@ namespace Gigamonkey::BitcoinAssociation {
             proofs_serialization_standard x;
             
             byte flags;
-            bytes_reader r {b.data (), b.data () + b.size ()};
+            iterator_reader r {b.data (), b.data () + b.size ()};
             Bitcoin::var_int index; 
             r >> flags >> index;
             x.Path.Index = index;
@@ -209,9 +191,9 @@ namespace Gigamonkey::BitcoinAssociation {
                 bytes tx;
                 read_transaction (r, tx);
             } else {
-                Bitcoin::txid t;
+                Bitcoin::TXID t;
                 r >> t;
-                x.Txid = t;
+                x.TXID = t;
             }
 
             switch (target_type (flags)) {
@@ -238,7 +220,7 @@ namespace Gigamonkey::BitcoinAssociation {
                 }
             }
             
-            read_path (r, x.txid (), x.Path);
+            read_path (r, x.Path.Digests);
             return x;
         } catch (...) {}
         return {};
@@ -261,7 +243,7 @@ namespace Gigamonkey::BitcoinAssociation {
         return w;
     }
     
-    writer inline &write_txid (writer &w, const Bitcoin::txid &t) {
+    writer inline &write_txid (writer &w, const Bitcoin::TXID &t) {
         return w << t;
     }
     
@@ -273,8 +255,7 @@ namespace Gigamonkey::BitcoinAssociation {
         bool tx_included = transaction_included ();
         auto tt = target_type ();
         
-        // we need to pre-generate some data for the path. 
-        auto path = generate_path (branch ());
+        auto path = branch ().Digests;
         
         // figure out the serialized size. 
         size_t size = 1 + 
@@ -289,11 +270,11 @@ namespace Gigamonkey::BitcoinAssociation {
         bytes b (size);
         
         // write flags and index. 
-        bytes_writer w {b.begin (), b.end ()};
+        iterator_writer w {b.begin (), b.end ()};
         w << flags() << Bitcoin::var_int {index ()};
         
         if (tx_included) write_transaction (w, *Transaction);
-        else write_txid (w, *Txid);
+        else write_txid (w, *TXID);
         
         if (tt == target_type_block_hash) write_txid (w, *BlockHash);
         else if (tt == target_type_Merkle_root) write_txid (w, *MerkleRoot);
@@ -318,12 +299,12 @@ namespace Gigamonkey::BitcoinAssociation {
         return target_type_invalid;
     }
     
-    proofs_serialization_standard::proofs_serialization_standard(
-        const Bitcoin::transaction& t, const Merkle::path& p, const digest256& hash, target_type_value v) {
+    proofs_serialization_standard::proofs_serialization_standard (
+        const Bitcoin::transaction &t, const Merkle::path &p, const digest256 &hash, target_type_value v) {
         if (v == target_type_block_hash) BlockHash = hash;
         else if (v == target_type_Merkle_root) MerkleRoot = hash;
         else return;
-        Transaction = bytes(t);
+        Transaction = bytes (t);
         Path = p;
     }
     
@@ -337,6 +318,24 @@ namespace Gigamonkey::BitcoinAssociation {
     maybe<Bitcoin::header> inline proofs_serialization_standard::block_header (const JSON &j) {
         if (j.contains ("targetType") && j["targetType"] == "header") return {read_header (j["target"])};
         return {};
+    }
+
+    // with an SPV database we can check all additional information
+    bool proofs_serialization_standard::validate (SPV::database &d) const {
+        if (!valid ()) return false;
+
+        Bitcoin::TXID txid = bool (Transaction) ? Bitcoin::transaction::id (*Transaction) : *TXID;
+
+        digest256 root = Path.derive_root (txid);
+
+        const data::entry<N, Bitcoin::header> *header = d.header (root);
+        if (header == nullptr) return false;
+
+        if (bool (MerkleRoot) && root != *MerkleRoot) return false;
+        if (bool (BlockHash) && header->Value.hash () != BlockHash) return false;
+        if (bool (BlockHeader) && header->Value != *BlockHeader) return false;
+
+        return root == header->Value.MerkleRoot;
     }
     
 }

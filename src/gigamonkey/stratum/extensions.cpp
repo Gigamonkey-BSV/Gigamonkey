@@ -17,7 +17,7 @@ namespace Gigamonkey::Stratum::extensions {
     maybe<configuration<version_rolling>> configuration<version_rolling>::read (const request &p) {
         auto m = p.contains ("mask");
         auto mbc = p.contains ("min-bit-count");
-        if (!bool(m) || !bool (mbc) || !mbc->is_number_unsigned ()) return {};
+        if (!bool (m) || !bool (mbc) || !mbc->is_number_unsigned ()) return {};
         auto mask = read_version_mask (*m);
         if (!mask) return {};
         return {{*mask, byte (*mbc)}};

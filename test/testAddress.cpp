@@ -8,9 +8,10 @@
 
 #include <gigamonkey/wif.hpp>
 #include <gigamonkey/p2p/checksum.hpp>
-#include <gigamonkey/script/machine.hpp>
+#include <gigamonkey/script/interpreter.hpp>
 #include <gigamonkey/script/pattern/pay_to_address.hpp>
 #include <gigamonkey/script/pattern/pay_to_pubkey.hpp>
+#include <gigamonkey/script/pattern/pay_to_script_hash.hpp>
 #include <gigamonkey/script/typed_data_bip_276.hpp>
 #include <data/crypto/NIST_DRBG.hpp>
 #include <data/encoding/hex.hpp>
@@ -18,91 +19,213 @@
 #include <iostream>
 
 namespace Gigamonkey::Bitcoin {
-    
-    TEST(AddressTest, TestAddresses) {
-        
-        // We start with a secret key. 
+
+    sighash::document inline add_script_code (const redemption_document &doc, bytes script_code) {
+        return sighash::document {doc.Transaction, doc.InputIndex, doc.RedeemedValue, script_code};
+    }
+
+    struct test_standard_scripts {
+
+        // We start with a secret key.
         secret key {secret::test, secp256k1::secret {uint256 {"0x00000000000000000000000000000000000000000000000000000000000101a7"}}};
-        
-        satoshi redeemed_value = 6767;
-        
-        EXPECT_TRUE (key.valid ());
-        
-        pubkey pubkey_compressed = key.to_public ().compress ();
-        pubkey pubkey_uncompressed = key.to_public ().decompress ();
-        
-        EXPECT_TRUE (pubkey_compressed.valid ());
-        EXPECT_TRUE (pubkey_uncompressed.valid ());
-        
-        EXPECT_EQ (pubkey_compressed, pubkey_uncompressed.compress ());
-        EXPECT_EQ (pubkey_uncompressed, pubkey_compressed.decompress ());
-        
-        // now we make four scripts. 
-        bytes script_p2pk_compressed = pay_to_pubkey::script (pubkey_compressed);
-        bytes script_p2pk_uncompressed = pay_to_pubkey::script (pubkey_uncompressed);
-        
-        digest160 pubkey_hash_compressed = Hash160 (pubkey_compressed);
-        digest160 pubkey_hash_uncompressed = Hash160 (pubkey_uncompressed);
-        
-        bytes script_p2pkh_compressed = pay_to_address::script (pubkey_hash_compressed);
-        bytes script_p2pkh_uncompressed = pay_to_address::script (pubkey_hash_uncompressed);
-        
-        redemption_document doc {redeemed_value,
-            incomplete::transaction {
-                transaction::LatestVersion, 
-                list<incomplete::input> {incomplete::input {outpoint {txid {307}, 7}}},
-                list<output> {}, 0}, 0};
-        
-        sighash::directive directive = sighash::all | sighash::fork_id;
-        
-        bytes redeem_p2pk_compressed = pay_to_pubkey::redeem (key.sign (doc.add_script_code (script_p2pk_compressed)));
-        bytes redeem_p2pk_uncompressed = pay_to_pubkey::redeem (key.sign (doc.add_script_code (script_p2pk_uncompressed)));
-        
-        bytes redeem_p2pkh_compressed = pay_to_address::redeem (
-            key.sign (doc.add_script_code (script_p2pkh_compressed)),
-            pubkey_compressed);
-        bytes redeem_p2pkh_uncompressed = pay_to_address::redeem (
-            key.sign (doc.add_script_code (script_p2pkh_uncompressed)),
-            pubkey_uncompressed);
-        
-        auto evaluate_p2pk_compressed = evaluate (redeem_p2pk_compressed, script_p2pk_compressed, doc);
-        auto evaluate_p2pk_uncompressed = evaluate (redeem_p2pk_uncompressed, script_p2pk_uncompressed, doc);
-        
-        auto evaluate_p2pkh_compressed = evaluate (redeem_p2pkh_compressed, script_p2pkh_compressed, doc);
-        auto evaluate_p2pkh_uncompressed = evaluate (redeem_p2pkh_uncompressed, script_p2pkh_uncompressed, doc);
-        
-        EXPECT_TRUE (evaluate_p2pk_compressed) << evaluate_p2pk_compressed;
-        EXPECT_TRUE (evaluate_p2pk_uncompressed) << evaluate_p2pk_uncompressed;
-        
-        EXPECT_TRUE (evaluate_p2pkh_compressed) << evaluate_p2pkh_compressed;
-        EXPECT_TRUE (evaluate_p2pkh_uncompressed) << evaluate_p2pkh_uncompressed;
-        
-        EXPECT_FALSE (evaluate (redeem_p2pk_uncompressed, script_p2pk_compressed, doc));
-        EXPECT_FALSE (evaluate (redeem_p2pk_compressed, script_p2pk_uncompressed, doc));
-        
-        EXPECT_FALSE (evaluate (redeem_p2pkh_uncompressed, script_p2pkh_compressed, doc));
-        EXPECT_FALSE (evaluate (redeem_p2pkh_compressed, script_p2pkh_uncompressed, doc));
-        
-        EXPECT_FALSE (evaluate (redeem_p2pkh_compressed, script_p2pk_compressed, doc));
-        EXPECT_FALSE (evaluate (redeem_p2pkh_uncompressed, script_p2pk_uncompressed, doc));
-        
-        EXPECT_FALSE (evaluate (redeem_p2pk_compressed, script_p2pkh_compressed, doc));
-        EXPECT_FALSE (evaluate (redeem_p2pk_uncompressed, script_p2pkh_uncompressed, doc));
-        
-        EXPECT_FALSE (evaluate (redeem_p2pkh_compressed, script_p2pk_uncompressed, doc));
-        EXPECT_FALSE (evaluate (redeem_p2pkh_uncompressed, script_p2pk_compressed, doc));
-        
-        EXPECT_FALSE (evaluate (redeem_p2pk_compressed, script_p2pkh_uncompressed, doc));
-        EXPECT_FALSE (evaluate (redeem_p2pk_uncompressed, script_p2pkh_compressed, doc));
-        
+
+        pubkey pubkey_compressed {key.to_public ().compress ()};
+        pubkey pubkey_uncompressed {key.to_public ().decompress ()};
+
+        satoshi redeemed_value {6767};
+
+        // now we make four scripts.
+        bytes script_p2pk_compressed {pay_to_pubkey::script (pubkey_compressed)};
+        bytes script_p2pk_uncompressed {pay_to_pubkey::script (pubkey_uncompressed)};
+
+        digest160 pubkey_hash_compressed {Hash160 (pubkey_compressed)};
+        digest160 pubkey_hash_uncompressed {Hash160 (pubkey_uncompressed)};
+
+        bytes script_p2pkh_compressed {pay_to_address::script (pubkey_hash_compressed)};
+        bytes script_p2pkh_uncompressed {pay_to_address::script (pubkey_hash_uncompressed)};
+
+        incomplete::transaction incomplete_tx {
+            transaction::LatestVersion,
+            list<incomplete::input> {incomplete::input {outpoint {Bitcoin::TXID {307}, 7}}},
+            list<output> {}, 0};
+
+        redemption_document doc {incomplete_tx, 0, redeemed_value};
+
+        sighash::directive fork_id {sighash::all | sighash::fork_id};
+        sighash::directive original {sighash::all};
+
+        bytes redeem_p2pk_compressed_fork_id {pay_to_pubkey::redeem (key.sign (add_script_code (doc, script_p2pk_compressed), fork_id))};
+        bytes redeem_p2pk_uncompressed_fork_id {pay_to_pubkey::redeem (key.sign (add_script_code (doc, script_p2pk_uncompressed), fork_id))};
+
+        bytes redeem_p2pk_compressed_original {pay_to_pubkey::redeem (key.sign (add_script_code (doc, script_p2pk_compressed), original))};
+        bytes redeem_p2pk_uncompressed_original {pay_to_pubkey::redeem (key.sign (add_script_code (doc, script_p2pk_uncompressed), original))};
+
+        bytes redeem_p2pkh_compressed_fork_id {pay_to_address::redeem (
+            key.sign (add_script_code (doc, script_p2pkh_compressed), fork_id),
+            pubkey_compressed)};
+
+        bytes redeem_p2pkh_uncompressed_fork_id {pay_to_address::redeem (
+            key.sign (add_script_code (doc, script_p2pkh_uncompressed), fork_id),
+            pubkey_uncompressed)};
+
+        bytes redeem_p2pkh_compressed_original {pay_to_address::redeem (
+            key.sign (add_script_code (doc, script_p2pkh_compressed), original),
+            pubkey_compressed)};
+
+        bytes redeem_p2pkh_uncompressed_original {pay_to_address::redeem (
+            key.sign (add_script_code (doc, script_p2pkh_uncompressed), original),
+            pubkey_uncompressed)};
+
+        test_standard_scripts () {}
+
+        void test_p2pk_and_p2pkh () {
+
+            EXPECT_TRUE (key.valid ());
+
+            EXPECT_TRUE (pubkey_compressed.valid ());
+            EXPECT_TRUE (pubkey_uncompressed.valid ());
+
+            EXPECT_EQ (pubkey_compressed, pubkey_uncompressed.compress ());
+            EXPECT_EQ (pubkey_uncompressed, pubkey_compressed.decompress ());
+
+            uint32 flag_original = SCRIPT_VERIFY_NONE;
+            uint32 flag_fork_id = SCRIPT_ENABLE_SIGHASH_FORKID;
+
+            // note: we need to use the right flags to support the original signature algorithm.
+            auto evaluate_p2pk_compressed_fork_id = evaluate (redeem_p2pk_compressed_fork_id,
+                script_p2pk_compressed, doc, flag_fork_id);
+
+            auto evaluate_p2pk_uncompressed_fork_id = evaluate (redeem_p2pk_uncompressed_fork_id,
+                script_p2pk_uncompressed, doc, flag_fork_id);
+
+            auto evaluate_p2pkh_compressed_fork_id = evaluate (redeem_p2pkh_compressed_fork_id,
+                script_p2pkh_compressed, doc, flag_fork_id);
+
+            auto evaluate_p2pkh_uncompressed_fork_id = evaluate (redeem_p2pkh_uncompressed_fork_id,
+                script_p2pkh_uncompressed, doc, flag_fork_id);
+
+            auto evaluate_p2pk_compressed_original = evaluate (redeem_p2pk_compressed_original,
+                script_p2pk_compressed, doc, flag_original);
+
+            auto evaluate_p2pk_uncompressed_original = evaluate (redeem_p2pk_uncompressed_original,
+                script_p2pk_uncompressed, doc, flag_original);
+
+            auto evaluate_p2pkh_compressed_original = evaluate (redeem_p2pkh_compressed_original,
+                script_p2pkh_compressed, doc, flag_original);
+
+            auto evaluate_p2pkh_uncompressed_original = evaluate (redeem_p2pkh_uncompressed_original,
+                script_p2pkh_uncompressed, doc, flag_original);
+
+            EXPECT_TRUE (evaluate_p2pk_compressed_fork_id) << evaluate_p2pk_compressed_fork_id;
+            EXPECT_TRUE (evaluate_p2pk_uncompressed_fork_id) << evaluate_p2pk_uncompressed_fork_id;
+
+            EXPECT_TRUE (evaluate_p2pkh_compressed_fork_id) << evaluate_p2pkh_compressed_fork_id;
+            EXPECT_TRUE (evaluate_p2pkh_uncompressed_fork_id) << evaluate_p2pkh_uncompressed_fork_id;
+
+            EXPECT_TRUE (evaluate_p2pk_compressed_original) << evaluate_p2pk_compressed_original;
+            EXPECT_TRUE (evaluate_p2pk_uncompressed_original) << evaluate_p2pk_uncompressed_original;
+
+            EXPECT_TRUE (evaluate_p2pkh_compressed_original) << evaluate_p2pkh_compressed_original;
+            EXPECT_TRUE (evaluate_p2pkh_uncompressed_original) << evaluate_p2pkh_uncompressed_original;
+
+            // these next four fail because the signature is incorrect
+            // due to the public key being included in the script code.
+            EXPECT_FALSE (evaluate (redeem_p2pk_uncompressed_fork_id, script_p2pk_compressed, doc, flag_fork_id));
+            EXPECT_FALSE (evaluate (redeem_p2pk_compressed_fork_id, script_p2pk_uncompressed, doc, flag_fork_id));
+
+            EXPECT_FALSE (evaluate (redeem_p2pk_uncompressed_original, script_p2pk_compressed, doc, flag_original));
+            EXPECT_FALSE (evaluate (redeem_p2pk_compressed_original, script_p2pk_uncompressed, doc, flag_original));
+
+            // these fail because the address is wrong.
+            EXPECT_FALSE (evaluate (redeem_p2pkh_uncompressed_fork_id, script_p2pkh_compressed, doc, flag_fork_id));
+            EXPECT_FALSE (evaluate (redeem_p2pkh_compressed_fork_id, script_p2pkh_uncompressed, doc, flag_fork_id));
+
+            EXPECT_FALSE (evaluate (redeem_p2pkh_uncompressed_original, script_p2pkh_compressed, doc, flag_original));
+            EXPECT_FALSE (evaluate (redeem_p2pkh_compressed_original, script_p2pkh_uncompressed, doc, flag_original));
+
+            EXPECT_FALSE (evaluate (redeem_p2pkh_compressed_fork_id, script_p2pk_compressed, doc, flag_fork_id));
+            EXPECT_FALSE (evaluate (redeem_p2pkh_uncompressed_fork_id, script_p2pk_uncompressed, doc, flag_fork_id));
+
+            EXPECT_FALSE (evaluate (redeem_p2pk_compressed_fork_id, script_p2pkh_compressed, doc, flag_fork_id));
+            EXPECT_FALSE (evaluate (redeem_p2pk_uncompressed_fork_id, script_p2pkh_uncompressed, doc, flag_fork_id));
+
+            EXPECT_FALSE (evaluate (redeem_p2pkh_compressed_fork_id, script_p2pk_uncompressed, doc, flag_fork_id));
+            EXPECT_FALSE (evaluate (redeem_p2pkh_uncompressed_fork_id, script_p2pk_compressed, doc, flag_fork_id));
+
+            EXPECT_FALSE (evaluate (redeem_p2pk_compressed_fork_id, script_p2pkh_uncompressed, doc, flag_fork_id));
+            EXPECT_FALSE (evaluate (redeem_p2pk_uncompressed_fork_id, script_p2pkh_compressed, doc, flag_fork_id));
+
+        }
+
+        void test_p2sh () {
+
+            digest160 p2pk_hash_compressed = Hash160 (script_p2pk_compressed);
+            digest160 p2pk_hash_uncompressed = Hash160 (script_p2pk_uncompressed);
+
+            digest160 p2pkh_hash_compressed = Hash160 (script_p2pkh_compressed);
+            digest160 p2pkh_hash_uncompressed = Hash160 (script_p2pkh_uncompressed);
+
+            bytes p2sh_p2pk_compressed = pay_to_script_hash::script (p2pk_hash_compressed);
+            bytes p2sh_p2pk_uncompressed = pay_to_script_hash::script (p2pk_hash_uncompressed);
+            bytes p2sh_p2pkh_compressed = pay_to_script_hash::script (p2pkh_hash_compressed);
+            bytes p2sh_p2pkh_uncompressed = pay_to_script_hash::script (p2pkh_hash_uncompressed);
+
+            // expect that these scripts are p2sh while the others are not.
+            EXPECT_TRUE (is_P2SH (p2sh_p2pk_compressed));
+            EXPECT_TRUE (is_P2SH (p2sh_p2pk_uncompressed));
+            EXPECT_TRUE (is_P2SH (p2sh_p2pkh_compressed));
+            EXPECT_TRUE (is_P2SH (p2sh_p2pkh_uncompressed));
+
+            EXPECT_FALSE (is_P2SH (script_p2pk_compressed));
+            EXPECT_FALSE (is_P2SH (script_p2pk_uncompressed));
+            EXPECT_FALSE (is_P2SH (script_p2pkh_compressed));
+            EXPECT_FALSE (is_P2SH (script_p2pkh_uncompressed));
+
+            // the redeem script is the same redeem script with the locking script added as push data.
+            bytes redeem_p2sh_p2pk_compressed_original = compile (decompile (redeem_p2pk_compressed_original) <<
+                push_data (script_p2pk_compressed));
+
+            bytes redeem_p2sh_p2pk_uncompressed_original = compile (decompile (redeem_p2pk_uncompressed_original) <<
+                push_data (script_p2pk_uncompressed));
+
+            bytes redeem_p2sh_p2pkh_compressed_original = compile (decompile (redeem_p2pkh_compressed_original) <<
+                push_data (script_p2pkh_compressed));
+
+            bytes redeem_p2sh_p2pkh_uncompressed_original = compile (decompile (redeem_p2pkh_uncompressed_original) <<
+                push_data (script_p2pkh_uncompressed));
+
+            uint32 flag_p2sh = SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_CLEANSTACK;
+            uint32 flag_no_p2sh = SCRIPT_VERIFY_CLEANSTACK;
+
+            EXPECT_TRUE (evaluate (redeem_p2sh_p2pk_compressed_original, p2sh_p2pk_compressed, flag_p2sh));
+            EXPECT_TRUE (evaluate (redeem_p2sh_p2pk_uncompressed_original, p2sh_p2pk_uncompressed, flag_p2sh));
+            EXPECT_TRUE (evaluate (redeem_p2sh_p2pkh_compressed_original, p2sh_p2pkh_compressed, flag_p2sh));
+            EXPECT_TRUE (evaluate (redeem_p2sh_p2pkh_uncompressed_original, p2sh_p2pkh_uncompressed, flag_p2sh));
+
+            // script should be invalid if the flag is not set.
+            EXPECT_FALSE (evaluate (redeem_p2sh_p2pk_compressed_original, p2sh_p2pk_compressed, flag_no_p2sh));
+            EXPECT_FALSE (evaluate (redeem_p2sh_p2pk_uncompressed_original, p2sh_p2pk_uncompressed, flag_no_p2sh));
+            EXPECT_FALSE (evaluate (redeem_p2sh_p2pkh_compressed_original, p2sh_p2pkh_compressed, flag_no_p2sh));
+            EXPECT_FALSE (evaluate (redeem_p2sh_p2pkh_uncompressed_original, p2sh_p2pkh_uncompressed, flag_no_p2sh));
+        }
+
+    };
+
+    TEST (AddressTest, TestAddresses) {
+        test_standard_scripts {}.test_p2pk_and_p2pkh ();
+    }
+
+    // use the address tests above to test P2SH
+    TEST (AddressTest, TestP2SH) {
+        test_standard_scripts {}.test_p2sh ();
     }
     
-    TEST(AddressTest, TestRecoverBase58) {
+    TEST (AddressTest, TestRecoverBase58) {
         
         ptr<crypto::entropy> entropy = std::static_pointer_cast<crypto::entropy> (std::make_shared<crypto::fixed_entropy> (
             bytes_view (bytes (string ("atehu=eSRCjt.r83085[934[498[35")))));
         
-        crypto::NIST::DRBG random {crypto::NIST::DRBG::HMAC, *entropy, bytes {}, 305};
+        crypto::NIST::DRBG random {crypto::NIST::DRBG::HMAC, {*entropy, bytes {}, 305}};
         
         digest160 pubkey_hash;
         

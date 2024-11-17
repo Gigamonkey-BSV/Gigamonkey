@@ -1,7 +1,7 @@
 // Copyright (c) 2021 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#include <gigamonkey/spv.hpp>
+#include <gigamonkey/timechain.hpp>
 #include <gigamonkey/script/pattern/pay_to_address.hpp>
 #include "gtest/gtest.h"
 #include <gigamonkey/boost/boost.hpp>
@@ -9,7 +9,7 @@
 namespace Gigamonkey::Bitcoin {
 
     // can result in stack smashing
-    TEST (TransactionTest, TestTransaction) {
+    TEST (TransactionTest, TestTransaction1) {
 
         string tx_hex = string {} +
         "0100000001DB78AC273A4113615B5FC2D5BC24904884988201A7DB977FEEE56F73F5BF718CB00000006A4730440220295348C95DBAA2E0CF67F2EDA2A442AFF7D6D8DCA2" + 
@@ -144,7 +144,7 @@ namespace Gigamonkey::Bitcoin {
         
         EXPECT_EQ (t.Outputs.size (), 110);
         
-        EXPECT_EQ (t.Locktime, 0);
+        EXPECT_EQ (t.LockTime, 0);
         
         EXPECT_EQ (t.serialized_size (), 7676);
         
@@ -152,5 +152,33 @@ namespace Gigamonkey::Bitcoin {
         
         EXPECT_EQ (bytes (t), *tx);
         
+    }
+
+    TEST (TransactionTest, TestTransaction2) {
+        std::string tx1_hex =
+            "0100000001cd4e4cac3c7b56920d1e7655e7e260d31f29d9a388d04910f1bbd72304a7902901"
+            "0000006b483045022100e75279a205a547c445719420aa3138bf14743e3f42618e5f86a19bde"
+            "14bb95f7022064777d34776b05d816daf1699493fcdf2ef5a5ab1ad710d9c97bfb5b8f7cef36"
+            "41210263e2dee22b1ddc5e11f6fab8bcd2378bdd19580d640501ea956ec0e786f93e76ffffff"
+            "ff013e660000000000001976a9146bfd5c7fbe21529d45803dbcf0c87dd3c71efbc288ac00000000";
+
+        std::string tx2_hex =
+            "0100000001ac4e164f5bc16746bb0868404292ac8318bbac3800e4aad13a014da427adce3e00"
+            "0000006a47304402203a61a2e931612b4bda08d541cfb980885173b8dcf64a3471238ae7abcd"
+            "368d6402204cbf24f04b9aa2256d8901f0ed97866603d2be8324c2bfb7a37bf8fc90edd5b441"
+            "210263e2dee22b1ddc5e11f6fab8bcd2378bdd19580d640501ea956ec0e786f93e76ffffffff"
+            "013c660000000000001976a9146bfd5c7fbe21529d45803dbcf0c87dd3c71efbc288ac00000000";
+
+        bytes tx1_bytes = *encoding::hex::read (tx1_hex);
+        bytes tx2_bytes = *encoding::hex::read (tx2_hex);
+
+        transaction tx1 {tx1_bytes};
+        transaction tx2 {tx2_bytes};
+
+        EXPECT_EQ (tx1.serialized_size (), tx1_bytes.size ());
+        EXPECT_EQ (tx2.serialized_size (), tx2_bytes.size ());
+
+        EXPECT_EQ (bytes (tx1), tx1_bytes);
+        EXPECT_EQ (bytes (tx2), tx2_bytes);
     }
 }

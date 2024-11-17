@@ -3,7 +3,7 @@
 
 #include <gigamonkey/schema/bip_39.hpp>
 #include <data/encoding/base58.hpp>
-#include <data/encoding/endian/endian.hpp>
+#include <data/arithmetic/endian.hpp>
 #include <data/io/unimplemented.hpp>
 #include <cryptopp/cryptlib.h>
 #include <cryptopp/hmac.h>
@@ -13,14 +13,13 @@
 #include <cryptopp/pwdbased.h>
 #include <boost/locale.hpp>
 
-
 namespace Gigamonkey::HD::BIP_39 {
-    char getBit (int index,bytes bitarray) {
-        return (bitarray[index/8] >> 7-(index & 0x7)) & 0x1;
+    char inline getBit (int index, bytes bitarray) {
+        return (bitarray[index/8] >> 7 - (index & 0x7)) & 0x1;
     }
 
-    void setBit (int index, int value,bytes& bitarray) {
-        bitarray[index/8] = bitarray[index/8] | (value  << 7-(index & 0x7));
+    void inline setBit (int index, int value, bytes &bitarray) {
+        bitarray[index/8] = bitarray[index/8] | (value  << 7 - (index & 0x7));
     }
     
     const cross<std::string> &getWordList (language lang) {
@@ -35,7 +34,7 @@ namespace Gigamonkey::HD::BIP_39 {
     }
     
     std::string getLangSplit (language lang) {
-        switch(lang) {
+        switch (lang) {
             case japanese:
                 return "\u3000";
             default:
@@ -57,19 +56,20 @@ namespace Gigamonkey::HD::BIP_39 {
         byte key[64];
 
         pbkdf2.DeriveKey (key, sizeof (key), 0, (const byte *) wordsBA2, words.length (), (const byte *) salt.data (), salt.length (), 2048);
-        seed seedObj (64);
-        std::copy (std::begin (key), std::end (key), seedObj.begin ());
-        return seedObj;
+        seed x (64);
+        std::copy (std::begin (key), std::end (key), x.begin ());
+        return x;
     }
 
     std::string generate (entropy ent, language lang) {
-        if (lang != english)
-            throw data::method::unimplemented ("Non English Language");
+        if (lang != english) throw data::method::unimplemented ("Non English Language");
+
         assert (ent.size () % 4 == 0);
         assert (ent.size () >= 16 && ent.size () <= 32);
+
         byte abDigest[CryptoPP::SHA256::DIGESTSIZE];
         CryptoPP::SHA256 ().CalculateDigest (abDigest, ent.data (), ent.size ());
-        int checksumLength = (ent.size () * 8) /32;
+        int checksumLength = (ent.size () * 8) / 32;
         byte checkByte = abDigest[0];
         byte mask = 1;
         mask = (1 << checksumLength) - 1;
@@ -83,12 +83,9 @@ namespace Gigamonkey::HD::BIP_39 {
             word_indices[i /11]+=getBit (i,ent) << (10 - (i % 11));
 
         cross<std::string> words_ret;
-        const cross<std::string>& wordList = getWordList (lang);
+        const cross<std::string> &wordList = getWordList (lang);
 
-        for(short word_indice : word_indices)
-        {
-            words_ret.emplace_back (wordList[word_indice]);
-        }
+        for (short word_index : word_indices) words_ret.emplace_back (wordList[word_index]);
 
         std::string output = "";
         for (std::string str : words_ret) output += str + getLangSplit (lang);
@@ -124,11 +121,12 @@ namespace Gigamonkey::HD::BIP_39 {
         int wordIndicesSize = wordIndices.size ();
         double numBits = ((wordIndices.size ()) * 11);
         bytes byteArray (std::ceil (numBits / 8));
-        for (int i = 0; i < numBits; i++)
-        {
+
+        for (int i = 0; i < numBits; i++) {
             bool bit = ((wordIndices[i/11]) & (1 << (10 - (i % 11))));
             setBit (i, bit, byteArray);
         }
+
         byte check = byteArray[byteArray.size () - 1];
         byte abDigest[CryptoPP::SHA256::DIGESTSIZE];
         CryptoPP::SHA256 ().CalculateDigest (abDigest, byteArray.data (), byteArray.size () - 1);

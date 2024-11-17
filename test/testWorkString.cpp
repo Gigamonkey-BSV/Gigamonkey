@@ -28,13 +28,13 @@ namespace Gigamonkey::Bitcoin {
         ASSERT_TRUE (bool (genesis_header_hex));
         
         digest256 genesis_hash = Hash256 (*genesis_header_hex);
-        
+
         EXPECT_EQ (genesis_hash, digest256 ("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
-        
+
         work::string work_string {slice<80> (genesis_header_hex->data ())};
-        
+
         Bitcoin::header header (slice<80> (genesis_header_hex->data ()));
-        
+
         EXPECT_EQ (work_string, work::string (header));
         
         byte_array<80> work_string_written = work_string.write ();
@@ -52,7 +52,7 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_TRUE (header.valid ());
         
     }
-    
+
     TEST (WorkStringTest, TestASICBoost) {
         
         int32 VERSIONBITS_IGNORE_MASK = 0xE0001FFFUL;
