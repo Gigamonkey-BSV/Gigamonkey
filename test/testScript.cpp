@@ -447,22 +447,22 @@ namespace Gigamonkey::Bitcoin {
         return test_program;
     }
 
-    void test_op_error (op Op, list<int> start, string explanation) {
+    void test_stack_op_error (op Op, list<int> start, string explanation) {
         error (evaluate (compile (stack_initialize (start)), bytes {Op}, 0), explanation);
     }
 
-    void test_op (op Op, list<int> start, list<int> expected, string explanation = "") {
+    void test_stack_op (op Op, list<int> start, list<int> expected, string explanation = "") {
         success (evaluate (compile (stack_initialize (start) << Op), compile (stack_equal (expected)), 0), explanation);
     }
 
     void test_pick_roll_error (list<int> start, string explanation) {
-        test_op_error (OP_PICK, start, explanation);
-        test_op_error (OP_ROLL, start, explanation);
+        test_stack_op_error (OP_PICK, start, explanation);
+        test_stack_op_error (OP_ROLL, start, explanation);
     }
 
     void test_pick_roll (list<int> start, list<int> expected_roll, list<int> expected_pick, string explanation) {
-        test_op (OP_PICK, start, expected_pick, explanation);
-        test_op (OP_ROLL, start, expected_roll, explanation);
+        test_stack_op (OP_PICK, start, expected_pick, explanation);
+        test_stack_op (OP_ROLL, start, expected_roll, explanation);
     }
 
     TEST (ScriptTest, TestPickRoll) {
@@ -480,43 +480,51 @@ namespace Gigamonkey::Bitcoin {
 
     TEST (ScriptTest, TestStackOps) {
 
-        test_op (OP_DROP, {3}, {}, "DROP");
-        test_op (OP_2DROP, {4, 5}, {}, "2DROP");
+        test_stack_op (OP_DROP, {3}, {}, "DROP");
+        test_stack_op (OP_2DROP, {4, 5}, {}, "2DROP");
 
-        test_op (OP_DUP, {0}, {0, 0}, "DUP 0");
-        test_op (OP_DUP, {1}, {1, 1}, "DUP 1");
-        test_op (OP_DUP, {2}, {2, 2}, "DUP 2");
+        test_stack_op (OP_DUP, {0}, {0, 0}, "DUP 0");
+        test_stack_op (OP_DUP, {1}, {1, 1}, "DUP 1");
+        test_stack_op (OP_DUP, {2}, {2, 2}, "DUP 2");
 
-        test_op (OP_IFDUP, {0}, {0}, "IFDUP 0");
-        test_op (OP_IFDUP, {1}, {1, 1}, "IFDUP 1");
-        test_op (OP_IFDUP, {2}, {2, 2}, "IFDUP 2");
+        test_stack_op (OP_IFDUP, {0}, {0}, "IFDUP 0");
+        test_stack_op (OP_IFDUP, {1}, {1, 1}, "IFDUP 1");
+        test_stack_op (OP_IFDUP, {2}, {2, 2}, "IFDUP 2");
 
-        test_op (OP_2DUP, {0, 1}, {0, 1, 0, 1}, "2DUP");
-        test_op (OP_3DUP, {0, 1, 2}, {0, 1, 2, 0, 1, 2});
+        test_stack_op (OP_2DUP, {0, 1}, {0, 1, 0, 1}, "2DUP");
+        test_stack_op (OP_3DUP, {0, 1, 2}, {0, 1, 2, 0, 1, 2});
 
-        test_op (OP_SWAP, {8, 9}, {9, 8});
-        test_op (OP_2SWAP, {10, 11, 12, 13}, {12, 13, 10, 11});
+        test_stack_op (OP_SWAP, {8, 9}, {9, 8});
+        test_stack_op (OP_2SWAP, {10, 11, 12, 13}, {12, 13, 10, 11});
 
-        test_op (OP_OVER, {-1, -2}, {-1, -2, -1});
-        test_op (OP_2OVER, {-1, -2, -3, -4}, {-1, -2, -3, -4, -1, -2});
+        test_stack_op (OP_OVER, {-1, -2}, {-1, -2, -1});
+        test_stack_op (OP_2OVER, {-1, -2, -3, -4}, {-1, -2, -3, -4, -1, -2});
 
-        test_op (OP_ROT, {1, 2, 3}, {2, 3, 1});
-        test_op (OP_2ROT, {1, 2, 3, 4, 5, 6}, {3, 4, 5, 6, 1, 2});
+        test_stack_op (OP_ROT, {1, 2, 3}, {2, 3, 1});
+        test_stack_op (OP_2ROT, {1, 2, 3, 4, 5, 6}, {3, 4, 5, 6, 1, 2});
 
-        test_op (OP_NIP, {1, 2}, {2});
-        test_op (OP_TUCK, {1, 2}, {2, 1, 2});
+        test_stack_op (OP_NIP, {1, 2}, {2});
+        test_stack_op (OP_TUCK, {1, 2}, {2, 1, 2});
+
+    }
+
+    void test_hash_op (op Op, bytes_view input, bytes_view result, bool expected = true) {
+        if (expected) success (evaluate (compile (push_data (input)), compile (program {Op, push_data (result), OP_EQUAL}), 0));
+        else failure (evaluate (compile (push_data (input)), compile (program {Op, push_data (result), OP_EQUAL}), 0));
+    }
+
+    TEST (ScriptTest, TestHashOps) {
+
+        test_hash_op (OP_SHA1, bytes {}, *encoding::hex::read ("da39a3ee5e6b4b0d3255bfef95601890afd80709"));
+        test_hash_op (OP_SHA256, bytes {}, *encoding::hex::read ("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"));
+
+        test_hash_op (OP_RIPEMD160, bytes {}, *encoding::hex::read ("9c1185a5c5e9fc54612808977ee8f548b2258d31"));
+
+        test_hash_op (OP_HASH160, bytes {}, crypto::RIPEMD_160 (crypto::SHA2_256 (bytes {})));
+        test_hash_op (OP_HASH256, bytes {}, crypto::SHA2_256 (crypto::SHA2_256 (bytes {})));
 
     }
 /*
-    TEST (ScriptTest, TestHashOps) {
-
-        OP_RIPEMD160
-        OP_SHA1
-        OP_SHA256
-        OP_HASH160
-        OP_HASH256
-    }
-
     TEST (ScriptTest, TestStringOps) {
 
         OP_CAT
@@ -588,7 +596,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     TEST (ScriptTest, TestOP_VER) {
-
+        OP_VER
     }
 
     TEST (ScriptTest, TestChecksig) {
@@ -604,13 +612,14 @@ namespace Gigamonkey::Bitcoin {
     }
 
     TEST (ScriptTest, TestControlOps) {
-        OP_VER
+
         OP_IF
         OP_NOTIF
         OP_VERIF
         OP_VERNOTIF
         OP_ELSE
         OP_ENDIF
+
     }*/
     
     bytes multisig_script (
