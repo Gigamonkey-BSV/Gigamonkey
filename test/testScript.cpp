@@ -204,6 +204,17 @@ namespace Gigamonkey::Bitcoin {
 
     TEST (ScriptTest, TestUnlockPushOnly) {
 
+        success (evaluate (bytes {}, bytes {OP_TRUE}, 0));
+        success (evaluate (bytes {}, bytes {OP_TRUE}, SCRIPT_VERIFY_SIGPUSHONLY));
+
+        success (evaluate (bytes {OP_TRUE}, bytes {}, 0));
+        success (evaluate (bytes {OP_TRUE}, bytes {}, SCRIPT_VERIFY_SIGPUSHONLY));
+
+        success (evaluate (bytes {OP_0, OP_0, OP_EQUAL}, bytes {}, 0));
+        error (evaluate (bytes {OP_0, OP_0, OP_EQUAL}, bytes {}, SCRIPT_VERIFY_SIGPUSHONLY));
+
+        success (evaluate (bytes {OP_0, OP_0}, bytes {OP_EQUAL}, 0));
+        success (evaluate (bytes {OP_0, OP_0}, bytes {OP_EQUAL}, SCRIPT_VERIFY_SIGPUSHONLY));
     }
 
     TEST (ScriptTest, TestInvalidStack) {
@@ -373,29 +384,41 @@ namespace Gigamonkey::Bitcoin {
 
     TEST (ScriptTest, TestOpcodes) {
 
+        // OP_NOP
         failure (evaluate (bytes {OP_NOP}, bytes {}, 0), "OP_NOP 1");
         success (evaluate (bytes {OP_1, OP_NOP}, bytes {}, 0), "OP_NOP 2");
         failure (evaluate (bytes {OP_0, OP_NOP}, bytes {}, 0), "OP_NOP 3");
 
+        // OP_VERIFY
         error (evaluate (bytes {OP_FALSE}, bytes {OP_VERIFY}, 0), "OP_VERIFY 1");
         failure (evaluate (bytes {OP_TRUE}, bytes {OP_VERIFY}, 0), "OP_VERIFY 2");
 
+        // OP_DEPTH
         failure (evaluate (bytes {}, bytes {OP_DEPTH}, 0), "OP DEPTH 1");
         success (evaluate (bytes {OP_FALSE}, bytes {OP_DEPTH}, 0), "OP DEPTH 2");
 
         // OP_EQUAL
-        // OP_EQUALVERIFY
+        success (evaluate (bytes {OP_FALSE, OP_FALSE}, bytes {OP_EQUAL}), "EQUAL 1");
+        failure (evaluate (bytes {OP_FALSE, OP_PUSHSIZE1, 0x00}, bytes {OP_EQUAL}, 0), "EQUAL 2");
 
+        // OP_EQUALVERIFY
+        failure (evaluate (bytes {OP_FALSE, OP_FALSE}, bytes {OP_EQUALVERIFY}, 0), "EQUALVERIFY 1");
+        error (evaluate (bytes {OP_FALSE, OP_TRUE}, bytes {OP_EQUALVERIFY}, 0), "EQUALVERIFY 2");
+        success (evaluate (bytes {OP_FALSE, OP_FALSE}, bytes {OP_EQUALVERIFY, OP_1}, SCRIPT_VERIFY_CLEANSTACK), "EQUALVERIFY 3");
+
+        // OP_SIZE
         success (evaluate (bytes {OP_0, OP_SIZE}, bytes {OP_0, OP_EQUAL}, 0));
         success (evaluate (bytes {OP_1, OP_SIZE}, bytes {OP_1, OP_EQUAL}, 0));
         success (evaluate (bytes {OP_16, OP_SIZE}, bytes {OP_1, OP_EQUAL}, 0));
         success (evaluate (bytes {OP_PUSHSIZE3, 0x11, 0x12, 0x13, OP_SIZE}, bytes {OP_3, OP_EQUAL}, 0));
     }
-/*
+
     TEST (ScriptTest, TestAltStack) {
-        OP_TOALTSTACK
-        OP_FROMALTSTACK
-    }*/
+        // OP_TOALTSTACK
+        failure (evaluate (bytes {OP_1}, bytes {OP_TOALTSTACK}, 0), "alt stack 1");
+        // OP_FROMALTSTACK
+        success (evaluate (bytes {OP_1}, bytes {OP_TOALTSTACK, OP_FROMALTSTACK}, 0), "alt stack 2");
+    }
 
     program stack_equal (list<int> stack) {
         list<instruction> test_program;
@@ -424,14 +447,22 @@ namespace Gigamonkey::Bitcoin {
         return test_program;
     }
 
+    void test_op_error (op Op, list<int> start, string explanation) {
+        error (evaluate (compile (stack_initialize (start)), bytes {Op}, 0), explanation);
+    }
+
+    void test_op (op Op, list<int> start, list<int> expected, string explanation = "") {
+        success (evaluate (compile (stack_initialize (start) << Op), compile (stack_equal (expected)), 0), explanation);
+    }
+
     void test_pick_roll_error (list<int> start, string explanation) {
-        error (evaluate (compile (stack_initialize (start)), bytes {OP_PICK}, 0), explanation);
-        error (evaluate (compile (stack_initialize (start)), bytes {OP_ROLL}, 0), explanation);
+        test_op_error (OP_PICK, start, explanation);
+        test_op_error (OP_ROLL, start, explanation);
     }
 
     void test_pick_roll (list<int> start, list<int> expected_roll, list<int> expected_pick, string explanation) {
-        success (evaluate (compile (stack_initialize (start) << OP_PICK), compile (stack_equal (expected_pick)), 0), explanation);
-        success (evaluate (compile (stack_initialize (start) << OP_ROLL), compile (stack_equal (expected_roll)), 0), explanation);
+        test_op (OP_PICK, start, expected_pick, explanation);
+        test_op (OP_ROLL, start, expected_roll, explanation);
     }
 
     TEST (ScriptTest, TestPickRoll) {
@@ -446,24 +477,44 @@ namespace Gigamonkey::Bitcoin {
         test_pick_roll ({17, 34, 12, 2}, {34, 12, 17}, {17, 34, 12, 17}, "success 2");
 
     }
-/*
+
     TEST (ScriptTest, TestStackOps) {
 
-        OP_DROP
-        OP_DUP
-        OP_NIP
-        OP_OVER
-        OP_ROT
-        OP_SWAP
-        OP_TUCK
+        test_op (OP_DROP, {3}, {}, "DROP");
+        test_op (OP_2DROP, {4, 5}, {}, "2DROP");
 
-        OP_2DROP
-        OP_2DUP
-        OP_3DUP
-        OP_2OVER
-        OP_2ROT
-        OP_2SWAP
+        test_op (OP_DUP, {0}, {0, 0}, "DUP 0");
+        test_op (OP_DUP, {1}, {1, 1}, "DUP 1");
+        test_op (OP_DUP, {2}, {2, 2}, "DUP 2");
 
+        test_op (OP_IFDUP, {0}, {0}, "IFDUP 0");
+        test_op (OP_IFDUP, {1}, {1, 1}, "IFDUP 1");
+        test_op (OP_IFDUP, {2}, {2, 2}, "IFDUP 2");
+
+        test_op (OP_2DUP, {0, 1}, {0, 1, 0, 1}, "2DUP");
+        test_op (OP_3DUP, {0, 1, 2}, {0, 1, 2, 0, 1, 2});
+
+        test_op (OP_SWAP, {8, 9}, {9, 8});
+        test_op (OP_2SWAP, {10, 11, 12, 13}, {12, 13, 10, 11});
+
+        test_op (OP_OVER, {-1, -2}, {-1, -2, -1});
+        test_op (OP_2OVER, {-1, -2, -3, -4}, {-1, -2, -3, -4, -1, -2});
+
+        test_op (OP_ROT, {1, 2, 3}, {2, 3, 1});
+        test_op (OP_2ROT, {1, 2, 3, 4, 5, 6}, {3, 4, 5, 6, 1, 2});
+
+        test_op (OP_NIP, {1, 2}, {2});
+        test_op (OP_TUCK, {1, 2}, {2, 1, 2});
+
+    }
+/*
+    TEST (ScriptTest, TestHashOps) {
+
+        OP_RIPEMD160
+        OP_SHA1
+        OP_SHA256
+        OP_HASH160
+        OP_HASH256
     }
 
     TEST (ScriptTest, TestStringOps) {
@@ -491,42 +542,39 @@ namespace Gigamonkey::Bitcoin {
         OP_BOOLOR
     }
 
-    TEST (ScriptTest, TestHashOps) {
+    TEST (ScriptTest, TestNumberEqual) {
 
-        OP_RIPEMD160
-        OP_SHA1
-        OP_SHA256
-        OP_HASH160
-        OP_HASH256
+        OP_NUMEQUAL
+        OP_NUMEQUALVERIFY
+        OP_NUMNOTEQUAL
+
     }
 
     TEST (ScriptTest, TestNumberOps) {
 
-        OP_1ADD = 0x8b,
-        OP_1SUB = 0x8c,
-        OP_2MUL = 0x8d,
-        OP_2DIV = 0x8e,
-        OP_NEGATE = 0x8f,
-        OP_ABS = 0x90,
-        OP_0NOTEQUAL = 0x92,
+        OP_1ADD
+        OP_1SUB
+        OP_2MUL
+        OP_2DIV
+        OP_NEGATE
+        OP_ABS
+        OP_0NOTEQUAL
 
-        OP_ADD = 0x93,
-        OP_SUB = 0x94,
+        OP_ADD
+        OP_SUB
         OP_MUL
-        OP_DIV = 0x96,
-        OP_MOD = 0x97,
+        OP_DIV
+        OP_MOD
 
-        OP_NUMEQUAL = 0x9c,
-        OP_NUMEQUALVERIFY = 0x9d,
-        OP_NUMNOTEQUAL
-        OP_LESSTHAN = 0x9f,
-        OP_GREATERTHAN = 0xa0,
-        OP_LESSTHANOREQUAL = 0xa1,
-        OP_GREATERTHANOREQUAL = 0xa2,
-        OP_MIN = 0xa3,
+        OP_LESSTHAN
+        OP_GREATERTHAN
+        OP_LESSTHANOREQUAL
+        OP_GREATERTHANOREQUAL
+        OP_MIN
         OP_MAX
 
-        OP_WITHIN = 0xa5,
+        OP_WITHIN
+
     }
 
     TEST (ScriptTest, TestBitShift) {
@@ -535,8 +583,8 @@ namespace Gigamonkey::Bitcoin {
     }
 
     TEST (ScriptTest, TestBin2Num2Bin) {
-        OP_NUM2BIN = 0x80, // after monolith upgrade (May 2018)
-        OP_BIN2NUM = 0x81, // after monolith upgrade (May 2018)
+        OP_NUM2BIN
+        OP_BIN2NUM
     }
 
     TEST (ScriptTest, TestOP_VER) {
@@ -563,7 +611,6 @@ namespace Gigamonkey::Bitcoin {
         OP_VERNOTIF
         OP_ELSE
         OP_ENDIF
-        OP_IFDUP
     }*/
     
     bytes multisig_script (

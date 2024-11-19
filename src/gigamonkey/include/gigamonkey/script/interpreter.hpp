@@ -10,6 +10,7 @@ namespace Gigamonkey::Bitcoin {
 
     // a Bitcoin script interpreter that can be advanced step-by-step.
     struct interpreter {
+
         machine Machine;
         bytes Script;
         program_counter Counter;
