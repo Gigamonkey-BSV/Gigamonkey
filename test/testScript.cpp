@@ -668,7 +668,16 @@ namespace Gigamonkey::Bitcoin {
         test_data_op (OP_LSHIFT, {{0xff}, {0x08}}, {{0x00}});
         test_data_op (OP_RSHIFT, {{0xff}, {0x08}}, {{0x00}});
 
-        // TODO
+        test_data_op (OP_LSHIFT, {{0xff, 0xff}, {}}, {{0xff, 0xff}});
+        test_data_op (OP_RSHIFT, {{0xff, 0xff}, {}}, {{0xff, 0xff}});
+        test_data_op (OP_LSHIFT, {{0xff, 0xff}, {0x01}}, {{0xff, 0xfe}});
+        test_data_op (OP_RSHIFT, {{0xff, 0xff}, {0x01}}, {{0x7f, 0xff}});
+        test_data_op (OP_LSHIFT, {{0xff, 0xff}, {0x02}}, {{0xff, 0xfc}});
+        test_data_op (OP_RSHIFT, {{0xff, 0xff}, {0x02}}, {{0x3f, 0xff}});
+        test_data_op (OP_LSHIFT, {{0xff, 0xff}, {0x04}}, {{0xff, 0xf0}});
+        test_data_op (OP_RSHIFT, {{0xff, 0xff}, {0x04}}, {{0x0f, 0xff}});
+        test_data_op (OP_LSHIFT, {{0xff, 0xff}, {0x08}}, {{0xff, 0x00}});
+        test_data_op (OP_RSHIFT, {{0xff, 0xff}, {0x08}}, {{0x00, 0xff}});
 
     }
 
@@ -725,22 +734,84 @@ namespace Gigamonkey::Bitcoin {
         test_data_op (OP_NUM2BIN, {{0xf0, 0x80}, {0x03}}, {{0xf0, 0x00, 0x80}});
 
     }
-/*
-    TEST (ScriptTest, TestNumberEqual) {
-
-        test_data_op (OP_NUMEQUAL);
-        test_data_op (OP_NUMEQUALVERIFY);
-        test_data_op (OP_NUMNOTEQUAL);
-
-    }
 
     TEST (ScriptTest, TestNumberCompare) {
 
-        test_data_op (OP_NUMEQUAL);
-        test_data_op (OP_NUMEQUALVERIFY);
-        test_data_op (OP_NUMNOTEQUAL);
+        // number representations organized in equal sets ordered from least to greatest.
+        list<list<bytes>> equals_test_cases {
+            {{0xf0, 0x80}, {0xf0, 0x00, 0x80}},
+            {{0x81}, {0x01, 0x80}, {0x01, 0x00, 0x80}},
+            {{}, {0x00}, {0x80}, {0x00, 0x00}, {0x00, 0x80}},
+            {{0x01}, {0x01, 0x00}, {0x01, 0x00, 0x00}},
+            {{0xf0, 0x00}, {0xf0, 0x00, 0x00}}};
+
+        while (data::size (equals_test_cases) > 0) {
+            list<bytes> current_set = data::first (equals_test_cases);
+            equals_test_cases = data::rest (equals_test_cases);
+
+            while (data::size (current_set) > 0) {
+                bytes left = data::first (current_set);
+                list<bytes> right_set = current_set;
+
+                current_set = data::rest (current_set);
+
+                while (data::size (right_set) > 0) {
+
+                    bytes right = data::first (right_set);
+                    right_set = data::rest (right_set);
+
+                    success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_NUMEQUAL}, 0));
+                    success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_NUMEQUAL}, 0));
+
+                    failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_NUMNOTEQUAL}, 0));
+                    failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_NUMNOTEQUAL}, 0));
+
+                    failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_LESSTHAN}, 0));
+                    failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_GREATERTHAN}, 0));
+                    failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_LESSTHAN}, 0));
+                    failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_GREATERTHAN}, 0));
+
+                    success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_LESSTHANOREQUAL}, 0));
+                    success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_GREATERTHANOREQUAL}, 0));
+                    success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_LESSTHANOREQUAL}, 0));
+                    success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_GREATERTHANOREQUAL}, 0));
+
+                }
+
+                auto right_sets = equals_test_cases;
+                while (data::size (right_sets) > 0) {
+                    right_set = data::first (right_sets);
+                    right_sets = data::rest (right_sets);
+
+                    while (data::size (right_set) > 0) {
+                        bytes right = data::first (right_set);
+                        right_set = data::rest (right_set);
+
+                        failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_NUMEQUAL}, 0));
+                        failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_NUMEQUAL}, 0));
+
+                        success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_NUMNOTEQUAL}, 0));
+                        success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_NUMNOTEQUAL}, 0));
+
+                        success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_LESSTHAN}, 0));
+                        failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_GREATERTHAN}, 0));
+                        failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_LESSTHAN}, 0));
+                        success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_GREATERTHAN}, 0));
+
+                        success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_LESSTHANOREQUAL}, 0));
+                        failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_GREATERTHANOREQUAL}, 0));
+                        failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_LESSTHANOREQUAL}, 0));
+                        success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_GREATERTHANOREQUAL}, 0));
+
+                    }
+                }
+            }
+        }
+
+        // test_data_op (OP_WITHIN);
 
     }
+/*
 
     TEST (ScriptTest, TestNumberOps) {
 
@@ -758,29 +829,19 @@ namespace Gigamonkey::Bitcoin {
         test_data_op (OP_DIV);
         test_data_op (OP_MOD);
 
-        test_data_op (OP_LESSTHAN);
-        test_data_op (OP_GREATERTHAN);
-        test_data_op (OP_LESSTHANOREQUAL);
-        test_data_op (OP_GREATERTHANOREQUAL);
-        test_data_op (OP_MIN);
-        test_data_op (OP_MAX);
-
-        test_data_op (OP_WITHIN);
-
     }*/
 /*
+    // TODO
+    TEST (ScriptTest, TestChecksig) {
+
+    }
+
     TEST (ScriptTest, TestSignatureNULLFAIL) {
         // TODO
     }
 
     TEST (ScriptTest, TestSignatureCompressedPubkey) {
         // TODO
-    }
-
-    // TODO
-
-    TEST (ScriptTest, TestChecksig) {
-
     }
 
     TEST (ScriptTest, TestCodeSeparator) {
@@ -878,6 +939,14 @@ namespace Gigamonkey::Bitcoin {
         
     }
 /*
+    TEST (ScriptTest, TestVerify) {
+
+        test_data_op (OP_NUMEQUALVERIFY);
+        test_data_op (OP_CHECKSIGVERIFY);
+        test_data_op (OP_CHECKMULTISIGVERIFY);
+
+    }
+
     TEST (ScriptTest, TestOP_VER) {
         OP_VER
     }
