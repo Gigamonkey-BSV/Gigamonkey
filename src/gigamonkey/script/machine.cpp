@@ -1034,9 +1034,9 @@ namespace Gigamonkey::Bitcoin {
                 Stack->push_back (n2);
             } break;
 
-            //
-            // Conversion operations
-            //
+            // Extend a number to a certain size.
+            // (shrinking numbers is not allowed, even if they
+            // are not minimally encoded -- use OP_BIN2NUM first)
             case OP_NUM2BIN: {
                 // (in size -- out)
                 if (Stack->size () < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
@@ -1053,17 +1053,13 @@ namespace Gigamonkey::Bitcoin {
                 Stack->pop_back ();
 
                 Stack->modify_top ([size] (bytes &rawnum) {
-                    auto min_size = arithmetic::minimal_size<endian::little, arithmetic::complement::twos, byte> (rawnum);
-
-                    // Try to see if we can fit that number in the number of
-                    // byte requested.
-                    if (min_size > size) throw script_exception {SCRIPT_ERR_IMPOSSIBLE_ENCODING};
-
+                    if (rawnum.size () > size) throw script_exception {SCRIPT_ERR_IMPOSSIBLE_ENCODING};
                     arithmetic::extend<endian::little, arithmetic::complement::twos, byte> (rawnum, size);
                 });
 
             } break;
 
+            // trim a number to its minimal representation.
             case OP_BIN2NUM: {
 
                 // (in -- out)

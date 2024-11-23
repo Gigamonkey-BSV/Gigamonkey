@@ -8,6 +8,7 @@
 /** Script opcodes */
 enum opcodetype : unsigned char {
     // push value
+
     OP_0 = 0x00,
     OP_FALSE = OP_0,
     
@@ -75,13 +76,26 @@ enum opcodetype : unsigned char {
     OP_TUCK = 0x7d,
 
     // splice ops
+
+    // concatinate 2 strings.
     OP_CAT = 0x7e,
-    OP_SPLIT = 0x7f,   // after monolith upgrade (May 2018)
-    OP_NUM2BIN = 0x80, // after monolith upgrade (May 2018)
-    OP_BIN2NUM = 0x81, // after monolith upgrade (May 2018)
+
+    // after monolith upgrade (May 2018)
+    OP_SPLIT = 0x7f,
+
+    // after monolith upgrade (May 2018)
+    // extend a number to be represented by a string of a larger size (or keep it the same)
+    OP_NUM2BIN = 0x80,
+
+    // after monolith upgrade (May 2018)
+    // trim a number to its minimal representation.
+    OP_BIN2NUM = 0x81,
+
+    // the size of the top string on the stack.
     OP_SIZE = 0x82,
 
     // bit logic
+
     OP_INVERT = 0x83,
     OP_AND = 0x84,
     OP_OR = 0x85,
@@ -93,6 +107,7 @@ enum opcodetype : unsigned char {
     OP_RESERVED2 = 0x8a,
 
     // numeric
+
     OP_1ADD = 0x8b,
     OP_1SUB = 0x8c,
     OP_2MUL = 0x8d,
@@ -125,6 +140,7 @@ enum opcodetype : unsigned char {
     OP_WITHIN = 0xa5,
 
     // crypto
+
     OP_RIPEMD160 = 0xa6,
     OP_SHA1 = 0xa7,
     OP_SHA256 = 0xa8,
@@ -137,6 +153,7 @@ enum opcodetype : unsigned char {
     OP_CHECKMULTISIGVERIFY = 0xaf,
 
     // expansion
+
     OP_NOP1 = 0xb0,
     OP_CHECKLOCKTIMEVERIFY = 0xb1,
     OP_NOP2 = OP_CHECKLOCKTIMEVERIFY,

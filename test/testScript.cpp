@@ -74,6 +74,7 @@ namespace Gigamonkey::Bitcoin {
     // There's an option having to do with malleability which says that the
     // stack has to have one element at the end or else it's an error.
     TEST (ScriptTest, TestCleanStack) {
+
         success (evaluate (bytes {}, bytes {OP_1}, SCRIPT_VERIFY_CLEANSTACK), "Clean stack 1");
         success (evaluate (bytes {}, bytes {OP_2}, SCRIPT_VERIFY_CLEANSTACK), "Clean stack 2");
         success (evaluate (bytes {}, bytes {OP_3}, SCRIPT_VERIFY_CLEANSTACK), "Clean stack 3");
@@ -162,6 +163,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     TEST (ScriptTest, TestPush) {
+
         error (evaluate (bytes {}, bytes {}), "empty script");
 
         success (evaluate (bytes {OP_TRUE}, bytes {}, 0), "OP_TRUE");
@@ -215,6 +217,7 @@ namespace Gigamonkey::Bitcoin {
 
         success (evaluate (bytes {OP_0, OP_0}, bytes {OP_EQUAL}, 0));
         success (evaluate (bytes {OP_0, OP_0}, bytes {OP_EQUAL}, SCRIPT_VERIFY_SIGPUSHONLY));
+
     }
 
     TEST (ScriptTest, TestInvalidStack) {
@@ -358,6 +361,7 @@ namespace Gigamonkey::Bitcoin {
         error (evaluate (bytes {OP_1}, bytes {OP_MAX}, 0), "OP_MAX 2");
 
         error (evaluate (bytes {OP_2}, bytes {OP_WITHIN}, 0));
+        error (evaluate (bytes {OP_8}, bytes {OP_NUM2BIN}, 0));
 
         error (evaluate (bytes {OP_6}, bytes {OP_CHECKSIG}, 0));
         error (evaluate (bytes {OP_7}, bytes {OP_CHECKSIGVERIFY}, 0));
@@ -371,6 +375,7 @@ namespace Gigamonkey::Bitcoin {
         error (evaluate (bytes {OP_16, OP_0}, bytes {OP_2ROT}, 0));
         error (evaluate (bytes {OP_1, OP_2}, bytes {OP_2SWAP}, 0));
         error (evaluate (bytes {OP_3, OP_4}, bytes {OP_WITHIN}, 0), "OP_WITHIN 3");
+        //error (evaluate (bytes {OP_6, OP_7}, bytes {OP_SUBSTR}, 0), "OP_SUBSTR 3");
 
         // at least 4
         error (evaluate (bytes {OP_5, OP_6, OP_7}, bytes {OP_2OVER}, 0));
@@ -380,6 +385,7 @@ namespace Gigamonkey::Bitcoin {
         // at least 6
         error (evaluate (bytes {OP_14, OP_15, OP_16, OP_0}, bytes {OP_2ROT}, 0));
         error (evaluate (bytes {OP_1, OP_2, OP_3, OP_4, OP_5}, bytes {OP_2ROT}, 0));
+
     }
 
     TEST (ScriptTest, TestOpcodes) {
@@ -411,6 +417,7 @@ namespace Gigamonkey::Bitcoin {
         success (evaluate (bytes {OP_1, OP_SIZE}, bytes {OP_1, OP_EQUAL}, 0));
         success (evaluate (bytes {OP_16, OP_SIZE}, bytes {OP_1, OP_EQUAL}, 0));
         success (evaluate (bytes {OP_PUSHSIZE3, 0x11, 0x12, 0x13, OP_SIZE}, bytes {OP_3, OP_EQUAL}, 0));
+
     }
 
     TEST (ScriptTest, TestAltStack) {
@@ -420,9 +427,10 @@ namespace Gigamonkey::Bitcoin {
         success (evaluate (bytes {OP_1}, bytes {OP_TOALTSTACK, OP_FROMALTSTACK}, 0), "alt stack 2");
     }
 
-    program stack_equal (list<int> stack) {
+    template <typename X>
+    program stack_equal (list<X> stack) {
         list<instruction> test_program;
-        for (const int &b : reverse (stack)) {
+        for (const X &b : reverse (stack)) {
             test_program <<= push_data (b);
             test_program <<= OP_EQUALVERIFY;
         }
@@ -434,35 +442,31 @@ namespace Gigamonkey::Bitcoin {
         return test_program;
     }
 
-    // if the redemption document is not provided, all signature operations will succeed.
-    result inline evaluate_step (const script &unlock, const script &lock, const script_config &conf) {
-        interpreter i (unlock, lock, conf);
-        step_through (i);
-        return false;
-    }
-
-    program stack_initialize (list<int> stack) {
+    template <typename X>
+    program stack_initialize (list<X> stack) {
         list<instruction> test_program;
-        for (const int &b : stack) test_program <<= push_data (b);
+        for (const X &b : stack) test_program <<= push_data (b);
         return test_program;
     }
 
-    void test_stack_op_error (op Op, list<int> start, string explanation) {
-        error (evaluate (compile (stack_initialize (start)), bytes {Op}, 0), explanation);
+    template <typename X>
+    void test_op_error (op Op, list<X> start, string explanation) {
+        error (evaluate (compile (stack_initialize<X> (start)), bytes {Op}, 0), explanation);
     }
 
-    void test_stack_op (op Op, list<int> start, list<int> expected, string explanation = "") {
-        success (evaluate (compile (stack_initialize (start) << Op), compile (stack_equal (expected)), 0), explanation);
+    template <typename X>
+    void test_op (op Op, list<X> start, list<X> expected, string explanation = "") {
+        success (evaluate (compile (stack_initialize<X> (start) << Op), compile (stack_equal<X> (expected)), 0), explanation);
     }
 
     void test_pick_roll_error (list<int> start, string explanation) {
-        test_stack_op_error (OP_PICK, start, explanation);
-        test_stack_op_error (OP_ROLL, start, explanation);
+        test_op_error<int> (OP_PICK, start, explanation);
+        test_op_error<int> (OP_ROLL, start, explanation);
     }
 
     void test_pick_roll (list<int> start, list<int> expected_roll, list<int> expected_pick, string explanation) {
-        test_stack_op (OP_PICK, start, expected_pick, explanation);
-        test_stack_op (OP_ROLL, start, expected_roll, explanation);
+        test_op<int> (OP_PICK, start, expected_pick, explanation);
+        test_op<int> (OP_ROLL, start, expected_roll, explanation);
     }
 
     TEST (ScriptTest, TestPickRoll) {
@@ -478,6 +482,10 @@ namespace Gigamonkey::Bitcoin {
 
     }
 
+    auto test_stack_op_error = &test_op<int>;
+
+    auto test_stack_op = &test_op<int>;
+
     TEST (ScriptTest, TestStackOps) {
 
         test_stack_op (OP_DROP, {3}, {}, "DROP");
@@ -492,19 +500,19 @@ namespace Gigamonkey::Bitcoin {
         test_stack_op (OP_IFDUP, {2}, {2, 2}, "IFDUP 2");
 
         test_stack_op (OP_2DUP, {0, 1}, {0, 1, 0, 1}, "2DUP");
-        test_stack_op (OP_3DUP, {0, 1, 2}, {0, 1, 2, 0, 1, 2});
+        test_stack_op (OP_3DUP, {0, 1, 2}, {0, 1, 2, 0, 1, 2}, "3DUP");
 
-        test_stack_op (OP_SWAP, {8, 9}, {9, 8});
-        test_stack_op (OP_2SWAP, {10, 11, 12, 13}, {12, 13, 10, 11});
+        test_stack_op (OP_SWAP, {8, 9}, {9, 8}, "SWAP");
+        test_stack_op (OP_2SWAP, {10, 11, 12, 13}, {12, 13, 10, 11}, "2SWAP");
 
-        test_stack_op (OP_OVER, {-1, -2}, {-1, -2, -1});
-        test_stack_op (OP_2OVER, {-1, -2, -3, -4}, {-1, -2, -3, -4, -1, -2});
+        test_stack_op (OP_OVER, {-1, -2}, {-1, -2, -1}, "OVER");
+        test_stack_op (OP_2OVER, {-1, -2, -3, -4}, {-1, -2, -3, -4, -1, -2}, "2OVER");
 
-        test_stack_op (OP_ROT, {1, 2, 3}, {2, 3, 1});
-        test_stack_op (OP_2ROT, {1, 2, 3, 4, 5, 6}, {3, 4, 5, 6, 1, 2});
+        test_stack_op (OP_ROT, {1, 2, 3}, {2, 3, 1}, "ROT");
+        test_stack_op (OP_2ROT, {1, 2, 3, 4, 5, 6}, {3, 4, 5, 6, 1, 2}, "2ROT");
 
-        test_stack_op (OP_NIP, {1, 2}, {2});
-        test_stack_op (OP_TUCK, {1, 2}, {2, 1, 2});
+        test_stack_op (OP_NIP, {1, 2}, {2}, "NIP");
+        test_stack_op (OP_TUCK, {1, 2}, {2, 1, 2}, "TUCK");
 
     }
 
@@ -524,101 +532,258 @@ namespace Gigamonkey::Bitcoin {
         test_hash_op (OP_HASH256, bytes {}, crypto::SHA2_256 (crypto::SHA2_256 (bytes {})));
 
     }
-/*
-    TEST (ScriptTest, TestStringOps) {
 
-        OP_CAT
-        OP_SPLIT
-        OP_SUBSTR
-        OP_LEFT
-        OP_RIGHT
+    void test_data_op_error (op Op, list<bytes> start, string explanation = "") {
+        test_op_error (Op, start, explanation);
+    }
+
+    void test_data_op (op Op, list<bytes> start, list<bytes> expected, string explanation = "") {
+        test_op (Op, start, expected, explanation);
+    }
+
+    TEST (ScriptTest, TestBoolOps) {
+
+        // should replace 0 to 1, everything other than zero to zero
+        test_data_op (OP_NOT, {{}}, {{0x01}});
+        test_data_op (OP_NOT, {{0x00}}, {{0x01}});
+        test_data_op (OP_NOT, {{0x80}}, {{0x01}});
+        test_data_op (OP_NOT, {{0x01}}, {{}});
+        test_data_op (OP_NOT, {{0x02}}, {{}});
+        test_data_op (OP_NOT, {{0x81}}, {{}});
+
+        test_data_op (OP_BOOLAND, {{}, {}}, {{}});
+        test_data_op (OP_BOOLOR, {{}, {}}, {{}});
+        test_data_op (OP_BOOLAND, {{0x00}, {0x00}}, {{}});
+        test_data_op (OP_BOOLOR, {{0x00}, {0x00}}, {{}});
+
+        test_data_op (OP_BOOLAND, {{0x01}, {}}, {{}});
+        test_data_op (OP_BOOLOR, {{0x01}, {}}, {{0x01}});
+        test_data_op (OP_BOOLAND, {{0x81}, {}}, {{}});
+        test_data_op (OP_BOOLOR, {{0x81}, {}}, {{0x01}});
+
+        test_data_op (OP_BOOLAND, {{}, {0x01}}, {{}});
+        test_data_op (OP_BOOLOR, {{}, {0x01}}, {{0x01}});
+        test_data_op (OP_BOOLAND, {{}, {0x81}}, {{}});
+        test_data_op (OP_BOOLOR, {{}, {0x81}}, {{0x01}});
+
+        test_data_op (OP_BOOLAND, {{0x01}, {0x01}}, {{0x01}});
+        test_data_op (OP_BOOLOR, {{0x01}, {0x01}}, {{0x01}});
 
     }
 
     TEST (ScriptTest, TestBitOps) {
 
-        OP_INVERT
-        OP_AND
-        OP_OR
-        OP_XOR
+        test_data_op_error (OP_AND, {{}, {0x00}}, "AND args must be the same size 1");
+        test_data_op_error (OP_OR, {{}, {0x00}}, "OR args must be the same size 1");
+        test_data_op_error (OP_XOR, {{}, {0x00}}, "XOR args must be the same size 1");
+
+        test_data_op_error (OP_AND, {{0x00}, {}}, "AND args must be the same size 2");
+        test_data_op_error (OP_OR, {{0x00}, {}}, "OR args must be the same size 2");
+        test_data_op_error (OP_XOR, {{0x00}, {}}, "XOR args must be the same size 2");
+
+        test_data_op (OP_INVERT, {{}}, {{}}, "INVERT {}");
+        test_data_op (OP_INVERT, {{0xff}}, {{0x00}}, "INVERT {ff}");
+        test_data_op (OP_INVERT, {{0x00}}, {{0xff}}, "INVERT {00}");
+
+        test_data_op (OP_AND, {{}, {}}, {{}}, "{} AND {}");
+        test_data_op (OP_OR, {{}, {}}, {{}}, "{} OR {}");
+        test_data_op (OP_XOR, {{}, {}}, {{}}, "{} XOR {}");
+
+        test_data_op (OP_AND, {{0x74}, {0xa3}}, {{0x20}}, "{74} AND {a3}");
+        test_data_op (OP_AND, {{0xa3}, {0x74}}, {{0x20}}, "{a3} AND {74}");
+
+        test_data_op (OP_OR, {{0x74}, {0xa3}}, {{0xf7}}, "{74} OR {a3}");
+        test_data_op (OP_OR, {{0xa3}, {0x74}}, {{0xf7}}, "{a3} OR {74}");
+
+        test_data_op (OP_XOR, {{0x74}, {0xa3}}, {{0xd7}}, "{74} XOR {a3}");
+        test_data_op (OP_XOR, {{0xa3}, {0x74}}, {{0xd7}}, "{a3} XOR {74}");
+
     }
 
-    TEST (ScriptTest, TestBoolOps) {
+    TEST (ScriptTest, TestStringOps) {
 
-        OP_NOT
-        OP_BOOLAND
-        OP_BOOLOR
+        test_data_op (OP_CAT, {{}, {}}, {{}});
+        test_data_op (OP_CAT, {{0x78}, {}}, {{0x78}});
+        test_data_op (OP_CAT, {{}, {0x78}}, {{0x78}});
+        test_data_op (OP_CAT, {{0xab}, {0xcd}}, {{0xab, 0xcd}});
+
+        test_data_op_error (OP_SPLIT, {{0xab, 0xcd}, {0x81}});
+        test_data_op (OP_SPLIT, {{0xab, 0xcd}, {}}, {{}, {0xab, 0xcd}});
+        test_data_op (OP_SPLIT, {{0xab, 0xcd}, {0x01}}, {{0xab}, {0xcd}});
+        test_data_op (OP_SPLIT, {{0xab, 0xcd}, {0x02}}, {{0xab, 0xcd}, {}});
+        test_data_op_error (OP_SPLIT, {{0xab, 0xcd}, {0x03}});
+/*
+        test_data_op_error (OP_LEFT, {{0xab, 0xcd}, {0x81}});
+        test_data_op (OP_LEFT, {{0xab, 0xcd}, {}}, {{}});
+        test_data_op (OP_LEFT, {{0xab, 0xcd}, {0x01}}, {{0xab}});
+        test_data_op (OP_LEFT, {{0xab, 0xcd}, {0x02}}, {{0xab, 0xcd}});
+        test_data_op_error (OP_LEFT, {{0xab, 0xcd}, {0x03}});
+
+        test_data_op_error (OP_RIGHT, {{0xab, 0xcd}, {0x81}});
+        test_data_op (OP_RIGHT, {{0xab, 0xcd}, {}}, {{}});
+        test_data_op (OP_RIGHT, {{0xab, 0xcd}, {0x01}}, {{0xcd}});
+        test_data_op (OP_RIGHT, {{0xab, 0xcd}, {0x02}}, {{0xab, 0xcd}});
+        test_data_op_error (OP_RIGHT, {{0xab, 0xcd}, {0x03}});
+
+        // TODO
+        test_data_op_error (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x81}, {0x00}});
+        test_data_op_error (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {}, {0x81}});
+        test_data_op_error (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {}, {0x04}});
+        test_data_op_error (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x01}, {0x03}});
+        test_data_op_error (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x02}, {0x02}});
+        test_data_op_error (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x03}, {0x01}});
+        test_data_op (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x00}, {0x00}}, {{}});
+        test_data_op (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x01}, {0x00}}, {{}});
+        test_data_op (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x02}, {0x00}}, {{}});
+        test_data_op (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x03}, {0x00}}, {{}});
+        test_data_op (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x00}, {0x01}}, {{0xab}});
+        test_data_op (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x01}, {0x01}}, {{0xcd}});
+        test_data_op (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x02}, {0x01}}, {{0xef}});
+        test_data_op (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x00}, {0x02}}, {{0xab, 0xcd}});
+        test_data_op (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x01}, {0x02}}, {{0xcd, 0xef}});
+        test_data_op (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x00}, {0x03}}, {{0xab, 0xcd, 0xef}});
+        */
+
     }
 
+    TEST (ScriptTest, TestBitShift) {
+
+        // negative numbers not allowed.
+        test_data_op_error (OP_LSHIFT, {{}, {0x81}});
+        test_data_op_error (OP_RSHIFT, {{}, {0x81}});
+
+        test_data_op (OP_LSHIFT, {{}, {}}, {{}});
+        test_data_op (OP_RSHIFT, {{}, {}}, {{}});
+        test_data_op (OP_LSHIFT, {{}, {0x01}}, {{}});
+        test_data_op (OP_RSHIFT, {{}, {0x01}}, {{}});
+
+        test_data_op (OP_LSHIFT, {{0xff}, {}}, {{0xff}});
+        test_data_op (OP_RSHIFT, {{0xff}, {}}, {{0xff}});
+        test_data_op (OP_LSHIFT, {{0xff}, {0x01}}, {{0xfe}});
+        test_data_op (OP_RSHIFT, {{0xff}, {0x01}}, {{0x7f}});
+        test_data_op (OP_LSHIFT, {{0xff}, {0x02}}, {{0xfc}});
+        test_data_op (OP_RSHIFT, {{0xff}, {0x02}}, {{0x3f}});
+        test_data_op (OP_LSHIFT, {{0xff}, {0x04}}, {{0xf0}});
+        test_data_op (OP_RSHIFT, {{0xff}, {0x04}}, {{0x0f}});
+        test_data_op (OP_LSHIFT, {{0xff}, {0x08}}, {{0x00}});
+        test_data_op (OP_RSHIFT, {{0xff}, {0x08}}, {{0x00}});
+
+        // TODO
+
+    }
+
+    TEST (ScriptTest, TestBin2Num2Bin) {
+
+        // Different representations of zero.
+        test_data_op (OP_BIN2NUM, {{}}, {{}});
+        test_data_op (OP_BIN2NUM, {{0x00}}, {{}});
+        test_data_op (OP_BIN2NUM, {{0x80}}, {{}});
+        test_data_op (OP_BIN2NUM, {{0x00, 0x00}}, {{}});
+        test_data_op (OP_BIN2NUM, {{0x00, 0x80}}, {{}});
+
+        test_data_op (OP_BIN2NUM, {{0x01}}, {{0x01}});
+        test_data_op (OP_BIN2NUM, {{0x01, 0x00}}, {{0x01}}, "1 size 2");
+
+        test_data_op (OP_BIN2NUM, {{0x81}}, {{0x81}});
+        test_data_op (OP_BIN2NUM, {{0x01, 0x80}}, {{0x81}}, "-1 size 2");
+
+        test_data_op (OP_BIN2NUM, {{0x81, 0x00}}, {{0x81, 0x00}});
+        test_data_op (OP_BIN2NUM, {{0x81, 0x00, 0x00}}, {{0x81, 0x00}}, "129 size 3");
+
+        test_data_op (OP_BIN2NUM, {{0x81, 0x80}}, {{0x81, 0x80}});
+        test_data_op (OP_BIN2NUM, {{0x81, 0x00, 0x80}}, {{0x81, 0x80}});
+
+        test_data_op_error (OP_NUM2BIN, {{}, {0x81}}, "size -1 is an error 1");
+        test_data_op_error (OP_NUM2BIN, {{0x00}, {0x81}}, "size -1 is an error 2");
+        test_data_op_error (OP_NUM2BIN, {{0x80}, {0x00}}, "-0 to size 0");
+        test_data_op_error (OP_NUM2BIN, {{0x01}, {0x00}}, "1 to size 0");
+        test_data_op_error (OP_NUM2BIN, {{0x81}, {0x00}}, "-1 to size 0");
+        test_data_op_error (OP_NUM2BIN, {{0x00, 0x01}, {0x00}});
+        test_data_op_error (OP_NUM2BIN, {{0x00, 0x01}, {0x01}});
+        test_data_op_error (OP_NUM2BIN, {{0x00, 0x81}, {0x00}});
+        test_data_op_error (OP_NUM2BIN, {{0x00, 0x81}, {0x01}});
+        test_data_op_error (OP_NUM2BIN, {{0xf0, 0x80}, {0x00}});
+        test_data_op_error (OP_NUM2BIN, {{0xf0, 0x80}, {0x01}});
+
+        test_data_op (OP_NUM2BIN, {{}, {}}, {{}});
+        test_data_op (OP_NUM2BIN, {{}, {0x01}}, {{0x00}});
+        test_data_op (OP_NUM2BIN, {{}, {0x02}}, {{0x00, 0x00}});
+
+        test_data_op (OP_NUM2BIN, {{0x00}, {0x01}}, {{0x00}});
+        test_data_op (OP_NUM2BIN, {{0x00}, {0x02}}, {{0x00, 0x00}});
+
+        test_data_op (OP_NUM2BIN, {{0x80}, {0x01}}, {{0x80}});
+        test_data_op (OP_NUM2BIN, {{0x80}, {0x02}}, {{0x00, 0x80}});
+        test_data_op (OP_NUM2BIN, {{0x80}, {0x03}}, {{0x00, 0x00, 0x80}});
+
+        test_data_op (OP_NUM2BIN, {{0x00, 0x01}, {0x02}}, {{0x00, 0x01}});
+        test_data_op (OP_NUM2BIN, {{0x00, 0x81}, {0x02}}, {{0x00, 0x81}});
+        test_data_op (OP_NUM2BIN, {{0xf0, 0x80}, {0x02}}, {{0xf0, 0x80}});
+
+        test_data_op (OP_NUM2BIN, {{0x00, 0x01}, {0x03}}, {{0x00, 0x01, 0x00}});
+        test_data_op (OP_NUM2BIN, {{0x00, 0x81}, {0x03}}, {{0x00, 0x01, 0x80}});
+        test_data_op (OP_NUM2BIN, {{0xf0, 0x80}, {0x03}}, {{0xf0, 0x00, 0x80}});
+
+    }
+/*
     TEST (ScriptTest, TestNumberEqual) {
 
-        OP_NUMEQUAL
-        OP_NUMEQUALVERIFY
-        OP_NUMNOTEQUAL
+        test_data_op (OP_NUMEQUAL);
+        test_data_op (OP_NUMEQUALVERIFY);
+        test_data_op (OP_NUMNOTEQUAL);
+
+    }
+
+    TEST (ScriptTest, TestNumberCompare) {
+
+        test_data_op (OP_NUMEQUAL);
+        test_data_op (OP_NUMEQUALVERIFY);
+        test_data_op (OP_NUMNOTEQUAL);
 
     }
 
     TEST (ScriptTest, TestNumberOps) {
 
-        OP_1ADD
-        OP_1SUB
-        OP_2MUL
-        OP_2DIV
-        OP_NEGATE
-        OP_ABS
-        OP_0NOTEQUAL
+        test_data_op (OP_1ADD);
+        test_data_op (OP_1SUB);
+        test_data_op (OP_2MUL);
+        test_data_op (OP_2DIV);
+        test_data_op (OP_NEGATE);
+        test_data_op (OP_ABS);
+        test_data_op (OP_0NOTEQUAL);
 
-        OP_ADD
-        OP_SUB
-        OP_MUL
-        OP_DIV
-        OP_MOD
+        test_data_op (OP_ADD);
+        test_data_op (OP_SUB);
+        test_data_op (OP_MUL);
+        test_data_op (OP_DIV);
+        test_data_op (OP_MOD);
 
-        OP_LESSTHAN
-        OP_GREATERTHAN
-        OP_LESSTHANOREQUAL
-        OP_GREATERTHANOREQUAL
-        OP_MIN
-        OP_MAX
+        test_data_op (OP_LESSTHAN);
+        test_data_op (OP_GREATERTHAN);
+        test_data_op (OP_LESSTHANOREQUAL);
+        test_data_op (OP_GREATERTHANOREQUAL);
+        test_data_op (OP_MIN);
+        test_data_op (OP_MAX);
 
-        OP_WITHIN
+        test_data_op (OP_WITHIN);
 
+    }*/
+/*
+    TEST (ScriptTest, TestSignatureNULLFAIL) {
+        // TODO
     }
 
-    TEST (ScriptTest, TestBitShift) {
-        OP_LSHIFT
-        OP_RSHIFT
+    TEST (ScriptTest, TestSignatureCompressedPubkey) {
+        // TODO
     }
 
-    TEST (ScriptTest, TestBin2Num2Bin) {
-        OP_NUM2BIN
-        OP_BIN2NUM
-    }
-
-    TEST (ScriptTest, TestOP_VER) {
-        OP_VER
-    }
+    // TODO
 
     TEST (ScriptTest, TestChecksig) {
 
     }
 
     TEST (ScriptTest, TestCodeSeparator) {
-
-    }
-
-    TEST (ScriptTest, TestReturn) {
-        OP_RETURN
-    }
-
-    TEST (ScriptTest, TestControlOps) {
-
-        OP_IF
-        OP_NOTIF
-        OP_VERIF
-        OP_VERNOTIF
-        OP_ELSE
-        OP_ENDIF
 
     }*/
     
@@ -706,11 +871,30 @@ namespace Gigamonkey::Bitcoin {
         multisig_test {190, true,  doc, {k1, k2, k3}, {p1, p2, p3}}.test ();
         multisig_test {200, false, doc, {k3, k2, k1}, {p1, p2, p3}}.test ();
         multisig_test {210, false, doc, {k2, k3, k1}, {p1, p2, p3}}.test ();
-        
+
         // TODO test that not adding the prefix fails
         // TODO test that adding a different prefix fails for the right flags. 
         // TODO test that signatures that fail should be null for certain flags. 
         
     }
+/*
+    TEST (ScriptTest, TestOP_VER) {
+        OP_VER
+    }
+
+    TEST (ScriptTest, TestReturn) {
+        OP_RETURN
+    }
+
+    TEST (ScriptTest, TestControlOps) {
+
+        OP_IF
+        OP_NOTIF
+        OP_VERIF
+        OP_VERNOTIF
+        OP_ELSE
+        OP_ENDIF
+
+    }*/
     
 }
