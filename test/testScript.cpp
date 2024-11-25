@@ -309,9 +309,9 @@ namespace Gigamonkey::Bitcoin {
         error (evaluate (bytes {OP_CHECKMULTISIG}, bytes {}, flag {}));
         error (evaluate (bytes {OP_CHECKMULTISIGVERIFY}, bytes {}, flag {}));
 
-        //error (evaluate (bytes {OP_SUBSTR}, bytes {}, flag {}));
-        //error (evaluate (bytes {OP_LEFT}, bytes {}, flag {}));
-        //error (evaluate (bytes {OP_RIGHT}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_SUBSTR}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_LEFT}, bytes {}, flag {}));
+        error (evaluate (bytes {OP_RIGHT}, bytes {}, flag {}));
 
         // ops requiring at least 2 arguments.
 
@@ -331,9 +331,9 @@ namespace Gigamonkey::Bitcoin {
         error (evaluate (bytes {OP_8}, bytes {OP_CAT}, flag {}));
         error (evaluate (bytes {OP_9}, bytes {OP_SPLIT}, flag {}));
 
-        //error (evaluate (bytes {OP_3}, bytes {OP_SUBSTR}, flag {}), "OP_SUBSTR 2");
-        //error (evaluate (bytes {OP_4}, bytes {OP_LEFT}, flag {}));
-        //error (evaluate (bytes {OP_5}, bytes {OP_RIGHT}, flag {}));
+        error (evaluate (bytes {OP_3}, bytes {OP_SUBSTR}, flag {}), "OP_SUBSTR 2");
+        error (evaluate (bytes {OP_4}, bytes {OP_LEFT}, flag {}));
+        error (evaluate (bytes {OP_5}, bytes {OP_RIGHT}, flag {}));
 
         error (evaluate (bytes {OP_13}, bytes {OP_AND}, flag {}));
         error (evaluate (bytes {OP_14}, bytes {OP_OR}, flag {}));
@@ -376,7 +376,7 @@ namespace Gigamonkey::Bitcoin {
         error (evaluate (bytes {OP_16, OP_0}, bytes {OP_2ROT}, flag {}));
         error (evaluate (bytes {OP_1, OP_2}, bytes {OP_2SWAP}, flag {}));
         error (evaluate (bytes {OP_3, OP_4}, bytes {OP_WITHIN}, flag {}), "OP_WITHIN 3");
-        //error (evaluate (bytes {OP_6, OP_7}, bytes {OP_SUBSTR}, flag {}), "OP_SUBSTR 3");
+        error (evaluate (bytes {OP_6, OP_7}, bytes {OP_SUBSTR}, flag {}), "OP_SUBSTR 3");
 
         // at least 4
         error (evaluate (bytes {OP_5, OP_6, OP_7}, bytes {OP_2OVER}, flag {}));
@@ -613,7 +613,7 @@ namespace Gigamonkey::Bitcoin {
         test_data_op (OP_SPLIT, {{0xab, 0xcd}, {0x01}}, {{0xab}, {0xcd}});
         test_data_op (OP_SPLIT, {{0xab, 0xcd}, {0x02}}, {{0xab, 0xcd}, {}});
         test_data_op_error (OP_SPLIT, {{0xab, 0xcd}, {0x03}});
-/*
+
         test_data_op_error (OP_LEFT, {{0xab, 0xcd}, {0x81}});
         test_data_op (OP_LEFT, {{0xab, 0xcd}, {}}, {{}});
         test_data_op (OP_LEFT, {{0xab, 0xcd}, {0x01}}, {{0xab}});
@@ -626,13 +626,13 @@ namespace Gigamonkey::Bitcoin {
         test_data_op (OP_RIGHT, {{0xab, 0xcd}, {0x02}}, {{0xab, 0xcd}});
         test_data_op_error (OP_RIGHT, {{0xab, 0xcd}, {0x03}});
 
-        // TODO
         test_data_op_error (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x81}, {0x00}});
         test_data_op_error (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {}, {0x81}});
         test_data_op_error (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {}, {0x04}});
         test_data_op_error (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x01}, {0x03}});
         test_data_op_error (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x02}, {0x02}});
         test_data_op_error (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x03}, {0x01}});
+
         test_data_op (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x00}, {0x00}}, {{}});
         test_data_op (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x01}, {0x00}}, {{}});
         test_data_op (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x02}, {0x00}}, {{}});
@@ -643,7 +643,6 @@ namespace Gigamonkey::Bitcoin {
         test_data_op (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x00}, {0x02}}, {{0xab, 0xcd}});
         test_data_op (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x01}, {0x02}}, {{0xcd, 0xef}});
         test_data_op (OP_SUBSTR, {{0xab, 0xcd, 0xef}, {0x00}, {0x03}}, {{0xab, 0xcd, 0xef}});
-        */
 
     }
 

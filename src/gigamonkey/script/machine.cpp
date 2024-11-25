@@ -82,8 +82,7 @@ namespace Gigamonkey::Bitcoin {
         for (integer::size_type index = x.size (); index > 0; index--) {
             integer::size_type i = index - 1;
             // make sure that k is always >= 0
-            if (byte_shift <= i)
-            {
+            if (byte_shift <= i) {
                 integer::size_type k = i - byte_shift;
                 uint8_t val = (x[i] & mask);
                 val <<= bit_shift;
@@ -123,6 +122,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     // just take the first four bites.
+    // must know that it's not negative or too big.
     uint32_little inline read_as_uint32_little (const integer &n) {
         uint32_little ul {0};
         std::copy (n.begin (), n.begin () + (n.size () >= 4 ? 4 : n.size ()), ul.begin ());
@@ -280,9 +280,6 @@ namespace Gigamonkey::Bitcoin {
             } break;
             
             case OP_NOP1:
-            case OP_NOP4:
-            case OP_NOP5:
-            case OP_NOP6:
             case OP_NOP7:
             case OP_NOP8:
             case OP_NOP9:
@@ -486,7 +483,7 @@ namespace Gigamonkey::Bitcoin {
                 if (sn < 0 || sn >= Stack->size ())
                     return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 
-                const size_t n = static_cast<size_t> (uint32 (read_as_uint32_little (sn)));
+                const uint32 n = uint32 (read_as_uint32_little (sn));
                 auto vch = Stack->top (-n - 1);
 
                 if (Op == OP_ROLL) Stack->erase (-n - 1);
@@ -1000,7 +997,7 @@ namespace Gigamonkey::Bitcoin {
 
                 if (n < 0 || n > data.size ()) return SCRIPT_ERR_INVALID_SPLIT_RANGE;
 
-                const size_t position = static_cast<size_t> (uint32 (read_as_uint32_little (n)));
+                const uint32 position = uint32 (read_as_uint32_little (n));
 
                 // Prepare the results in their own buffer as `data`
                 // will be invalidated.
@@ -1033,7 +1030,7 @@ namespace Gigamonkey::Bitcoin {
                 if (n < 0 || n > std::numeric_limits<int32_t>::max ())
                     return SCRIPT_ERR_PUSH_SIZE;
 
-                const size_t size = static_cast<size_t> (read_as_uint32_little (n));
+                const uint32 size = read_as_uint32_little (n);
                 if (!UtxoAfterGenesis && (size > MAX_SCRIPT_ELEMENT_SIZE_BEFORE_GENESIS))
                     return SCRIPT_ERR_PUSH_SIZE;
 
@@ -1056,6 +1053,77 @@ namespace Gigamonkey::Bitcoin {
                     arithmetic::trim<endian::little, arithmetic::complement::twos, byte> (n);
                     if (n.size () > this->Config.MaxScriptNumLength) throw script_exception {SCRIPT_ERR_INVALID_NUMBER_RANGE};
                 });
+
+            } break;
+
+            case OP_SUBSTR: {
+                if (Stack->size () < 3) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                const auto &data = Stack->top (-3);
+                const integer len = read_integer (Stack->top (), RequireMinimal, Config.MaxScriptNumLength);
+                const integer pos = read_integer (Stack->top (-2), RequireMinimal, Config.MaxScriptNumLength);
+                if (pos < 0 || pos > data.size ()) return SCRIPT_ERR_INVALID_SPLIT_RANGE;
+                if (len < 0 || pos + len > data.size ()) return SCRIPT_ERR_INVALID_SPLIT_RANGE;
+
+                const uint32 position = uint32 (read_as_uint32_little (pos));
+                const uint32 length = uint32 (read_as_uint32_little (len));
+
+                integer n1;
+
+                n1.resize (length);
+
+                std::copy (data.begin () + position, data.begin () + position + length, n1.begin ());
+
+                Stack->pop_back ();
+                Stack->pop_back ();
+                Stack->pop_back ();
+
+                Stack->push_back (n1);
+
+            } break;
+
+            case OP_LEFT: {
+                if (Stack->size () < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                const auto &data = Stack->top (-2);
+                const integer n = read_integer (Stack->top (), RequireMinimal, Config.MaxScriptNumLength);
+                if (n < 0 || n > data.size ()) return SCRIPT_ERR_INVALID_SPLIT_RANGE;
+
+                const uint32 position = uint32 (read_as_uint32_little (n));
+
+                // Prepare the results in their own buffer as `data`
+                // will be invalidated.
+                integer n1;
+
+                n1.resize (position);
+
+                std::copy (data.begin (), data.begin () + position, n1.begin ());
+
+                Stack->pop_back ();
+                Stack->pop_back ();
+
+                Stack->push_back (n1);
+
+            } break;
+
+            case OP_RIGHT: {
+                if (Stack->size () < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                const auto &data = Stack->top (-2);
+                const integer n = read_integer (Stack->top (), RequireMinimal, Config.MaxScriptNumLength);
+                if (n < 0 || n > data.size ()) return SCRIPT_ERR_INVALID_SPLIT_RANGE;
+
+                const uint32 position = uint32 (read_as_uint32_little (n));
+
+                // Prepare the results in their own buffer as `data`
+                // will be invalidated.
+                integer n1;
+
+                n1.resize (position);
+
+                std::copy (data.begin () + data.size () - position, data.end (), n1.begin ());
+
+                Stack->pop_back ();
+                Stack->pop_back ();
+
+                Stack->push_back (n1);
 
             } break;
             
