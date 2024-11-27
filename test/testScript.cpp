@@ -58,8 +58,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     void success (result r, string explanation = "") {
-        EXPECT_TRUE (r.valid ()) << r;
-        EXPECT_TRUE (bool (r)) << explanation;
+        EXPECT_TRUE (r.valid () && bool (r)) << r << "; " << explanation;
     }
 
     void failure (result r, string explanation = "") {
@@ -483,7 +482,7 @@ namespace Gigamonkey::Bitcoin {
 
     }
 
-    auto test_stack_op_error = &test_op<int>;
+    auto test_stack_op_error = &test_op_error<int>;
 
     auto test_stack_op = &test_op<int>;
 
@@ -808,28 +807,94 @@ namespace Gigamonkey::Bitcoin {
             }
         }
 
-        // test_data_op (OP_WITHIN);
+    }
+
+    TEST (ScriptTest, TestNumberWithin) {
+
+        failure (evaluate (bytes {OP_0, OP_0, OP_0}, bytes {OP_WITHIN}, flag {}), "Within 1");
+        success (evaluate (bytes {OP_0, OP_0, OP_1}, bytes {OP_WITHIN}, flag {}), "Within 2");
+        failure (evaluate (bytes {OP_1, OP_0, OP_1}, bytes {OP_WITHIN}, flag {}), "Within 3");
+        success (evaluate (bytes {OP_1, OP_0, OP_2}, bytes {OP_WITHIN}, flag {}), "Within 4");
 
     }
-/*
+
+    TEST (ScriptTest, TestNumberEqualVerify) {
+
+        test_data_op (OP_NUMEQUALVERIFY, {{0x01}, {0x01, 0x00}}, {});
+        test_data_op_error (OP_NUMEQUALVERIFY, {{0x81}, {0x01}});
+
+    }
 
     TEST (ScriptTest, TestNumberOps) {
 
-        test_data_op (OP_1ADD);
-        test_data_op (OP_1SUB);
-        test_data_op (OP_2MUL);
-        test_data_op (OP_2DIV);
-        test_data_op (OP_NEGATE);
-        test_data_op (OP_ABS);
-        test_data_op (OP_0NOTEQUAL);
+        test_data_op (OP_0NOTEQUAL, {{}}, {{}}, "OP_0NOTEQUAL 1");
+        test_data_op (OP_0NOTEQUAL, {{0x00}}, {{}}, "OP_0NOTEQUAL 2");
+        test_data_op (OP_0NOTEQUAL, {{0x80}}, {{}}, "OP_0NOTEQUAL 3");
+        test_data_op (OP_0NOTEQUAL, {{0x01}}, {{0x01}}, "OP_0NOTEQUAL 4");
+        test_data_op (OP_0NOTEQUAL, {{0x81}}, {{0x01}}, "OP_0NOTEQUAL 5");
 
-        test_data_op (OP_ADD);
-        test_data_op (OP_SUB);
-        test_data_op (OP_MUL);
-        test_data_op (OP_DIV);
-        test_data_op (OP_MOD);
+        test_data_op (OP_1ADD, {{}}, {{0x01}}, "OP_1ADD");
+        test_data_op (OP_1ADD, {{0x00}}, {{0x01}}, "OP_1ADD");
+        test_data_op (OP_1ADD, {{0x80}}, {{0x01}}, "OP_1ADD");
 
-    }*/
+        test_data_op (OP_1SUB, {{}}, {{0x81}}, "OP_1SUB");
+        test_data_op (OP_1SUB, {{0x01}}, {{}}, "OP_1SUB");
+
+        test_stack_op (OP_2MUL, {0}, {0}, "OP_2MUL");
+        test_stack_op (OP_2DIV, {0}, {0}, "OP_2DIV");
+        test_stack_op (OP_2MUL, {1}, {2}, "OP_2MUL");
+        test_stack_op (OP_2DIV, {1}, {0}, "OP_2DIV");
+        test_stack_op (OP_2MUL, {-1}, {-2}, "OP_2MUL");
+        test_stack_op (OP_2DIV, {-1}, {0}, "OP_2DIV");
+        test_stack_op (OP_2MUL, {2}, {4}, "OP_2MUL");
+        test_stack_op (OP_2DIV, {2}, {1}, "OP_2DIV");
+        test_stack_op (OP_2MUL, {-2}, {-4}, "OP_2MUL");
+        test_stack_op (OP_2DIV, {-2}, {-1}, "OP_2DIV");
+        test_stack_op (OP_2MUL, {3}, {6}, "OP_2MUL");
+        test_stack_op (OP_2DIV, {3}, {1}, "OP_2DIV");
+        test_stack_op (OP_2MUL, {-3}, {-6}, "OP_2MUL");
+        test_stack_op (OP_2DIV, {-3}, {-1}, "OP_2DIV");
+        test_stack_op (OP_2MUL, {4}, {8}, "OP_2MUL");
+        test_stack_op (OP_2DIV, {4}, {2}, "OP_2DIV");
+        test_stack_op (OP_2MUL, {-4}, {-8}, "OP_2MUL");
+        test_stack_op (OP_2DIV, {-4}, {-2}, "OP_2DIV");
+
+        test_data_op (OP_NEGATE, {{}}, {{}}, "OP_NEGATE");
+        test_data_op (OP_NEGATE, {{0x80}}, {{}}, "OP_NEGATE");
+        test_data_op (OP_NEGATE, {{0x00}}, {{}}, "OP_NEGATE");
+        test_data_op (OP_NEGATE, {{0x01}}, {{0x81}}, "OP_NEGATE");
+        test_data_op (OP_NEGATE, {{0x81}}, {{0x01}}, "OP_NEGATE");
+
+        // interesting thing about ABS is that the number is only
+        // trimmed to minimal size if it is changed.
+        test_data_op (OP_ABS, {{}}, {{}}, "OP_ABS");
+        test_data_op (OP_ABS, {{0x00}}, {{0x00}}, "OP_ABS");
+        test_data_op (OP_ABS, {{0x01}}, {{0x01}}, "OP_ABS");
+        test_data_op (OP_ABS, {{0x81}}, {{0x01}}, "OP_ABS");
+        test_data_op (OP_ABS, {{0x01, 0x00}}, {{0x01, 0x00}}, "OP_ABS");
+        test_data_op (OP_ABS, {{0x01, 0x80}}, {{0x01}}, "OP_ABS");
+
+        test_stack_op (OP_ADD, {1, 2}, {3}, "OP_ADD");
+        test_stack_op (OP_ADD, {1, -2}, {-1}, "OP_ADD");
+
+        test_stack_op (OP_SUB, {1, 2}, {-1}, "OP_SUB");
+        test_stack_op (OP_SUB, {1, -2}, {3}, "OP_SUB");
+
+        test_stack_op (OP_MUL, {1, 1}, {1}, "OP_MUL");
+        test_stack_op (OP_MUL, {1, 2}, {2}, "OP_MUL");
+        test_stack_op (OP_MUL, {1, -1}, {-1}, "OP_MUL");
+        test_stack_op (OP_MUL, {2, 2}, {4}, "OP_MUL");
+
+        test_stack_op_error (OP_DIV, {1, 0}, "OP_DIV");
+        test_stack_op_error (OP_MOD, {1, 0}, "OP_MOD");
+
+        test_stack_op (OP_DIV, {1, 1}, {1}, "OP_DIV");
+        test_stack_op (OP_MOD, {1, 1}, {0}, "OP_MOD");
+
+        test_stack_op (OP_DIV, {19, 5}, {3}, "OP_DIV");
+        test_stack_op (OP_MOD, {19, 5}, {4}, "OP_MOD");
+
+    }
 /*
     // TODO
     TEST (ScriptTest, TestChecksig) {

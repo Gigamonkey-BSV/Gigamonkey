@@ -12,7 +12,7 @@ namespace Gigamonkey::Bitcoin {
 
     machine::machine (ptr<two_stack> stack, maybe<redemption_document> doc, const script_config &conf):
         Halt {false}, Result {false}, Config {conf},
-        UtxoAfterGenesis {static_cast<uint32> (Config.Flags & flag::ENABLE_GENESIS_OPCODES)},
+        UtxoAfterGenesis {bool (static_cast<uint32> (Config.Flags & flag::ENABLE_GENESIS_OPCODES))},
         RequireMinimal {Config.verify_minimal_push ()},
         Document {doc}, Stack {stack}, Exec {}, Else {}, OpCount {0} {}
 
@@ -644,6 +644,8 @@ namespace Gigamonkey::Bitcoin {
             //
             case OP_1ADD:
             case OP_1SUB:
+            case OP_2MUL:
+            case OP_2DIV:
             case OP_NEGATE:
             case OP_ABS:
             case OP_NOT:
@@ -659,7 +661,13 @@ namespace Gigamonkey::Bitcoin {
                         break;
                     case OP_1SUB:
                         bn--;
-                        // bn -= bnOne;
+                        break;
+                    case OP_2MUL:
+                        bn <<= 1;
+                        break;
+                    case OP_2DIV:
+                        if (is_negative (bn)) bn++;
+                        bn >>= 1;
                         break;
                     case OP_NEGATE:
                         bn = -bn;
@@ -671,7 +679,7 @@ namespace Gigamonkey::Bitcoin {
                         bn = integer {!bool (bn)};
                         break;
                     case OP_0NOTEQUAL:
-                        bn = integer {!bool (bn)};
+                        bn = integer {bool (bn)};
                         break;
                     default:
                         assert (!"invalid opcode");
