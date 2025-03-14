@@ -27,11 +27,15 @@ FetchContent_MakeAvailable (ctre)
 
 
 find_package (PkgConfig REQUIRED)
-pkg_check_modules (Cryptopp REQUIRED IMPORTED_TARGET libcrypto++)
 
+IF (WIN32)
+  pkg_check_modules (cryptopp REQUIRED IMPORTED_TARGET cryptopp)
+ELSE ()
+  pkg_check_modules (cryptopp REQUIRED IMPORTED_TARGET libcrypto++)
+  # If we do not have crypto++, go to `https://github.com/weidai11/cryptopp` and follow the instructions.
+ENDIF ()
 
 find_package (data CONFIG REQUIRED)
-
 
 if (PACKAGE_TESTS)
 	include (CTest)

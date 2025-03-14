@@ -65,10 +65,12 @@ add_library (gigamonkey STATIC
 configure_file(include/gigamonkey/version.hpp.in generated/gigamonkey/version.hpp )
 
 target_include_directories(gigamonkey PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated/> $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+
 target_include_directories (gigamonkey PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
 
 target_link_libraries (gigamonkey PUBLIC
 nlohmann_json::nlohmann_json 
+PkgConfig::cryptopp
 Data::data 
 util
 sv_giga
