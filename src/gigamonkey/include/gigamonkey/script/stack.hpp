@@ -8,7 +8,6 @@
 //#include <data/tools/store.hpp>
 #include <gigamonkey/types.hpp>
 #include <gigamonkey/script/config.hpp>
-#include <gigamonkey/script/flags.h>
 #include <gigamonkey/script/error.h>
 
 namespace Gigamonkey::Bitcoin {
