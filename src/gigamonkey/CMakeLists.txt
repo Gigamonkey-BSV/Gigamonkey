@@ -69,17 +69,17 @@ target_include_directories(gigamonkey PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_
 target_include_directories (gigamonkey PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
 
 target_link_libraries (gigamonkey PUBLIC
-nlohmann_json::nlohmann_json 
-PkgConfig::cryptopp
-Data::data 
-util
-sv_giga
+  nlohmann_json::nlohmann_json
+  PkgConfig::cryptopp
+  Data::data
+  util
+  sv_giga
 
-# boost::boost 
-# openssl::openssl 
-# cryptopp::cryptopp 
+  # boost::boost
+  # openssl::openssl
+  # cryptopp::cryptopp
 
-# gmp::gmp 
+  # gmp::gmp
 )
 
 
