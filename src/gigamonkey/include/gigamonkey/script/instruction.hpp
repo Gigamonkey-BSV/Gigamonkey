@@ -12,6 +12,7 @@
 //#include <sv/policy/policy.h>
 
 #include <gigamonkey/hash.hpp>
+#include <gigamonkey/numbers.hpp>
 
 namespace Gigamonkey::Bitcoin { 
 

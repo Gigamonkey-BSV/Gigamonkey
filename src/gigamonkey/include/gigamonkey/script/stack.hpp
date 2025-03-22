@@ -6,7 +6,7 @@
 #define GIGAMONKEY_INTERPRETER_STACK
 
 //#include <data/tools/store.hpp>
-#include <gigamonkey/types.hpp>
+#include <gigamonkey/numbers.hpp>
 #include <gigamonkey/script/config.hpp>
 #include <gigamonkey/script/error.h>
 

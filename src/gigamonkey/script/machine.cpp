@@ -33,72 +33,6 @@ namespace Gigamonkey::Bitcoin {
         return new sighash::document {doc.Transaction, doc.InputIndex, doc.RedeemedValue, script_code};
     }
 
-    uint8_t inline make_rshift_mask (size_t n) {
-        static uint8_t mask[] = {0xFF, 0xFE, 0xFC, 0xF8, 0xF0, 0xE0, 0xC0, 0x80};
-        return mask[n];
-    }
-
-    uint8_t inline make_lshift_mask (size_t n) {
-        static uint8_t mask[] = {0xFF, 0x7F, 0x3F, 0x1F, 0x0F, 0x07, 0x03, 0x01};
-        return mask[n];
-    }
-
-    // shift x right by n bits, implements OP_RSHIFT
-    static integer RShift (const bytes &x, int32 n) {
-        integer::size_type bit_shift = n % 8;
-        integer::size_type byte_shift = n / 8;
-
-        uint8_t mask = make_rshift_mask (bit_shift);
-        uint8_t overflow_mask = ~mask;
-
-        integer result = integer::zero (x.size ());
-        for (integer::size_type i = 0; i < x.size (); i++) {
-            integer::size_type k = i + byte_shift;
-            if (k < x.size ()) {
-                uint8_t val = (x[i] & mask);
-                val >>= bit_shift;
-                result[k] |= val;
-            }
-
-            if (k + 1 < x.size ()) {
-                uint8_t carryval = (x[i] & overflow_mask);
-                carryval <<= 8 - bit_shift;
-                result[k + 1] |= carryval;
-            }
-        }
-
-        return result;
-    }
-
-    // shift x left by n bits, implements OP_LSHIFT
-    static integer LShift (const bytes &x, int32 n) {
-        integer::size_type bit_shift = n % 8;
-        integer::size_type byte_shift = n / 8;
-
-        uint8_t mask = make_lshift_mask (bit_shift);
-        uint8_t overflow_mask = ~mask;
-
-        integer result = integer::zero (x.size ());
-        for (integer::size_type index = x.size (); index > 0; index--) {
-            integer::size_type i = index - 1;
-            // make sure that k is always >= 0
-            if (byte_shift <= i) {
-                integer::size_type k = i - byte_shift;
-                uint8_t val = (x[i] & mask);
-                val <<= bit_shift;
-                result[k] |= val;
-
-                if (k >= 1) {
-                    uint8_t carryval = (x[i] & overflow_mask);
-                    carryval >>= 8 - bit_shift;
-                    result[k - 1] |= carryval;
-                }
-            }
-        }
-
-        return result;
-    }
-
     constexpr auto bits_per_byte {8};
     
     bytes_view get_push_data (bytes_view instruction) {
@@ -127,12 +61,6 @@ namespace Gigamonkey::Bitcoin {
         uint32_little ul {0};
         std::copy (n.begin (), n.begin () + (n.size () >= 4 ? 4 : n.size ()), ul.begin ());
         return ul;
-    }
-
-    bool nonzero (bytes_view b) {
-        if (b.size () == 0) return false;
-        for (int i = 0; i < b.size () - 1; i++) if (b[i] != 0) return true;
-        return b[b.size () - 1] != 0 && b[b.size () - 1] != 0x80;
     }
 
     static const size_t MAXIMUM_ELEMENT_SIZE = 4;
@@ -584,10 +512,10 @@ namespace Gigamonkey::Bitcoin {
                     else {
                         integer max = integer {INT32_MAX};
                         while (n > max) {
-                            values = LShift (values, INT32_MAX);
+                            values = left_shift (values, INT32_MAX);
                             n -= max;
                         }
-                        values = LShift (values, static_cast<int32> (uint32 (read_as_uint32_little (n))));
+                        values = left_shift (values, static_cast<int32> (uint32 (read_as_uint32_little (n))));
                     }
                 });
             } break;
@@ -605,10 +533,10 @@ namespace Gigamonkey::Bitcoin {
                     else {
                         integer max = integer {INT32_MAX};
                         while (n > max) {
-                            values = RShift (values, INT32_MAX);
+                            values = right_shift (values, INT32_MAX);
                             n -= max;
                         }
-                        values = RShift (values, static_cast<int32> (uint32 (read_as_uint32_little (n))));
+                        values = right_shift (values, static_cast<int32> (uint32 (read_as_uint32_little (n))));
                     }
                 });
             } break;

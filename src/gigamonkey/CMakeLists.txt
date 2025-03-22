@@ -5,6 +5,7 @@ add_library (gigamonkey STATIC
     p2p/version.cpp
 
     secp256k1.cpp
+    numbers.cpp
     timestamp.cpp
     incomplete.cpp
     sighash.cpp

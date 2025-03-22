@@ -199,7 +199,7 @@ namespace Gigamonkey::Bitcoin {
         OP_NEGATE = 0x8f,
         OP_ABS = 0x90,
         OP_NOT = 0x91,
-        OP_0NOTEQUAL = 0x92,
+        OP_0NOTEQUAL = 0x92,    // can be thought of as a cast to bool.
 
         OP_ADD = 0x93,
         OP_SUB = 0x94,

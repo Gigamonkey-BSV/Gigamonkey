@@ -41,22 +41,6 @@ namespace Gigamonkey {
 
         using check = bytes_array<byte, 4>;
 
-        // bitcoin uses two kinds of numbers.
-        // Fixed-size unsigned, little endian
-        template <size_t size> using uint = uint_little<size>;
-
-        // and arbitrary size integers, little endian two's complement.
-        using integer = Z_bytes_twos_little;
-
-        template <size_t size> size_t inline serialized_size (const uint<size> &u) {
-            size_t last_0 = 0;
-            for (size_t i = 0; i < size; i++) if (u[i] != 0x00) last_0 = i + 1;
-            return last_0 == 0 ? 1 : u[last_0 - 1] & 0x80 ? last_0 + 2 : last_0 + 1;
-        }
-
-        template <size_t size> size_t inline serialized_size (const integer &i) {
-            return i.size ();
-        }
     }
     
     using JSON = nlohmann::json;
