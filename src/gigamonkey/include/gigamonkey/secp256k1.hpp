@@ -155,7 +155,7 @@ namespace Gigamonkey::secp256k1 {
         
         signature sign (const digest &d) const;
         
-        pubkey to_public () const;
+        pubkey to_public (bool compressed = true) const;
     
         secret operator - () const;
         secret operator + (const secret &) const;
@@ -204,8 +204,8 @@ namespace Gigamonkey::secp256k1 {
         return a + b;
     }
     
-    pubkey inline to_public (const secret &s) {
-        return s.to_public ();
+    pubkey inline to_public (const secret &s, bool compressed = true) {
+        return s.to_public (compressed);
     }
     
     bool inline valid (const pubkey& p) {
@@ -252,8 +252,8 @@ namespace Gigamonkey::secp256k1 {
         return sign (Value, d);
     }
     
-    pubkey inline secret::to_public () const {
-        return pubkey {to_public_compressed (bytes_view (Value))};
+    pubkey inline secret::to_public (bool compressed) const {
+        return pubkey {(compressed ? to_public_compressed : to_public_uncompressed) (bytes_view (Value))};
     }
     
     secret inline secret::operator - () const {
