@@ -6,41 +6,41 @@
 namespace Gigamonkey::MAPI {
     using namespace Bitcoin;
     
-    JSON client::call (const net::HTTP::request &q) {
-        net::HTTP::response r = (*this) (q);
+    JSON client::call (const HTTP::request &q) {
+        HTTP::response r = (*this) (q);
         
         if (static_cast<unsigned int> (r.Status) < 200 ||
             static_cast<unsigned int> (r.Status) >= 300)
-            throw net::HTTP::exception {q, r, "response code"};
+            throw HTTP::exception {q, r, "response code"};
         
-        if (r.Headers[net::HTTP::header::content_type] != "application/json")
-            throw net::HTTP::exception {q, r, string {"content type is not JSON; it is "} +
-                r.Headers[net::HTTP::header::content_type]};
+        if (r.Headers[HTTP::header::content_type] != "application/json")
+            throw HTTP::exception {q, r, string {"content type is not JSON; it is "} +
+                r.Headers[HTTP::header::content_type]};
 
         JSON res = JSON::parse (r.Body);
         
         auto envelope = JSON_JSON_envelope {JSON_envelope {res}};
         
-        if (!envelope.verify ()) throw net::HTTP::exception {q, r, "MAPI signature verify fail"};
+        if (!envelope.verify ()) throw HTTP::exception {q, r, "MAPI signature verify fail"};
         
         return res;
     }
     
-    net::HTTP::request client::transaction_status_HTTP_request (const Bitcoin::TXID &request) const {
+    HTTP::request client::transaction_status_HTTP_request (const Bitcoin::TXID &request) const {
         if (!request.valid ()) throw std::invalid_argument {"invalid txid"};
         std::stringstream ss;
         ss << "/mapi/tx/" << request;
         return this->REST.GET (ss.str ());
     }
     
-    net::HTTP::request client::submit_transaction_HTTP_request (const submit_transaction_request &request) const {
+    HTTP::request client::submit_transaction_HTTP_request (const submit_transaction_request &request) const {
         if (!request.valid ()) throw std::invalid_argument {"invalid transaction submission request"};
-        return this->REST (net::HTTP::REST::request (request));
+        return this->REST (HTTP::REST::request (request));
     }
     
-    net::HTTP::request client::submit_transactions_HTTP_request (const submit_transactions_request &request) const {
+    HTTP::request client::submit_transactions_HTTP_request (const submit_transactions_request &request) const {
         if (!request.valid ()) throw std::invalid_argument {"invalid transactions submission request"};
-        return this->REST (net::HTTP::REST::request (request));
+        return this->REST (HTTP::REST::request (request));
     }
     
     namespace {
@@ -86,25 +86,25 @@ namespace Gigamonkey::MAPI {
             return j;
         }
         
-        maybe<list<net::IP::address>> read_ip_address_list (const JSON &j) {
+        maybe<list<ip_address>> read_ip_address_list (const JSON &j) {
             if (!j.is_array ()) return {};
             
-            list<net::IP::address> ips;
+            list<ip_address> ips;
             
             for (const JSON &i : j) {
                 if (!j.contains ("ipAddress")) return {};
-                ips = ips << net::IP::address {string (j["ipAddress"])};
+                ips = ips << ip_address {string (j["ipAddress"])};
             }
             
             return ips;
         } 
         
-        JSON ip_addresses_to_JSON (list<net::IP::address> ips) {
+        JSON ip_addresses_to_JSON (list<ip_address> ips) {
             JSON::array_t ii;
             ii.resize (ips.size ());
             
             int i = 0;
-            for (const net::IP::address &ip : ips) ii[i++] = string (ip);
+            for (const ip_address &ip : ips) ii[i++] = string (ip);
             
             return ii;
         }
@@ -213,11 +213,11 @@ namespace Gigamonkey::MAPI {
         return j;
     }
     
-    submit_transaction_request::operator net::HTTP::REST::request () const {
+    submit_transaction_request::operator HTTP::REST::request () const {
 
         if (ContentType == application_JSON) {
-            return net::HTTP::REST::request {net::HTTP::method::post, "/mapi/tx", {}, {},
-                {{net::HTTP::header::content_type, "application/JSON"}},
+            return HTTP::REST::request {HTTP::method::post, "/mapi/tx", {}, {},
+                {{HTTP::header::content_type, "application/JSON"}},
                 JSON (static_cast<const transaction_submission> (*this))};
         }
         
@@ -225,15 +225,15 @@ namespace Gigamonkey::MAPI {
         tx.resize (this->Transaction.size ());
         std::copy (this->Transaction.begin (), this->Transaction.end (), tx.begin ());
         
-        return net::HTTP::REST::request {net::HTTP::method::post,
+        return HTTP::REST::request {HTTP::method::post,
             "/mapi/tx", to_url_params (Parameters), {},
-            {{net::HTTP::header::content_type, "application/octet-stream"}}, tx};
+            {{HTTP::header::content_type, "application/octet-stream"}}, tx};
     }
     
-    submit_transactions_request::operator net::HTTP::REST::request () const {
-        return net::HTTP::REST::request{net::HTTP::method::post, "/mapi/tx",
+    submit_transactions_request::operator HTTP::REST::request () const {
+        return HTTP::REST::request{HTTP::method::post, "/mapi/tx",
             to_url_params (DefaultParameters), {},
-            {{net::HTTP::header::content_type, "application/JSON"}},
+            {{HTTP::header::content_type, "application/JSON"}},
             to_JSON (Submissions)};
     }
     

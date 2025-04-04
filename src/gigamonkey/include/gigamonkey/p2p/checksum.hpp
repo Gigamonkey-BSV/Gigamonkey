@@ -34,7 +34,7 @@ namespace Gigamonkey::base58 {
         // to see if we can find a valid base58 check encoded string. 
         static check recover (const string_view invalid);
 
-        struct writer : crypto::hash::Bitcoin<32> {
+        struct writer : data::crypto::hash::Bitcoin<32> {
             check finalize ();
         };
 

@@ -4,6 +4,7 @@
 #include <gigamonkey/script/interpreter.hpp>
 #include <gigamonkey/script/bitcoin_core.hpp>
 #include <sv/policy/policy.h>
+#include <data/io/wait_for_enter.hpp>
 
 namespace Gigamonkey::Bitcoin {
 
@@ -60,7 +61,7 @@ namespace Gigamonkey::Bitcoin {
         while (true) {
             std::cout << m << std::endl;
             if (m.Machine.Halt) break;
-            wait_for_enter ();
+            data::wait_for_enter ();
             m.step ();
         }
 

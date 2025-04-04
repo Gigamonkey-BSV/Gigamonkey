@@ -104,8 +104,10 @@ namespace Gigamonkey::extended {
     }
 
     writer inline &operator << (writer &w, const transaction &t) {
-        return w << t.Version << *encoding::hex::read ("0000000000EF") <<
-            Bitcoin::var_sequence<input> {t.Inputs} << Bitcoin::var_sequence<Bitcoin::output> {t.Outputs} << t.LockTime;
+        return w << t.Version <<
+            *encoding::hex::read ("0000000000EF") <<
+            Bitcoin::var_sequence<input> {t.Inputs} <<
+            Bitcoin::var_sequence<Bitcoin::output> {t.Outputs} << t.LockTime;
     }
 
     reader inline &operator >> (reader &r, transaction &t) {

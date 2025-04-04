@@ -62,18 +62,6 @@ namespace Gigamonkey::Bitcoin {
         std::copy (n.begin (), n.begin () + (n.size () >= 4 ? 4 : n.size ()), ul.begin ());
         return ul;
     }
-
-    static const size_t MAXIMUM_ELEMENT_SIZE = 4;
-
-    const integer inline &read_integer (const bytes &span, bool RequireMinimal, const size_t nMaxNumSize = MAXIMUM_ELEMENT_SIZE) {
-
-        if (span.size () > nMaxNumSize) throw script_exception {SCRIPT_ERR_SCRIPTNUM_OVERFLOW};
-
-        if (RequireMinimal && !arithmetic::is_minimal<endian::little, arithmetic::complement::twos, byte> (span))
-            throw script_exception {SCRIPT_ERR_SCRIPTNUM_MINENCODE};
-
-        return static_cast<const integer &> (span);
-    }
     
     maybe<result> machine::step (const program_counter &Counter) {
         
@@ -974,7 +962,7 @@ namespace Gigamonkey::Bitcoin {
 
                 Stack->modify_top ([size] (bytes &rawnum) {
                     if (rawnum.size () > size) throw script_exception {SCRIPT_ERR_IMPOSSIBLE_ENCODING};
-                    arithmetic::extend<endian::little, arithmetic::complement::twos, byte> (rawnum, size);
+                    extend_number (rawnum, size);
                 });
 
             } break;
@@ -986,7 +974,7 @@ namespace Gigamonkey::Bitcoin {
                 if (Stack->size () < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
 
                 Stack->modify_top ([this] (bytes &n) {
-                    arithmetic::trim<endian::little, arithmetic::complement::twos, byte> (n);
+                    trim_number (n);
                     if (n.size () > this->Config.MaxScriptNumLength) throw script_exception {SCRIPT_ERR_INVALID_NUMBER_RANGE};
                 });
 

@@ -99,7 +99,7 @@ namespace Gigamonkey::Bitcoin {
         writer &write (writer &w, const document &doc, sighash::directive d);
         
         bytes inline write (const document &doc, sighash::directive d) {
-            lazy_bytes_writer w;
+            data::lazy_bytes_writer w;
             write (w, doc, d);
             return w;
         }
@@ -112,13 +112,13 @@ namespace Gigamonkey::Bitcoin {
         writer &write_Bitcoin_Cash (writer &, const document &, sighash::directive);
         
         bytes inline write_original (const document &doc, sighash::directive d) {
-            lazy_bytes_writer w;
+            data::lazy_bytes_writer w;
             write_original (w, doc, d);
             return w;
         }
         
         bytes inline write_Bitcoin_Cash (const document &doc, sighash::directive d) {
-            lazy_bytes_writer w;
+            data::lazy_bytes_writer w;
             write_Bitcoin_Cash (w, doc, d);
             return w;
         }
@@ -149,7 +149,7 @@ namespace Gigamonkey::Bitcoin {
         namespace Amaury {
         
             bytes inline write (const document &doc, sighash::directive d) {
-                lazy_bytes_writer w;
+                data::lazy_bytes_writer w;
                 Amaury::write (w, doc, d);
                 return w;
             }

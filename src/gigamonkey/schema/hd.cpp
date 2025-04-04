@@ -167,7 +167,7 @@ namespace Gigamonkey::HD::BIP_32 {
         if (prv != check)
             return secret ();
 
-        iterator_reader r (view.begin () + 3, view.end ());
+        it_rdr r (view.begin () + 3, view.end ());
         
         byte depth;
         r >> depth;
@@ -317,7 +317,7 @@ namespace Gigamonkey::HD::BIP_32 {
         bytes prv = bytes ({0x88, 0xB2, 0x1E});
         auto check = view.substr (0, 3);
         if (prv != check) return pubkey ();
-        iterator_reader r (view.begin () + 3, view.end ());
+        it_rdr r (view.begin () + 3, view.end ());
         
         byte depth;
         r >> depth;

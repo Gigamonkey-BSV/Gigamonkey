@@ -31,7 +31,7 @@ namespace Gigamonkey::Stratum {
             optional<mining::subscribe_request::parameters> SubscribeRequest;
         };
         
-        client_session (ptr<net::session<JSON>> p, const options &o) : remote_receive_handler {p}, Options {o} {}
+        client_session (session p, const options &o) : remote_receive_handler {p}, Options {o} {}
         virtual ~client_session () {}
         
     private:

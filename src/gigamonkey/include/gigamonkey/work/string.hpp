@@ -88,7 +88,7 @@ namespace Gigamonkey::work {
     }
     
     std::ostream inline &operator << (std::ostream &o, const string &work_string) {
-        return o << "work_string{" << data::encoding::hex::write (work_string.write ()) << "}";
+        return o << "work_string{" << encoding::hex::write (work_string.write ()) << "}";
     }
 
     bool inline string::valid () const {

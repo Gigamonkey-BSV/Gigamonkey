@@ -14,11 +14,22 @@
 #include <data/net/TCP.hpp>
 #include <data/net/JSON.hpp>
 
+namespace Gigamonkey {
+
+    using URL = data::net::URL;
+    using ASCII = data::ASCII;
+    using unicode = data::unicode;
+    using UTF8 = data::UTF8;
+    using ip_address = data::net::IP::address;
+}
+
 namespace Gigamonkey::Stratum {
+
+    using session = ptr<data::net::session<JSON>>;
     
     // can be used for a remote server or a remote client. 
     struct remote_receive_handler {
-        ptr<net::session<JSON>> Send;
+        session Send;
     
         virtual void receive_notification (const notification &) = 0;
         virtual void receive_request (const Stratum::request &) = 0;
@@ -37,7 +48,7 @@ namespace Gigamonkey::Stratum {
         
         void send_notification (method m, parameters p);
         
-        remote_receive_handler (ptr<net::session<JSON>> x): Send {x} {}
+        remote_receive_handler (session x): Send {x} {}
         
     };
     

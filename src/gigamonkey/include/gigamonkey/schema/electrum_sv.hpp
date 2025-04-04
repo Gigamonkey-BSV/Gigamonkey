@@ -7,6 +7,11 @@
 #include <gigamonkey/schema/bip_39.hpp>
 #include <data/encoding/unicode.hpp>
 
+namespace Gigamonkey {
+    using unicode = data::unicode;
+    using UTF8 = data::UTF8;
+}
+
 // electrum SV uses a different method of working with a seed phrase with the same interface as BIP_39
 namespace Gigamonkey::HD::Electrum_SV {
 

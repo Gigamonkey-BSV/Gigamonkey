@@ -33,6 +33,8 @@ namespace Gigamonkey::SPV {
     // database for storing headers, merkle proofs, and transactions.
     struct database;
 
+    using time_limit = data::math::signed_limit<Bitcoin::timestamp>;
+
     // a proof consists of a transaction + previous transactions that are being redeemed
     // with merkle proofs or previous transactions with merkle proofs, etc
     // this is what you would send to a peer when you wanted to make a payment.
@@ -94,8 +96,7 @@ namespace Gigamonkey::SPV {
 
         // check valid and check that all headers are in our database.
         // and check all scripts for txs that have no merkle proof.
-        bool validate (database &,
-            math::signed_limit<Bitcoin::timestamp> genesis_upgrade_time = math::signed_limit<Bitcoin::timestamp>::negative_infinity ()) const;
+        bool validate (database &, time_limit genesis_upgrade_time = time_limit::negative_infinity ()) const;
 
         explicit operator list<extended::transaction> () const;
 
@@ -148,7 +149,7 @@ namespace Gigamonkey::SPV {
         virtual set<Bitcoin::TXID> unconfirmed () = 0;
 
         // an in-memory implementation of the database.
-        class memory;
+        struct memory;
 
         virtual ~database () {}
 

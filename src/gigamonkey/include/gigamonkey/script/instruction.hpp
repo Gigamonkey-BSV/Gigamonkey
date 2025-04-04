@@ -24,7 +24,7 @@ namespace Gigamonkey::Bitcoin {
         return o <= OP_PUSHDATA4;
     }
     
-    bool is_minimal (bytes_view);
+    bool is_minimal_script (bytes_view);
     
     // ASM is a standard human format for Bitcoin scripts that is unique only if the script is minimally encoded. 
     string ASM (bytes_view);
@@ -46,9 +46,9 @@ namespace Gigamonkey::Bitcoin {
     instruction push_data (bytes_view);
     
     template <bool is_signed, boost::endian::order o, std::size_t size>
-    instruction push_data (const arithmetic::endian_integral<is_signed, o, size> &x);
+    instruction push_data (const data::endian_integral<is_signed, o, size> &x);
     
-    bool is_minimal (const instruction &);
+    bool is_minimal_instruction (const instruction &);
     
     // Representation of a Bitcoin script instruction, which is either an op code
     // by itself or an op code for pushing data to the stack along with data. 
@@ -198,12 +198,12 @@ namespace Gigamonkey::Bitcoin {
     }
     
     template <bool is_signed, boost::endian::order o, std::size_t size>
-    instruction inline push_data (const arithmetic::endian_integral<is_signed, o, size> &x) {
+    instruction inline push_data (const data::endian_integral<is_signed, o, size> &x) {
         return push_data (bytes_view (x));
     }
 
-    bool inline is_minimal (bytes_view b) {
-        for (const instruction &i : decompile (b)) if (!is_minimal (i)) return false;
+    bool inline is_minimal_script (bytes_view b) {
+        for (const instruction &i : decompile (b)) if (!is_minimal_instruction (i)) return false;
         return true;
     }
 }

@@ -4,25 +4,25 @@
 #include <gigamonkey/pay/ARC.hpp>
 
 namespace Gigamonkey::ARC {
-    bool response::valid (const net::HTTP::response &r) {
-        if (r.Status == net::HTTP::status::unauthorized && r.Body == "") return true;
-        const auto *v = r.Headers.contains (net::HTTP::header::content_type);
+    bool response::valid (const HTTP::response &r) {
+        if (r.Status == HTTP::status::unauthorized && r.Body == "") return true;
+        const auto *v = r.Headers.contains (HTTP::header::content_type);
         return bool (v) && *v == "application/json" || bool (body (r));
     }
 
-    error response::error (const net::HTTP::response &r) {
-        if (!error (r) || r.Status == net::HTTP::status::unauthorized) return JSON (nullptr);
+    error response::error (const HTTP::response &r) {
+        if (!error (r) || r.Status == HTTP::status::unauthorized) return JSON (nullptr);
         return *body (r);
     }
 
-    maybe<JSON> response::body (const net::HTTP::response &r) {
+    maybe<JSON> response::body (const HTTP::response &r) {
         try {
             return JSON::parse (r.Body);
         } catch (JSON::exception) {}
         return {};
     }
 
-    bool health_response::valid (const net::HTTP::response &r) {
+    bool health_response::valid (const HTTP::response &r) {
         if (!response::valid (r)) return false;
         auto b = response::body (r);
         return bool (b) ? health::valid (*b) : true;
@@ -35,7 +35,7 @@ namespace Gigamonkey::ARC {
             j.contains ("miningFee") && j["miningFee"].is_object ();
     }
 
-    bool policy_response::valid (const net::HTTP::response &r) {
+    bool policy_response::valid (const HTTP::response &r) {
         if (!response::valid (r)) return false;
         auto b = response::body (r);
         if (!bool (b)) return true;
@@ -52,17 +52,17 @@ namespace Gigamonkey::ARC {
             j.contains ("txStatus") && j["txStatus"].is_string ();
     }
 
-    bool status_response::valid (const net::HTTP::response &r) {
+    bool status_response::valid (const HTTP::response &r) {
         if (!response::valid (r)) return false;
         auto b = response::body (r);
         if (!bool (b)) return true;
-        if (response::is_error (r)) return error::valid (*b) && r.Status == net::HTTP::status::not_found || r.Status == net::HTTP::status::conflict;
+        if (response::is_error (r)) return error::valid (*b) && r.Status == HTTP::status::not_found || r.Status == HTTP::status::conflict;
         if (!success::valid (*b)) return false;
         return status::valid (*b);
     }
 
     submit_request::submit_request (const extended::transaction &tx, submit x) :
-        net::HTTP::REST::request {net::HTTP::method::post, "/v1/tx", {}, {}, x.headers ()} {
+        HTTP::REST::request {HTTP::method::post, "/v1/tx", {}, {}, x.headers ()} {
         switch (x.ContentType) {
             case (octet): {
                 this->Body = string (bytes (tx));
@@ -80,14 +80,14 @@ namespace Gigamonkey::ARC {
     }
 
     submit_txs_request::submit_txs_request (list<extended::transaction> txs, submit x) :
-        net::HTTP::REST::request {net::HTTP::method::post, "/v1/txs", {}, {}, x.headers ()} {
+        HTTP::REST::request {HTTP::method::post, "/v1/txs", {}, {}, x.headers ()} {
         switch (x.ContentType) {
             case octet: {
                 bytes b (fold ([] (size_t so_far, const extended::transaction &G) {
                     return so_far + G.serialized_size ();
                 }, size_t {0}, txs));
 
-                iterator_writer bb {b.begin (), b.end ()};
+                it_wtr bb {b.begin (), b.end ()};
                 for (const extended::transaction &tx : txs) bb << tx;
                 this->Body = string (b);
             } return;
@@ -142,9 +142,9 @@ namespace Gigamonkey::ARC {
         }
     }
 
-    map<net::HTTP::header, ASCII> submit::headers () const {
-        map<net::HTTP::header, ASCII> m {};
-        m = m.insert (net::HTTP::header::content_type, write (ContentType));
+    map<HTTP::header, ASCII> submit::headers () const {
+        map<HTTP::header, ASCII> m {};
+        m = m.insert (HTTP::header::content_type, write (ContentType));
         if (bool (CallbackURL)) m = m.insert ("X-CallbackURL", *CallbackURL);
         if (bool (FullStatusUpdates)) m = m.insert ("X-FullStatusUpdates", write (*FullStatusUpdates));
         if (bool (MaxTimeout)) m = m.insert ("X-MaxTimeout", write (*MaxTimeout));
@@ -157,7 +157,7 @@ namespace Gigamonkey::ARC {
         return m;
     }
 
-    bool submit_response::valid (const net::HTTP::response &r) {
+    bool submit_response::valid (const HTTP::response &r) {
         if (!response::valid (r)) return false;
         auto b = response::body (r);
         if (!bool (b)) return true;
@@ -170,7 +170,7 @@ namespace Gigamonkey::ARC {
         return status::valid (*b);
     }
 
-    bool submit_txs_response::valid (const net::HTTP::response &r) {
+    bool submit_txs_response::valid (const HTTP::response &r) {
         if (!response::valid (r)) return false;
         auto b = response::body (r);
         if (!bool (b)) return true;
@@ -184,7 +184,7 @@ namespace Gigamonkey::ARC {
         return true;
     }
 
-    list<status> submit_txs_response::status (const net::HTTP::response &r) {
+    list<status> submit_txs_response::status (const HTTP::response &r) {
         list<ARC::status> stat;
         auto b = response::body (r);
         for (const JSON &j : *b) stat <<= ARC::status {j};

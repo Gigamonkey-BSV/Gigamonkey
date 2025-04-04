@@ -10,7 +10,7 @@ namespace Gigamonkey::Bitcoin {
     bytes append_checksum (bytes_view b) {
 
         bytes checked (b.size () + 4);
-        iterator_writer w (checked.begin (), checked.end ());
+        it_wtr w (checked.begin (), checked.end ());
         w << b << checksum (b);
         return checked;
 
@@ -45,7 +45,7 @@ namespace Gigamonkey::base58 {
         bytes data = Bitcoin::append_checksum (static_cast<bytes> (*this));
         size_t leading_zeros = 0;
         while (leading_zeros < data.size () && data[leading_zeros] == 0) leading_zeros++;
-        std::string b58 = data::encoding::base58::write (bytes_view (data).substr (leading_zeros));
+        std::string b58 = encoding::base58::write (bytes_view (data).substr (leading_zeros));
         std::string ones (leading_zeros, '1');
         std::stringstream ss;
         ss << ones << b58;
@@ -85,7 +85,7 @@ namespace Gigamonkey::base58 {
         
         string test {invalid};
         
-        string characters = data::encoding::base58::characters ();
+        string characters = encoding::base58::characters ();
         
         // replacements
         for (int i = 0; i < test.size (); i++) {

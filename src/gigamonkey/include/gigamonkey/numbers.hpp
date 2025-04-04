@@ -5,15 +5,22 @@
 #define GIGAMONKEY_NUMBERS
 
 #include <gigamonkey/types.hpp>
+#include <gigamonkey/script/error.h>
 
 namespace Gigamonkey::Bitcoin {
 
-    // bitcoin uses two kinds of numbers.
-    // Fixed-size unsigned, little endian
-    template <size_t size> using uint = uint_little<size>;
-
     // and arbitrary size integers, little endian two's complement.
-    using integer = Z_bytes_twos_little;
+    using integer = data::Z_bytes_BC_little;
+
+    bool is_minimal_number (bytes_view);
+    bytes &extend_number (bytes &, size_t size);
+
+    // trim to minimal size;
+    bytes &trim_number (bytes &);
+
+    static const size_t MAXIMUM_ELEMENT_SIZE = 4;
+
+    const integer &read_integer (const bytes &span, bool RequireMinimal, const size_t nMaxNumSize = MAXIMUM_ELEMENT_SIZE);
 
     bool nonzero (bytes_view b);
 
@@ -60,7 +67,7 @@ namespace Gigamonkey::Bitcoin {
         return b[b.size () - 1] != 0 && b[b.size () - 1] != 0x80;
     }
 
-    template <size_t size> size_t inline serialized_size (const uint<size> &u) {
+    template <size_t size> size_t inline serialized_size (const uint_little<size> &u) {
         size_t last_0 = 0;
         for (size_t i = 0; i < size; i++) if (u[i] != 0x00) last_0 = i + 1;
         return last_0 == 0 ? 1 : u[last_0 - 1] & 0x80 ? last_0 + 2 : last_0 + 1;
@@ -68,6 +75,29 @@ namespace Gigamonkey::Bitcoin {
 
     size_t inline serialized_size (const integer &i) {
         return i.size ();
+    }
+
+    const integer inline &read_integer (const bytes &span, bool RequireMinimal, const size_t nMaxNumSize) {
+
+        if (span.size () > nMaxNumSize) throw script_exception {SCRIPT_ERR_SCRIPTNUM_OVERFLOW};
+
+        if (RequireMinimal && !is_minimal_number (span)) throw script_exception {SCRIPT_ERR_SCRIPTNUM_MINENCODE};
+
+        return static_cast<const integer &> (span);
+    }
+
+    bool inline is_minimal_number (bytes_view span) {
+        return data::arithmetic::is_minimal<data::endian::little, data::arithmetic::complement::BC, byte> (span);
+    }
+
+    bytes inline &extend_number (bytes &rawnum, size_t size) {
+        data::arithmetic::extend<data::endian::little, data::arithmetic::complement::BC, byte> (rawnum, size);
+        return rawnum;
+    }
+
+    bytes inline &trim_number (bytes &num) {
+        data::arithmetic::trim<data::endian::little, data::arithmetic::complement::BC, byte> (num);
+        return num;
     }
 
     // implements OP_LEFT

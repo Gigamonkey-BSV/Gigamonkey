@@ -113,7 +113,7 @@ namespace Gigamonkey {
         if (j["txOrId"].size () == 64) {
             return read_digest (j["txOrId"]);
         } else {
-            return Bitcoin::transaction::id(*encoding::hex::read (string (j["txOrId"])));
+            return Bitcoin::transaction::id (*encoding::hex::read (string (j["txOrId"])));
         }
     }
     
@@ -182,7 +182,7 @@ namespace Gigamonkey {
             proofs_serialization_standard x;
             
             byte flags;
-            iterator_reader r {b.data (), b.data () + b.size ()};
+            it_rdr r {b.data (), b.data () + b.size ()};
             Bitcoin::var_int index; 
             r >> flags >> index;
             x.Path.Index = index;
@@ -270,7 +270,7 @@ namespace Gigamonkey {
         bytes b (size);
         
         // write flags and index. 
-        iterator_writer w {b.begin (), b.end ()};
+        it_wtr w {b.begin (), b.end ()};
         w << flags() << Bitcoin::var_int {index ()};
         
         if (tx_included) write_transaction (w, *Transaction);

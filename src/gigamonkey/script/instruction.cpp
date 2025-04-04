@@ -125,7 +125,7 @@ namespace Gigamonkey::Bitcoin {
                 return b;
             }
             
-            script_reader (iterator_reader<const byte *> r) : Reader {r} {}
+            script_reader (it_rdr<const byte *> r) : Reader {r} {}
         };
 
         template <typename R>
@@ -142,13 +142,13 @@ namespace Gigamonkey::Bitcoin {
         return SCRIPT_ERR_OK;
     }
 
-    bool is_minimal (const instruction &i) {
+    bool is_minimal_instruction (const instruction &i) {
         return verify_instruction (i) == SCRIPT_ERR_OK && is_minimal_push (i.Op, i.Data);
     }
     
     instruction instruction::read (bytes_view b) {
         instruction i;
-        script_reader {iterator_reader {b.data (), b.data () + b.size ()}} >> i;
+        script_reader {it_rdr {b.data (), b.data () + b.size ()}} >> i;
         return i;
     }
     
@@ -187,7 +187,7 @@ namespace Gigamonkey::Bitcoin {
     
     std::ostream &write_asm (std::ostream &o, instruction i) {
         if (i.Op == OP_0) return o << "0";
-        if (is_push_data (i.Op)) return o << data::encoding::hex::write (i.Data);
+        if (is_push_data (i.Op)) return o << encoding::hex::write (i.Data);
         return o << i.Op;
     }
     
@@ -296,19 +296,19 @@ namespace Gigamonkey::Bitcoin {
 
     std::ostream &operator << (std::ostream &o, const instruction &i) {
         if (!is_push_data (i.Op)) return write_op_code (o, i.Op);
-        return write_op_code (o, i.Op) << "{" << data::encoding::hex::write (i.Data) << "}";
+        return write_op_code (o, i.Op) << "{" << encoding::hex::write (i.Data) << "}";
     }
     
     bytes compile (program p) {
         bytes compiled (serialized_size (p));
-        iterator_writer b {compiled.begin (), compiled.end ()};
+        it_wtr b {compiled.begin (), compiled.end ()};
         script_writer {b} << p;
         return compiled;
     }
     
     bytes compile (instruction i) {
         bytes compiled (serialized_size (i));
-        iterator_writer b {compiled.begin (), compiled.end ()};
+        it_wtr b {compiled.begin (), compiled.end ()};
         script_writer {b} << i;
         return compiled;
     }
@@ -316,7 +316,7 @@ namespace Gigamonkey::Bitcoin {
     program decompile (bytes_view b) {
         
         program p {};
-        script_reader r {iterator_reader {b.data (), b.data () + b.size ()}};
+        script_reader r {it_rdr {b.data (), b.data () + b.size ()}};
         
         stack<op> Control;
         
@@ -359,7 +359,7 @@ namespace Gigamonkey::Bitcoin {
         auto script_error = i.verify (flags);
         if (script_error != SCRIPT_ERR_OK) return script_error;
         
-        if ((verify_minimal_push (flags)) && !is_minimal (i)) return SCRIPT_ERR_MINIMALDATA;
+        if ((verify_minimal_push (flags)) && !is_minimal_instruction (i)) return SCRIPT_ERR_MINIMALDATA;
         
         op o = i.Op;
         

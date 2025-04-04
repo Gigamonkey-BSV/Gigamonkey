@@ -290,7 +290,7 @@ namespace Gigamonkey::work {
 
     inline compact compact::encode (byte e, uint24_little v) {
         compact t;
-        iterator_writer w (t.begin (), t.end ());
+        it_wtr w (t.begin (), t.end ());
         w << v << e;
         return t;
     }

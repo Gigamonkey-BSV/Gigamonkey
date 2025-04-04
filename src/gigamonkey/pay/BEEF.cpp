@@ -20,7 +20,7 @@ namespace Gigamonkey {
 
     BEEF::operator bytes () const {
         bytes b (serialized_size ());
-        iterator_writer w {b.begin (), b.end ()};
+        it_wtr w {b.begin (), b.end ()};
         w << *this;
         return b;
     }

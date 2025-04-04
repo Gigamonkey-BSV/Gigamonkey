@@ -167,14 +167,14 @@ namespace Gigamonkey::Merkle {
     BUMP::operator bytes () const {
         if (!valid ()) throw exception {} << "invalid BUMP";
         bytes b (serialized_size ());
-        iterator_writer w {b.begin (), b.end ()};
+        it_wtr w {b.begin (), b.end ()};
         w << *this;
         return b;
     }
 
     BUMP::BUMP (const bytes &b) {
         try {
-            iterator_reader r {b.data (), b.data () + b.size ()};
+            it_rdr r {b.data (), b.data () + b.size ()};
             r >> *this;
         } catch (data::end_of_stream n) {
             *this = BUMP {};

@@ -67,6 +67,7 @@ namespace Gigamonkey::Bitcoin {
     TEST (NumberTest, TestNumberConstructorsHexidecZ) {
         
         EXPECT_EQ (bytes_view (integer ("0")), bytes ());
+        EXPECT_EQ (bytes_view (integer ("0x")), *encoding::hex::read  (""));
         EXPECT_EQ (bytes_view (integer ("0x00")), *encoding::hex::read  ("00"));
         EXPECT_EQ (bytes_view (integer ("0x80")), *encoding::hex::read  ("80"));
         EXPECT_EQ (bytes_view (integer ("0x0000")), *encoding::hex::read  ("0000"));

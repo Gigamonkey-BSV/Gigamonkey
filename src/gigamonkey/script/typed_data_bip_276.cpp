@@ -16,11 +16,11 @@ namespace Gigamonkey {
         
         bytes data = write_bytes (b.size () + 2, version, byte (n), b);
         
-        ss << ':' << encoding::hex::write (data, hex_case::lower);
+        ss << ':' << encoding::hex::write (data, data::hex_case::lower);
         
         auto checksum = Bitcoin::checksum (bytes (string (ss.str ())));
         
-        ss << encoding::hex::write (checksum, hex_case::lower);
+        ss << encoding::hex::write (checksum, data::hex_case::lower);
         
         return ss.str ();
     }

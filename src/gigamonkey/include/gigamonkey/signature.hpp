@@ -69,12 +69,12 @@ namespace Gigamonkey::Bitcoin {
 
     inline signature::signature (const secp256k1::point raw, sighash::directive d) :
         bytes (secp256k1::signature::serialized_size (raw) + 1) {
-        iterator_writer w (bytes::begin (), bytes::end ());
+        it_wtr w (bytes::begin (), bytes::end ());
         w << raw << d;
     }
 
     inline signature::signature (const secp256k1::signature raw, sighash::directive d) : bytes (raw.size () + 1) {
-        iterator_writer w (bytes::begin (), bytes::end ());
+        it_wtr w (bytes::begin (), bytes::end ());
         w << raw << d;
     }
 
@@ -87,7 +87,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     std::ostream inline &operator << (std::ostream &o, const signature &x) {
-        return o << "signature {" << data::encoding::hex::write (bytes_view (x)) << "}";
+        return o << "signature {" << encoding::hex::write (bytes_view (x)) << "}";
     }
     
 }
