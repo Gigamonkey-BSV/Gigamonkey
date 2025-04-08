@@ -62,10 +62,10 @@ namespace Gigamonkey::SPV {
 
             auto o = old;
             do {
-                for (const auto &e : o->second->Paths) {
+                for (const auto &[key, _] : o->second->Paths) {
                     // all txs in paths go into pending.
-                    ByTXID.erase (e.Key);
-                    Pending = Pending.insert (e.Key);
+                    ByTXID.erase (key);
+                    Pending = Pending.insert (key);
                 }
 
                 ByRoot.erase (o->second->Header.Value.MerkleRoot);
@@ -117,8 +117,8 @@ namespace Gigamonkey::SPV {
 
             if (!extended_transaction (u.Transaction, u.Proof.get<proof::map> ()).valid ()) return false;
 
-            for (const entry<Bitcoin::TXID, proof::accepted> &p : u.Proof.get<proof::map> ())
-                if (p.Value == nullptr || p.Key != p.Value->Transaction.id () || !unconfirmed_validate (*p.Value, d)) return false;
+            for (const auto &[txid, accepted] : u.Proof.get<proof::map> ())
+                if (accepted == nullptr || txid != accepted->Transaction.id () || !unconfirmed_validate (*accepted, d)) return false;
 
             return true;
         }

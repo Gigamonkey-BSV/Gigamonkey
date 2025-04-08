@@ -31,8 +31,8 @@ namespace Gigamonkey {
 
             if (bool (n.Proof)) return h != nullptr ? n.Proof->validate (*h) : n.Proof->valid ();
 
-            for (const entry<TXID, ptr<SPV_envelope::node>> &p : n.Inputs)
-                if (p.Value == nullptr || !validate_node (p.Key, *p.Value, MAPI_responses_included, h)) return false;
+            for (const auto &[txid, ptn] : n.Inputs)
+                if (ptn == nullptr || !validate_node (txid, *ptn, MAPI_responses_included, h)) return false;
 
             return true;
         }
@@ -46,8 +46,8 @@ namespace Gigamonkey {
 
             no_excluded_middle MAPI_responses_included = no_excluded_middle::unknown;
 
-            for (const entry<TXID, SPV_envelope::node> &p : n.Inputs)
-                if (!validate_node (p.Key, p.Value, MAPI_responses_included, nullptr)) return false;
+            for (const auto &[txid, node] : n.Inputs)
+                if (!validate_node (txid, node, MAPI_responses_included, nullptr)) return false;
 
             return true;
         }
@@ -114,8 +114,8 @@ namespace Gigamonkey {
             }
 
             JSON::object_t inputs {};
-            for (const entry<Bitcoin::TXID, ptr<SPV_envelope::node>> &p : n.Inputs)
-                inputs[write_txid (p.Key)] = write_JSON (*p.Value);
+            for (const auto &[txid, ptn] : n.Inputs)
+                inputs[write_txid (txid)] = write_JSON (*ptn);
             node["inputs"] = inputs;
 
             return node;
@@ -185,8 +185,8 @@ namespace Gigamonkey {
         }
 
         JSON::object_t inputs {};
-        for (const entry<Bitcoin::TXID, SPV_envelope::node> &p : Inputs)
-            inputs[write_txid (p.Key)] = write_JSON (p.Value);
+        for (const auto &[txid, node] : Inputs)
+            inputs[write_txid (txid)] = write_JSON (node);
         node["inputs"] = inputs;
 
         return node;

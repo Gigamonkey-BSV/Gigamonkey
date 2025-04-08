@@ -77,11 +77,11 @@ namespace Gigamonkey::MAPI {
         JSON to_JSON (map<string, fee> fees) {
             JSON j = JSON::array ();
             
-            for (const data::entry<string, fee> &f : fees)
-                j.push_back (f.valid () ? JSON {
-                    {"feeType", f.Key}, 
-                    {"miningFee", to_JSON (f.Value.MiningFee)},
-                    {"relayFee", to_JSON (f.Value.RelayFee)}} : JSON (nullptr));
+            for (const auto &[k, v] : fees)
+                j.push_back (v.valid () ? JSON {
+                    {"feeType", k},
+                    {"miningFee", to_JSON (v.MiningFee)},
+                    {"relayFee", to_JSON (v.RelayFee)}} : JSON (nullptr));
             
             return j;
         }

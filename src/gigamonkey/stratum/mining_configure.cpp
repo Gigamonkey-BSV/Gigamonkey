@@ -51,10 +51,10 @@ namespace Gigamonkey::Stratum::mining {
     }
     
     configure_request::parameters::parameters (extensions::requests r) {
-        for (const data::entry<string, extensions::request> &e : r) {
-            Supported = Supported << e.Key;
-            for (const data::entry<string, JSON> &j : e.Value) 
-                Parameters[e.Key + string {"."} + j.Key] = j.Value;
+        for (const auto &[name, req] : r) {
+            Supported = Supported << name;
+            for (const auto &[key, val] : req)
+                Parameters[key + string {"."} + key] = val;
         }
     }
     
@@ -63,25 +63,28 @@ namespace Gigamonkey::Stratum::mining {
         
         for (const string &supported : Supported) m = m.insert (supported, extensions::request{});
         
-        for (const std::pair<string, JSON> &j : Parameters) {
+        for (const auto &[param, val] : Parameters) {
             std::vector<std::string> z;
-            boost::split(z, j.first, boost::is_any_of ("."));
+            boost::split(z, param, boost::is_any_of ("."));
             if (z.size() != 2) throw data::exception {"invalid format"};
-            
-            auto x = m.contains (z[0]);
-            if (!x) throw data::exception {"invalid format"};
-            *x = x->insert (z[1], j.second);
+
+            if (!bool (m.contains (z[0]))) throw data::exception {"invalid format"};
+
+            data::entry<const string, JSON> e {z[1], val};
+            m = m.replace_part (z[0], [e] (const extensions::request &o) {
+                return o.insert (e);
+            });
         }
         
         return {m};
     }
     
-    configure_response::parameters::parameters(extensions::results r) {
-        for (const data::entry<string, extensions::result> &e : r) {
-            (*this)[e.Key] = JSON(e.Value.Accepted);
-            if (!e.Value.Accepted) continue;
-            for (const data::entry<string, JSON> &x : e.Value.Parameters) {
-                (*this)[e.Key + string{"."} + x.Key] = x.Value;
+    configure_response::parameters::parameters (extensions::results r) {
+        for (const auto &[name, req] : r) {
+            (*this)[name] = JSON (req.Accepted);
+            if (!req.Accepted) continue;
+            for (const auto &[key, val] : req.Parameters) {
+                (*this)[name + string {"."} + key] = val;
             } 
         }
     }

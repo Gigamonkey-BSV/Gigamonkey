@@ -732,10 +732,10 @@ namespace Gigamonkey {
         }
         
         inline candidate::candidate (list<Bitcoin::prevout> utxos) :
-            Script {utxos.first ().script ()}, Prevouts {data::for_each (
-                [] (const Bitcoin::prevout &p) -> prevout {
-                    return prevout {p.outpoint (), p.value ()};
-                }, utxos)} {}
+            Script {utxos.first ().script ()}, Prevouts {
+                data::fold ([] (set<prevout> x, const Bitcoin::prevout &p) -> set<prevout> {
+                    return x.insert (prevout {p.outpoint (), p.value ()});
+                }, set<prevout> {}, utxos)} {}
         
         double inline candidate::difficulty () const {
             return double (work::difficulty (output_script {Script}.Target));
@@ -752,7 +752,7 @@ namespace Gigamonkey {
         candidate inline candidate::add (const Bitcoin::prevout &p) const {
             prevout pp {p.outpoint (), p.value ()};
             return Prevouts.size () == 0 ? candidate {p.script (), {pp}} :
-                Prevouts.contains (pp) ? *this : candidate {Script, Prevouts << pp};
+                Prevouts.contains (pp) ? *this : candidate {Script, Prevouts.insert (pp)};
         }
         
         digest256 inline candidate::id () const {
@@ -760,9 +760,9 @@ namespace Gigamonkey {
         }
         
         Bitcoin::satoshi inline candidate::value () const {
-            return data::fold ([] (const Bitcoin::satoshi so_far, const prevout &u) -> Bitcoin::satoshi {
-                    return so_far + u.Value;
-                }, Bitcoin::satoshi {0}, Prevouts.values ());
+            Bitcoin::satoshi so_far {0};
+            for (const prevout &u : Prevouts) so_far += u.Value;
+            return so_far;
         }
 
         bool inline candidate::valid () const {

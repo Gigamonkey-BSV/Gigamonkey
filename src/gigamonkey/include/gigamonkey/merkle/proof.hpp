@@ -93,7 +93,7 @@ namespace Gigamonkey::Merkle {
         return root (leaf {txid, Index}, Digests);
     }
     
-    using entry = data::entry<digest, path>;
+    using entry = data::entry<const digest, path>;
     
     // branch has a leaf and a path but not a root. 
     struct branch final {
