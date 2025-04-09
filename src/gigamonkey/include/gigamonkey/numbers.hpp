@@ -127,12 +127,12 @@ namespace Gigamonkey::Bitcoin {
     // implements OP_SPLIT
     std::pair<bytes_view, bytes_view> inline split (bytes_view x, size_t n) {
         if (n < 0 || n > x.size ()) throw exception {} << "invalid split range";
-        return {x.substr (n), x.substr (x.size () - n, x.size ())};
+        return {x.substr (0, n), x.substr (n + 1)};
     }
 
     std::pair<string_view, string_view> inline split (string_view x, size_t n) {
         if (n < 0 || n > x.size ()) throw exception {} << "invalid split range";
-        return {x.substr (n), x.substr (x.size () - n, x.size ())};
+        return {x.substr (0, n), x.substr (n + 1)};
     }
 }
 
