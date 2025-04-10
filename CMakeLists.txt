@@ -54,7 +54,7 @@ IF (WIN32)
   pkg_check_modules (cryptopp REQUIRED IMPORTED_TARGET cryptopp)
 ELSE ()
   pkg_check_modules (cryptopp REQUIRED IMPORTED_TARGET libcrypto++)
-  # If we do not have crypto++, go to `https://github.com/weidai11/cryptopp` and follow the instructions.
+  # If we do not have crypto++, `sudo apt install libcrypto++-dev`
 ENDIF ()
 
 ## Enable testing
