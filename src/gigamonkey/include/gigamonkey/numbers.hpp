@@ -12,6 +12,8 @@ namespace Gigamonkey::Bitcoin {
     // and arbitrary size integers, little endian two's complement.
     using integer = data::Z_bytes_BC_little;
 
+    size_t minimal_number_size (bytes_view);
+
     bool is_minimal_number (bytes_view);
     bytes &extend_number (bytes &, size_t size);
 
@@ -75,6 +77,10 @@ namespace Gigamonkey::Bitcoin {
 
     size_t inline serialized_size (const integer &i) {
         return i.size ();
+    }
+
+    size_t inline minimal_number_size (bytes_view b) {
+        return data::arithmetic::minimal_size<data::endian::little, data::arithmetic::complement::BC, byte> (b);
     }
 
     const integer inline &read_integer (const bytes &span, bool RequireMinimal, const size_t nMaxNumSize) {
