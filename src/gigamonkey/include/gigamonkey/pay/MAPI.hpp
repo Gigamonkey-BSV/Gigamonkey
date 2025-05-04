@@ -16,6 +16,8 @@ namespace Gigamonkey {
     using unicode = data::unicode;
     using UTF8 = data::UTF8;
     using ip_address = data::net::IP::address;
+
+    template <typename X> using awaitable = boost::asio::awaitable<X>;
 }
 
 namespace Gigamonkey::MAPI {
@@ -40,15 +42,14 @@ namespace Gigamonkey::MAPI {
     struct submit_transaction_request;
     using submit_transactions_response = response<submit_transactions>;
 
-    struct client : HTTP::client_blocking {
-        using HTTP::client_blocking::client_blocking;
-
+    struct client : HTTP::client {
+        using HTTP::client::client;
         // there are five calls in MAPI
-        get_policy_quote_response get_policy_quote ();
-        get_fee_quote_response get_fee_quote ();
-        transaction_status_response get_transaction_status (const Bitcoin::TXID &);
-        submit_transaction_response submit_transaction (const submit_transaction_request &);
-        submit_transactions_response submit_transactions (const submit_transactions_request &);
+        awaitable<get_policy_quote_response> get_policy_quote ();
+        awaitable<get_fee_quote_response> get_fee_quote ();
+        awaitable<transaction_status_response> get_transaction_status (const Bitcoin::TXID &);
+        awaitable<submit_transaction_response> submit_transaction (const submit_transaction_request &);
+        awaitable<submit_transactions_response> submit_transactions (const submit_transactions_request &);
 
     private:
         HTTP::request get_policy_quote_HTTP_request () const;
@@ -56,7 +57,7 @@ namespace Gigamonkey::MAPI {
         HTTP::request transaction_status_HTTP_request (const Bitcoin::TXID &) const;
         HTTP::request submit_transaction_HTTP_request (const submit_transaction_request &) const;
         HTTP::request submit_transactions_HTTP_request (const submit_transactions_request &) const;
-        JSON call (const HTTP::request &r);
+        awaitable<JSON> call (const HTTP::request &r);
     };
 
     enum service {
@@ -352,24 +353,24 @@ namespace Gigamonkey::MAPI {
         return this->REST.GET ("/mapi/feeQuote");
     }
     
-    get_policy_quote_response inline client::get_policy_quote () {
-        return call (get_policy_quote_HTTP_request ());
+    awaitable<get_policy_quote_response> inline client::get_policy_quote () {
+        co_return co_await call (get_policy_quote_HTTP_request ());
     }
     
-    get_fee_quote_response inline client::get_fee_quote () {
-        return call (get_fee_quote_HTTP_request ());
+    awaitable<get_fee_quote_response> inline client::get_fee_quote () {
+        co_return co_await call (get_fee_quote_HTTP_request ());
     }
     
-    transaction_status_response inline client::get_transaction_status (const Bitcoin::TXID &txid) {
-        return call (transaction_status_HTTP_request (txid));
+    awaitable<transaction_status_response> inline client::get_transaction_status (const Bitcoin::TXID &txid) {
+        co_return co_await call (transaction_status_HTTP_request (txid));
     }
     
-    submit_transaction_response inline client::submit_transaction (const submit_transaction_request &r) {
-        return call (submit_transaction_HTTP_request (r));
+    awaitable<submit_transaction_response> inline client::submit_transaction (const submit_transaction_request &r) {
+        co_return co_await call (submit_transaction_HTTP_request (r));
     }
     
-    submit_transactions_response inline client::submit_transactions (const submit_transactions_request &r) {
-        return call (submit_transactions_HTTP_request (r));
+    awaitable<submit_transactions_response> inline client::submit_transactions (const submit_transactions_request &r) {
+        co_return co_await call (submit_transactions_HTTP_request (r));
     }
 
     inline fee::fee (satoshis_per_byte mining, satoshis_per_byte relay) :

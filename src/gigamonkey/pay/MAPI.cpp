@@ -6,8 +6,8 @@
 namespace Gigamonkey::MAPI {
     using namespace Bitcoin;
     
-    JSON client::call (const HTTP::request &q) {
-        HTTP::response r = (*this) (q);
+    awaitable<JSON> client::call (const HTTP::request &q) {
+        HTTP::response r = co_await (*this) (q);
         
         if (static_cast<unsigned int> (r.Status) < 200 ||
             static_cast<unsigned int> (r.Status) >= 300)
@@ -23,7 +23,7 @@ namespace Gigamonkey::MAPI {
         
         if (!envelope.verify ()) throw HTTP::exception {q, r, "MAPI signature verify fail"};
         
-        return res;
+        co_return res;
     }
     
     HTTP::request client::transaction_status_HTTP_request (const Bitcoin::TXID &request) const {
@@ -45,7 +45,7 @@ namespace Gigamonkey::MAPI {
     
     namespace {
     
-        satoshis_per_byte spb_from_JSON (const JSON& j) {
+        satoshis_per_byte spb_from_JSON (const JSON &j) {
             if (!(j.is_object () &&
                 j.contains ("satoshis") && j["satoshis"].is_number_unsigned () &&
                 j.contains ("bytes") && j["bytes"].is_number_unsigned ())) return {};

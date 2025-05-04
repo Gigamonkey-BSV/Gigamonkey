@@ -17,6 +17,8 @@ namespace Gigamonkey {
     using unicode = data::unicode;
     using UTF8 = data::UTF8;
     using ip_address = data::net::IP::address;
+
+    template <typename X> using awaitable = boost::asio::awaitable<X>;
 }
 
 namespace Gigamonkey::ARC {
@@ -32,15 +34,15 @@ namespace Gigamonkey::ARC {
     struct submit_txs_request;
     struct submit_txs_response;
 
-    struct client : HTTP::client_blocking {
-        using HTTP::client_blocking::client_blocking;
+    struct client : HTTP::client {
+        using HTTP::client::client;
 
         // there are five calls in ARC
-        policy_response policy ();
-        health_response health ();
-        status_response status (const Bitcoin::TXID &);
-        submit_response submit (const submit_request &);
-        submit_txs_response submit_txs (const submit_txs_request &);
+        awaitable<policy_response> policy ();
+        awaitable<health_response> health ();
+        awaitable<status_response> status (const Bitcoin::TXID &);
+        awaitable<submit_response> submit (const submit_request &);
+        awaitable<submit_txs_response> submit_txs (const submit_txs_request &);
     };
 
     // failed queries may contain errors.
@@ -250,24 +252,24 @@ namespace Gigamonkey::ARC {
         return HTTP::REST::request {HTTP::method::get, std::string {"/v1/tx/"} + Gigamonkey::write_reverse_hex (txid)};
     }
 
-    policy_response inline client::policy () {
-        return this->operator () (this->REST (policy_request ()));
+    awaitable<policy_response> inline client::policy () {
+        co_return co_await this->operator () (this->REST (policy_request ()));
     }
 
-    health_response inline client::health () {
-        return this->operator () (this->REST (health_request ()));
+    awaitable<health_response> inline client::health () {
+        co_return co_await this->operator () (this->REST (health_request ()));
     }
 
-    status_response inline client::status (const Bitcoin::TXID &txid) {
-        return this->operator () (this->REST (status_request (txid)));
+    awaitable<status_response> inline client::status (const Bitcoin::TXID &txid) {
+        co_return co_await this->operator () (this->REST (status_request (txid)));
     }
 
-    submit_response inline client::submit (const submit_request &x) {
-        return this->operator () (this->REST (x));
+    awaitable<submit_response> inline client::submit (const submit_request &x) {
+        co_return co_await this->operator () (this->REST (x));
     }
 
-    submit_txs_response inline client::submit_txs (const submit_txs_request &x) {
-        return this->operator () (this->REST (x));
+    awaitable<submit_txs_response> inline client::submit_txs (const submit_txs_request &x) {
+        co_return co_await this->operator () (this->REST (x));
     }
 
     inline response::response (HTTP::response &&r): HTTP::response (r) {}
