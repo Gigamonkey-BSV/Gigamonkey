@@ -94,6 +94,7 @@ namespace Gigamonkey {
     template <typename X> using set = data::set<X>;
     template <typename K, typename V> using entry = data::entry<K, V>;
     template <typename K, typename V> using map = data::map<K, V>;
+    template <typename K, typename V> using dispatch = data::dispatch<K, V>;
 
     template <typename X> using ptr = data::ptr<X>;
 

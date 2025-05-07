@@ -261,8 +261,6 @@ namespace Gigamonkey::MAPI {
             const submit_transaction_parameters &params = {},
             content_type ct = application_octet_stream) : transaction_submission {tx, params}, ContentType {ct} {}
 
-        operator HTTP::REST::request () const;
-
     };
 
     struct submit_transaction : status {
@@ -302,8 +300,6 @@ namespace Gigamonkey::MAPI {
         submit_transaction_parameters DefaultParameters;
 
         bool valid () const;
-
-        operator HTTP::REST::request () const;
 
     };
 

@@ -12,10 +12,10 @@ namespace Gigamonkey::MAPI {
         if (static_cast<unsigned int> (r.Status) < 200 ||
             static_cast<unsigned int> (r.Status) >= 300)
             throw HTTP::exception {q, r, "response code"};
-        
-        if (r.Headers[HTTP::header::content_type] != "application/json")
-            throw HTTP::exception {q, r, string {"content type is not JSON; it is "} +
-                r.Headers[HTTP::header::content_type]};
+        auto v = r.content_type ();
+        if (!bool (v)) throw HTTP::exception {q, r, "content-type missing"};
+        if (*v != "application/json")
+            throw HTTP::exception {q, r, string {"content type is not JSON; it is "} + *v};
 
         JSON res = JSON::parse (r.Body);
         
@@ -32,97 +32,100 @@ namespace Gigamonkey::MAPI {
         ss << "/mapi/tx/" << request;
         return this->REST.GET (ss.str ());
     }
-    
-    HTTP::request client::submit_transaction_HTTP_request (const submit_transaction_request &request) const {
-        if (!request.valid ()) throw std::invalid_argument {"invalid transaction submission request"};
-        return this->REST (HTTP::REST::request (request));
-    }
-    
-    HTTP::request client::submit_transactions_HTTP_request (const submit_transactions_request &request) const {
-        if (!request.valid ()) throw std::invalid_argument {"invalid transactions submission request"};
-        return this->REST (HTTP::REST::request (request));
-    }
-    
+
     namespace {
-    
+
+        data::ASCII to_url_params (const submit_transaction_parameters &ts) {
+            list<data::entry<UTF8, UTF8>> params;
+
+            if (ts.CallbackURL) params = params << data::entry<UTF8, UTF8> {"callbackUrl", *ts.CallbackURL};
+            if (ts.CallbackToken) params = params << data::entry<UTF8, UTF8> {"callbackToken", *ts.CallbackToken};
+            if (ts.MerkleProof) params = params << data::entry<UTF8, UTF8> {"merkleProof", std::to_string (*ts.MerkleProof)};
+            if (ts.MerkleFormat) params = params << data::entry<UTF8, UTF8> {"merkleFormat", *ts.MerkleFormat};
+            if (ts.DSCheck) params = params << data::entry<UTF8, UTF8> {"dsCheck", std::to_string (*ts.DSCheck)};
+            if (ts.CallbackEncryption) params = params << data::entry<UTF8, UTF8> {"callbackEncryption", *ts.CallbackEncryption};
+
+            return HTTP::REST::encode_form_data (params);
+        }
+
         satoshis_per_byte spb_from_JSON (const JSON &j) {
             if (!(j.is_object () &&
                 j.contains ("satoshis") && j["satoshis"].is_number_unsigned () &&
                 j.contains ("bytes") && j["bytes"].is_number_unsigned ())) return {};
-            
+
             return satoshis_per_byte {satoshi {int64 (j["satoshis"])}, uint64 (j["bytes"])};
-            
+
         }
-        
+
         JSON to_JSON (const digest256 &v) {
             return write_reverse_hex (v);
         }
-        
+
         JSON to_JSON (const satoshis_per_byte v) {
             return JSON {{"satoshis", int64 (v.Satoshis)}, {"bytes", v.Bytes}};
         }
-    
+
         string to_JSON (return_result r) {
             return r == success ? "success" : "failure";
         }
-        
+
         JSON to_JSON (list<transaction_submission> subs) {
             JSON j = JSON::array ();
-            
+
             for (const transaction_submission& sub : subs) j.push_back (JSON (sub));
-            
+
             return j;
         }
-        
+
         JSON to_JSON (map<string, fee> fees) {
             JSON j = JSON::array ();
-            
+
             for (const auto &[k, v] : fees)
                 j.push_back (v.valid () ? JSON {
                     {"feeType", k},
                     {"miningFee", to_JSON (v.MiningFee)},
-                    {"relayFee", to_JSON (v.RelayFee)}} : JSON (nullptr));
-            
-            return j;
+                             {"relayFee", to_JSON (v.RelayFee)}} : JSON (nullptr));
+
+                return j;
         }
-        
+
         maybe<list<ip_address>> read_ip_address_list (const JSON &j) {
             if (!j.is_array ()) return {};
-            
+
             list<ip_address> ips;
-            
+
             for (const JSON &i : j) {
                 if (!j.contains ("ipAddress")) return {};
                 ips = ips << ip_address {string (j["ipAddress"])};
             }
-            
+
             return ips;
-        } 
-        
+        }
+
         JSON ip_addresses_to_JSON (list<ip_address> ips) {
             JSON::array_t ii;
             ii.resize (ips.size ());
-            
+
             int i = 0;
             for (const ip_address &ip : ips) ii[i++] = string (ip);
-            
+
             return ii;
         }
-    
+
         status read_status (const JSON& j) {
             status x;
-            
+
             if (!(j.is_object () &&
                 j.contains ("txid") && j["txid"].is_string () &&
                 j.contains ("returnResult") && j["returnResult"].is_string () &&
                 j.contains ("returnDescription") && j["returnDescription"].is_string () &&
                 (!j.contains ("conflictedWith") || j["conflictedWith"].is_array ()))) return {};
-            
+
             string rr = j["returnResult"];
             if (rr == "success") x.ReturnResult = success;
             else if (rr == "failure") x.ReturnResult = failure;
             else return {};
-            
+
             if (j.contains ("conflictedWith")) {
                 list<conflicted_with> cw;
                 for (const JSON& w : j["conflictedWith"]) {
@@ -131,73 +134,82 @@ namespace Gigamonkey::MAPI {
                 }
                 x.ConflictedWith = cw;
             }
-            
+
             x.TXID = read_reverse_hex<32> (std::string (j["txid"]));
             if (!x.TXID.valid ()) return {};
-            
+
             x.ResultDescription = j["resultDescription"];
-            
+
             return x;
         }
-    
+
         JSON to_JSON (const submit_transaction_parameters &x) {
             JSON j = JSON::object_t {};
-            
+
             if (x.CallbackURL.has_value ()) j["callbackUrl"] = *x.CallbackURL;
             if (x.CallbackToken.has_value ()) j["callbackToken"] = *x.CallbackToken;
             if (x.MerkleProof.has_value ()) j["merkleProof"] = *x.MerkleProof;
             if (x.DSCheck.has_value ()) j["dsCheck"] = *x.DSCheck;
             if (x.CallbackEncryption.has_value ()) j["callbackEncryption"] = *x.CallbackEncryption;
-            
+
             return j;
         }
-        
+
         JSON to_JSON (const transaction_submission &x) {
             if (!x.valid ()) return {};
-            
+
             JSON j = to_JSON (x.Parameters);
-            
+
             j["rawtx"] = encoding::hex::write (x.Transaction);
-            
+
             return j;
         }
-        
+
         JSON to_JSON (list<conflicted_with> cx) {
             JSON::array_t cf;
             cf.resize (cx.size ());
-            
+
             int i = 0;
             for (const conflicted_with &c : cx) cf[i++] = JSON (c);
-            
+
             return cf;
         }
-        
+
         JSON to_JSON (const status &tst) {
             if (!tst.valid ()) return {};
-        
+
             JSON j {
                 {"txid", write_reverse_hex (tst.TXID)},
                 {"returnResult", to_JSON (tst.ReturnResult)},
                 {"resultDescription", tst.ResultDescription}};
-        
-            if (tst.ConflictedWith.size () > 0) j["conflictedWith"] = to_JSON (tst.ConflictedWith);
-            
-            return j;
+
+                if (tst.ConflictedWith.size () > 0) j["conflictedWith"] = to_JSON (tst.ConflictedWith);
+
+                return j;
         }
-        
-        list<data::entry<UTF8, UTF8>> to_url_params (const submit_transaction_parameters &ts) {
-            list<data::entry<UTF8, UTF8>> params;
-            
-            if (ts.CallbackURL) params = params << data::entry<UTF8, UTF8> {"callbackUrl", *ts.CallbackURL};
-            if (ts.CallbackToken) params = params << data::entry<UTF8, UTF8> {"callbackToken", *ts.CallbackToken};
-            if (ts.MerkleProof) params = params << data::entry<UTF8, UTF8> {"merkleProof", std::to_string (*ts.MerkleProof)};
-            if (ts.MerkleFormat) params = params << data::entry<UTF8, UTF8> {"merkleFormat", *ts.MerkleFormat};
-            if (ts.DSCheck) params = params << data::entry<UTF8, UTF8> {"dsCheck", std::to_string (*ts.DSCheck)};
-            if (ts.CallbackEncryption) params = params << data::entry<UTF8, UTF8> {"callbackEncryption", *ts.CallbackEncryption};
-            
-            return params;
-        }
-        
+
+    }
+    
+    HTTP::request client::submit_transaction_HTTP_request (const submit_transaction_request &request) const {
+        if (!request.valid ()) throw std::invalid_argument {"invalid transaction submission request"};
+
+        HTTP::request::make r = HTTP::request::make {}.method (HTTP::method::post).path (REST.Path + "/mapi/tx");
+
+        if (request.ContentType == application_JSON)
+            r = r.body (JSON (static_cast<const transaction_submission> (request)));
+        else r = r.query (to_url_params (request.Parameters)).body (request.Transaction);
+
+        return REST (r);
+
+    }
+    
+    HTTP::request client::submit_transactions_HTTP_request (const submit_transactions_request &request) const {
+        if (!request.valid ()) throw std::invalid_argument {"invalid transactions submission request"};
+
+        return REST (HTTP::request::make {}.method (HTTP::method::post).path (REST.Path + "/mapi/txs").
+            query (to_url_params (request.DefaultParameters)).
+            body (to_JSON (request.Submissions)));
+
     }
     
     transaction_submission::operator JSON () const {
@@ -211,30 +223,6 @@ namespace Gigamonkey::MAPI {
         if (this->Parameters.CallbackEncryption) j["callbackEncryption"] = *this->Parameters.CallbackEncryption;
         
         return j;
-    }
-    
-    submit_transaction_request::operator HTTP::REST::request () const {
-
-        if (ContentType == application_JSON) {
-            return HTTP::REST::request {HTTP::method::post, "/mapi/tx", {}, {},
-                {{HTTP::header::content_type, "application/JSON"}},
-                JSON (static_cast<const transaction_submission> (*this))};
-        }
-        
-        std::string tx {};
-        tx.resize (this->Transaction.size ());
-        std::copy (this->Transaction.begin (), this->Transaction.end (), tx.begin ());
-        
-        return HTTP::REST::request {HTTP::method::post,
-            "/mapi/tx", to_url_params (Parameters), {},
-            {{HTTP::header::content_type, "application/octet-stream"}}, tx};
-    }
-    
-    submit_transactions_request::operator HTTP::REST::request () const {
-        return HTTP::REST::request{HTTP::method::post, "/mapi/tx",
-            to_url_params (DefaultParameters), {},
-            {{HTTP::header::content_type, "application/JSON"}},
-            to_JSON (Submissions)};
     }
     
     conflicted_with::operator JSON () const {

@@ -23,11 +23,8 @@ namespace Gigamonkey {
 
 namespace Gigamonkey::ARC {
 
-    HTTP::REST::request policy_request ();
     struct policy_response;
-    HTTP::REST::request health_request ();
     struct health_response;
-    HTTP::REST::request status_request (const Bitcoin::TXID &);
     struct status_response;
     struct submit_request;
     struct submit_response;
@@ -200,18 +197,15 @@ namespace Gigamonkey::ARC {
         maybe<ASCII> CallbackToken {};
         maybe<status_value> WaitFor {};
 
-        map<HTTP::header, ASCII> headers () const;
+        dispatch<HTTP::header, ASCII> headers () const;
     };
 
-    struct submit_request : HTTP::REST::request {
+    struct submit_request {
         submit_request (const extended::transaction &x) : submit_request {x, submit {}} {}
-        submit_request (const extended::transaction &, submit);
+        submit_request (const extended::transaction &tx, submit x): Transaction {tx}, Submit {x} {}
 
-        bool valid () const;
-
-        submit_request (HTTP::REST::request &&);
-        static bool valid (const HTTP::REST::request &);
-
+        extended::transaction Transaction;
+        submit Submit;
     };
 
     struct submit_response : response {
@@ -223,13 +217,12 @@ namespace Gigamonkey::ARC {
         static ARC::status status (const HTTP::response &);
     };
 
-    struct submit_txs_request : HTTP::REST::request {
-        submit_txs_request (HTTP::REST::request &&);
+    struct submit_txs_request {
         submit_txs_request (list<extended::transaction> x) : submit_txs_request {x, submit {}} {}
-        submit_txs_request (list<extended::transaction>, submit);
+        submit_txs_request (list<extended::transaction> txs, submit x): Transactions {txs}, Submit {x} {}
 
-        bool valid () const;
-        static bool valid (const HTTP::REST::request &);
+        list<extended::transaction> Transactions;
+        submit Submit;
     };
 
     struct submit_txs_response : response {
@@ -239,38 +232,6 @@ namespace Gigamonkey::ARC {
         static bool valid (const HTTP::response &);
         static list<ARC::status> status (const HTTP::response &);
     };
-
-    HTTP::REST::request inline policy_request () {
-        return HTTP::REST::request {HTTP::method::get, "/v1/policy"};
-    }
-
-    HTTP::REST::request inline health_request () {
-        return HTTP::REST::request {HTTP::method::get, "/v1/health"};
-    }
-
-    HTTP::REST::request inline status_request (const Bitcoin::TXID &txid) {
-        return HTTP::REST::request {HTTP::method::get, std::string {"/v1/tx/"} + Gigamonkey::write_reverse_hex (txid)};
-    }
-
-    awaitable<policy_response> inline client::policy () {
-        co_return co_await this->operator () (this->REST (policy_request ()));
-    }
-
-    awaitable<health_response> inline client::health () {
-        co_return co_await this->operator () (this->REST (health_request ()));
-    }
-
-    awaitable<status_response> inline client::status (const Bitcoin::TXID &txid) {
-        co_return co_await this->operator () (this->REST (status_request (txid)));
-    }
-
-    awaitable<submit_response> inline client::submit (const submit_request &x) {
-        co_return co_await this->operator () (this->REST (x));
-    }
-
-    awaitable<submit_txs_response> inline client::submit_txs (const submit_txs_request &x) {
-        co_return co_await this->operator () (this->REST (x));
-    }
 
     inline response::response (HTTP::response &&r): HTTP::response (r) {}
 
@@ -461,18 +422,6 @@ namespace Gigamonkey::ARC {
     }
 
     bool inline status_response::valid () const {
-        return valid (*this);
-    }
-
-    inline submit_request::submit_request (HTTP::REST::request &&r): HTTP::REST::request (r) {}
-
-    inline submit_txs_request::submit_txs_request (HTTP::REST::request &&r): HTTP::REST::request (r) {}
-
-    bool inline submit_request::valid () const {
-        return valid (*this);
-    }
-
-    bool inline submit_txs_request::valid () const {
         return valid (*this);
     }
 
