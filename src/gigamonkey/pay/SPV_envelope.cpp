@@ -247,7 +247,7 @@ namespace Gigamonkey {
                 return SPV::confirmation
                     {x.paths ().begin ()->Value, db.header (x.block_header ()->MerkleRoot)->Key, *x.block_header ()};
 
-            const entry<data::N, header> *h = bool (x.Merkle_root ()) ? db.header (*x.Merkle_root ()) : db.header (*x.block_hash ());
+            ptr<const entry<data::N, header>> h = bool (x.Merkle_root ()) ? db.header (*x.Merkle_root ()) : db.header (*x.block_hash ());
 
             return SPV::confirmation {x.paths ().begin ()->Value, h->Key, h->Value};
         }

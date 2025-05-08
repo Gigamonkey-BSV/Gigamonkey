@@ -328,7 +328,7 @@ namespace Gigamonkey {
 
         digest256 root = Path.derive_root (txid);
 
-        const data::entry<N, Bitcoin::header> *header = d.header (root);
+        ptr<const data::entry<N, Bitcoin::header>> header = d.header (root);
         if (header == nullptr) return false;
 
         if (bool (MerkleRoot) && root != *MerkleRoot) return false;

@@ -23,13 +23,13 @@ namespace Gigamonkey::Bitcoin {
 
 namespace Gigamonkey::SPV {
 
-    const Bitcoin::header *database::memory::header (const N &n) {
+    ptr<const data::entry<N, Bitcoin::header>> database::memory::header (const N &n) {
         auto h = ByHeight.find (n);
         if (h == ByHeight.end ()) return {};
-        return &h->second->Header.Value;
+        return h->second->Header;
     }
 
-    const data::entry<N, Bitcoin::header> *database::memory::header (const digest256 &n) {
+    ptr<const data::entry<N, Bitcoin::header>> database::memory::header (const digest256 &n) {
         auto h = ByHash.find (n);
 
         if (h == ByHash.end ()) {
@@ -37,7 +37,7 @@ namespace Gigamonkey::SPV {
             if (h == ByRoot.end ()) return {};
         }
 
-        return &h->second->Header;
+        return h->second->Header;
     }
 
     Merkle::dual database::memory::dual_tree (const digest256 &d) const {
@@ -48,16 +48,16 @@ namespace Gigamonkey::SPV {
             if (h == ByRoot.end ()) return {};
         }
 
-        return Merkle::dual {h->second->Paths, h->second->Header.Value.MerkleRoot};
+        return Merkle::dual {h->second->Paths, h->second->Header->Value.MerkleRoot};
     }
 
-    const entry<N, Bitcoin::header> *database::memory::insert (const data::N &height, const Bitcoin::header &h) {
+    ptr<const entry<N, Bitcoin::header>> database::memory::insert (const data::N &height, const Bitcoin::header &h) {
 
         if (!h.valid ()) return nullptr;
 
         auto old = ByHeight.find (height);
         if (old != ByHeight.end ()) {
-            if (old->second->Header.Value == h) return &old->second->Header;
+            if (old->second->Header->Value == h) return old->second->Header;
             // if we replace one header with another, we assume this is a reorg and replace all subsequent blocks.
 
             auto o = old;
@@ -68,8 +68,8 @@ namespace Gigamonkey::SPV {
                     Pending = Pending.insert (key);
                 }
 
-                ByRoot.erase (o->second->Header.Value.MerkleRoot);
-                ByHash.erase (o->second->Header.Value.hash ());
+                ByRoot.erase (o->second->Header->Value.MerkleRoot);
+                ByHash.erase (o->second->Header->Value.hash ());
 
                 ByHeight.erase (o++);
 
@@ -85,12 +85,12 @@ namespace Gigamonkey::SPV {
         ByHash[h.hash ()] = new_entry;
         ByRoot[h.MerkleRoot] = new_entry;
 
-        if (height == 0 || Latest == nullptr || Latest->Header.Key < height) Latest = new_entry;
+        if (height == 0 || Latest == nullptr || Latest->Header->Key < height) Latest = new_entry;
         if (height > 0) if (auto i = ByHeight.find (height - 1); i != ByHeight.end ())
             new_entry->Last = i->second;
 
         if (auto i = ByHeight.find (height + 1); i != ByHeight.end ()) i->second->Last = new_entry;
-        return &new_entry->Header;
+        return new_entry->Header;
     }
 
     database::tx database::memory::transaction (const Bitcoin::TXID &t) {
@@ -99,9 +99,9 @@ namespace Gigamonkey::SPV {
         auto h = ByTXID.find (t);
         return h == ByTXID.end () ? database::tx {tt} :
             database::tx {tt, confirmation {
-                Merkle::path (Merkle::dual {h->second->Paths, h->second->Header.Value.MerkleRoot}[t].Branch),
-                h->second->Header.Key,
-                h->second->Header.Value}};
+                Merkle::path (Merkle::dual {h->second->Paths, h->second->Header->Value.MerkleRoot}[t].Branch),
+                h->second->Header->Key,
+                h->second->Header->Value}};
     }
 
     namespace {
@@ -230,7 +230,7 @@ namespace Gigamonkey::SPV {
     bool database::memory::insert (const Merkle::dual &p) {
         auto h = ByRoot.find (p.Root);
         if (h == ByRoot.end ()) return false;
-        auto d = Merkle::dual {h->second->Paths, h->second->Header.Value.MerkleRoot} + p;
+        auto d = Merkle::dual {h->second->Paths, h->second->Header->Value.MerkleRoot} + p;
         if (!d.valid ()) return false;
         h->second->Paths = d.Paths;
 

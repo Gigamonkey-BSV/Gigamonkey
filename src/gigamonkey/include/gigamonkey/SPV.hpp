@@ -116,14 +116,15 @@ namespace Gigamonkey::SPV {
 
     // interface for database containing headers, transactions, and merkle paths.
     struct database {
+        using block_header = ptr<const data::entry<data::N, Bitcoin::header>>;
 
         // get a block header by height.
-        virtual const Bitcoin::header *header (const N &) = 0;
+        virtual block_header header (const N &) = 0;
 
-        virtual const entry<N, Bitcoin::header> *latest () = 0;
+        virtual block_header latest () = 0;
 
         // get by hash or merkle root
-        virtual const entry<N, Bitcoin::header> *header (const digest256 &) = 0;
+        virtual block_header header (const digest256 &) = 0;
 
         // a transaction in the database, which may include a merkle proof if we have one.
         struct tx {
@@ -166,20 +167,30 @@ namespace Gigamonkey::SPV {
         
         // providing a merkle proof removes a tx from pending.
         virtual bool insert (const Merkle::dual &) = 0;
-        virtual const data::entry<N, Bitcoin::header> *insert (const data::N &height, const Bitcoin::header &h) = 0;
+        virtual database::block_header insert (const data::N &height, const Bitcoin::header &h) = 0;
 
         virtual ~writable () {}
     };
     
     struct database::memory : public virtual database, public virtual writable {
+        using database::block_header;
+
         struct entry {
-            data::entry<data::N, Bitcoin::header> Header;
+            block_header Header;
             Merkle::map Paths;
             ptr<entry> Last;
 
-            entry (data::N n, Bitcoin::header h) : Header {n, h}, Paths {}, Last {nullptr} {}
-            entry (data::N n, Bitcoin::header h, Merkle::map tree) : Header {n, h}, Paths {tree}, Last {nullptr} {}
-            entry (Bitcoin::header h, const Merkle::BUMP &bump) : Header {bump.BlockHeight, h}, Paths {bump.paths ()}, Last {nullptr} {}
+            entry (data::N n, Bitcoin::header h) :
+                Header {std::make_shared<data::entry<data::N, Bitcoin::header>> (n, h)},
+                Paths {}, Last {nullptr} {}
+
+            entry (data::N n, Bitcoin::header h, Merkle::map tree) :
+                Header {std::make_shared<data::entry<data::N, Bitcoin::header>> (n, h)},
+                Paths {tree}, Last {nullptr} {}
+
+            entry (Bitcoin::header h, const Merkle::BUMP &bump) :
+                Header {std::make_shared<data::entry<data::N, Bitcoin::header>> (bump.BlockHeight, h)},
+                Paths {bump.paths ()}, Last {nullptr} {}
 
             Merkle::dual dual_tree () const;
 
@@ -201,18 +212,18 @@ namespace Gigamonkey::SPV {
 
         memory () : memory (Bitcoin::genesis ().Header) {}
         
-        const data::entry<data::N, Bitcoin::header> *latest () final override {
+        block_header latest () final override {
             // always present because we always start with at least one header.
-            return &Latest->Header;
+            return Latest->Header;
         }
         
-        const Bitcoin::header *header (const data::N &n) final override;
-        const data::entry<data::N, Bitcoin::header> *header (const digest256 &n) override;
+        block_header header (const data::N &n) final override;
+        block_header header (const digest256 &n) override;
 
         tx transaction (const Bitcoin::TXID &t) final override;
         Merkle::dual dual_tree (const digest256 &d) const;
 
-        const data::entry<N, Bitcoin::header> *insert (const data::N &height, const Bitcoin::header &h) final override;
+        block_header insert (const data::N &height, const Bitcoin::header &h) final override;
         bool insert (const Merkle::dual &p) final override;
         void insert (const Bitcoin::transaction &) final override;
 
@@ -321,11 +332,11 @@ namespace Gigamonkey::SPV {
     }
 
     Merkle::dual inline database::memory::entry::dual_tree () const {
-        return Merkle::dual {Paths, Header.Value.MerkleRoot};
+        return Merkle::dual {Paths, Header->Value.MerkleRoot};
     }
 
     Merkle::BUMP inline database::memory::entry::BUMP () const {
-        return Merkle::BUMP {uint64 (Header.Key), Paths};
+        return Merkle::BUMP {uint64 (Header->Key), Paths};
     }
 }
 

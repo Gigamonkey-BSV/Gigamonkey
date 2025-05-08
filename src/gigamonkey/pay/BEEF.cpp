@@ -116,10 +116,10 @@ namespace Gigamonkey {
 
             // check if the block header referenced by the proof exists.
             N height {merkle.first};
-            const Bitcoin::header *header = db.header (height);
+            ptr<const entry<N, Bitcoin::header>> header = db.header (height);
             if (header == nullptr) return result;
 
-            result.Value = std::make_shared<node> (tx, conf {merkle.second[result.Key], height, *header});
+            result.Value = std::make_shared<node> (tx, conf {merkle.second[result.Key], height, header->Value});
 
             return result;
 
