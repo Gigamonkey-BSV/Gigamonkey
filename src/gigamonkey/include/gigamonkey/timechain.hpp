@@ -12,6 +12,10 @@
 #include <gigamonkey/work/target.hpp>
 #include <gigamonkey/script/instruction.hpp>
 
+namespace Gigamonkey {
+    struct chain_loader;
+}
+
 namespace Gigamonkey::Bitcoin {
 
     using TXID = digest256;
@@ -112,15 +116,17 @@ namespace Gigamonkey::Bitcoin {
         
         byte_array<80> write () const;
         
-        digest256 hash () const {
-            return Hash256 (write ());
-        }
+        const digest256 &hash () const;
         
         // check the proof-of-work on the header.
         bool valid () const;
         
         int16 version () const;
         const transaction &coinbase () const;
+
+    private:
+        mutable ptr<digest256> Hash;
+        friend struct Gigamonkey::chain_loader;
     };
 
     // an outpoint is a reference to a previous output. 
@@ -232,7 +238,7 @@ namespace Gigamonkey::Bitcoin {
         bytes write () const;
         explicit operator bytes () const;
         
-        TXID id () const;
+        const TXID &id () const;
         
         uint64 serialized_size () const;
         
@@ -245,6 +251,10 @@ namespace Gigamonkey::Bitcoin {
         }
 
         static constexpr p2p::command Command {"tx"};
+
+    private:
+        mutable ptr<TXID> Hash;
+        friend struct Gigamonkey::chain_loader;
     };
     
     TXID inline id (const transaction &t) {
@@ -291,6 +301,21 @@ namespace Gigamonkey::Bitcoin {
         
         uint64 serialized_size () const;
     };
+}
+
+namespace Gigamonkey {
+    struct chain_loader {
+        void set_hash (Bitcoin::header &h, const digest256 &x) {
+            if (h.Hash != nullptr) h.Hash = std::make_shared<digest256> (x);
+        }
+
+        void set_hash (Bitcoin::transaction &tx, const Bitcoin::TXID &x) {
+            if (tx.Hash != nullptr) tx.Hash = std::make_shared<Bitcoin::TXID> (x);
+        }
+    };
+}
+
+namespace Gigamonkey::Bitcoin {
     
     bool inline operator == (const header &a, const header &b) {
         return a.Version == b.Version && a.Previous == b.Previous && a.MerkleRoot == b.MerkleRoot 
@@ -402,9 +427,15 @@ namespace Gigamonkey::Bitcoin {
     digest256 inline header::hash (const slice<80> h) {
         return Bitcoin::Hash256 (h);
     }
+
+    const digest256 inline &header::hash () const {
+        if (Hash != nullptr) Hash = std::make_shared<digest256> (hash (write ()));
+        return *Hash;
+    }
         
-    TXID inline transaction::id () const {
-        return Bitcoin::id (*this);
+    const TXID inline &transaction::id () const {
+        if (Hash != nullptr) Hash = std::make_shared<TXID> (Bitcoin::id (*this));
+        return *Hash;
     }
     
     std::strong_ordering inline operator <=> (const outpoint &a, const outpoint &b) {

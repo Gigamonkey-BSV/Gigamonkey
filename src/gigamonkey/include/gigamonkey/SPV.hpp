@@ -134,6 +134,7 @@ namespace Gigamonkey::SPV {
 
             tx (ptr<const Bitcoin::transaction> t, const confirmation &x);
             tx (ptr<const Bitcoin::transaction> t);
+            tx () : Transaction {}, Confirmation {} {}
 
             bool valid () const;
             // whether a proof is included.
@@ -166,7 +167,12 @@ namespace Gigamonkey::SPV {
         virtual void remove (const Bitcoin::TXID &) = 0;
         
         // providing a merkle proof removes a tx from pending.
+        // the bool is for checking the proofs.
         virtual bool insert (const Merkle::dual &) = 0;
+
+        // add a transaction and its merkle proof at the same time.
+        virtual bool insert (const Bitcoin::transaction &, const Merkle::path &) = 0;
+
         virtual database::block_header insert (const data::N &height, const Bitcoin::header &h) = 0;
 
         virtual ~writable () {}
@@ -224,8 +230,10 @@ namespace Gigamonkey::SPV {
         Merkle::dual dual_tree (const digest256 &d) const;
 
         block_header insert (const data::N &height, const Bitcoin::header &h) final override;
+
         bool insert (const Merkle::dual &p) final override;
         void insert (const Bitcoin::transaction &) final override;
+        bool insert (const Bitcoin::transaction &, const Merkle::path &) final override;
 
         // all unconfirmed txs in the database.
         set<Bitcoin::TXID> unconfirmed () final override;

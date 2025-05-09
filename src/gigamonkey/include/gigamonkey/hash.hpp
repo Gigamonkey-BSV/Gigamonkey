@@ -10,17 +10,17 @@
 namespace Gigamonkey {
     namespace crypto = data::crypto;
 
-    template<size_t size>
+    template <size_t size>
     using digest = crypto::digest<size>;
 
     // because of a bug in bitcoind long ago, many bitcoin
     // applications expect hashes to be provided backwards.
-    template<size_t size>
+    template <size_t size>
     string inline write_reverse_hex (const digest<size> &x) {
         return data::drop (encoding::hexidecimal::write (x), 2);
     }
 
-    template<size_t size>
+    template <size_t size>
     digest<size> inline read_reverse_hex (const std::string &x) {
         return digest<size> {std::string {"0x"} + x};
     }

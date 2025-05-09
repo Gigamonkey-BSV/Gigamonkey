@@ -228,10 +228,12 @@ namespace Gigamonkey::SPV {
     }
 
     bool database::memory::insert (const Merkle::dual &p) {
+        if (!p.valid ()) return false;
+
         auto h = ByRoot.find (p.Root);
         if (h == ByRoot.end ()) return false;
+
         auto d = Merkle::dual {h->second->Paths, h->second->Header->Value.MerkleRoot} + p;
-        if (!d.valid ()) return false;
         h->second->Paths = d.Paths;
 
         for (const auto &[txid, _]: p.Paths) {
@@ -241,6 +243,26 @@ namespace Gigamonkey::SPV {
             if (auto e = Transactions.find (txid); e != Transactions.end ())
                 Pending = Pending.remove (txid);
         }
+
+        return true;
+    }
+
+    bool database::memory::insert (const Bitcoin::transaction &t, const Merkle::path &path) {
+        auto txid = t.id ();
+        auto x = Transactions.find (txid);
+        if (x != Transactions.end ()) return false;
+
+        Merkle::branch branch {txid, path};
+
+        digest256 root = branch.root ();
+
+        auto h = ByRoot.find (root);
+        if (h == ByRoot.end ()) return false;
+
+        auto d = Merkle::dual {h->second->Paths, h->second->Header->Value.MerkleRoot} + Merkle::proof {branch, root};
+        h->second->Paths = d.Paths;
+
+        Transactions[txid] = ptr<Bitcoin::transaction> {new Bitcoin::transaction {t}};
 
         return true;
     }
