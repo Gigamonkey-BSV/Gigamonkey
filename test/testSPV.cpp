@@ -68,7 +68,7 @@ namespace Gigamonkey {
         }
 
         // check SPV proof
-        EXPECT_TRUE (proof->valid ()) << "proof should be valid but is not";
+        EXPECT_TRUE (proof->validate (d)) << "proof should be valid but is not";
 
         // make BEEF
         BEEF beef {*proof};

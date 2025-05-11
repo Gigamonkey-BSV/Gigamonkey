@@ -87,9 +87,9 @@ namespace Gigamonkey::SPV {
 
         if (height == 0 || Latest == nullptr || Latest->Header->Key < height) Latest = new_entry;
         if (height > 0) if (auto i = ByHeight.find (height - 1); i != ByHeight.end ())
-            new_entry->Last = i->second;
+            new_entry->Previous = i->second;
 
-        if (auto i = ByHeight.find (height + 1); i != ByHeight.end ()) i->second->Last = new_entry;
+        if (auto i = ByHeight.find (height + 1); i != ByHeight.end ()) i->second->Previous = new_entry;
         return new_entry->Header;
     }
 
@@ -106,7 +106,7 @@ namespace Gigamonkey::SPV {
 
     namespace {
 
-        bool unconfirmed_validate (const proof::node &u, database *d) {
+        bool unconfirmed_validate (const proof::node &u, database *d, time_limit genesis_upgrade_time) {
 
             if (u.Proof.is<confirmation> ()) {
                 const confirmation &conf = u.Proof.get<confirmation> ();
@@ -115,10 +115,28 @@ namespace Gigamonkey::SPV {
                 return proof::valid (u.Transaction, conf.Path, conf.Header);
             }
 
-            if (!extended_transaction (u.Transaction, u.Proof.get<proof::map> ()).valid ()) return false;
+            auto tx = extended_transaction (u.Transaction, u.Proof.get<proof::map> ());
+
+            if (!tx.valid ()) return false;
+
+            // verify scripts.
+            // again these cannot be coinbases because if they were, there would be a merkle proof.
+            // generate incomplete transaction.
+            Bitcoin::incomplete::transaction incomplete {tx.Version,
+                data::for_each ([] (const extended::input &i) -> Bitcoin::incomplete::input {
+                    return {i.Reference, i.Sequence};
+                }, tx.Inputs),
+                tx.Outputs, tx.LockTime};
+
+            uint32 input_index = 0;
+            for (const extended::input &in : tx.Inputs) {
+                if (!in.evaluate (incomplete, input_index)) return false;
+                input_index++;
+            }
 
             for (const auto &[txid, accepted] : u.Proof.get<proof::map> ())
-                if (accepted == nullptr || txid != accepted->Transaction.id () || !unconfirmed_validate (*accepted, d)) return false;
+                if (accepted == nullptr || txid != accepted->Transaction.id ()
+                    || !unconfirmed_validate (*accepted, d, genesis_upgrade_time)) return false;
 
             return true;
         }
@@ -133,20 +151,33 @@ namespace Gigamonkey::SPV {
                 for (const auto &p : pp) if (x == p) return false;
             }
 
-            // TODO need to verify scripts here.
-            // need something that's extended + timestamps of earlier txs.
-            if (!list<extended::transaction> (u).valid ()) return false;
+            list<extended::transaction> txs (u);
+
+            if (!txs.valid ()) return false;
+
+            // verify scripts.
+            // these transactions cannot be coinbases because coinbases are not payments.
+            for (const extended::transaction &tx : txs) {
+                // generate incomplete transaction.
+                Bitcoin::incomplete::transaction incomplete {tx.Version,
+                    data::for_each ([] (const extended::input &i) -> Bitcoin::incomplete::input {
+                        return {i.Reference, i.Sequence};
+                    }, tx.Inputs),
+                    tx.Outputs, tx.LockTime};
+
+                uint32 input_index = 0;
+                for (const extended::input &in : tx.Inputs) {
+                    if (!in.evaluate (incomplete, input_index)) return false;
+                    input_index++;
+                }
+            }
 
             // TODO return some error
             for (const auto &[txid, accepted] : u.Proof)
-                if (txid != accepted->Transaction.id () || !unconfirmed_validate (*accepted, d)) return false;
+                if (txid != accepted->Transaction.id () || !unconfirmed_validate (*accepted, d, genesis_upgrade_time)) return false;
 
             return true;
         }
-    }
-
-    bool proof::valid () const {
-        return proof_validate (*this, nullptr);
     }
 
     // check valid and check that all headers are in our database.
@@ -271,6 +302,31 @@ namespace Gigamonkey::SPV {
         if (!Pending.contains (txid)) return;
         Pending = Pending.remove (txid);
         Transactions.erase (txid);
+    }
+
+    void remove_latest (database::memory &m) {
+        auto last = m.Latest;
+
+        m.ByHeight.erase (last->Header->Key);
+        m.ByHash.erase (last->Header->Value.hash ());
+        m.ByRoot.erase (last->Header->Value.MerkleRoot);
+
+        for (const auto &key: last->Paths.keys ()) m.Pending = m.Pending.insert (key);
+
+        m.Latest = last->Previous;
+
+    }
+
+    void database::memory::remove_header (const data::N &n) {
+        block_header last = latest ();
+        if (last->Key != n) return;
+        remove_latest (*this);
+    }
+
+    void database::memory::remove_header (const digest256 &d) {
+        block_header last = latest ();
+        if (last->Value.hash () != d) return;
+        remove_latest (*this);
     }
 
     std::partial_ordering SPV::proof::ordering (const data::entry<Bitcoin::TXID, proof::tree> &a, const data::entry<Bitcoin::TXID, proof::tree> &b) {

@@ -23,7 +23,7 @@ namespace Gigamonkey::work {
         string (uint16_little m, uint16_little b, uint256 d, uint256 mp, Bitcoin::timestamp ts, compact tg, Bitcoin::nonce n) :
             Category {ASICBoost::category (m, b)}, Digest {d}, MerkleRoot {mp}, Timestamp {ts}, Target {tg}, Nonce {n} {}
         
-        static string read (const slice<80> x) {
+        static string read (slice<const byte, 80> x) {
             return string {
                 Bitcoin::header::version (x), 
                 uint_little<32> {Bitcoin::header::previous (x)},
@@ -33,7 +33,7 @@ namespace Gigamonkey::work {
                 Bitcoin::header::nonce (x)};
         }
         
-        explicit string (const slice<80> &x) : string (read (x)) {}
+        explicit string (slice<const byte, 80> x) : string (read (x)) {}
         
         byte_array<80> write () const {
             return operator Bitcoin::header ().write ();
@@ -43,7 +43,7 @@ namespace Gigamonkey::work {
             return Bitcoin::Hash256 (write ());
         }
         
-        static bool valid (const slice<80> x) {
+        static bool valid (slice<const byte, 80> x) {
             return Bitcoin::Hash256 (x) < Bitcoin::header::target (x).expand ();
         }
         

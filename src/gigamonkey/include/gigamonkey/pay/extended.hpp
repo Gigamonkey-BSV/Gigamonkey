@@ -41,6 +41,9 @@ namespace Gigamonkey::extended {
             Bitcoin::input {r, unlock, x}, Prevout {val, lock} {}
         input (const Bitcoin::output &prev, const Bitcoin::input &in) : Bitcoin::input {in}, Prevout {prev} {}
 
+        // for a coinbase tx.
+        input (const Bitcoin::satoshi &coinbase);
+
         // Do not evaluate the script, merely check if the data was read.
         bool valid () const;
 
@@ -77,7 +80,10 @@ namespace Gigamonkey::extended {
         // check all scripts and check that the fee is non-negative.
         // NOTE this function makes no sense because we don't know how old the old outputs are.
         bool valid () const {
-            return Inputs.size () > 0 && Outputs.size () > 0 && data::valid (Inputs) && data::valid (Outputs) && sent () <= spent ();
+            return Inputs.size () > 0 && Outputs.size () > 0 && (
+                data::valid (Inputs) ||
+                (Inputs.size () == 1 && Inputs[0].Reference == Bitcoin::outpoint {} && Inputs[0].Prevout.Script == bytes {}) // coinbase
+            ) && data::valid (Outputs) && sent () <= spent ();
         }
 
         explicit operator Bitcoin::transaction () const;

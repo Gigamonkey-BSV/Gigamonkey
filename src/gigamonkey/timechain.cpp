@@ -8,7 +8,7 @@
 
 namespace Gigamonkey::Bitcoin {
     namespace {
-        bool header_valid_work (slice<80> h) {
+        bool header_valid_work (header::slice h) {
             return work::string::valid (h);
         }
 
@@ -17,35 +17,35 @@ namespace Gigamonkey::Bitcoin {
         }
     }
     
-    int32_little header::version (const slice<80> x) {
+    int32_little header::version (slice x) {
         int32_little version;
-        slice<4> v = x.range<0, 4> ();
+        auto v = x.range<0, 4> ();
         std::copy (v.begin (), v.end (), version.data ());
         return version;
     }
     
-    Bitcoin::timestamp header::timestamp (const slice<80> x) {
+    Bitcoin::timestamp header::timestamp (slice x) {
         Bitcoin::timestamp time;
-        slice<4> v = x.range<68, 72> ();
+        auto v = x.range<68, 72> ();
         std::copy (v.begin (), v.end (), time.data ());
         return time;
     }
     
-    work::compact header::target (const slice<80> x) {
+    work::compact header::target (slice x) {
         work::compact work;
-        slice<4> v = x.range<72, 76> ();
+        auto v = x.range<72, 76> ();
         std::copy (v.begin (), v.end (), work.data ());
         return work;
     }
     
-    uint32_little header::nonce (const slice<80> x) {
+    uint32_little header::nonce (slice x) {
         uint32_little n;
-        slice<4> v = x.range<76, 80> ();
+        auto v = x.range<76, 80> ();
         std::copy (v.begin (), v.end (), n.data ());
         return n;
     }
     
-    bool header::valid (const slice<80> h) {
+    bool header::valid (slice h) {
         return header_valid (Bitcoin::header {h}) && header_valid_work (h);
     }
         
@@ -245,11 +245,13 @@ namespace Gigamonkey::Bitcoin {
     satoshi output::value (bytes_view z) {
         it_rdr r {z.begin (), z.end ()};
         satoshi Value;
+
         try {
             r >> Value;
         } catch (data::end_of_stream) {
             Value = -1;
         }
+
         return Value;
     }
     

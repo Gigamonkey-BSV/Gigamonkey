@@ -31,23 +31,23 @@ namespace Gigamonkey::Bitcoin {
 
         EXPECT_EQ (genesis_hash, digest256 ("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
 
-        work::string work_string {slice<80> (genesis_header_hex->data ())};
+        work::string work_string {slice<const byte, 80> (genesis_header_hex->data ())};
 
-        Bitcoin::header header (slice<80> (genesis_header_hex->data ()));
+        Bitcoin::header header (slice<const byte, 80> (genesis_header_hex->data ()));
 
         EXPECT_EQ (work_string, work::string (header));
-        
+
         byte_array<80> work_string_written = work_string.write ();
         
         byte_array<80> header_written = header.write ();
-        
+
         EXPECT_EQ (work_string_written, header_written);
         
-        EXPECT_EQ (work_string.hash (), digest256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
-        
-        EXPECT_EQ (header.hash (), digest256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
-        
-        EXPECT_TRUE(work_string.valid ());
+        EXPECT_EQ (work_string.hash (), digest256 ("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
+
+        EXPECT_EQ (header.hash (), digest256 ("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
+
+        EXPECT_TRUE (work_string.valid ());
         
         EXPECT_TRUE (header.valid ());
         

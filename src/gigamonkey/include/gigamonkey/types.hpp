@@ -108,8 +108,7 @@ namespace Gigamonkey {
 
     using exception = data::exception;
     
-    template <size_t size>
-    using slice = data::slice<byte, size>;
+    template <std::integral word, size_t ...size> using slice = data::slice<word, size...>;
 
     using writer = data::writer<byte>;
     using reader = data::reader<byte>;

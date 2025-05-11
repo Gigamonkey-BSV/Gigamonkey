@@ -91,9 +91,6 @@ namespace Gigamonkey::SPV {
 
         proof (): Payment {}, Proof {} {}
 
-        // check all merkle proofs, do not check scripts (because we don't know when these transactions happened)
-        bool valid () const;
-
         // check valid and check that all headers are in our database.
         // and check all scripts for txs that have no merkle proof.
         bool validate (database &, time_limit genesis_upgrade_time = time_limit::negative_infinity ()) const;
@@ -175,6 +172,10 @@ namespace Gigamonkey::SPV {
 
         virtual database::block_header insert (const data::N &height, const Bitcoin::header &h) = 0;
 
+        // can only remove the latest header (for reorgs)
+        virtual void remove_header (const data::N &) = 0;
+        virtual void remove_header (const digest256 &) = 0;
+
         virtual ~writable () {}
     };
     
@@ -184,19 +185,19 @@ namespace Gigamonkey::SPV {
         struct entry {
             block_header Header;
             Merkle::map Paths;
-            ptr<entry> Last;
+            ptr<entry> Previous;
 
             entry (data::N n, Bitcoin::header h) :
                 Header {std::make_shared<data::entry<data::N, Bitcoin::header>> (n, h)},
-                Paths {}, Last {nullptr} {}
+                Paths {}, Previous {nullptr} {}
 
             entry (data::N n, Bitcoin::header h, Merkle::map tree) :
                 Header {std::make_shared<data::entry<data::N, Bitcoin::header>> (n, h)},
-                Paths {tree}, Last {nullptr} {}
+                Paths {tree}, Previous {nullptr} {}
 
             entry (Bitcoin::header h, const Merkle::BUMP &bump) :
                 Header {std::make_shared<data::entry<data::N, Bitcoin::header>> (bump.BlockHeight, h)},
-                Paths {bump.paths ()}, Last {nullptr} {}
+                Paths {bump.paths ()}, Previous {nullptr} {}
 
             Merkle::dual dual_tree () const;
 
@@ -241,6 +242,10 @@ namespace Gigamonkey::SPV {
         // only txs in unconfirmed can be removed.
         void remove (const Bitcoin::TXID &) final override;
 
+        // remove a header and all headers after it.
+        void remove_header (const data::N &) final override;
+        void remove_header (const digest256 &) final override;
+
     };
 
     list<extended::transaction> inline extended_transactions (list<Bitcoin::transaction> payment, proof::map proof) {
@@ -258,7 +263,8 @@ namespace Gigamonkey::SPV {
     }
 
     inline confirmation::confirmation (): Path {}, Height {0}, Header {} {}
-    inline confirmation::confirmation (Merkle::path p, const N &height, const Bitcoin::header &h): Path {p}, Height {height}, Header {h} {}
+    inline confirmation::confirmation (Merkle::path p, const N &height, const Bitcoin::header &h):
+        Path {p}, Height {height}, Header {h} {}
 
     bool inline confirmation::operator == (const confirmation &t) const {
         return Header == t.Header && t.Height == Height && Path.Index == t.Path.Index;

@@ -13,7 +13,7 @@ namespace Gigamonkey {
     Bitcoin::header read_header (const string &x) {
         maybe<bytes> b = encoding::hex::read (x);
         if (!bool (b) || b->size () != 80) return {};
-        return Bitcoin::header {slice<80> {b->data ()}};
+        return Bitcoin::header {slice<const byte, 80> {b->data ()}};
     }
     
     string inline write_header (const Bitcoin::header &h) {
@@ -206,7 +206,7 @@ namespace Gigamonkey {
                 case target_type_block_header: {
                     bytes header (80);
                     r >> header;
-                    x.BlockHeader = Bitcoin::header {slice<80> (header.data ())};
+                    x.BlockHeader = Bitcoin::header {slice<const byte, 80> (header.data ())};
                     break;
                 }
                 case target_type_Merkle_root: {
