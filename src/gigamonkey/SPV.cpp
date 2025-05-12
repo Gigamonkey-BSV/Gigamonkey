@@ -85,11 +85,15 @@ namespace Gigamonkey::SPV {
         ByHash[h.hash ()] = new_entry;
         ByRoot[h.MerkleRoot] = new_entry;
 
-        if (height == 0 || Latest == nullptr || Latest->Header->Key < height) Latest = new_entry;
+        if (height == 0 || Latest == nullptr || Latest->Header->Key < height)
+            Latest = new_entry;
+
         if (height > 0) if (auto i = ByHeight.find (height - 1); i != ByHeight.end ())
             new_entry->Previous = i->second;
 
-        if (auto i = ByHeight.find (height + 1); i != ByHeight.end ()) i->second->Previous = new_entry;
+        if (auto i = ByHeight.find (height + 1); i != ByHeight.end ())
+            i->second->Previous = new_entry;
+
         return new_entry->Header;
     }
 
@@ -106,42 +110,14 @@ namespace Gigamonkey::SPV {
 
     namespace {
 
-        bool unconfirmed_validate (const proof::node &u, database *d, time_limit genesis_upgrade_time) {
+        bool check_sub_proof (
+            set<Bitcoin::TXID> &checked,
+            const Bitcoin::transaction &tx,
+            proof::map map,
+            database &d,
+            time_limit genesis_upgrade_time);
 
-            if (u.Proof.is<confirmation> ()) {
-                const confirmation &conf = u.Proof.get<confirmation> ();
-                if (d != nullptr && d->header (conf.Header.MerkleRoot) == nullptr) return false;
-
-                return proof::valid (u.Transaction, conf.Path, conf.Header);
-            }
-
-            auto tx = extended_transaction (u.Transaction, u.Proof.get<proof::map> ());
-
-            if (!tx.valid ()) return false;
-
-            // verify scripts.
-            // again these cannot be coinbases because if they were, there would be a merkle proof.
-            // generate incomplete transaction.
-            Bitcoin::incomplete::transaction incomplete {tx.Version,
-                data::for_each ([] (const extended::input &i) -> Bitcoin::incomplete::input {
-                    return {i.Reference, i.Sequence};
-                }, tx.Inputs),
-                tx.Outputs, tx.LockTime};
-
-            uint32 input_index = 0;
-            for (const extended::input &in : tx.Inputs) {
-                if (!in.evaluate (incomplete, input_index)) return false;
-                input_index++;
-            }
-
-            for (const auto &[txid, accepted] : u.Proof.get<proof::map> ())
-                if (accepted == nullptr || txid != accepted->Transaction.id ()
-                    || !unconfirmed_validate (*accepted, d, genesis_upgrade_time)) return false;
-
-            return true;
-        }
-
-        bool proof_validate (const proof &u, database *d, time_limit genesis_upgrade_time = time_limit::negative_infinity ()) {
+        bool proof_validate (const proof &u, database &d, time_limit genesis_upgrade_time = time_limit::negative_infinity ()) {
 
             //check that all txs are unique.
             auto pp = u.Payment;
@@ -151,38 +127,84 @@ namespace Gigamonkey::SPV {
                 for (const auto &p : pp) if (x == p) return false;
             }
 
-            list<extended::transaction> txs (u);
+            // keep track of transactions we have checked already.
+            set<Bitcoin::TXID> checked;
 
-            if (!txs.valid ()) return false;
-
-            // verify scripts.
-            // these transactions cannot be coinbases because coinbases are not payments.
-            for (const extended::transaction &tx : txs) {
-                // generate incomplete transaction.
-                Bitcoin::incomplete::transaction incomplete {tx.Version,
-                    data::for_each ([] (const extended::input &i) -> Bitcoin::incomplete::input {
-                        return {i.Reference, i.Sequence};
-                    }, tx.Inputs),
-                    tx.Outputs, tx.LockTime};
-
-                uint32 input_index = 0;
-                for (const extended::input &in : tx.Inputs) {
-                    if (!in.evaluate (incomplete, input_index)) return false;
-                    input_index++;
-                }
-            }
-
-            // TODO return some error
-            for (const auto &[txid, accepted] : u.Proof)
-                if (txid != accepted->Transaction.id () || !unconfirmed_validate (*accepted, d, genesis_upgrade_time)) return false;
+            // we check each transaction in the payment, which involves
+            // checking antecedents and their antecedents and so on.
+            for (const Bitcoin::transaction &tx : u.Payment)
+                if (!check_sub_proof (checked, tx, u.Proof, d, genesis_upgrade_time)) return false;
 
             return true;
+        }
+
+        bool check_sub_proof (
+            set<Bitcoin::TXID> &checked,
+            const Bitcoin::transaction &tx,
+            proof::map map,
+            database &d,
+            time_limit genesis_upgrade_time) {
+
+            uint32 input_index = 0;
+            Bitcoin::satoshi spent = 0;
+
+            // for checking scripts.
+            Bitcoin::incomplete::transaction incomplete {tx};
+
+            for (const Bitcoin::input &in : tx.Inputs) {
+                const auto *v = map.contains (in.Reference.Digest);
+                if (!bool (v)) return {};
+
+                const proof::node &antecedent = **v;
+
+                time_limit execution_time;
+
+                if (!checked.contains (in.Reference.Digest)) {
+                    if (antecedent.Proof.is<SPV::confirmation> ()) {
+                        const confirmation &conf = antecedent.Proof.get<confirmation> ();
+                        if (d.header (conf.Header.MerkleRoot) == nullptr) return false;
+
+                        if (!proof::valid (antecedent.Transaction, conf.Path, conf.Header)) return false;
+
+                        execution_time = time_limit {conf.Header.Timestamp};
+                    } else {
+                        if (!check_sub_proof (checked, antecedent.Transaction, antecedent.Proof.get<proof::map> (), d, genesis_upgrade_time))
+                            return {};
+                        checked = checked.insert (in.Reference.Digest);
+
+                        // this ensures that we use the latest version of the interpreter.
+                        execution_time = time_limit::infinity ();
+                    }
+                }
+
+                // get prevout
+                if (in.Reference.Index >= antecedent.Transaction.Outputs.size ()) return false;
+                const Bitcoin::output &prevout = antecedent.Transaction.Outputs[in.Reference.Index];
+
+                spent += prevout.Value;
+
+                // check scripts
+                if (!bool (
+                    Bitcoin::evaluate (
+                        in.Script, prevout.Script,
+                        Bitcoin::redemption_document {incomplete, input_index, prevout.Value},
+                        genesis_upgrade_time > execution_time ?
+                            Bitcoin::script_config {Bitcoin::pre_genesis_profile ()}:
+                            Bitcoin::script_config {Bitcoin::genesis_profile ()}
+                        )
+                    )
+                ) return false;
+
+                input_index++;
+            }
+
+            return spent >= tx.sent ();
         }
     }
 
     // check valid and check that all headers are in our database.
     bool proof::validate (SPV::database &d, time_limit genesis_upgrade_time) const {
-        return proof_validate (*this, &d, genesis_upgrade_time);
+        return proof_validate (*this, d, genesis_upgrade_time);
     }
 
     namespace {
