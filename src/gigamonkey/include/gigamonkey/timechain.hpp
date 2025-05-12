@@ -152,6 +152,7 @@ namespace Gigamonkey::Bitcoin {
         }
 
         byte_array<36> write () const;
+
         static outpoint read (slice x) {
             return outpoint {x};
         }

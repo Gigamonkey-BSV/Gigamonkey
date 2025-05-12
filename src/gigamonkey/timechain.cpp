@@ -285,5 +285,24 @@ namespace Gigamonkey::Bitcoin {
         return 0;
     }
 
+    Bitcoin::TXID outpoint::digest (slice x) {
+        Bitcoin::TXID txid;
+        std::copy (x.begin (), x.begin () + 32, txid.begin ());
+        return txid;
+    }
+
+    Bitcoin::index outpoint::index (slice x) {
+        Bitcoin::index ind;
+        std::copy (x.begin () + 32, x.end (), ind.begin ());
+        return ind;
+    }
+
+    byte_array<36> outpoint::write () const {
+        byte_array<36> rar;
+        std::copy (Digest.begin (), Digest.end (), rar.begin ());
+        std::copy (Index.begin (), Index.end (), rar.begin () + 32);
+        return rar;
+    }
+
 }
 

@@ -258,7 +258,7 @@ namespace Gigamonkey::SPV {
         return p;
     }
 
-    maybe<extended::transaction> extend (database &d, Bitcoin::transaction tx) {
+    maybe<extended::transaction> extend (database &d, const Bitcoin::transaction &tx) {
         list<extended::input> inputs;
         for (const auto &in : tx.Inputs) {
             auto c = d.transaction (in.Reference.Digest);

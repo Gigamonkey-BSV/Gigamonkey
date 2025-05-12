@@ -109,7 +109,7 @@ namespace Gigamonkey::SPV {
     // this proof can be sent to a merchant who can use it to confirm that
     // the transaction is valid.
     maybe<proof> generate_proof (database &d, list<Bitcoin::transaction> payment);
-    maybe<extended::transaction> extend (database &d, Bitcoin::transaction);
+    maybe<extended::transaction> extend (database &d, const Bitcoin::transaction &);
 
     // interface for database containing headers, transactions, and merkle paths.
     struct database {
