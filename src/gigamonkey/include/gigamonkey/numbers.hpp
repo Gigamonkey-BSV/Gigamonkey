@@ -80,7 +80,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     size_t inline minimal_number_size (bytes_view b) {
-        return data::arithmetic::minimal_size<data::endian::little, data::arithmetic::complement::BC, byte> (b);
+        return data::arithmetic::minimal_size<data::endian::little, data::arithmetic::negativity::BC, byte> (b);
     }
 
     const integer inline &read_integer (const bytes &span, bool RequireMinimal, const size_t nMaxNumSize) {
@@ -93,16 +93,16 @@ namespace Gigamonkey::Bitcoin {
     }
 
     bool inline is_minimal_number (bytes_view span) {
-        return data::arithmetic::is_minimal<data::endian::little, data::arithmetic::complement::BC, byte> (span);
+        return data::arithmetic::is_minimal<data::endian::little, data::arithmetic::negativity::BC, byte> (span);
     }
 
     bytes inline &extend_number (bytes &rawnum, size_t size) {
-        data::arithmetic::extend<data::endian::little, data::arithmetic::complement::BC, byte> (rawnum, size);
+        data::arithmetic::extend<data::endian::little, data::arithmetic::negativity::BC, byte> (rawnum, size);
         return rawnum;
     }
 
     bytes inline &trim_number (bytes &num) {
-        data::arithmetic::trim<data::endian::little, data::arithmetic::complement::BC, byte> (num);
+        data::arithmetic::trim<data::endian::little, data::arithmetic::negativity::BC, byte> (num);
         return num;
     }
 
