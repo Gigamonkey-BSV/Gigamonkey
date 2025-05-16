@@ -90,3 +90,14 @@ if (PACKAGE_TESTS)
 endif ()
 
 add_subdirectory (src bin)
+
+# Default to Debug if no build type is specified
+if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set (CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
+endif ()
+
+# Optional: Show message
+message (STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
+set (CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+set (CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
