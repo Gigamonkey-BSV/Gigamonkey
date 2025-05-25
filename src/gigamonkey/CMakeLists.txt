@@ -63,11 +63,17 @@ add_library (gigamonkey STATIC
     boost/boost.cpp  
 )
 
-configure_file(include/gigamonkey/version.hpp.in generated/gigamonkey/version.hpp )
+configure_file (include/gigamonkey/version.hpp.in generated/gigamonkey/version.hpp )
 
-target_include_directories(gigamonkey PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated/> $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+target_include_directories (
+  gigamonkey
+  PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated/> $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
 
-target_include_directories (gigamonkey PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
+target_include_directories (
+  gigamonkey
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>
+)
 
 target_link_libraries (gigamonkey PUBLIC
   nlohmann_json::nlohmann_json
@@ -91,43 +97,54 @@ target_compile_options (gigamonkey PUBLIC "-fconcepts")
 
 
 include(GNUInstallDirs)
-install(DIRECTORY
-  include/
+
+# copy include directory into install destination
+install (
+  DIRECTORY include/
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
-install(TARGETS gigamonkey sv_giga nlohmann_json
-EXPORT GigamonkeyTargets ARCHIVE 
+
+install (
+  TARGETS gigamonkey sv_giga nlohmann_json
+  EXPORT GigamonkeyTargets
+  ARCHIVE
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/generated/gigamonkey/version.hpp 
-DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/gigamonkey)
+install (
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/generated/gigamonkey/version.hpp
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/gigamonkey
+)
 
-install(EXPORT GigamonkeyTargets
+install (
+  EXPORT GigamonkeyTargets
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/gigamonkey
   FILE gigamonkeyTargets.cmake
   NAMESPACE Gigamonkey::
 )
 
-include(CMakePackageConfigHelpers)
+include (CMakePackageConfigHelpers)
+
 # generate the config file that includes the exports
-configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
+configure_package_config_file (
+  ${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
   "${CMAKE_CURRENT_BINARY_DIR}/gigamonkeyConfig.cmake"
   INSTALL_DESTINATION "lib/cmake/gigamonkeyFunctions"
   NO_SET_AND_CHECK_MACRO
   NO_CHECK_REQUIRED_COMPONENTS_MACRO
-  )
+)
 
-  write_basic_package_version_file(
+write_basic_package_version_file (
   "${CMAKE_CURRENT_BINARY_DIR}/gigamonkeyConfigVersion.cmake"
   COMPATIBILITY AnyNewerVersion
 )
-install(FILES
+
+install (FILES
   ${CMAKE_CURRENT_BINARY_DIR}/gigamonkeyConfig.cmake
   ${CMAKE_CURRENT_BINARY_DIR}/gigamonkeyConfigVersion.cmake
   DESTINATION lib/cmake/gigamonkey
-  )
+)
 
-  set(CPACK_PACKAGE_VENDOR "Daniel Krawisz")
-set(CPACK_PACKAGE_CONTACT "email@example.com")
-set(CPACK_PACKAGE_DESCRIPTION "Gigamonkey")
-include(CPack)
+set (CPACK_PACKAGE_VENDOR "Daniel Krawisz")
+#set(CPACK_PACKAGE_CONTACT "email@example.com")
+set (CPACK_PACKAGE_DESCRIPTION "Gigamonkey")
+include (CPack)

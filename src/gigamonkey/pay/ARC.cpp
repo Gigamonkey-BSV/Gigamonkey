@@ -30,7 +30,7 @@ namespace Gigamonkey::ARC {
     }
 
     bool response::valid (const HTTP::response &r) {
-        if (r.Status == HTTP::status::unauthorized && r.Body == "") return true;
+        if (r.Status == HTTP::status::unauthorized && r.Body == bytes {}) return true;
         auto v = r.content_type ();
         return bool (v) && *v == "application/json" || bool (body (r));
     }
