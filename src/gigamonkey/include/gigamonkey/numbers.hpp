@@ -24,11 +24,19 @@ namespace Gigamonkey::Bitcoin {
 
     const integer &read_integer (const bytes &span, bool RequireMinimal, const size_t nMaxNumSize = MAXIMUM_ELEMENT_SIZE);
 
+    // implements OP_0NOTEQUAL
     bool nonzero (bytes_view b);
+
+    bool is_zero (bytes_view);
+    bool is_negative (bytes_view);
+    bool is_positive (bytes_view);
 
     template <size_t size> size_t serialized_size (const uint<size> &u);
 
     size_t serialized_size (const integer &i);
+
+    // implements OP_INVERT
+    integer bit_not (bytes_view);
 
     // implements OP_AND
     integer bit_and (bytes_view, bytes_view);
@@ -38,6 +46,30 @@ namespace Gigamonkey::Bitcoin {
 
     // implements OP_OR
     integer bit_or (bytes_view, bytes_view);
+
+    // implements OP_NOT
+    bool bool_not (bytes_view);
+
+    // implements OP_BOOLAND
+    bool bool_and (bytes_view, bytes_view);
+
+    // implements OP_BOOLOR
+    bool bool_or (bytes_view, bytes_view);
+
+    bool num_equal (bytes_view, bytes_view);
+    bool num_not_equal (bytes_view, bytes_view);
+    bool less (bytes_view, bytes_view);
+    bool greater (bytes_view, bytes_view);
+    bool less_equal (bytes_view, bytes_view);
+    bool greater_equal (bytes_view, bytes_view);
+
+    bytes negate (bytes_view);
+    bytes abs (bytes_view);
+    bytes plus (bytes_view, bytes_view);
+    bytes minus (bytes_view, bytes_view);
+    bytes times (bytes_view, bytes_view);
+    bytes divide (bytes_view, bytes_view);
+    bytes mod (bytes_view, bytes_view);
 
     // concatinate, implements OP_CAT
     integer cat (bytes_view, bytes_view);
@@ -66,7 +98,21 @@ namespace Gigamonkey::Bitcoin {
     bool inline nonzero (bytes_view b) {
         if (b.size () == 0) return false;
         for (int i = 0; i < b.size () - 1; i++) if (b[i] != 0) return true;
-        return b[b.size () - 1] != 0 && b[b.size () - 1] != 0x80;
+        return b[b.size () - 1] != 0x00 && b[b.size () - 1] != 0x80;
+    }
+
+    bool inline is_zero (bytes_view b) {
+        if (b.size () == 0) return true;
+        for (int i = 0; i < b.size () - 1; i++) if (b[i] != 0) return false;
+        return b[b.size () - 1] == 0x00 || b[b.size () - 1] == 0x80;
+    }
+
+    bool inline is_negative (bytes_view b) {
+        return nonzero (b) && (b[b.size () - 1] & 0x80);
+    }
+
+    bool inline is_positive (bytes_view b) {
+        return nonzero (b) && !(b[b.size () - 1] & 0x80);
     }
 
     template <size_t size> size_t inline serialized_size (const uint_little<size> &u) {
@@ -139,6 +185,71 @@ namespace Gigamonkey::Bitcoin {
     std::pair<string_view, string_view> inline split (string_view x, size_t n) {
         if (n < 0 || n > x.size ()) throw exception {} << "invalid split range";
         return {x.substr (0, n), x.substr (n + 1)};
+    }
+
+    bool inline bool_not (bytes_view x) {
+        return is_zero (x);
+    }
+
+    bool inline bool_and (bytes_view x, bytes_view y) {
+        return nonzero (x) && nonzero (y);
+    }
+
+    bool inline bool_or (bytes_view x, bytes_view y) {
+        return nonzero (x) || nonzero (y);
+    }
+
+    bool inline num_not_equal (bytes_view x, bytes_view y) {
+        return !num_equal (x, y);
+    }
+
+    bool inline num_equal (bytes_view x, bytes_view y) {
+        return integer {x} == integer {y};
+    }
+
+    bool inline less (bytes_view x, bytes_view y) {
+        return integer {x} < integer {y};
+    }
+
+    bool inline greater (bytes_view x, bytes_view y) {
+        return integer {x} > integer {y};
+    }
+
+    bool inline less_equal (bytes_view x, bytes_view y) {
+        return integer {x} <= integer {y};
+    }
+
+    bool inline greater_equal (bytes_view x, bytes_view y) {
+        return integer {x} >= integer {y};
+    }
+
+    bytes inline negate (bytes_view x) {
+        return -integer {x};
+    }
+
+    bytes inline plus (bytes_view x, bytes_view y) {
+        return integer {x} + integer {y};
+    }
+
+    bytes inline minus (bytes_view x, bytes_view y) {
+        return integer {x} - integer {y};
+    }
+
+    bytes inline times (bytes_view x, bytes_view y) {
+        return integer {x} * integer {y};
+    }
+
+    bytes inline divide (bytes_view x, bytes_view y) {
+        return integer {x} / integer {y};
+    }
+
+    bytes inline mod (bytes_view x, bytes_view y) {
+        return integer {x} % integer {y};
+    }
+
+    bytes inline abs (bytes_view x) {
+        if (is_negative (x)) return negate (x);
+        return bytes (x);
     }
 }
 

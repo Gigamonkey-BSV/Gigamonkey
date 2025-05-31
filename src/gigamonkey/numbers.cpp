@@ -3,6 +3,13 @@
 namespace Gigamonkey::Bitcoin {
 
     // concatinate, implements OP_AND
+    integer bit_not (bytes_view x) {
+        integer result = integer::zero (x.size ());
+        data::arithmetic::bit_negate<byte> (result.end (), result.begin (), x.begin ());
+        return result;
+    }
+
+    // concatinate, implements OP_AND
     integer bit_and (bytes_view x, bytes_view y) {
         if (x.size () != y.size ()) throw exception {"bit and on strings of unequal size"};
         integer result = integer::zero (x.size ());
