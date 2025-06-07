@@ -111,7 +111,7 @@ namespace Gigamonkey::Boost {
             Bitcoin::timestamp start, 
             Stratum::session_id n1, 
             uint64_big n2, uint64 key) {
-            Bitcoin::secret s (Bitcoin::secret::main, secp256k1::secret (uint256 (key)));
+            Bitcoin::secret s (Bitcoin::net::Main, secp256k1::secret (uint256 (key)));
             
             bytes extra_nonce_2 (8);
             std::copy (n2.begin (), n2.end (), extra_nonce_2.begin ());
@@ -129,7 +129,7 @@ namespace Gigamonkey::Boost {
             Stratum::session_id n1,  
             uint64_big n2, 
             uint64 key) { 
-            Bitcoin::secret s (Bitcoin::secret::main, secp256k1::secret (uint256 (key)));
+            Bitcoin::secret s (Bitcoin::net::Main, secp256k1::secret (uint256 (key)));
             digest160 address = Bitcoin::Hash160 (s.to_public ());
             
             output_script o = type == contract ? 
@@ -153,7 +153,7 @@ namespace Gigamonkey::Boost {
             Stratum::session_id n1, 
             uint64_big n2, 
             uint64 key) { 
-            Bitcoin::secret s (Bitcoin::secret::main, secp256k1::secret (uint256 (key)));
+            Bitcoin::secret s (Bitcoin::net::Main, secp256k1::secret (uint256 (key)));
             digest160 address = Bitcoin::Hash160 (s.to_public ());
             
             output_script o = type == contract ? 
@@ -536,11 +536,11 @@ namespace Gigamonkey::Boost {
         bytes minerPubKeyHash_bytes = bytes (minerPubKeyHash_hex);
             
         std::copy (signature_bytes.begin (), signature_bytes.end(), signature.begin ());
-        std::copy (minerPubKey_bytes.begin(), minerPubKey_bytes.end(), pubkey.begin());
+        std::copy (minerPubKey_bytes.begin (), minerPubKey_bytes.end(), pubkey.begin ());
         
         std::copy (time_bytes.begin (), time_bytes.end(), timestamp.begin ());
         
-        std::copy (minerPubKeyHash_bytes.begin (), minerPubKeyHash_bytes.end (), miner_address.begin());
+        std::copy (minerPubKeyHash_bytes.begin (), minerPubKeyHash_bytes.end (), miner_address.begin ());
         
         work::puzzle puzzle {work::candidate{boost_script.Category,
             boost_script.Content, boost_script.Target, Merkle::path {}},
@@ -548,11 +548,11 @@ namespace Gigamonkey::Boost {
             Boost::puzzle::body (boost_script.UserNonce, boost_script.AdditionalData)};
         
         uint64_big n2;
-        std::copy (extra_nonce_2.begin (), extra_nonce_2.end (), n2.begin());
+        std::copy (extra_nonce_2.begin (), extra_nonce_2.end (), n2.begin ());
         n2 += 5;
         std::copy (n2.begin (), n2.end (), extra_nonce_2.begin ());
         
-        work::proof pr = work::cpu_solve (puzzle, work::solution{Bitcoin::timestamp{timestamp}, nonce, extra_nonce_2, extra_nonce_1});
+        work::proof pr = work::cpu_solve (puzzle, work::solution {Bitcoin::timestamp {timestamp}, nonce, extra_nonce_2, extra_nonce_1});
         
         EXPECT_EQ (pr.Solution.Share.Nonce, nonce);
         
@@ -626,7 +626,7 @@ namespace Gigamonkey::Boost {
         
         // getExtraNonce1Number() => 33554432
         uint32_big expected_extra_nonce_1_number;
-        boost::algorithm::unhex (given_extra_nonce_1.begin (), given_extra_nonce_1.end (), expected_extra_nonce_1_number.begin());
+        boost::algorithm::unhex (given_extra_nonce_1.begin (), given_extra_nonce_1.end (), expected_extra_nonce_1_number.begin ());
         
         // getExtraNonce2Number() => 12884901891
         uint64_big expected_extra_nonce_2_number;
@@ -854,7 +854,7 @@ namespace Gigamonkey::Boost {
     // this is used to test against the boostpow-js library. 
     TEST (BoostTest, TestAgainstBoostPoWJSRedeem) {
         
-        Bitcoin::secret from_key {Bitcoin::secret::main,
+        Bitcoin::secret from_key {Bitcoin::net::Main,
             secp256k1::secret {uint256 {"0x0000000000000000000000000000000000000000000000000000000000000003"}}};
         
         bytes content_string = bytes (string ("hello animal"));
@@ -910,12 +910,12 @@ namespace Gigamonkey::Boost {
         
         // getExtraNonce1Number() => 33554432
         Stratum::session_id expected_extra_nonce_1_number;
-        boost::algorithm::unhex (given_extra_nonce_1.begin (), given_extra_nonce_1.end (), expected_extra_nonce_1_number.begin());
+        boost::algorithm::unhex (given_extra_nonce_1.begin (), given_extra_nonce_1.end (), expected_extra_nonce_1_number.begin ());
         
         bytes expected_extra_nonce_2_v1 (8);
         bytes expected_extra_nonce_2_v2 (32);
-        boost::algorithm::unhex (given_extra_nonce_2_v1.begin (), given_extra_nonce_2_v1.end(), expected_extra_nonce_2_v1.begin());
-        boost::algorithm::unhex (given_extra_nonce_2_v2.begin (), given_extra_nonce_2_v2.end(), expected_extra_nonce_2_v2.begin());
+        boost::algorithm::unhex (given_extra_nonce_2_v1.begin (), given_extra_nonce_2_v1.end(), expected_extra_nonce_2_v1.begin ());
+        boost::algorithm::unhex (given_extra_nonce_2_v2.begin (), given_extra_nonce_2_v2.end(), expected_extra_nonce_2_v2.begin ());
         
         work::puzzle puzzle_bounty_v1 = work_puzzle (
             output_script::bounty (

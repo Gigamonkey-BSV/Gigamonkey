@@ -31,7 +31,7 @@ namespace Gigamonkey::Bitcoin {
     bool is_negative (bytes_view);
     bool is_positive (bytes_view);
 
-    template <size_t size> size_t serialized_size (const uint<size> &u);
+    template <size_t size> size_t serialized_size (const uint_little<size> &u);
 
     size_t serialized_size (const integer &i);
 

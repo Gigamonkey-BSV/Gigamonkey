@@ -18,7 +18,11 @@ namespace Gigamonkey::Bitcoin {
         else return {};
 
         it_rdr r (b58.data (), b58.data () + b58.size ());
-        r >> (byte &) (w.Prefix);
+        prefix p;
+        r >> (byte &) (p);
+        if (p != main && p != test) return {};
+
+        w.Network = p == main ? net::Main : net::Test;
         r.read (w.Secret.Value.data (), secp256k1::secret::Size);
         
         if (w.Compressed) {
@@ -31,7 +35,9 @@ namespace Gigamonkey::Bitcoin {
 
     }
     
-    WIF WIF::encode (byte prefix, const secp256k1::secret& s, bool compressed) {
+    WIF WIF::encode (net n, const secp256k1::secret &s, bool compressed) {
+
+        if (!Bitcoin::secret {n, s, compressed}.valid ()) return {};
 
         bytes data (compressed ? CompressedSize - 1: UncompressedSize - 1);
         it_wtr w (data.begin (), data.end ());
@@ -39,7 +45,7 @@ namespace Gigamonkey::Bitcoin {
         if (compressed) w << CompressedSuffix;
 
         WIF wif;
-        static_cast<string &> (wif) = base58::check {prefix, data}.encode ();
+        static_cast<string &> (wif) = base58::check {n == net::Main ? byte (main) : byte (test), data}.encode ();
         return wif;
 
     }

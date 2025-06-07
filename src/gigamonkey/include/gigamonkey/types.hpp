@@ -78,7 +78,7 @@ namespace Gigamonkey {
 
         using nonce = uint32_little;
 
-        enum chain : byte {test, main};
+        enum class net {Invalid, Main, Test};
 
         using check = bytes_array<byte, 4>;
 

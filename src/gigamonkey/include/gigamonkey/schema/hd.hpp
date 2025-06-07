@@ -20,27 +20,6 @@ namespace Gigamonkey::HD {
     
     // bip 32 defines the basic format. See: https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki
     namespace BIP_32 {
-
-        enum type : byte {
-            main = 0x78,
-            test = 0x74
-        };
-        
-        constexpr type inline from_wif (Bitcoin::secret::type t) {
-            return t == Bitcoin::secret::main ? main : t == Bitcoin::secret::test ? test : type{0};
-        }
-        
-        constexpr Bitcoin::secret::type inline to_wif (type t) {
-            return t == main ? Bitcoin::secret::main : t == test ? Bitcoin::secret::test : Bitcoin::secret::type{0};
-        }
-        
-        constexpr type inline from_address (Bitcoin::address::type t) {
-            return t == Bitcoin::address::main ? main : t == Bitcoin::address::test ? test : type{0};
-        }
-        
-        constexpr Bitcoin::address::type inline to_address (type t) {
-            return t == main ? Bitcoin::address::main : t == test ? Bitcoin::address::test : Bitcoin::address::type{0};
-        }
         
         constexpr bool inline hardened (uint32 child) {
             return child >= 0x80000000;
@@ -59,13 +38,14 @@ namespace Gigamonkey::HD {
             
             secp256k1::pubkey Pubkey;
             chain_code ChainCode;
-            type Net;
+            Bitcoin::net Network;
             byte Depth;
             uint32_t Parent;
             uint32_t Sequence;
             
             bool valid () const {
-                return Pubkey.valid () && Pubkey.size () == secp256k1::pubkey::CompressedSize && (Net == main || Net == test);
+                return Pubkey.valid () && Pubkey.size () == secp256k1::pubkey::CompressedSize &&
+                    (Network == Bitcoin::net::Main || Network == Bitcoin::net::Test);
             }
             
             pubkey (const secp256k1::pubkey &p, const chain_code &cc) : Pubkey {p}, ChainCode {cc} {}
@@ -73,16 +53,15 @@ namespace Gigamonkey::HD {
             pubkey () = default;
             
             static pubkey read (string_view);
-            static pubkey from_seed (seed entropy, type net);
+            static pubkey from_seed (seed entropy, Bitcoin::net net);
 
             string write () const;
 
             Bitcoin::address::decoded address () const {
-                return {to_address (Net), Bitcoin::Hash160 (Pubkey)};
+                return {Network, Bitcoin::Hash160 (Pubkey)};
             }
 
             bool operator == (const pubkey &rhs) const;
-            bool operator != (const pubkey &rhs) const;
             
             pubkey derive (path l) const;
             pubkey derive (string_view l) const;
@@ -100,27 +79,26 @@ namespace Gigamonkey::HD {
             
             secp256k1::secret Secret;
             chain_code ChainCode;
-            type Net;
+            Bitcoin::net Network;
             byte Depth;
             uint32_t Parent;
             uint32_t Sequence;
 
-            secret (const secp256k1::secret &s, const chain_code &cc, type network) : Secret {s}, ChainCode {cc}, Net {network} {}
+            secret (const secp256k1::secret &s, const chain_code &cc, Bitcoin::net network) : Secret {s}, ChainCode {cc}, Network {network} {}
             secret (string_view s) : secret {read (s)} {}
             secret () = default;
 
             static secret read (string_view);
-            static secret from_seed (seed entropy, type net = main);
+            static secret from_seed (seed entropy, Bitcoin::net network = Bitcoin::net::Main);
 
             string write () const;
             pubkey to_public () const;
             
             bool valid () const {
-                return Secret.valid () && (Net == main || Net == test);
+                return Secret.valid () && (Network == Bitcoin::net::Main || Network == Bitcoin::net::Test);
             }
 
             bool operator == (const secret &rhs) const;
-            bool operator != (const secret &rhs) const;
             
             Bitcoin::signature sign (const digest256& d) const;
             
@@ -128,7 +106,7 @@ namespace Gigamonkey::HD {
             secret derive (string_view l) const;
             
             explicit operator Bitcoin::secret () const {
-                return Bitcoin::secret {to_wif (Net), Secret, true};
+                return Bitcoin::secret {Network, Secret, true};
             }
             
             explicit operator string () const {

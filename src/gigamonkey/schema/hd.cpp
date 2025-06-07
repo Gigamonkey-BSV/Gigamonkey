@@ -35,7 +35,7 @@ namespace Gigamonkey::HD::BIP_32 {
         derived.Depth = sec.Depth + 1;
         derived.Parent = fp (Bitcoin::Hash160 (pub));
         derived.Sequence = child;
-        derived.Net = sec.Net;
+        derived.Network = sec.Network;
         
         bool is_hardened = child >= 0x80000000;
         
@@ -104,7 +104,7 @@ namespace Gigamonkey::HD::BIP_32 {
         derived.Depth = pub.Depth + 1;
         derived.Parent = fp (Bitcoin::Hash160 (pub.Pubkey));
         derived.Sequence = child;
-        derived.Net = pub.Net;
+        derived.Network = pub.Network;
 
         bool is_hardened = child >= 0x80000000;
 
@@ -150,22 +150,52 @@ namespace Gigamonkey::HD::BIP_32 {
         return derived;
     }
 
+    string secret::write () const {
+        bytes output;
+
+        bytes prv = Network == Bitcoin::net::Main ? bytes ({0x88, 0xAD, 0xE4}) : bytes ({0x35, 0x83, 0x94});
+
+        for (int i = 0; i < prv.size (); i++) output.push_back (prv[i]);
+        output.push_back (Depth);
+        output.push_back ((uint32_t) Parent >> 24);
+        output.push_back (((uint32_t) Parent >> 16) & 0xff);
+        output.push_back (((uint32_t) Parent >> 8) & 0xff);
+        output.push_back ((uint32_t) Parent & 0xff);
+        output.push_back ((uint32_t) Sequence >> 24);
+        output.push_back (((uint32_t) Sequence >> 16) & 0xff);
+        output.push_back (((uint32_t) Sequence >> 8) & 0xff);
+        output.push_back ((uint32_t) Sequence & 0xff);
+
+        bytes chain_value (ChainCode.size ());
+        std::reverse_copy (ChainCode.begin (), ChainCode.end (), chain_value.begin ());
+        auto itr2 = ChainCode.begin ();
+        while (itr2 != ChainCode.end ()) output.push_back (*itr2++);
+
+        output.push_back (0);
+        bytes sec_value (Secret.Value.size ());
+        std::reverse_copy (Secret.Value.begin (), Secret.Value.end (), sec_value.begin ());
+        auto itr = Secret.Value.begin ();
+
+        while (itr != Secret.Value.end ()) output.push_back (*itr++);
+
+        return Gigamonkey::base58::check {0x04, output}.encode ();
+    }
+
     secret secret::read (string_view str) {
-        Gigamonkey::base58::check tmp (str);
+        Gigamonkey::base58::check b58_read (str);
+        if (!b58_read.valid ()) return secret {};
+
+        if (b58_read.version () != 0x04) return secret {};
+
+        auto view = b58_read.payload ();
+        if (view.length () != 77) return secret {};
+
         secret secret1;
-        if (!tmp.valid ())
-            return secret ();
-
-        auto view = tmp.payload ();
-        if (view.length () != 77)
-            return secret ();
-
-        secret1.Net = main;
-        bytes prv = bytes ({0x88, 0xAD, 0xE4});
 
         auto check = view.substr (0, 3);
-        if (prv != check)
-            return secret ();
+        if (bytes ({0x88, 0xAD, 0xE4}) == check) secret1.Network = Bitcoin::net::Main;
+        else if (bytes ({0x35, 0x83, 0x94}) == check) secret1.Network = Bitcoin::net::Test;
+        else return secret {};
 
         it_rdr r (view.begin () + 3, view.end ());
         
@@ -198,7 +228,7 @@ namespace Gigamonkey::HD::BIP_32 {
         return secret1;
     }
 
-    secret secret::from_seed (seed entropy, type net) {
+    secret secret::from_seed (seed entropy, Bitcoin::net net) {
         const char *keyText = "Bitcoin seed";
         byte hmaced[CryptoPP::HMAC<CryptoPP::SHA512>::DIGESTSIZE];
         try {
@@ -215,72 +245,40 @@ namespace Gigamonkey::HD::BIP_32 {
         for (int i = 0; i < 32; i++)
             secret1.ChainCode.push_back (hmaced[32 + i]);
 
-        secret1.Net = net;
+        secret1.Network = net;
         secret1.Depth = 0;
         secret1.Parent = 0;
         secret1.Sequence = 0;
         return secret1;
     }
 
-    string secret::write () const {
-        bytes output;
-
-        bytes prv = bytes ({0x88, 0xAD, 0xE4});
-        for (int i = 0; i < prv.size (); i++)
-            output.push_back (prv[i]);
-        output.push_back (Depth);
-        output.push_back ((uint32_t) Parent >> 24);
-        output.push_back (((uint32_t) Parent >> 16) & 0xff);
-        output.push_back (((uint32_t) Parent >> 8) & 0xff);
-        output.push_back ((uint32_t) Parent & 0xff);
-        output.push_back ((uint32_t) Sequence >> 24);
-        output.push_back (((uint32_t) Sequence >> 16) & 0xff);
-        output.push_back (((uint32_t) Sequence >> 8) & 0xff);
-        output.push_back ((uint32_t) Sequence & 0xff);
-        bytes chain_value (ChainCode.size ());
-        std::reverse_copy (ChainCode.begin (), ChainCode.end (), chain_value.begin ());
-        auto itr2 = ChainCode.begin ();
-        while (itr2 != ChainCode.end ())
-            output.push_back (*itr2++);
-
-        output.push_back (0);
-        bytes sec_value (Secret.Value.size ());
-        std::reverse_copy (Secret.Value.begin (), Secret.Value.end(), sec_value.begin());
-        auto itr = Secret.Value.begin ();
-
-        while (itr != Secret.Value.end ()) {
-            output.push_back (*itr++);
-        }
-        Gigamonkey::base58::check outputString (0x04, output);
-        return outputString.encode ();
-    }
-
     pubkey secret::to_public () const {
         pubkey pu;
         pu.Depth = Depth;
         pu.Sequence = Sequence;
-        pu.Net = Net;
+        pu.Network = Network;
         pu.ChainCode = bytes (32);
-        std::copy (ChainCode.begin (), ChainCode.end(), pu.ChainCode.begin());
+        std::copy (ChainCode.begin (), ChainCode.end (), pu.ChainCode.begin ());
         pu.Parent = Parent;
         pu.Pubkey = Secret.to_public ();
         return pu;
     }
 
     bool secret::operator == (const secret &rhs) const {
-        return std::tie (Secret, ChainCode, Net, Depth, Parent, Sequence) ==
-               std::tie (rhs.Secret, rhs.ChainCode, rhs.Net, rhs.Depth, rhs.Parent, rhs.Sequence);
+        return std::tie (Secret, ChainCode, Network, Depth, Parent, Sequence) ==
+            std::tie (rhs.Secret, rhs.ChainCode, rhs.Network, rhs.Depth, rhs.Parent, rhs.Sequence);
     }
 
-    bool secret::operator != (const secret &rhs) const {
-        return !(rhs == *this);
+    pubkey pubkey::from_seed (seed entropy, Bitcoin::net net) {
+        return secret::from_seed (entropy, net).to_public ();
     }
 
     string pubkey::write () const {
         bytes output;
-        bytes prv = bytes ({0x88, 0xB2, 0x1E});
-        for (int i = 0; i < prv.size (); i++)
-            output.push_back (prv[i]);
+        bytes prv = Network == Bitcoin::net::Main ? bytes ({0x88, 0xB2, 0x1E}) : bytes ({0x35, 0x87, 0xCF});
+
+        for (int i = 0; i < prv.size (); i++) output.push_back (prv[i]);
+
         output.push_back (Depth);
         output.push_back ((uint32_t) Parent >> 24);
         output.push_back (((uint32_t) Parent >> 16) & 0xff);
@@ -290,33 +288,30 @@ namespace Gigamonkey::HD::BIP_32 {
         output.push_back (((uint32_t) Sequence >> 16) & 0xff);
         output.push_back (((uint32_t) Sequence >> 8) & 0xff);
         output.push_back ((uint32_t) Sequence & 0xff);
+
         auto itr2 = ChainCode.begin ();
-        while (itr2 != ChainCode.end ())
-            output.push_back (*itr2++);
+        while (itr2 != ChainCode.end ()) output.push_back (*itr2++);
 
         auto itr = Pubkey.begin ();
-        while (itr != Pubkey.end ())
-            output.push_back (*itr++);
+        while (itr != Pubkey.end ()) output.push_back (*itr++);
 
-        Gigamonkey::base58::check outputString (0x04, output);
-        return outputString.encode ();
-    }
-
-    pubkey pubkey::from_seed (seed entropy, type net) {
-        return secret::from_seed (entropy, net).to_public ();
+        return Gigamonkey::base58::check {0x04, output}.encode ();
     }
 
     pubkey pubkey::read (string_view str) {
-        Gigamonkey::base58::check tmp (str);
-        pubkey pubkey1;
-        if (!tmp.valid ()) return pubkey ();
-        auto view = tmp.payload ();
-        if (view.length () != 77) return pubkey ();
+        Gigamonkey::base58::check b58_read (str);
+        if (b58_read.version () != 0x04) return pubkey {};
 
-        pubkey1.Net = main;
-        bytes prv = bytes ({0x88, 0xB2, 0x1E});
+        auto view = b58_read.payload ();
+        if (view.length () != 77) return pubkey {};
+
+        pubkey pubkey1;
+
         auto check = view.substr (0, 3);
-        if (prv != check) return pubkey ();
+        if (bytes ({0x88, 0xB2, 0x1E}) == check) pubkey1.Network = Bitcoin::net::Main;
+        else if (bytes ({0x35, 0x87, 0xCF}) == check) pubkey1.Network = Bitcoin::net::Test;
+        else return pubkey {};
+
         it_rdr r (view.begin () + 3, view.end ());
         
         byte depth;
@@ -341,12 +336,8 @@ namespace Gigamonkey::HD::BIP_32 {
     }
 
     bool pubkey::operator == (const pubkey &rhs) const {
-        return std::tie (Pubkey, ChainCode, Net, Depth, Parent, Sequence) ==
-               std::tie (rhs.Pubkey, rhs.ChainCode, rhs.Net, rhs.Depth, rhs.Parent, rhs.Sequence);
-    }
-
-    bool pubkey::operator != (const pubkey &rhs) const {
-        return !(rhs == *this);
+        return std::tie (Pubkey, ChainCode, Network, Depth, Parent, Sequence) ==
+            std::tie (rhs.Pubkey, rhs.ChainCode, rhs.Network, rhs.Depth, rhs.Parent, rhs.Sequence);
     }
     
     path read_path (string_view p) {

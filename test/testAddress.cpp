@@ -27,7 +27,7 @@ namespace Gigamonkey::Bitcoin {
     struct test_standard_scripts {
 
         // We start with a secret key.
-        secret key {secret::test, secp256k1::secret {uint256 {"0x00000000000000000000000000000000000000000000000000000000000101a7"}}};
+        secret key {net::Test, secp256k1::secret {uint256 {"0x00000000000000000000000000000000000000000000000000000000000101a7"}}};
 
         pubkey pubkey_compressed {key.to_public ().compress ()};
         pubkey pubkey_uncompressed {key.to_public ().decompress ()};
@@ -231,7 +231,7 @@ namespace Gigamonkey::Bitcoin {
         
         random >> pubkey_hash;
         
-        Bitcoin::address address {Bitcoin::address::main, pubkey_hash};
+        Bitcoin::address address {Bitcoin::net::Main, pubkey_hash};
         
         base58::check address_check (address);
         
