@@ -44,9 +44,9 @@ namespace Gigamonkey::Bitcoin {
     instruction push_data (int);
     instruction push_data (const Z &z);
     instruction push_data (bytes_view);
-    
-    template <bool is_signed, boost::endian::order o, std::size_t size>
-    instruction push_data (const data::endian_integral<is_signed, o, size> &x);
+
+    template <data::endian::order Order, class T, std::size_t n_bits, boost::endian::align Align>
+    instruction push_data (const boost::endian::endian_arithmetic<Order, T, n_bits, Align> &x);
     
     bool is_minimal_instruction (const instruction &);
     
@@ -196,9 +196,10 @@ namespace Gigamonkey::Bitcoin {
     instruction inline push_data (const Z &z) {
         return push_data (integer {z});
     }
-    
-    template <bool is_signed, boost::endian::order o, std::size_t size>
-    instruction inline push_data (const data::endian_integral<is_signed, o, size> &x) {
+
+
+    template <data::endian::order Order, class T, std::size_t n_bits, boost::endian::align Align>
+    instruction inline push_data (const boost::endian::endian_arithmetic<Order, T, n_bits, Align> &x) {
         return push_data (bytes_view (x));
     }
 
