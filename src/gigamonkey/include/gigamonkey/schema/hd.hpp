@@ -100,7 +100,9 @@ namespace Gigamonkey::HD {
 
             bool operator == (const secret &rhs) const;
             
-            Bitcoin::signature sign (const digest256& d) const;
+            secp256k1::signature sign (const digest256 &d) const {
+                return Secret.sign (d);
+            }
             
             secret derive (path l) const;
             secret derive (string_view l) const;
