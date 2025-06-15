@@ -11,7 +11,7 @@ namespace Gigamonkey::Bitcoin {
         prefix p = n == net::Main ? main : test;
 
         address addr {};
-        static_cast<string &> (addr) = std::move (base58::check {byte (p), bytes_view {d}}.encode ());
+        static_cast<string &> (addr) = std::move (base58::check {byte (p), slice<const byte> {d}}.encode ());
         return addr;
 
     }

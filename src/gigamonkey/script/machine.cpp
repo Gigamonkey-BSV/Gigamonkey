@@ -24,7 +24,7 @@ namespace Gigamonkey::Bitcoin {
         return IsValidMaxOpsPerScript (++OpCount, Config);
     }
     
-    program inline cleanup_script_code (program script_code, bytes_view sig) {
+    program inline cleanup_script_code (program script_code, slice<const byte> sig) {
         return sighash::has_fork_id (signature::directive (sig)) ? script_code :
             find_and_delete (script_code, instruction::push (sig));
     }
@@ -35,20 +35,20 @@ namespace Gigamonkey::Bitcoin {
 
     constexpr auto bits_per_byte {8};
     
-    bytes_view get_push_data (bytes_view instruction) {
+    slice<const byte> get_push_data (slice<const byte> instruction) {
         if (instruction.size () < 1) return {};
         
         op Op = op (instruction[0]);
         
         if (!is_push_data (Op)) return {};
         
-        if (Op <= OP_PUSHSIZE75) return instruction.substr (1);
+        if (Op <= OP_PUSHSIZE75) return instruction.drop (1);
         
-        if (Op == OP_PUSHDATA1) return instruction.substr (2);
+        if (Op == OP_PUSHDATA1) return instruction.drop (2);
         
-        if (Op == OP_PUSHDATA2) return instruction.substr (3);
+        if (Op == OP_PUSHDATA2) return instruction.drop (3);
         
-        return instruction.substr (5);
+        return instruction.drop (5);
     }
 
     bool inline IsInvalidBranchingOpcode (op opcode) {
@@ -65,7 +65,7 @@ namespace Gigamonkey::Bitcoin {
     
     maybe<result> machine::step (const program_counter &Counter) {
         
-        if (Counter.Next == bytes_view {}) {
+        if (Counter.Next == slice<const byte> {}) {
             if (Config.verify_clean_stack () && (Stack->size () != 1)) return SCRIPT_ERR_CLEANSTACK;
             if (Stack->size () == 0) return false;
             return nonzero (Stack->top ());

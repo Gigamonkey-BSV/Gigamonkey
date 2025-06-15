@@ -62,7 +62,7 @@ namespace Gigamonkey {
 
             bytes script_so_far () const;
 
-            extended::input complete (bytes_view script) const {
+            extended::input complete (slice<const byte> script) const {
                 return extended::input {Prevout, static_cast<const Bitcoin::incomplete::input &> (*this).complete (script)};
             }
         };

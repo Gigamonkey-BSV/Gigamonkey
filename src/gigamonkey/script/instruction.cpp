@@ -146,13 +146,13 @@ namespace Gigamonkey::Bitcoin {
         return verify_instruction (i) == SCRIPT_ERR_OK && is_minimal_push (i.Op, i.Data);
     }
     
-    instruction instruction::read (bytes_view b) {
+    instruction instruction::read (slice<const byte> b) {
         instruction i;
         script_reader {it_rdr {b.data (), b.data () + b.size ()}} >> i;
         return i;
     }
     
-    instruction instruction::push (bytes_view data) {
+    instruction instruction::push (slice<const byte> data) {
         int size = data.size ();
         if (size == 0) return instruction {OP_0};
         
@@ -191,7 +191,7 @@ namespace Gigamonkey::Bitcoin {
         return o << i.Op;
     }
     
-    string ASM (bytes_view b) {
+    string ASM (slice<const byte> b) {
         std::stringstream ss;
         program p = decompile (b);
 
@@ -313,7 +313,7 @@ namespace Gigamonkey::Bitcoin {
         return compiled;
     }
     
-    program decompile (bytes_view b) {
+    program decompile (slice<const byte> b) {
         
         program p {};
         script_reader r {it_rdr {b.data (), b.data () + b.size ()}};

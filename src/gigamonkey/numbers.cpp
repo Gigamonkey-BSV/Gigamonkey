@@ -3,14 +3,14 @@
 namespace Gigamonkey::Bitcoin {
 
     // concatinate, implements OP_AND
-    integer bit_not (bytes_view x) {
+    integer bit_not (slice<const byte> x) {
         integer result = integer::zero (x.size ());
         data::arithmetic::bit_negate<byte> (result.end (), result.begin (), x.begin ());
         return result;
     }
 
     // concatinate, implements OP_AND
-    integer bit_and (bytes_view x, bytes_view y) {
+    integer bit_and (slice<const byte> x, slice<const byte> y) {
         if (x.size () != y.size ()) throw exception {"bit and on strings of unequal size"};
         integer result = integer::zero (x.size ());
         data::arithmetic::bit_and<byte> (result.end (), result.begin (), x.begin (), y.begin ());
@@ -18,7 +18,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     // concatinate, implements OP_XOR
-    integer bit_xor (bytes_view x, bytes_view y) {
+    integer bit_xor (slice<const byte> x, slice<const byte> y) {
         if (x.size () != y.size ()) throw exception {"bit xor on strings of unequal size"};
         integer result = integer::zero (x.size ());
         data::arithmetic::bit_xor<byte> (result.end (), result.begin (), x.begin (), y.begin ());
@@ -26,7 +26,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     // concatinate, implements OP_OR
-    integer bit_or (bytes_view x, bytes_view y) {
+    integer bit_or (slice<const byte> x, slice<const byte> y) {
         if (x.size () != y.size ()) throw exception {"bit or on strings of unequal size"};
         integer result = integer::zero (x.size ());
         data::arithmetic::bit_or<byte> (result.end (), result.begin (), x.begin (), y.begin ());
@@ -34,7 +34,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     // concatinate, implements OP_CAT
-    integer cat (bytes_view x, bytes_view y) {
+    integer cat (slice<const byte> x, slice<const byte> y) {
         integer result = integer::zero (x.size () + y.size ());
         auto b = result.begin ();
 
@@ -80,7 +80,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     // shift x right by n bits, implements OP_RSHIFT
-    integer right_shift (bytes_view x, int32 n) {
+    integer right_shift (slice<const byte> x, int32 n) {
         integer::size_type bit_shift = n % 8;
         integer::size_type byte_shift = n / 8;
 
@@ -107,7 +107,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     // shift x left by n bits, implements OP_LSHIFT
-    integer left_shift (bytes_view x, int32 n) {
+    integer left_shift (slice<const byte> x, int32 n) {
         integer::size_type bit_shift = n % 8;
         integer::size_type byte_shift = n / 8;
 

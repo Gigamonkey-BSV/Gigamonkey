@@ -7,7 +7,7 @@
 
 namespace Gigamonkey::Bitcoin {
 
-    bytes append_checksum (bytes_view b) {
+    bytes append_checksum (slice<const byte> b) {
 
         bytes checked (b.size () + 4);
         it_wtr w (checked.begin (), checked.end ());
@@ -16,7 +16,7 @@ namespace Gigamonkey::Bitcoin {
 
     }
     
-    check checksum (bytes_view b) {
+    check checksum (slice<const byte> b) {
 
         check x;
         digest256 digest = Hash256 (b);
@@ -25,12 +25,12 @@ namespace Gigamonkey::Bitcoin {
 
     }
     
-    bytes_view remove_checksum (bytes_view b) {
+    slice<const byte> remove_checksum (slice<const byte> b) {
 
         if (b.size () < 4) return {};
         check x;
         std::copy (b.end () - 4, b.end (), x.begin ());
-        bytes_view without = b.substr (0, b.size () - 4);
+        slice<const byte> without = b.range (0, b.size () - 4);
         if (x != checksum (without)) return {};
         return without;
 
@@ -45,7 +45,7 @@ namespace Gigamonkey::base58 {
         bytes data = Bitcoin::append_checksum (static_cast<bytes> (*this));
         size_t leading_zeros = 0;
         while (leading_zeros < data.size () && data[leading_zeros] == 0) leading_zeros++;
-        std::string b58 = encoding::base58::write (bytes_view (data).substr (leading_zeros));
+        std::string b58 = encoding::base58::write (slice<const byte> (data).drop (leading_zeros));
         std::string ones (leading_zeros, '1');
         std::stringstream ss;
         ss << ones << b58;

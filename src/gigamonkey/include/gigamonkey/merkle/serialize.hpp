@@ -28,17 +28,17 @@ namespace Gigamonkey {
         // this only checks if the format is valid, but does not check the Merkle proof.
         bool valid () const;
         static bool valid (const JSON &);
-        static bool valid (bytes_view);
+        static bool valid (slice<const byte>);
         
         // the proof format has both a binary and a JSON representation. 
         static proofs_serialization_standard read_JSON (const JSON &);
-        static proofs_serialization_standard read_binary (bytes_view);
+        static proofs_serialization_standard read_binary (slice<const byte>);
         
         explicit operator JSON () const;
         explicit operator bytes () const;
         
         // whether the full transaction is included or just the txid. 
-        static bool transaction_included (bytes_view);
+        static bool transaction_included (slice<const byte>);
         static bool transaction_included (const JSON &);
         bool transaction_included () const;
         
@@ -50,7 +50,7 @@ namespace Gigamonkey {
             target_type_invalid = 6
         };
         
-        static target_type_value target_type (bytes_view);
+        static target_type_value target_type (slice<const byte>);
         static target_type_value target_type (const JSON &);
         target_type_value target_type () const;
         
@@ -60,12 +60,12 @@ namespace Gigamonkey {
             proof_type_tree = 8
         };
         
-        static proof_type_value proof_type (bytes_view);
+        static proof_type_value proof_type (slice<const byte>);
         static proof_type_value proof_type (const JSON &);
         proof_type_value proof_type () const;
         
         // composite proofs are not yet supported, so these should always return false. 
-        static bool composite_proof (bytes_view);
+        static bool composite_proof (slice<const byte>);
         static bool composite_proof (const JSON &);
         bool composite_proof () const;
         
@@ -88,7 +88,7 @@ namespace Gigamonkey {
         // since we are only doing single paths for now, there 
         // will only be one entry in this map. 
         map<digest256, Merkle::path> paths () const;
-        static map<digest256, Merkle::path> paths (bytes_view);
+        static map<digest256, Merkle::path> paths (slice<const byte>);
         static map<digest256, Merkle::path> paths (const JSON &);
         
         // various kinds of targets that might be included.  
@@ -100,9 +100,9 @@ namespace Gigamonkey {
         static maybe<digest256> Merkle_root (const JSON &);
         static maybe<Bitcoin::header> block_header (const JSON &);
         
-        static maybe<digest256> block_hash (bytes_view);
-        static maybe<digest256> Merkle_root (bytes_view);
-        static maybe<Bitcoin::header> block_header (bytes_view);
+        static maybe<digest256> block_hash (slice<const byte>);
+        static maybe<digest256> Merkle_root (slice<const byte>);
+        static maybe<Bitcoin::header> block_header (slice<const byte>);
         
         // We can always calculate a root from the given information
         // but not necessarily check the whole proof. 
@@ -121,7 +121,7 @@ namespace Gigamonkey {
         // the rest of the structure. 
         byte flags () const;
         static byte flags (const JSON &);
-        static byte flags (bytes_view);
+        static byte flags (slice<const byte>);
         
         static bool transaction_included (byte flags);
         static target_type_value target_type (byte flags);
@@ -129,23 +129,23 @@ namespace Gigamonkey {
         static bool composite_proof (byte flags);
         
         uint32 index () const;
-        static uint32 index (bytes_view);
+        static uint32 index (slice<const byte>);
         static uint32 index (const JSON &);
         
         digest256 txid () const;
-        static digest256 txid (bytes_view);
+        static digest256 txid (slice<const byte>);
         static digest256 txid (const JSON &);
         
         Merkle::leaf leaf () const;
-        static Merkle::leaf leaf (bytes_view);
+        static Merkle::leaf leaf (slice<const byte>);
         static Merkle::leaf leaf (const JSON &);
         
         Merkle::path path () const;
-        static Merkle::path path (bytes_view);
+        static Merkle::path path (slice<const byte>);
         static Merkle::path path (const JSON &);
         
         Merkle::branch branch () const;
-        static Merkle::branch branch (bytes_view);
+        static Merkle::branch branch (slice<const byte>);
         static Merkle::branch branch (const JSON &);
         
         // one of these must be included. 
@@ -165,11 +165,11 @@ namespace Gigamonkey {
     digest256 read_digest (const string &);
     std::string write_digest (const digest256 &);
     
-    bool inline proofs_serialization_standard::valid (bytes_view b) {
+    bool inline proofs_serialization_standard::valid (slice<const byte> b) {
         return read_binary (b).valid ();
     }
     
-    byte inline proofs_serialization_standard::flags (bytes_view b) {
+    byte inline proofs_serialization_standard::flags (slice<const byte> b) {
         if (b.size () == 0) return 0;
         return b[0];
     }
@@ -186,7 +186,7 @@ namespace Gigamonkey {
         return flags & 1;
     }
     
-    bool inline proofs_serialization_standard::transaction_included (bytes_view b) {
+    bool inline proofs_serialization_standard::transaction_included (slice<const byte> b) {
         return transaction_included (flags (b));
     }
     
@@ -202,7 +202,7 @@ namespace Gigamonkey {
         return target_type_value (flags & target_type_invalid);
     }
     
-    proofs_serialization_standard::target_type_value inline proofs_serialization_standard::target_type (bytes_view b) {
+    proofs_serialization_standard::target_type_value inline proofs_serialization_standard::target_type (slice<const byte> b) {
         return target_type (flags (b));
     }
         
@@ -210,7 +210,7 @@ namespace Gigamonkey {
         return proof_type_value (flags & proof_type_tree);
     }
     
-    proofs_serialization_standard::proof_type_value inline proofs_serialization_standard::proof_type (bytes_view b) {
+    proofs_serialization_standard::proof_type_value inline proofs_serialization_standard::proof_type (slice<const byte> b) {
         return proof_type (flags (b));
     }
     
@@ -227,7 +227,7 @@ namespace Gigamonkey {
         return 0 != (flags & 16);
     }
     
-    bool inline proofs_serialization_standard::composite_proof (bytes_view b) {
+    bool inline proofs_serialization_standard::composite_proof (slice<const byte> b) {
         return composite_proof (flags (b));
     }
     
@@ -282,19 +282,19 @@ namespace Gigamonkey {
         return {};
     }
         
-    maybe<digest256> inline proofs_serialization_standard::block_hash (bytes_view b) {
+    maybe<digest256> inline proofs_serialization_standard::block_hash (slice<const byte> b) {
         auto x = read_binary (b);
         if (x.valid ()) return x.block_hash ();
         return {};
     }
     
-    maybe<Bitcoin::header> inline proofs_serialization_standard::block_header (bytes_view b) {
+    maybe<Bitcoin::header> inline proofs_serialization_standard::block_header (slice<const byte> b) {
         auto x = read_binary (b);
         if (x.valid ()) return x.block_header ();
         return {};
     }
     
-    maybe<digest256> inline proofs_serialization_standard::Merkle_root (bytes_view b) {
+    maybe<digest256> inline proofs_serialization_standard::Merkle_root (slice<const byte> b) {
         auto x = read_binary (b);
         if (x.valid ()) return x.Merkle_root ();
         return {};
@@ -314,7 +314,7 @@ namespace Gigamonkey {
         return Bitcoin::Hash256 (*Transaction);
     }
     
-    digest256 inline proofs_serialization_standard::txid (bytes_view b) {
+    digest256 inline proofs_serialization_standard::txid (slice<const byte> b) {
         auto x = read_binary (b);
         if (x.valid ()) return x.txid ();
         return {};
@@ -324,7 +324,7 @@ namespace Gigamonkey {
         return {txid (), Path.Index};
     }
     
-    Merkle::leaf inline proofs_serialization_standard::leaf (bytes_view b) {
+    Merkle::leaf inline proofs_serialization_standard::leaf (slice<const byte> b) {
         auto x = read_binary (b);
         if (x.valid ()) return x.leaf ();
         return {};
@@ -338,7 +338,7 @@ namespace Gigamonkey {
         return Path;
     }
     
-    Merkle::path inline proofs_serialization_standard::path (bytes_view b) {
+    Merkle::path inline proofs_serialization_standard::path (slice<const byte> b) {
         auto x = read_binary (b);
         if (x.valid ()) return x.path ();
         return {};
@@ -354,7 +354,7 @@ namespace Gigamonkey {
         return {txid (), Path};
     }
     
-    Merkle::branch inline proofs_serialization_standard::branch (bytes_view b) {
+    Merkle::branch inline proofs_serialization_standard::branch (slice<const byte> b) {
         auto x = read_binary (b);
         if (x.valid ()) return x.branch ();
         return {};
@@ -370,7 +370,7 @@ namespace Gigamonkey {
         return {{txid (), path ()}};
     }
     
-    map<digest256, Merkle::path> inline proofs_serialization_standard::paths (bytes_view b) {
+    map<digest256, Merkle::path> inline proofs_serialization_standard::paths (slice<const byte> b) {
         auto x = read_binary (b);
         if (x.valid ()) return x.paths ();
         return {};

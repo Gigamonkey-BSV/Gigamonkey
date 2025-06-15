@@ -16,7 +16,7 @@ namespace Gigamonkey {
         
         static bytes script (const digest160 &a) {
             using namespace Bitcoin;
-            return compile (program {OP_DUP, OP_HASH160, bytes_view (a), OP_EQUALVERIFY, OP_CHECKSIG});
+            return compile (program {OP_DUP, OP_HASH160, slice<const byte> (a), OP_EQUALVERIFY, OP_CHECKSIG});
         }
         
         digest160 Address;
@@ -29,7 +29,7 @@ namespace Gigamonkey {
             return script (Address);
         }
         
-        pay_to_address (bytes_view script) : Address {} {
+        pay_to_address (slice<const byte> script) : Address {} {
             using namespace Bitcoin;
             bytes addr {20};
             if (!pattern (addr).match (script)) return;

@@ -58,7 +58,7 @@ namespace Gigamonkey::Bitcoin {
         Stack.erase (Stack.end () + index);
     }
 
-    void limited_two_stack<true>::insert (int position, bytes_view element) {
+    void limited_two_stack<true>::insert (int position, slice<const byte> element) {
 
         if (position >= 0) throw std::invalid_argument ("Invalid argument - position should be < 0.");
 
@@ -66,7 +66,7 @@ namespace Gigamonkey::Bitcoin {
         Stack.insert (Stack.end () + position, integer {element});
     }
 
-    void limited_two_stack<false>::insert (int position, bytes_view element) {
+    void limited_two_stack<false>::insert (int position, slice<const byte> element) {
         if (position >= 0) throw std::invalid_argument ("Invalid argument - position should be < 0.");
 
         if (element.size () > MaxScriptElementSize || this->combined_size () == MaxStackElements)

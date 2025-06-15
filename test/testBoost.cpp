@@ -261,7 +261,7 @@ namespace Gigamonkey::Boost {
                 Boost::bounty, 
                 ContentsA, 
                 Target, 
-                bytes_view (Tag),
+                slice<const byte> (Tag),
                 UserNonce, 
                 AdditionalData, 
                 Start, 
@@ -272,7 +272,7 @@ namespace Gigamonkey::Boost {
                 Boost::contract, 
                 ContentsA, 
                 Target,
-                bytes_view (Tag),
+                slice<const byte> (Tag),
                 UserNonce + 1, 
                 AdditionalData, 
                 Start, 
@@ -283,7 +283,7 @@ namespace Gigamonkey::Boost {
                 Boost::bounty, 
                 ContentsB, 
                 Target,
-                bytes_view (Tag),
+                slice<const byte> (Tag),
                 UserNonce + 2, 
                 AdditionalData,
                 Start, 
@@ -294,7 +294,7 @@ namespace Gigamonkey::Boost {
                 Boost::contract, 
                 ContentsB, 
                 Target,
-                bytes_view (Tag),
+                slice<const byte> (Tag),
                 UserNonce + 3, 
                 AdditionalData,
                 Start, 
@@ -305,7 +305,7 @@ namespace Gigamonkey::Boost {
                 Boost::bounty, 
                 ContentsA, 
                 Target, 
-                bytes_view (Tag),
+                slice<const byte> (Tag),
                 UserNonce, 
                 AdditionalData, 
                 0xabcd,
@@ -317,7 +317,7 @@ namespace Gigamonkey::Boost {
                 Boost::contract, 
                 ContentsA, 
                 Target,
-                bytes_view (Tag),
+                slice<const byte> (Tag),
                 UserNonce + 1, 
                 AdditionalData, 
                 0xabcd,
@@ -329,7 +329,7 @@ namespace Gigamonkey::Boost {
                 Boost::bounty, 
                 ContentsB, 
                 Target,
-                bytes_view (Tag),
+                slice<const byte> (Tag),
                 UserNonce + 2, 
                 AdditionalData,
                 0xabcd,
@@ -341,7 +341,7 @@ namespace Gigamonkey::Boost {
                 Boost::contract, 
                 ContentsB, 
                 Target,
-                bytes_view (Tag),
+                slice<const byte> (Tag),
                 UserNonce + 3, 
                 AdditionalData,
                 0xabcd,
@@ -415,7 +415,7 @@ namespace Gigamonkey::Boost {
             return scripts {in, out};
         }, serialized_input_scripts, serialized_output_scripts);
 
-        bool check_scripts = dot_cross ([] (bytes_view in, bytes_view out) {
+        bool check_scripts = dot_cross ([] (slice<const byte> in, slice<const byte> out) {
             return Bitcoin::evaluate (in, out);
         }, serialized_input_scripts.rest (), serialized_output_scripts.rest ());
         

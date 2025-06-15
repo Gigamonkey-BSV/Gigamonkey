@@ -78,7 +78,7 @@ namespace Gigamonkey::Bitcoin {
         }, 0u, Transactions);
     }
 
-    input::input (bytes_view b) : input {} {
+    input::input (slice<const byte> b) : input {} {
         try {
             it_rdr r {b.begin (), b.end ()};
             r >> *this;
@@ -87,7 +87,7 @@ namespace Gigamonkey::Bitcoin {
         }
     }
     
-    transaction::transaction (bytes_view b) : transaction {} {
+    transaction::transaction (slice<const byte> b) : transaction {} {
         try {
             it_rdr r {b.begin (), b.end ()};
             r >> *this;
@@ -96,7 +96,7 @@ namespace Gigamonkey::Bitcoin {
         }
     }
         
-    block::block (bytes_view b) : block {} {
+    block::block (slice<const byte> b) : block {} {
         try {
             it_rdr r {b.begin (), b.end()};
             r >> *this;
@@ -128,12 +128,12 @@ namespace Gigamonkey::Bitcoin {
         return b;
     }
     
-    std::vector<bytes_view> block::transactions (bytes_view b) {
+    std::vector<slice<const byte>> block::transactions (slice<const byte> b) {
         it_rdr r (b.data (), b.data () + b.size ());
         Bitcoin::header h;
         var_int num_txs; 
         r >> h >> num_txs;
-        std::vector<bytes_view> x;
+        std::vector<slice<const byte>> x;
         x.resize (num_txs);
         auto prev = r.Begin;
 
@@ -141,7 +141,7 @@ namespace Gigamonkey::Bitcoin {
             transaction tx;
             r >> tx;
             auto next = r.Begin;
-            x[i] = bytes_view {prev, static_cast<size_t> (next - prev)};
+            x[i] = slice<const byte> {prev, static_cast<size_t> (next - prev)};
             prev = next;
         }
 
@@ -166,42 +166,42 @@ namespace Gigamonkey::Bitcoin {
     }
 
     template <typename it>
-    void scan_input (it_rdr<it> &r, bytes_view &i) {
-        const byte *begin = r.Begin;
+    void scan_input (it_rdr<it> &r, slice<const byte> &i) {
+        auto begin = r.Begin;
         outpoint o;
         var_int script_size;
         r >> o >> script_size;
         r.skip (script_size + 4);
-        i = bytes_view {begin, script_size + 40 + var_int::size (script_size)};
+        i = slice<const byte> {begin, script_size + 40 + var_int::size (script_size)};
     }
 
     template <typename it>
     bool to_transaction_outputs (it_rdr<it> &r) {
         if (!to_transaction_inputs (r)) return false;
         auto inputs = var_int::read (r);
-        bytes_view in;
+        slice<const byte> in;
         for (uint64 i; i < inputs; i++) scan_input (r, in);
         return true;
     }
     
     template <typename it>
-    void scan_output (it_rdr<it> &r, bytes_view &o) {
+    void scan_output (it_rdr<it> &r, slice<const byte> &o) {
         satoshi value;
-        const byte *begin = r.Begin;
+        auto begin = r.Begin;
         var_int script_size; 
         r >> value >> script_size;
         r.skip (script_size);
-        o = bytes_view {begin, script_size + 8 + var_int::size (script_size)};
+        o = slice<const byte> {begin, script_size + 8 + var_int::size (script_size)};
     }
 
-    bytes_view transaction::input (bytes_view b, index i) {
+    slice<const byte> transaction::input (slice<const byte> b, index i) {
         it_rdr r {b.begin (), b.end ()};
         try {
             if (!to_transaction_inputs (r)) return {};
             var_int num_outputs;
             r >> num_outputs;
             if (num_outputs == 0 || num_outputs <= i) return {};
-            bytes_view input;
+            slice<const byte> input;
             do {
                 scan_input (r, input);
                 if (input.size () == 0) return {};
@@ -213,14 +213,14 @@ namespace Gigamonkey::Bitcoin {
         }
     }
     
-    bytes_view transaction::output (bytes_view b, index i) {
+    slice<const byte> transaction::output (slice<const byte> b, index i) {
         it_rdr r {b.begin (), b.end ()};
         try {
             if (!to_transaction_outputs (r)) return {};
             var_int num_outputs;
             r >> num_outputs;
             if (num_outputs == 0 || num_outputs <= i) return {};
-            bytes_view output;
+            slice<const byte> output;
             do {
                 scan_output (r, output);
                 if (output.size () == 0) return {};
@@ -232,7 +232,7 @@ namespace Gigamonkey::Bitcoin {
         }
     }
     
-    output::output (bytes_view b) {
+    output::output (slice<const byte> b) {
         it_rdr r {b.begin (), b.end ()};
         try {
             r >> Value >> var_string {Script};
@@ -242,7 +242,7 @@ namespace Gigamonkey::Bitcoin {
         }
     }
     
-    satoshi output::value (bytes_view z) {
+    satoshi output::value (slice<const byte> z) {
         it_rdr r {z.begin (), z.end ()};
         satoshi Value;
 
@@ -255,13 +255,13 @@ namespace Gigamonkey::Bitcoin {
         return Value;
     }
     
-    bytes_view output::script (bytes_view z) {
+    slice<const byte> output::script (slice<const byte> z) {
         it_rdr r {z.begin (), z.end ()};
         satoshi Value;
         try {
             var_int script_size; 
             r >> Value >> script_size;
-            return bytes_view {r.Begin, script_size};
+            return slice<const byte> {r.Begin, script_size};
         } catch (data::end_of_stream) {
             return {};
         }

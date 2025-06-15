@@ -8,7 +8,7 @@ namespace Gigamonkey {
     
     // We already know that o has size at least 1 
     // when we call this function. 
-    uint32 next_instruction_size (bytes_view o) {
+    uint32 next_instruction_size (slice<const byte> o) {
         using namespace Bitcoin;
 
         op O = op (o[0]);
@@ -32,56 +32,56 @@ namespace Gigamonkey {
         return boost::endian::load_little_u32 (&o[1]) + 5;
     }
     
-    bytes_view pattern::atom::scan (bytes_view p) const {
+    slice<const byte> pattern::atom::scan (slice<const byte> p) const {
         using namespace Bitcoin;
 
         if (p.size () == 0) throw fail {};
         if (p[0] != Instruction.Op) throw fail {};
 
         uint32 size = next_instruction_size (p);
-        if (p.size () < size || Instruction != instruction::read (p.substr (0, size))) throw fail {};
-        return p.substr (size);
+        if (p.size () < size || Instruction != instruction::read (p.range (0, size))) throw fail {};
+        return p.drop (size);
     }
     
-    bytes_view pattern::string::scan (bytes_view p) const {
+    slice<const byte> pattern::string::scan (slice<const byte> p) const {
         if (p.size () < Program.size ()) throw fail {};
         for (int i = 0; i < Program.size (); i++) if (p[i] != Program[i]) throw fail {};
-        return p.substr (Program.size ());
+        return p.drop (Program.size ());
     }
     
-    bytes_view any::scan (bytes_view p) const {
+    slice<const byte> any::scan (slice<const byte> p) const {
         if (p.size () == 0) throw fail {};
         uint32 size = next_instruction_size(p);
         if (p.size () < size) throw fail {};
-        return p.substr (size);
+        return p.drop (size);
     }
     
-    bytes_view push::scan (bytes_view p) const {
+    slice<const byte> push::scan (slice<const byte> p) const {
         if (p.size () == 0) throw fail {};
         uint32 size = next_instruction_size (p);
         if (size == 0) throw fail {};
 
-        if (!match (Bitcoin::instruction::read (p.substr (0, size))))
+        if (!match (Bitcoin::instruction::read (p.range (0, size))))
             throw fail {};
 
-        return p.substr (size);
+        return p.drop (size);
     }
     
-    bytes_view push_size::scan (bytes_view p) const {
+    slice<const byte> push_size::scan (slice<const byte> p) const {
         if (p.size () == 0) throw fail {};
         uint32 size = next_instruction_size (p);
 
-        if (!match (Bitcoin::instruction::read (p.substr (0, size))))
+        if (!match (Bitcoin::instruction::read (p.range (0, size))))
             throw fail {};
 
-        return p.substr (size);
+        return p.drop (size);
     }
     
-    bytes_view op_return_data::scan (bytes_view p) const {
+    slice<const byte> op_return_data::scan (slice<const byte> p) const {
         using namespace Bitcoin;
         if (p.size () == 0) throw fail {};
         if (p[0] != OP_RETURN) throw fail {};
-        return pattern::scan (p.substr (1));
+        return pattern::scan (p.drop (1));
     }
     
     bool push::match (const Bitcoin::instruction &i) const {
@@ -108,7 +108,7 @@ namespace Gigamonkey {
         return true;
     }
     
-    bytes_view pattern::sequence::scan (bytes_view p) const {
+    slice<const byte> pattern::sequence::scan (slice<const byte> p) const {
         list<ptr<pattern>> patt = Patterns; 
         while (!data::empty (patt)) {
             p = patt.first ()->scan (p);
@@ -117,7 +117,7 @@ namespace Gigamonkey {
         return p;
     }
         
-    bytes_view optional::scan (bytes_view p) const {
+    slice<const byte> optional::scan (slice<const byte> p) const {
         try {
             return pattern::Pattern->scan (p);
         } catch (fail) {
@@ -125,7 +125,7 @@ namespace Gigamonkey {
         }
     }
     
-    bytes_view repeated::scan (bytes_view p) const {
+    slice<const byte> repeated::scan (slice<const byte> p) const {
         ptr<pattern> patt = pattern::Pattern;
         uint32 min = Second == -1 && Directive == or_less ? 0 : First;
         int64 max = Second != -1 ? Second : Directive == or_more ? -1 : First;
@@ -143,7 +143,7 @@ namespace Gigamonkey {
         }
     }
     
-    bytes_view alternatives::scan (bytes_view b) const {
+    slice<const byte> alternatives::scan (slice<const byte> b) const {
         list<ptr<pattern>> patt = Patterns;
 
         while (!data::empty (patt)) {

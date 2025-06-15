@@ -21,7 +21,7 @@ namespace Gigamonkey::Bitcoin::incomplete {
             Reference {r}, Sequence {x} {}
         input (const Bitcoin::input &in) : Reference {in.Reference}, Sequence {in.Sequence} {}
         
-        Bitcoin::input complete (bytes_view script) const {
+        Bitcoin::input complete (const Bitcoin::script &script) const {
             return Bitcoin::input {Reference, script, Sequence};
         }
     };

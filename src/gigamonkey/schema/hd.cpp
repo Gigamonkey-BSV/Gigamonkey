@@ -188,11 +188,11 @@ namespace Gigamonkey::HD::BIP_32 {
         if (b58_read.version () != 0x04) return secret {};
 
         auto view = b58_read.payload ();
-        if (view.length () != 77) return secret {};
+        if (view.size () != 77) return secret {};
 
         secret secret1;
 
-        auto check = view.substr (0, 3);
+        auto check = view.range (0, 3);
         if (bytes ({0x88, 0xAD, 0xE4}) == check) secret1.Network = Bitcoin::net::Main;
         else if (bytes ({0x35, 0x83, 0x94}) == check) secret1.Network = Bitcoin::net::Test;
         else return secret {};
@@ -209,8 +209,8 @@ namespace Gigamonkey::HD::BIP_32 {
         
         r >> sequence;
         secret1.Sequence = sequence;
-        bytes_view chain_code = view.substr (12, 32);
-        bytes_view key = view.substr (12 + 32 + 1);
+        slice<const byte> chain_code = view.range (12, 12 + 32);
+        slice<const byte> key = view.drop (12 + 32 + 1);
 
         uint256 keyuint;
 
@@ -303,11 +303,11 @@ namespace Gigamonkey::HD::BIP_32 {
         if (b58_read.version () != 0x04) return pubkey {};
 
         auto view = b58_read.payload ();
-        if (view.length () != 77) return pubkey {};
+        if (view.size () != 77) return pubkey {};
 
         pubkey pubkey1;
 
-        auto check = view.substr (0, 3);
+        auto check = view.range (0, 3);
         if (bytes ({0x88, 0xB2, 0x1E}) == check) pubkey1.Network = Bitcoin::net::Main;
         else if (bytes ({0x35, 0x87, 0xCF}) == check) pubkey1.Network = Bitcoin::net::Test;
         else return pubkey {};
@@ -325,8 +325,8 @@ namespace Gigamonkey::HD::BIP_32 {
         r >> sequence;
         pubkey1.Sequence = sequence;
         //sequence |= view[12] & 0xff;
-        bytes_view chain_code = view.substr (12, 32);
-        bytes_view key = view.substr (12 + 32);
+        auto chain_code = view.range (12, 12 + 32);
+        auto key = view.drop (12 + 32);
 
         pubkey1.Pubkey.resize (33);
         std::copy (key.begin (), key.end (), pubkey1.Pubkey.begin ());

@@ -8,9 +8,9 @@
 namespace Gigamonkey::Bitcoin {
     
     secret WIF::decode (string_view s) {
-
         base58::check b58 (s);
         if (!b58.valid ()) return Bitcoin::secret {};
+
         Bitcoin::secret w {};
 
         if (b58.size () == 33) w.Compressed = false;
@@ -46,6 +46,7 @@ namespace Gigamonkey::Bitcoin {
 
         WIF wif;
         static_cast<string &> (wif) = base58::check {n == net::Main ? byte (main) : byte (test), data}.encode ();
+
         return wif;
 
     }

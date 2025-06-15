@@ -43,53 +43,53 @@ namespace Gigamonkey::Bitcoin {
 
     TEST (NumberTest, TestNumberConstructorsInt) {
         
-        EXPECT_EQ (bytes_view (integer (0)), bytes ());
-        EXPECT_EQ (bytes_view (integer (1)), *encoding::hex::read  ("01"));
-        EXPECT_EQ (bytes_view (integer (-1)), *encoding::hex::read  ("81"));
-        EXPECT_EQ (bytes_view (integer (127)), *encoding::hex::read  ("7f"));
-        EXPECT_EQ (bytes_view (integer (-127)), *encoding::hex::read  ("ff"));
-        EXPECT_EQ (bytes_view (integer (128)), *encoding::hex::read  ("8000"));
-        EXPECT_EQ (bytes_view (integer (-128)), *encoding::hex::read  ("8080"));
-        EXPECT_EQ (bytes_view (integer (256)), *encoding::hex::read  ("0001"));
-        EXPECT_EQ (bytes_view (integer (-256)), *encoding::hex::read  ("0081"));
+        EXPECT_EQ (slice<const byte> (integer (0)), bytes ());
+        EXPECT_EQ (slice<const byte> (integer (1)), *encoding::hex::read  ("01"));
+        EXPECT_EQ (slice<const byte> (integer (-1)), *encoding::hex::read  ("81"));
+        EXPECT_EQ (slice<const byte> (integer (127)), *encoding::hex::read  ("7f"));
+        EXPECT_EQ (slice<const byte> (integer (-127)), *encoding::hex::read  ("ff"));
+        EXPECT_EQ (slice<const byte> (integer (128)), *encoding::hex::read  ("8000"));
+        EXPECT_EQ (slice<const byte> (integer (-128)), *encoding::hex::read  ("8080"));
+        EXPECT_EQ (slice<const byte> (integer (256)), *encoding::hex::read  ("0001"));
+        EXPECT_EQ (slice<const byte> (integer (-256)), *encoding::hex::read  ("0081"));
         
     }
     
     TEST (NumberTest, TestNumberConstructorsDecimalPositive) {
 
-        EXPECT_EQ (bytes_view (integer ("0")), *encoding::hex::read (""));
-        EXPECT_EQ (bytes_view (integer ("127")), *encoding::hex::read ("7f"));
-        EXPECT_EQ (bytes_view (integer ("128")), *encoding::hex::read ("8000"));
-        EXPECT_EQ (bytes_view (integer ("256")), *encoding::hex::read ("0001"));
+        EXPECT_EQ (slice<const byte> (integer ("0")), *encoding::hex::read (""));
+        EXPECT_EQ (slice<const byte> (integer ("127")), *encoding::hex::read ("7f"));
+        EXPECT_EQ (slice<const byte> (integer ("128")), *encoding::hex::read ("8000"));
+        EXPECT_EQ (slice<const byte> (integer ("256")), *encoding::hex::read ("0001"));
         
     }
 
     TEST (NumberTest, TestNumberConstructorsHexidecZ) {
         
-        EXPECT_EQ (bytes_view (integer ("0")), bytes ());
-        EXPECT_EQ (bytes_view (integer ("0x")), *encoding::hex::read  (""));
-        EXPECT_EQ (bytes_view (integer ("0x00")), *encoding::hex::read  ("00"));
-        EXPECT_EQ (bytes_view (integer ("0x80")), *encoding::hex::read  ("80"));
-        EXPECT_EQ (bytes_view (integer ("0x0000")), *encoding::hex::read  ("0000"));
-        EXPECT_EQ (bytes_view (integer ("0x8000")), *encoding::hex::read  ("0080"));
-        EXPECT_EQ (bytes_view (integer ("0x000000")), *encoding::hex::read  ("000000"));
-        EXPECT_EQ (bytes_view (integer ("0x800000")), *encoding::hex::read  ("000080"));
+        EXPECT_EQ (slice<const byte> (integer ("0")), bytes ());
+        EXPECT_EQ (slice<const byte> (integer ("0x")), *encoding::hex::read  (""));
+        EXPECT_EQ (slice<const byte> (integer ("0x00")), *encoding::hex::read  ("00"));
+        EXPECT_EQ (slice<const byte> (integer ("0x80")), *encoding::hex::read  ("80"));
+        EXPECT_EQ (slice<const byte> (integer ("0x0000")), *encoding::hex::read  ("0000"));
+        EXPECT_EQ (slice<const byte> (integer ("0x8000")), *encoding::hex::read  ("0080"));
+        EXPECT_EQ (slice<const byte> (integer ("0x000000")), *encoding::hex::read  ("000000"));
+        EXPECT_EQ (slice<const byte> (integer ("0x800000")), *encoding::hex::read  ("000080"));
 
-        EXPECT_EQ (bytes_view (integer ("1")), *encoding::hex::read  ("01"));
-        EXPECT_EQ (bytes_view (integer ("-1")), *encoding::hex::read  ("81"));
-        EXPECT_EQ (bytes_view (integer ("0x01")), *encoding::hex::read  ("01"));
-        EXPECT_EQ (bytes_view (integer ("0x81")), *encoding::hex::read  ("81"));
-        EXPECT_EQ (bytes_view (integer ("0x0001")), *encoding::hex::read  ("0100"));
-        EXPECT_EQ (bytes_view (integer ("0x8001")), *encoding::hex::read  ("0180"));
-        EXPECT_EQ (bytes_view (integer ("0x000001")), *encoding::hex::read  ("010000"));
-        EXPECT_EQ (bytes_view (integer ("0x800001")), *encoding::hex::read  ("010080"));
+        EXPECT_EQ (slice<const byte> (integer ("1")), *encoding::hex::read  ("01"));
+        EXPECT_EQ (slice<const byte> (integer ("-1")), *encoding::hex::read  ("81"));
+        EXPECT_EQ (slice<const byte> (integer ("0x01")), *encoding::hex::read  ("01"));
+        EXPECT_EQ (slice<const byte> (integer ("0x81")), *encoding::hex::read  ("81"));
+        EXPECT_EQ (slice<const byte> (integer ("0x0001")), *encoding::hex::read  ("0100"));
+        EXPECT_EQ (slice<const byte> (integer ("0x8001")), *encoding::hex::read  ("0180"));
+        EXPECT_EQ (slice<const byte> (integer ("0x000001")), *encoding::hex::read  ("010000"));
+        EXPECT_EQ (slice<const byte> (integer ("0x800001")), *encoding::hex::read  ("010080"));
         
-        EXPECT_EQ (bytes_view (integer ("0x7f")), *encoding::hex::read  ("7f"));
-        EXPECT_EQ (bytes_view (integer ("0xff")), *encoding::hex::read  ("ff"));
-        EXPECT_EQ (bytes_view (integer ("0x007f")), *encoding::hex::read  ("7f00"));
-        EXPECT_EQ (bytes_view (integer ("0x807f")), *encoding::hex::read  ("7f80"));
-        EXPECT_EQ (bytes_view (integer ("0x00007f")), *encoding::hex::read  ("7f0000"));
-        EXPECT_EQ (bytes_view (integer ("0x80007f")), *encoding::hex::read  ("7f0080"));
+        EXPECT_EQ (slice<const byte> (integer ("0x7f")), *encoding::hex::read  ("7f"));
+        EXPECT_EQ (slice<const byte> (integer ("0xff")), *encoding::hex::read  ("ff"));
+        EXPECT_EQ (slice<const byte> (integer ("0x007f")), *encoding::hex::read  ("7f00"));
+        EXPECT_EQ (slice<const byte> (integer ("0x807f")), *encoding::hex::read  ("7f80"));
+        EXPECT_EQ (slice<const byte> (integer ("0x00007f")), *encoding::hex::read  ("7f0000"));
+        EXPECT_EQ (slice<const byte> (integer ("0x80007f")), *encoding::hex::read  ("7f0080"));
         
     }
 
@@ -121,26 +121,26 @@ namespace Gigamonkey::Bitcoin {
     
     TEST (NumberTest, TestNumberTrimZ) {
         
-        EXPECT_EQ (bytes_view (trim (integer ("0x00"))), bytes ());
-        EXPECT_EQ (bytes_view (trim (integer ("0x80"))), bytes ());
-        EXPECT_EQ (bytes_view (trim (integer ("0x0000"))), bytes ());
-        EXPECT_EQ (bytes_view (trim (integer ("0x8000"))), bytes ());
-        EXPECT_EQ (bytes_view (trim (integer ("0x000000"))), bytes ());
-        EXPECT_EQ (bytes_view (trim (integer ("0x800000"))), bytes ());
+        EXPECT_EQ (slice<const byte> (trim (integer ("0x00"))), bytes ());
+        EXPECT_EQ (slice<const byte> (trim (integer ("0x80"))), bytes ());
+        EXPECT_EQ (slice<const byte> (trim (integer ("0x0000"))), bytes ());
+        EXPECT_EQ (slice<const byte> (trim (integer ("0x8000"))), bytes ());
+        EXPECT_EQ (slice<const byte> (trim (integer ("0x000000"))), bytes ());
+        EXPECT_EQ (slice<const byte> (trim (integer ("0x800000"))), bytes ());
         
-        EXPECT_EQ (bytes_view (trim (integer ("0x01"))), *encoding::hex::read  ("01"));
-        EXPECT_EQ (bytes_view (trim (integer ("0x81"))), *encoding::hex::read  ("81"));
-        EXPECT_EQ (bytes_view (trim (integer ("0x0001"))), *encoding::hex::read  ("01"));
-        EXPECT_EQ (bytes_view (trim (integer ("0x8001"))), *encoding::hex::read  ("81"));
-        EXPECT_EQ (bytes_view (trim (integer ("0x000001"))), *encoding::hex::read  ("01"));
-        EXPECT_EQ (bytes_view (trim (integer ("0x800001"))), *encoding::hex::read  ("81"));
+        EXPECT_EQ (slice<const byte> (trim (integer ("0x01"))), *encoding::hex::read  ("01"));
+        EXPECT_EQ (slice<const byte> (trim (integer ("0x81"))), *encoding::hex::read  ("81"));
+        EXPECT_EQ (slice<const byte> (trim (integer ("0x0001"))), *encoding::hex::read  ("01"));
+        EXPECT_EQ (slice<const byte> (trim (integer ("0x8001"))), *encoding::hex::read  ("81"));
+        EXPECT_EQ (slice<const byte> (trim (integer ("0x000001"))), *encoding::hex::read  ("01"));
+        EXPECT_EQ (slice<const byte> (trim (integer ("0x800001"))), *encoding::hex::read  ("81"));
         
-        EXPECT_EQ (bytes_view (trim (integer ("0x7f"))), *encoding::hex::read  ("7f"));
-        EXPECT_EQ (bytes_view (trim (integer ("0xff"))), *encoding::hex::read  ("ff"));
-        EXPECT_EQ (bytes_view (trim (integer ("0x007f"))), *encoding::hex::read  ("7f"));
-        EXPECT_EQ (bytes_view (trim (integer ("0x807f"))), *encoding::hex::read  ("ff"));
-        EXPECT_EQ (bytes_view (trim (integer ("0x00007f"))), *encoding::hex::read  ("7f"));
-        EXPECT_EQ (bytes_view (trim (integer ("0x80007f"))), *encoding::hex::read  ("ff"));
+        EXPECT_EQ (slice<const byte> (trim (integer ("0x7f"))), *encoding::hex::read  ("7f"));
+        EXPECT_EQ (slice<const byte> (trim (integer ("0xff"))), *encoding::hex::read  ("ff"));
+        EXPECT_EQ (slice<const byte> (trim (integer ("0x007f"))), *encoding::hex::read  ("7f"));
+        EXPECT_EQ (slice<const byte> (trim (integer ("0x807f"))), *encoding::hex::read  ("ff"));
+        EXPECT_EQ (slice<const byte> (trim (integer ("0x00007f"))), *encoding::hex::read  ("7f"));
+        EXPECT_EQ (slice<const byte> (trim (integer ("0x80007f"))), *encoding::hex::read  ("ff"));
         
     }
 
@@ -235,10 +235,9 @@ namespace Gigamonkey::Bitcoin {
 
     TEST (NumberTest, TestNumberConstructorsDecimalNegative) {
         
-        //EXPECT_EQ (bytes_view (integer ("-0")), *encoding::hex::read  ("80"));
-        EXPECT_EQ (bytes_view (integer ("-127")), *encoding::hex::read  ("ff"));
-        EXPECT_EQ (bytes_view (integer ("-128")), *encoding::hex::read  ("8080"));
-        EXPECT_EQ (bytes_view (integer ("-256")), *encoding::hex::read  ("0081"));
+        EXPECT_EQ (slice<const byte> (integer ("-127")), *encoding::hex::read  ("ff"));
+        EXPECT_EQ (slice<const byte> (integer ("-128")), *encoding::hex::read  ("8080"));
+        EXPECT_EQ (slice<const byte> (integer ("-256")), *encoding::hex::read  ("0081"));
 
     }
 

@@ -10,7 +10,7 @@
 #include <gigamonkey/script/stack.hpp>
 
 namespace Gigamonkey::Bitcoin {
-    result verify_signature (bytes_view sig, bytes_view pub, const sighash::document &doc, flag P) {
+    result verify_signature (slice<const byte> sig, slice<const byte> pub, const sighash::document &doc, flag P) {
 
         if (verify_compressed_pubkey (P))
             if (!secp256k1::pubkey::compressed (pub)) return SCRIPT_ERR_NONCOMPRESSED_PUBKEY;
@@ -44,7 +44,7 @@ namespace Gigamonkey::Bitcoin {
         return false;
     }
 
-    program remove_after_last_code_separator (bytes_view b) {
+    program remove_after_last_code_separator (slice<const byte> b) {
         program_counter counter {b};
         while (counter.Next.size () > 0) counter = counter.next ();
         return counter.to_last_code_separator ();
