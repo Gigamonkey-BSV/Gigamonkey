@@ -47,7 +47,7 @@ namespace Gigamonkey::Bitcoin::incomplete {
                 }, tx.Inputs)}, LockTime {tx.LockTime} {}
         
         explicit operator bytes () const;
-        explicit transaction (bytes_view);
+        explicit transaction (byte_slice);
         
         Bitcoin::transaction complete (list<bytes> scripts) const;
 

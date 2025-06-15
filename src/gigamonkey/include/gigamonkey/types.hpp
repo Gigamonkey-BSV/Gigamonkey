@@ -67,7 +67,7 @@ namespace Gigamonkey {
 
     using string = data::string;
 
-    using bytes_view = data::bytes_view;
+    using byte_slice = data::byte_slice;
     using string_view = data::string_view;
     
     namespace Bitcoin {

@@ -42,7 +42,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     program inline interpreter::unread () const {
-        return decompile (bytes_view {Counter.Script}.substr (Counter.Counter));
+        return decompile (byte_slice {Counter.Script}.drop (Counter.Counter));
     }
 
 }

@@ -36,7 +36,7 @@ namespace Gigamonkey::work {
         
         explicit operator work::difficulty () const;
         
-        explicit operator bytes_view () const;
+        explicit operator byte_slice () const;
         
         static compact min () {
             return compact {3, 0x0001};
@@ -284,8 +284,8 @@ namespace Gigamonkey::work {
         return difficulty ();
     }
     
-    inline compact::operator bytes_view () const {
-        return bytes_view {uint32_little::data (), 4};
+    inline compact::operator byte_slice () const {
+        return byte_slice {uint32_little::data (), 4};
     }
 
     inline compact compact::encode (byte e, uint24_little v) {

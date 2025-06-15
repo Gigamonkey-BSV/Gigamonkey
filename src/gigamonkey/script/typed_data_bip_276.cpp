@@ -44,7 +44,7 @@ namespace Gigamonkey {
         
         if (payload[0] != 1 || payload[1] > 2) return {};
         
-        return {bitcoin_script, 1, network (payload[1]), bytes {bytes_view {payload.data () + 2, payload.size () - 2}}};
+        return {bitcoin_script, 1, network (payload[1]), bytes {byte_slice {payload.data () + 2, payload.size () - 2}}};
         
     }
     

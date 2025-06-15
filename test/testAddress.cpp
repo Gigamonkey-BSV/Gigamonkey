@@ -223,7 +223,7 @@ namespace Gigamonkey::Bitcoin {
     TEST (AddressTest, TestRecoverBase58) {
         
         ptr<crypto::entropy> entropy = std::static_pointer_cast<crypto::entropy> (std::make_shared<crypto::fixed_entropy> (
-            bytes_view (bytes (string ("atehu=eSRCjt.r83085[934[498[35")))));
+            byte_slice (bytes (string ("atehu=eSRCjt.r83085[934[498[35")))));
         
         crypto::NIST::DRBG random {crypto::NIST::DRBG::HMAC, {*entropy, bytes {}, 305}};
         

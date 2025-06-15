@@ -15,7 +15,7 @@ namespace Gigamonkey {
         
         static bytes script(const digest160 &a) {
             using namespace Bitcoin;
-            return compile (program {OP_HASH160, bytes_view (a), OP_EQUALVERIFY});
+            return compile (program {OP_HASH160, byte_slice (a), OP_EQUALVERIFY});
         }
         
         digest160 Hash;

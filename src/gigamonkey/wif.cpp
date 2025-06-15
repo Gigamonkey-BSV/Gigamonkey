@@ -41,7 +41,7 @@ namespace Gigamonkey::Bitcoin {
 
         bytes data (compressed ? CompressedSize - 1: UncompressedSize - 1);
         it_wtr w (data.begin (), data.end ());
-        w << bytes_view (s.Value);
+        w << byte_slice (s.Value);
         if (compressed) w << CompressedSuffix;
 
         WIF wif;
