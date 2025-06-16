@@ -4,7 +4,7 @@
 
 namespace Gigamonkey {
     
-    void bitcoind_random::get (byte* x, size_t size) {
+    void bitcoind_entropy::read (byte* x, size_t size) {
         static bool initialized = false;
         if (!initialized) {
             void RandomInit ();

@@ -8,23 +8,15 @@
 #include <data/crypto/random.hpp>
 
 namespace Gigamonkey {
-    struct bitcoind_random : data::crypto::random {
-        void get (byte*, size_t) override;
-    };
-    
-    class bitcoind_entropy : public bitcoind_random, public data::crypto::entropy {
-        bytes get (size_t s) override {
-            bytes b (s);
-            bitcoind_random::get (b.data (), s);
-            return b;
-        }
+    struct bitcoind_entropy final : data::crypto::entropy {
+        void read (byte *, size_t) final override;
     };
 }
 
 namespace Gigamonkey::Bitcoin {
     
     class random_key_source final : public key_source {
-        data::crypto::random &Random;
+        data::crypto::entropy &Random;
         net Network;
         bool Compressed;
         
@@ -40,7 +32,7 @@ namespace Gigamonkey::Bitcoin {
             return x;
         }
         
-        random_key_source (data::crypto::random &r, net net = net::Main, bool compressed = true) :
+        random_key_source (data::crypto::entropy &r, net net = net::Main, bool compressed = true) :
             Random {r}, Network {net}, Compressed {compressed} {}
     };
 
