@@ -9,6 +9,9 @@
 
 namespace Gigamonkey {
     struct bitcoind_entropy final : data::crypto::entropy {
+        byte_array<32> Data;
+        uint32 Position;
+        bitcoind_entropy () : Data {}, Position {32} {}
         void read (byte *, size_t) final override;
     };
 }
