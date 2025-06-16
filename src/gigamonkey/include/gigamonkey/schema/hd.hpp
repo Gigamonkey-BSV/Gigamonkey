@@ -14,7 +14,7 @@
 // older wallets. 
 namespace Gigamonkey::HD {
     
-    using chain_code = data::bytes;
+    using chain_code = data::uint256_little;
     using seed = data::bytes;
     using entropy = data::bytes;
     

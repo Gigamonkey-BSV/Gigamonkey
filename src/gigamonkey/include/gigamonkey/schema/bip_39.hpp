@@ -42,7 +42,7 @@ namespace Gigamonkey::HD {
     // made with the standard set of words, but we do not load electrum words here yet.
     BIP_44::account_secret electrum_sv_wallet (const string &words, const string &passphrase = ""); // TODO
 
-    // CentBee uses a non-standard derivation path. .
+    // CentBee uses a non-standard derivation path.
     BIP_44::account_secret inline centbee_wallet (const string &words, uint32 pin, Bitcoin::net net = Bitcoin::net::Main) {
         return BIP_32::secret::from_seed
             (BIP_39::read (words, std::to_string (pin)), net).derive ({BIP_44::purpose, BIP_44::centbee_coin_type});

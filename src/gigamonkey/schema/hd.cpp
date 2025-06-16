@@ -94,8 +94,7 @@ namespace Gigamonkey::HD::BIP_32 {
         uint256 key = uint256 (keyCode);
         std::reverse (key.begin (), key.end ());
         derived.Secret = secp256k1::secret {key};
-        for (int i = 32; i < 64; i++)
-            derived.ChainCode.push_back (hmaced[i]);
+        std::copy (hmaced + 32, hmaced + 64, derived.ChainCode.begin ());
         return derived;
     }
     
@@ -145,8 +144,7 @@ namespace Gigamonkey::HD::BIP_32 {
         secp256k1::pubkey pubkey = pub.Pubkey + key;
         derived.Pubkey = pubkey;
         bytes child_key;
-        for (int i = 32; i < 64; i++)
-            derived.ChainCode.push_back (hmaced[i]);
+        std::copy (hmaced + 32, hmaced + 64, derived.ChainCode.begin ());
         return derived;
     }
 
@@ -222,7 +220,6 @@ namespace Gigamonkey::HD::BIP_32 {
             tmpItr++;
         }
 
-        secret1.ChainCode = bytes (32);
         std::copy (chain_code.begin (), chain_code.end (), secret1.ChainCode.begin ());
         secret1.Secret = secp256k1::secret {keyuint};
         return secret1;
@@ -242,8 +239,7 @@ namespace Gigamonkey::HD::BIP_32 {
         secret secret1;
         std::copy (std::begin (hmaced), std::begin (hmaced) + 32, secret1.Secret.Value.begin ());
         secret1.ChainCode = chain_code ();
-        for (int i = 0; i < 32; i++)
-            secret1.ChainCode.push_back (hmaced[32 + i]);
+        std::copy (hmaced + 32, hmaced + 64, secret1.ChainCode.begin ());
 
         secret1.Network = net;
         secret1.Depth = 0;
@@ -257,7 +253,6 @@ namespace Gigamonkey::HD::BIP_32 {
         pu.Depth = Depth;
         pu.Sequence = Sequence;
         pu.Network = Network;
-        pu.ChainCode = bytes (32);
         std::copy (ChainCode.begin (), ChainCode.end (), pu.ChainCode.begin ());
         pu.Parent = Parent;
         pu.Pubkey = Secret.to_public ();
@@ -330,7 +325,6 @@ namespace Gigamonkey::HD::BIP_32 {
 
         pubkey1.Pubkey.resize (33);
         std::copy (key.begin (), key.end (), pubkey1.Pubkey.begin ());
-        pubkey1.ChainCode.resize (32);
         std::copy (chain_code.begin (), chain_code.end (), pubkey1.ChainCode.begin ());
         return pubkey1;
     }
