@@ -338,7 +338,7 @@ namespace Gigamonkey::Bitcoin {
                 }
 
                 if (prev != OP_IF && prev != OP_NOTIF) invalid_program {SCRIPT_ERR_UNBALANCED_CONDITIONAL};
-            } else if (i.Op == OP_ELSE || i.Op == OP_IF || i.Op == OP_NOTIF) Control = Control << i.Op;
+            } else if (i.Op == OP_ELSE || i.Op == OP_IF || i.Op == OP_NOTIF) Control = Control >> i.Op;
             
             p = p << i;
         }
@@ -384,7 +384,7 @@ namespace Gigamonkey::Bitcoin {
             }
 
             if (prev != OP_IF && prev != OP_NOTIF) return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
-        } else if (o == OP_ELSE || o == OP_IF || o == OP_NOTIF) x = x << o;
+        } else if (o == OP_ELSE || o == OP_IF || o == OP_NOTIF) x = x >> o;
         
         return valid_program (p.rest (), x, flags);
     }

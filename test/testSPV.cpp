@@ -250,7 +250,7 @@ namespace Gigamonkey {
         digest256 previous {0};
         if (data::size (Blocks) != 0) previous = Blocks.first ().hash ();
         Bitcoin::header h {1, previous, merkle_root, Bitcoin::timestamp {1}, work::compact::max (), 0};
-        Blocks = Blocks << h;
+        Blocks >>= h;
         return h;
     }
 

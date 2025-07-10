@@ -83,17 +83,17 @@ namespace Gigamonkey {
                     // do we already have a BUMP for this block?
                     if (auto i = spv.RootToIndex.contains (c.Header.MerkleRoot); bool (i)) {
                         spv.Bumps[*i] += Merkle::branch {id, c.Path};
-                        spv.Beef.Transactions <<= BEEF::transaction {tx.Transaction, *i};
+                        spv.Beef.Transactions >>= BEEF::transaction {tx.Transaction, *i};
                     } else {
                         uint64 index = spv.Bumps.size ();
                         spv.Bumps.push_back (Merkle::BUMP {uint64 (c.Height), Merkle::branch {id, c.Path}});
                         spv.RootToIndex = spv.RootToIndex.insert (c.Header.MerkleRoot, index);
-                        spv.Beef.Transactions <<= BEEF::transaction {tx.Transaction, index};
+                        spv.Beef.Transactions >>= BEEF::transaction {tx.Transaction, index};
                     }
 
                 } else {
                     for (const auto &e : tx.Proof.get<SPV::proof::map> ()) read_node (e.Key, *e.Value, spv);
-                    spv.Beef.Transactions <<= BEEF::transaction {tx.Transaction};
+                    spv.Beef.Transactions >>= BEEF::transaction {tx.Transaction};
                 }
             }
         };
@@ -102,9 +102,9 @@ namespace Gigamonkey {
         inline SPV_proof_writer::SPV_proof_writer (const proof &p): Beef {} {
             for (const auto &[txid, nodep]: p.Proof) read_node (txid, *nodep, *this);
 
-            for (const auto &tx : p.Payment) Beef.Transactions <<= BEEF::transaction {tx};
+            for (const auto &tx : p.Payment) Beef.Transactions >>= BEEF::transaction {tx};
             Beef.Transactions = data::reverse (Beef.Transactions);
-            for (auto b = Bumps.rbegin (); b != Bumps.rend (); b++) Beef.BUMPs <<= *b;
+            for (auto b = Bumps.rbegin (); b != Bumps.rend (); b++) Beef.BUMPs >>= *b;
         }
 
         entry<Bitcoin::TXID, SPV::proof::accepted> read_SPV_proof_leaf (
@@ -168,7 +168,7 @@ namespace Gigamonkey {
                     // retrieve the node.
                     auto nodep = Nodes[txid];
 
-                    p.Payment <<= nodep->Transaction;
+                    p.Payment >>= nodep->Transaction;
 
                     // top level nodes should maps to earlier transactions.
                     if (nodep->Proof.is<conf> ()) return;

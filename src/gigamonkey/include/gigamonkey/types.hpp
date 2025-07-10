@@ -90,7 +90,7 @@ namespace Gigamonkey {
 
     template <typename X> using stack = data::stack<X>;
     template <typename X> using list = data::list<X>;
-    template <typename X> using ordered_list = data::ordered_list<X>;
+    template <typename X> using ordst = data::ordered_sequence<X>;
     template <typename X> using set = data::set<X>;
     template <typename K, typename V> using entry = data::entry<K, V>;
     template <typename K, typename V> using map = data::map<K, V>;

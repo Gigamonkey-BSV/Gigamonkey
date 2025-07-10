@@ -6,7 +6,6 @@
 
 #include <gigamonkey/script/instruction.hpp>
 #include <gigamonkey/address.hpp>
-#include <data/data.hpp>
 
 namespace Gigamonkey { 
     

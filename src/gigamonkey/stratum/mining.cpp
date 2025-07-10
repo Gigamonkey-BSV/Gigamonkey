@@ -59,7 +59,7 @@ namespace Gigamonkey::Stratum::mining {
             for (JSON d : j) {
                 uint256 o;
                 if (!read (d, o)) return false;
-                x = x << digest256 {o};
+                x >>= digest256 {o};
             }
             return true;
         }

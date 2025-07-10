@@ -13,10 +13,10 @@ namespace Gigamonkey::Merkle {
         leaf_digests round (leaf_digests l) {
             leaf_digests r {};
             while (l.size () >= 2) {
-                r = r << hash_concatinated (l.first (), l.rest ().first ());
+                r <<= hash_concatinated (l.first (), l.rest ().first ());
                 l = l.rest ().rest ();
             }
-            if (l.size () == 1) r = r << hash_concatinated (l.first (), l.first ());
+            if (l.size () == 1) r <<= hash_concatinated (l.first (), l.first ());
             return r;
         }
     
@@ -27,9 +27,9 @@ namespace Gigamonkey::Merkle {
             }
             
             if (!t.right ().empty ()) {
-                append_proofs (p, (index << 1), l << t.right ().root (), t.left (), r, height - 1);
-                append_proofs (p, (index << 1) + 1, l << t.left ().root (), t.right (), r, height - 1);
-            } else append_proofs (p, index << 1, l << t.left ().root (), t.left (), r, height - 1);
+                append_proofs (p, (index << 1), l >> t.right ().root (), t.left (), r, height - 1);
+                append_proofs (p, (index << 1) + 1, l >> t.left ().root (), t.right (), r, height - 1);
+            } else append_proofs (p, index << 1, l >> t.left ().root (), t.left (), r, height - 1);
         }
     
         template <typename it>
@@ -181,7 +181,7 @@ namespace Gigamonkey::Merkle {
         stack<maybe<digest256>> digests;
         
         while (next_height > 0) {
-            digests = digests << t.root ();
+            digests = digests >> t.root ();
             
             if ((i >> next_height) & 0 || i == max_index) {
                 t = t.right ();
@@ -213,12 +213,12 @@ namespace Gigamonkey::Merkle {
             
                 for (int i = 0; i <= height; i++) {
                     x = x.rest ();
-                    z = z << b.first ();
+                    z >>= b.first ();
                     b = b.rest ();
                 }
             
                 while (!z.empty ()) {
-                    x = x << z.first ();
+                    x >>= z.first ();
                     z = z.rest ();
                 }
                 
@@ -229,7 +229,7 @@ namespace Gigamonkey::Merkle {
             bool add (const branch &p) {
                 
                 uint32 index = p.Leaf.Index;
-                digests d = p.Digests << p.Leaf.Digest;
+                digests d = p.Digests >> p.Leaf.Digest;
                 
                 auto it = Branches.find (index);
                 if (it != Branches.end ()) {
@@ -285,7 +285,7 @@ namespace Gigamonkey::Merkle {
             dual_by_index (const dual &d) {
                 Root = d.Root;
                 for (const entry &e : d.Paths)
-                    Branches.insert_or_assign (e.Value.Index, e.Value.Digests << e.Key);
+                    Branches.insert_or_assign (e.Value.Index, e.Value.Digests >> e.Key);
             }
             
             operator dual () const {
@@ -294,7 +294,7 @@ namespace Gigamonkey::Merkle {
                 return dual{m, Root};
             }
             
-            bool add_all (ordered_list<proof> p) {
+            bool add_all (ordst<proof> p) {
                 for (const proof &x : p) if (!add (x.Branch)) return false;
                 return true;
             }
@@ -318,9 +318,9 @@ namespace Gigamonkey::Merkle {
         for (const proof& x : p) Paths = Paths.insert (entry (x.Branch));
     }
     
-    const ordered_list<proof> dual::proofs () const {
-        ordered_list<proof> p {};
-        for (const auto& e : Paths) p = p << proof {branch (e), Root};
+    const ordst<proof> dual::proofs () const {
+        ordst<proof> p {};
+        for (const auto &e : Paths) p >>= proof {branch (e), Root};
         return p;
     }
     
@@ -423,13 +423,13 @@ namespace Gigamonkey::Merkle {
             uint32 cumulative = 0;
             
             while (width > 1) {
-                p = p << x[cumulative + i + (i & 1 ? - 1 : i == width - 1 ? 0 : 1)];
+                p >>= x[cumulative + i + (i & 1 ? - 1 : i == width - 1 ? 0 : 1)];
                 cumulative += width;
                 width = (width + 1) / 2;
                 i >>= 1;
             }
             
-            return proof{branch{leaf{x[index], index}, data::reverse(p)}, x[-1]};
+            return proof {branch{leaf{x[index], index}, data::reverse (p)}, x[-1]};
         }
     }
     
@@ -442,7 +442,7 @@ namespace Gigamonkey::Merkle {
         
     list<proof> server::proofs () const {
         list<proof> p;
-        for (uint32 i = 0; i < Width; i++) p = p << get_server_proof(Digests, Width, i);
+        for (uint32 i = 0; i < Width; i++) p <<= get_server_proof (Digests, Width, i);
         return p;
     }
     

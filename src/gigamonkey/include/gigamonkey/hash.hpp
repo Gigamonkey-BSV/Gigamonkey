@@ -5,7 +5,7 @@
 #define GIGAMONKEY_HASH
 
 #include "types.hpp"
-#include <data/crypto/hash/hash.hpp>
+#include <data/crypto/hash.hpp>
 
 namespace Gigamonkey {
     namespace crypto = data::crypto;

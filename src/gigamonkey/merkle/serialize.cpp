@@ -23,7 +23,7 @@ namespace Gigamonkey {
     Merkle::digests read_path (const JSON::array_t &j) {
         Merkle::digests d;
 
-        for (const JSON &n : j) d = d << (n == "*" ? maybe<digest256> {} : maybe<digest256> {read_digest (n)});
+        for (const JSON &n : j) d >>= (n == "*" ? maybe<digest256> {} : maybe<digest256> {read_digest (n)});
 
         return data::reverse (d);
     }
@@ -170,7 +170,7 @@ namespace Gigamonkey {
         for (int i = 0; i < size; i++) {
             maybe<digest256> next;
             r = read_node (r, next);
-            d = d << next;
+            d >>= next;
         }
 
         p = data::reverse (d);
@@ -262,7 +262,7 @@ namespace Gigamonkey {
             Bitcoin::var_int::size (Path.Index) +
             Bitcoin::var_int::size (Path.Digests.size ()) +
             (tx_included ? Bitcoin::var_int::size (Transaction->size ()) + Transaction->size () : 32);
-        for (const maybe<digest256>& d : path) size += (bool (d) ? 33 : 1);
+        for (const maybe<digest256> &d : path) size += (bool (d) ? 33 : 1);
         if (tt == target_type_block_hash || tt == target_type_Merkle_root) size += 32;
         else if (tt == target_type_block_header) size += 80;
         
@@ -271,7 +271,7 @@ namespace Gigamonkey {
         
         // write flags and index. 
         it_wtr w {b.begin (), b.end ()};
-        w << flags() << Bitcoin::var_int {index ()};
+        w << flags () << Bitcoin::var_int {index ()};
         
         if (tx_included) write_transaction (w, *Transaction);
         else write_txid (w, *TXID);

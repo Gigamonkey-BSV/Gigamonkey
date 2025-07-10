@@ -81,6 +81,8 @@ target_link_libraries (gigamonkey PUBLIC
   Data::data
   util
   sv_giga
+  
+  secp256k1
 
   # boost::boost
   # openssl::openssl

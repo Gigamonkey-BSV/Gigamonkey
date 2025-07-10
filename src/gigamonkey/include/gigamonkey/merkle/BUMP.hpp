@@ -94,7 +94,7 @@ namespace Gigamonkey::Merkle {
 
         uint64 BlockHeight;
 
-        using nodes = list<ordered_list<node>>;
+        using nodes = list<ordst<node>>;
         nodes Path;
 
         BUMP (): BlockHeight {0}, Path {} {}

@@ -27,11 +27,11 @@ namespace Gigamonkey::Bitcoin {
     template <typename X> struct var_sequence;
     
     template <typename X> requires requires (writer &w, const X &x) {
-        { w << x } -> std::same_as<writer &>;
+        { w << x } -> data::Same<writer &>;
     } writer &operator << (writer &w, const var_sequence<X> x);
 
     template <typename X> requires requires (reader &r, X &x) {
-        { r >> x } -> std::same_as<reader &>;
+        { r >> x } -> data::Same<reader &>;
     } reader &operator >> (reader &r, var_sequence<X> x);
     
     struct var_int {
@@ -89,8 +89,8 @@ namespace Gigamonkey::Bitcoin {
         var_sequence (const list<X> &b) : List {const_cast<list<X> &> (b)} {};
         var_sequence (list<X> &b) : List {b} {};
         
-        template <data::functional::stack<X> Q> static reader &read (reader &r, Q &l);
-        template <data::sequence<X> Q> static writer &write (writer &w, Q l);
+        template <data::Stack<X> Q> static reader &read (reader &r, Q &l);
+        template <data::SequenceOf<X> Q> static writer &write (writer &w, Q l);
         static uint64 size (list<X> q);
         uint64 size () const {
             return size (*this);
@@ -115,18 +115,18 @@ namespace Gigamonkey::Bitcoin {
     }
 
     template <typename X> requires requires (writer &w, const X &x) {
-        { w << x } -> std::same_as<writer &>;
+        { w << x } -> data::Same<writer &>;
     } writer inline &operator << (writer &w, const var_sequence<X> x) {
         return var_sequence<X>::write (w, x.List);
     }
 
     template <typename X> requires requires (reader &r, X &x) {
-        { r >> x } -> std::same_as<reader &>;
+        { r >> x } -> data::Same<reader &>;
     } reader inline &operator >> (reader &r, var_sequence<X> x) {
         return var_sequence<X>::read (r, x.List);
     }
 
-    template <typename X> template <data::functional::stack<X> Q>
+    template <typename X> template <data::Stack<X> Q>
     reader &var_sequence<X>::read (reader &r, Q &l) {
         l = Q {};
         var_int size;
@@ -143,7 +143,7 @@ namespace Gigamonkey::Bitcoin {
         return r;
     }
 
-    template <typename X> template <data::sequence<X> Q>
+    template <typename X> template <data::SequenceOf<X> Q>
     writer inline &var_sequence<X>::write (writer &w, Q l) {
         w << var_int {data::size (l)};
         for (const X &x: l) w << x;

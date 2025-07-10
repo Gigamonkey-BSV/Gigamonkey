@@ -246,7 +246,7 @@ namespace Gigamonkey::SPV {
             database::tx n = d.transaction (x);
             if (n.confirmed ()) return {};
 
-            p.Payment <<= b;
+            p.Payment >>= b;
 
             for (const Bitcoin::input &in : b.Inputs)
                 if (!p.Proof.contains (in.Reference.Digest)) {
@@ -263,7 +263,7 @@ namespace Gigamonkey::SPV {
         for (const auto &in : tx.Inputs) {
             auto c = d.transaction (in.Reference.Digest);
             if (!c.valid ()) return {};
-            inputs <<= {c.Transaction->Outputs[in.Reference.Index], in};
+            inputs >>= {c.Transaction->Outputs[in.Reference.Index], in};
         }
 
         return extended::transaction {tx.Version, inputs, tx.Outputs, tx.LockTime};

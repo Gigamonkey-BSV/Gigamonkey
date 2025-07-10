@@ -57,6 +57,13 @@ ELSE ()
   # If we do not have crypto++, `sudo apt install libcrypto++-dev`
 ENDIF ()
 
+find_package (SECP256K1 REQUIRED)
+# if we do not have SECP256K1
+#   * on linux
+#     * go to `https://github.com/bitcoin-core/secp256k1`, download the repo, and follow the instructions.
+#     * you mighht need autoconf: `sudo apt install autoconf`
+#     * and libtool: `sudo apt-get install libtool-bin`
+
 ## Enable testing
 include (FetchContent)
 FetchContent_Declare (json URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz)
