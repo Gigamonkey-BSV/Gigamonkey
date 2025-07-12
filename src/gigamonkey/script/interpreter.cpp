@@ -19,7 +19,7 @@ namespace Gigamonkey::Bitcoin {
 
             if (conf.verify_unlock_push_only () && !is_push (unlock)) I.Machine.Result = SCRIPT_ERR_SIG_PUSHONLY;
             else if (conf.verify_P2SH () && is_P2SH (lock)) {
-                if (data::empty (unlock)) I.Machine.Result =  SCRIPT_ERR_INVALID_STACK_OPERATION;
+                if (empty (unlock)) I.Machine.Result =  SCRIPT_ERR_INVALID_STACK_OPERATION;
                 else if (!is_push (unlock)) I.Machine.Result = SCRIPT_ERR_SIG_PUSHONLY;
             } else I.Machine.Result = pre_verify (p, conf.Flags);
 

@@ -69,15 +69,15 @@ namespace Gigamonkey::Merkle {
     }
 
     uint64 BUMP::serialized_size () const {
-        uint64 size = Bitcoin::var_int::size (BlockHeight) + 1;
+        uint64 z = Bitcoin::var_int::size (BlockHeight) + 1;
 
         for (const ordst<node> &nnn : Path) {
-            size += Bitcoin::var_int::size (data::size (nnn));
+            z += Bitcoin::var_int::size (size (nnn));
 
-            for (const node &n : nnn) size += n.serialized_size ();
+            for (const node &n : nnn) z += n.serialized_size ();
         }
 
-        return size;
+        return z;
     }
 
     BUMP::node::operator JSON () const {
@@ -208,7 +208,7 @@ namespace Gigamonkey::Merkle {
     BUMP::BUMP (uint64 block_height, map m): BlockHeight {block_height}, Path {} {
         auto b = m.begin ();
         if (b == m.end ()) return;
-        for (uint64 i = 0; i < data::size ((*b).Value.Digests); i++) Path <<= ordst<node> {};
+        for (uint64 i = 0; i < size ((*b).Value.Digests); i++) Path <<= ordst<node> {};
         for (const auto &e : m) *this = *this + branch {e.Key, e.Value};
     }
 
@@ -218,11 +218,11 @@ namespace Gigamonkey::Merkle {
             stack<BUMP::node> b = reverse (static_cast<stack<BUMP::node>> (B));
 
             ordst<BUMP::node> result;
-            while (!data::empty (a) || !data::empty (b))
-                if (!data::empty (a) && (data::empty (b) || a.first ().Offset < b.first ().Offset)) {
+            while (!empty (a) || !empty (b))
+                if (!empty (a) && (empty (b) || a.first ().Offset < b.first ().Offset)) {
                     result = result.insert (a.first ());
                     a = a.rest ();
-                } else if (!data::empty (b) && (data::empty (a) || a.first ().Offset > b.first ().Offset)) {
+                } else if (!empty (b) && (empty (a) || a.first ().Offset > b.first ().Offset)) {
                     result = result.insert (b.first ());
                     b = b.rest ();
                 } else {
@@ -250,12 +250,12 @@ namespace Gigamonkey::Merkle {
             // the elements of the node should be organized in pairs, either
             // adjacent nodes of the full tree or a digest and a note saying
             // to duplicate it.
-            if (data::size (x) % 2 == 1) throw validation_error {};
+            if (size (x) % 2 == 1) throw validation_error {};
 
             stack<BUMP::node> nodes = reverse (static_cast<stack<BUMP::node>> (x));
 
             ordst<BUMP::node> result;
-            while (data::size (nodes) > 0) {
+            while (size (nodes) > 0) {
                 if ((nodes[0].Offset >> 1) != (nodes[1].Offset >> 1) || nodes[1].Offset + 1 != nodes[0].Offset) throw validation_error {};
 
                 result = result.insert (BUMP::node {nodes[0].Offset >> 1, BUMP::flag::intermediate, hash_concatinated (*nodes[1].Digest,
@@ -285,7 +285,7 @@ namespace Gigamonkey::Merkle {
         BUMP::nodes result;
 
         uint32 height = 0;
-        while (data::size (left) > 0) {
+        while (size (left) > 0) {
             result <<= combine (left.first (), right.first ());
             left = left.rest ();
             right = right.rest ();
@@ -301,7 +301,7 @@ namespace Gigamonkey::Merkle {
         for (const ordst<node> &next : Path)
             current = step (combine (current, next));
 
-        return data::size (current) == 1 && bool (data::first (current).Digest) ? *data::first (current).Digest : digest256 {};
+        return size (current) == 1 && bool (first (current).Digest) ? *first (current).Digest : digest256 {};
     }
 
     namespace {
@@ -315,28 +315,28 @@ namespace Gigamonkey::Merkle {
             ordst<uint64> generated_next_level;
 
             ordst<uint64> available = available_last_level;
-            while (!data::empty (available)) {
+            while (!empty (available)) {
                 generated_next_level = generated_next_level.insert (available.first () >> 1);
                 available = available.rest ().rest ();
             }
 
             unnecessary_removed result;
 
-            while (!data::empty (current) || !data::empty (generated_next_level))
-                if (!data::empty (current) && (data::empty (generated_next_level) ||
+            while (!empty (current) || !empty (generated_next_level))
+                if (!empty (current) && (empty (generated_next_level) ||
                     current.first ().Offset <= generated_next_level.first ())) {
 
-                    while (!data::empty (available_last_level) && available_last_level.first () < (current.first ().Offset << 1))
+                    while (!empty (available_last_level) && available_last_level.first () < (current.first ().Offset << 1))
                         available_last_level = available_last_level.rest ();
 
                     // if we didn't generate both of the lower nodes, then we can remove this one.
-                    if (data::size (available_last_level) < 2 ||
+                    if (size (available_last_level) < 2 ||
                         available_last_level[0] != (current.first ().Offset << 1) ||
                         available_last_level[1] != (current.first ().Offset << 1) + 1)
                         result.UnnecessaryRemoved = result.UnnecessaryRemoved.insert (current.first ());
 
                     result.AvailableNodesLastLevel = result.AvailableNodesLastLevel.insert (current.first ().Offset);
-                    if (!data::empty (generated_next_level) && current.first ().Offset == generated_next_level.first ())
+                    if (!empty (generated_next_level) && current.first ().Offset == generated_next_level.first ())
                         generated_next_level = generated_next_level.rest ();
 
                     current = current.rest ();
@@ -405,15 +405,15 @@ namespace Gigamonkey::Merkle {
 
         ordst<ptr<smash>> path_next_layer (ordst<ptr<smash>> Generated, ordst<BUMP::node> Provided) {
 
-            stack<ptr<smash>> generated = data::reverse (static_cast<stack<ptr<smash>>> (Generated));
-            stack<BUMP::node> provided = data::reverse (static_cast<stack<BUMP::node>> (Provided));
+            stack<ptr<smash>> generated = reverse (static_cast<stack<ptr<smash>>> (Generated));
+            stack<BUMP::node> provided = reverse (static_cast<stack<BUMP::node>> (Provided));
 
             ordst<ptr<smash>> to_smash;
-            while (!data::empty (generated) || !data::empty (provided)) {
-                if (!data::empty (generated) && (data::empty (provided) || generated.first ()->Offset < provided.first ().Offset)) {
+            while (!empty (generated) || !empty (provided)) {
+                if (!empty (generated) && (empty (provided) || generated.first ()->Offset < provided.first ().Offset)) {
                     to_smash = to_smash.insert (generated.first ());
                     generated = generated.rest ();
-                } else if (!data::empty (provided) && (data::empty (generated) || generated.first ()->Offset > provided.first ().Offset)) {
+                } else if (!empty (provided) && (empty (generated) || generated.first ()->Offset > provided.first ().Offset)) {
                     to_smash = to_smash.insert (std::make_shared<smash> (provided.first ()));
                     provided = provided.rest ();
                 } else {
@@ -425,7 +425,7 @@ namespace Gigamonkey::Merkle {
 
             ordst<ptr<smash>> smashed;
 
-            while (!data::empty (to_smash)) {
+            while (!empty (to_smash)) {
                 smashed = smashed.insert (smash_together (to_smash[0], to_smash[1]));
                 to_smash = to_smash.rest ().rest ();
             }

@@ -128,6 +128,7 @@ namespace Gigamonkey::Bitcoin {
         
         maybe<bytes> tx = encoding::hex::read (tx_hex);
         
+        // this is a valid transaction.
         ASSERT_TRUE (bool (tx));
         
         EXPECT_EQ (tx->size (), 7676);
@@ -149,11 +150,13 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_EQ (t.serialized_size (), 7676);
 
         EXPECT_FALSE (pay_to_address {t.Outputs.first ().Script}.valid ());
+
+        bytes rewritten = bytes (t);
         
-        EXPECT_EQ (bytes (t), *tx);
+        EXPECT_EQ (rewritten, *tx);
         
     }
-/*
+
     TEST (TransactionTest, TestTransaction2) {
         std::string tx1_hex =
             "0100000001cd4e4cac3c7b56920d1e7655e7e260d31f29d9a388d04910f1bbd72304a7902901"
@@ -180,5 +183,5 @@ namespace Gigamonkey::Bitcoin {
 
         EXPECT_EQ (bytes (tx1), tx1_bytes);
         EXPECT_EQ (bytes (tx2), tx2_bytes);
-    }*/
+    }
 }

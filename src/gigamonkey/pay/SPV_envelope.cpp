@@ -21,7 +21,7 @@ namespace Gigamonkey {
             // txid must match raw transaction.
             if (transaction::id (n.RawTx) != txid) return false;
 
-            bool has_MAPI = data::size (n.MAPIResponses) > 0;
+            bool has_MAPI = size (n.MAPIResponses) > 0;
             if (MAPI_responses_included == no_excluded_middle::unknown)
                 MAPI_responses_included = static_cast<no_excluded_middle> (has_MAPI);
             else if (no_excluded_middle (has_MAPI) != MAPI_responses_included) return false;
@@ -102,7 +102,7 @@ namespace Gigamonkey {
             JSON::object_t node {};
             node["rawTx"] = encoding::hex::write (n.RawTx);
 
-            if (data::size (n.MAPIResponses) > 0) {
+            if (size (n.MAPIResponses) > 0) {
                 JSON::array_t mapi_responses {};
                 for (const MAPI::transaction_status_response &r : n.MAPIResponses) mapi_responses.push_back (JSON (r));
                 node["mapiResponses"] = mapi_responses;
@@ -178,7 +178,7 @@ namespace Gigamonkey {
         if (TXID) node["txid"] = write_txid (*TXID);
         node["rawTx"] = encoding::hex::write (RawTx);
 
-        if (data::size (MAPIResponses) > 0) {
+        if (size (MAPIResponses) > 0) {
             JSON::array_t mapi_responses {};
             for (const MAPI::transaction_status_response &r : MAPIResponses) mapi_responses.push_back (JSON (r));
             node["mapiResponses"] = mapi_responses;

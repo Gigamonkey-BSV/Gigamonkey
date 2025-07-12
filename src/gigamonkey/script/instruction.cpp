@@ -349,7 +349,7 @@ namespace Gigamonkey::Bitcoin {
     // TODO need to take into account OP_VER etc
     ScriptError valid_program (program p, stack<op> x, flag flags) {
         
-        if (data::empty (p)) {
+        if (empty (p)) {
             if (x.empty ()) return SCRIPT_ERR_OK;
             return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
         }
@@ -368,7 +368,7 @@ namespace Gigamonkey::Bitcoin {
         // itself.
         if (o == OP_RETURN) {
             if (!safe_return_data (flags)) return SCRIPT_ERR_OP_RETURN;
-            if (data::empty (x) && p.size () == 1) return SCRIPT_ERR_OK;
+            if (empty (x) && p.size () == 1) return SCRIPT_ERR_OK;
             if (i.Data.size () != 0) return SCRIPT_ERR_OP_RETURN;
         }
         
@@ -390,7 +390,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     ScriptError pre_verify (program p, flag flags) {
-        if (data::empty (p)) return SCRIPT_ERR_OK;
+        if (empty (p)) return SCRIPT_ERR_OK;
 
         // first we check for OP_RETURN data.
         if (safe_return_data (flags)) {
@@ -403,16 +403,16 @@ namespace Gigamonkey::Bitcoin {
 
     // note: pay to script hash only applies to scripts that were created before genesis.
     program full (const program unlock, const program lock, bool support_p2sh) {
-        if (!support_p2sh || !is_P2SH (lock) || data::empty (unlock))
+        if (!support_p2sh || !is_P2SH (lock) || empty (unlock))
             // TODO the code separator should only go here if
             // there is no code separator in the unlocking script.
             return (unlock << OP_CODESEPARATOR) + lock;
 
-        auto reversed = data::reverse (unlock);
-        const instruction &push_redeem = data::first (reversed);
+        auto reversed = reverse (unlock);
+        const instruction &push_redeem = first (reversed);
 
         // For P2SH scripts. This is a depricated special case that is supported for backwards compatability.
-        return (data::reverse (data::rest (reversed)) << OP_CODESEPARATOR) +
+        return (reverse (rest (reversed)) << OP_CODESEPARATOR) +
             (decompile (push_redeem.push_data ()) << OP_VERIFY << push_redeem) + lock;
     }
 

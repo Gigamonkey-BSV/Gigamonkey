@@ -141,12 +141,12 @@ namespace Gigamonkey::Bitcoin {
     }
 
     size_t inline serialized_size (program p) {
-        if (data::empty (p)) return 0;
+        if (empty (p)) return 0;
         return serialized_size (p.first ()) + serialized_size (p.rest ());
     }
 
     bool inline is_push (program p) {
-        if (data::empty (p)) return true;
+        if (empty (p)) return true;
         return is_push (p.first ().Op) && is_push (p.rest ());
     }
     

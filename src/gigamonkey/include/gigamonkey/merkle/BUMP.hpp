@@ -111,7 +111,7 @@ namespace Gigamonkey::Merkle {
     }
 
     bool inline BUMP::valid () const {
-        return data::size (Path) != 0 && data::valid (Path);
+        return size (Path) != 0 && data::valid (Path);
     }
 
     BUMP inline BUMP::operator + (const branch &p) const {
@@ -119,7 +119,7 @@ namespace Gigamonkey::Merkle {
     }
 
     byte inline BUMP::depth () const {
-        return static_cast<byte> (data::size (Path));
+        return static_cast<byte> (size (Path));
     }
 
 }

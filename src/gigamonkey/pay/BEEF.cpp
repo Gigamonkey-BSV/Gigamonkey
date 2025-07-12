@@ -26,7 +26,7 @@ namespace Gigamonkey {
     }
 
     bool BEEF::valid () const {
-        if (Version <= 0xEFBE0000 || data::size (Transactions) == 0 || !data::valid (Transactions) || !data::valid (BUMPs))
+        if (Version <= 0xEFBE0000 || size (Transactions) == 0 || !data::valid (Transactions) || !data::valid (BUMPs))
             return false;
 
         set<Bitcoin::TXID> previously_read;
@@ -103,7 +103,7 @@ namespace Gigamonkey {
             for (const auto &[txid, nodep]: p.Proof) read_node (txid, *nodep, *this);
 
             for (const auto &tx : p.Payment) Beef.Transactions >>= BEEF::transaction {tx};
-            Beef.Transactions = data::reverse (Beef.Transactions);
+            Beef.Transactions = reverse (Beef.Transactions);
             for (auto b = Bumps.rbegin (); b != Bumps.rend (); b++) Beef.BUMPs >>= *b;
         }
 
@@ -181,7 +181,7 @@ namespace Gigamonkey {
 
                 }
 
-                p.Payment = data::reverse (p.Payment);
+                p.Payment = reverse (p.Payment);
 
                 Proof = p;
 

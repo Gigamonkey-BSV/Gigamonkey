@@ -429,7 +429,7 @@ namespace Gigamonkey::Merkle {
                 i >>= 1;
             }
             
-            return proof {branch{leaf{x[index], index}, data::reverse (p)}, x[-1]};
+            return proof {branch{leaf{x[index], index}, reverse (p)}, x[-1]};
         }
     }
     

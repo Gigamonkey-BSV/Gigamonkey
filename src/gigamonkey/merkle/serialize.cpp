@@ -25,7 +25,7 @@ namespace Gigamonkey {
 
         for (const JSON &n : j) d >>= (n == "*" ? maybe<digest256> {} : maybe<digest256> {read_digest (n)});
 
-        return data::reverse (d);
+        return reverse (d);
     }
     
     JSON write_path (Merkle::branch b) {
@@ -173,7 +173,7 @@ namespace Gigamonkey {
             d >>= next;
         }
 
-        p = data::reverse (d);
+        p = reverse (d);
         return r;
     }
     

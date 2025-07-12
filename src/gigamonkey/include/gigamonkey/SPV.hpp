@@ -317,7 +317,7 @@ namespace Gigamonkey::SPV {
     }
 
     bool inline proof::tree::valid () const {
-        return this->is<map> () && !data::empty (this->get<map> ()) ||
+        return this->is<map> () && !empty (this->get<map> ()) ||
             this->is<confirmation> () && this->get<confirmation> ().valid ();
     }
 

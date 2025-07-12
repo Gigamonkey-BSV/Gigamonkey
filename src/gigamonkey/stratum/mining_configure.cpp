@@ -6,11 +6,15 @@
 #include <boost/algorithm/string.hpp>
 
 namespace Gigamonkey::Stratum::mining {
+
+    template <typename K, typename V> using map = ::data::map<K, V>;
+    template <typename K, typename V> using entry = ::data::entry<K, V>;
+    using daxception = data::exception;
         
     bool configure_request::parameters::valid (const Stratum::parameters &p) {
         if (p.size () != 2 || !p[0].is_array () || !p[1].is_object ()) return false;
         
-        for (auto i = p[0].begin (); i != p[0].end(); i++) {
+        for (auto i = p[0].begin (); i != p[0].end (); i++) {
             if (!i->is_string ()) return false;
             for(auto j = p[0].begin (); j != i; j++) if (*j == *i) return false;
         }
@@ -59,18 +63,18 @@ namespace Gigamonkey::Stratum::mining {
     }
     
     configure_request::parameters::operator extensions::requests () const {
-        data::map<string, extensions::request> m;
+        map<string, extensions::request> m;
         
         for (const string &supported : Supported) m = m.insert (supported, extensions::request{});
         
         for (const auto &[param, val] : Parameters) {
             std::vector<std::string> z;
-            boost::split(z, param, boost::is_any_of ("."));
-            if (z.size() != 2) throw data::exception {"invalid format"};
+            boost::split (z, param, boost::is_any_of ("."));
+            if (z.size() != 2) throw daxception {"invalid format"};
 
-            if (!bool (m.contains (z[0]))) throw data::exception {"invalid format"};
+            if (!bool (m.contains (z[0]))) throw daxception {"invalid format"};
 
-            data::entry<const string, JSON> e {z[1], val};
+            entry<const string, JSON> e {z[1], val};
             m = m.replace_part (z[0], [e] (const extensions::request &o) {
                 return o.insert (e);
             });
@@ -97,7 +101,8 @@ namespace Gigamonkey::Stratum::mining {
             std::vector<std::string> z;
             boost::split (z, j.first, boost::is_any_of ("."));
             
-            if (z.size () > 2 || z.size () == 0) throw data::exception {"invalid format"};
+            if (z.size () > 2 || z.size () == 0) 
+                throw daxception {"invalid format"};
             
             if (z.size () == 1) {
                 accepted[z[0]] = extensions::accepted {j.second};
@@ -110,14 +115,14 @@ namespace Gigamonkey::Stratum::mining {
         } 
         
         for (const std::pair<string, extensions::result_params> &d : params) 
-            if (accepted.find (d.first) == accepted.end ()) throw data::exception {"invalid format"};
+            if (accepted.find (d.first) == accepted.end ()) throw daxception {"invalid format"};
         
-        data::map<string, extensions::result> results;
+        ::data::map<string, extensions::result> results;
         
-        for (const std::pair<string, extensions::accepted> &d : accepted) {
-            auto x = params.find (d.first);
-            results = x != params.end () ? results.insert (d.first, extensions::result {d.second, x->second}) :
-                results.insert (d.first, extensions::result {d.second});
+        for (const auto &[first, second] : accepted) {
+            auto x = params.find (first);
+            results = x != params.end () ? results.insert (first, extensions::result {second, x->second}) :
+                results.insert (first, extensions::result {second});
         }
         
         return {results};

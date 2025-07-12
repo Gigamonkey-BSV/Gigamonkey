@@ -110,7 +110,7 @@ namespace Gigamonkey {
     
     slice<const byte> pattern::sequence::scan (slice<const byte> p) const {
         list<ptr<pattern>> patt = Patterns; 
-        while (!data::empty (patt)) {
+        while (!empty (patt)) {
             p = patt.first ()->scan (p);
             patt = patt.rest ();
         }
@@ -146,7 +146,7 @@ namespace Gigamonkey {
     slice<const byte> alternatives::scan (slice<const byte> b) const {
         list<ptr<pattern>> patt = Patterns;
 
-        while (!data::empty (patt)) {
+        while (!empty (patt)) {
             try {
                 return patt.first ()->scan (b);
             } catch (fail) {

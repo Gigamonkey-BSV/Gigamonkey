@@ -15,8 +15,8 @@
 
 namespace Gigamonkey::Bitcoin {
 
-    struct prevout : data::entry<Bitcoin::outpoint, Bitcoin::output> {
-        using data::entry<Bitcoin::outpoint, Bitcoin::output>::entry;
+    struct prevout : entry<Bitcoin::outpoint, Bitcoin::output> {
+        using entry<Bitcoin::outpoint, Bitcoin::output>::entry;
 
         Bitcoin::outpoint outpoint () const {
             return this->Key;

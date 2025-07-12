@@ -44,7 +44,7 @@ namespace Gigamonkey::ARC {
 
     // failed queries may contain errors.
     struct error : data::net::error {
-        using data::net::error::error;
+        using ::data::net::error::error;
         maybe<Bitcoin::TXID> txid () const;
         maybe<string> extra_info () const;
     };
