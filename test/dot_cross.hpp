@@ -9,29 +9,29 @@
 namespace Gigamonkey {
 
     template <typename f, typename X, typename Y>
-    bool dot_cross(f foo, list<X> x, list<Y> y) {
-        if (x.size() != y.size()) return false;
-        if (x.size() == 0) return true;
+    bool dot_cross (f foo, list<X> x, list<Y> y) {
+        if (x.size () != y.size ()) return false;
+        if (x.size () == 0) return true;
         list<X> input = x;
         list<Y> expected = y;
-        while (!input.empty()) {
+        while (!empty (input)) {
             list<Y> uuu = expected;
-            X in = input.first();
-            Y ex = uuu.first();
+            X in = first (input);
+            Y ex = first (uuu);
             
-            if(!foo(in, ex)) return false;
+            if (!foo (in, ex)) return false;
             
-            uuu = uuu.rest();
+            uuu = rest (uuu);
         
-            while(!uuu.empty()) {
-                ex = uuu.first();
+            while (!empty (uuu)) {
+                ex = uuu.first ();
                 
-                if(foo(in, ex)) return false;
-                uuu = uuu.rest();
+                if (foo (in, ex)) return false;
+                uuu = rest (uuu);
             }
             
-            expected = expected.rest();
-            input = input.rest();
+            expected = rest (expected);
+            input = rest (input);
         }
         
         return true;

@@ -426,8 +426,8 @@ namespace Gigamonkey {
 
         optional<type> receive () {
             if (data::empty (Session->Send)) return {};
-            auto next = data::first (Session->Send);
-            Session->Send = data::rest (Session->Send);
+            auto next = first (Session->Send);
+            Session->Send = rest (Session->Send);
             return next;
         }
 

@@ -16,9 +16,9 @@ namespace Gigamonkey::work {
             list<Z> zz = z;
             while (!zz.empty ()) {
                 x = x << fun (y.first (), zz.first ());
-                zz = zz.rest ();
+                zz = rest (zz);
             }
-            y = y.rest ();
+            y = rest (y);
         }
         return x;
     }

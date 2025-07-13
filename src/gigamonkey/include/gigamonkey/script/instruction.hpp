@@ -142,12 +142,12 @@ namespace Gigamonkey::Bitcoin {
 
     size_t inline serialized_size (program p) {
         if (empty (p)) return 0;
-        return serialized_size (p.first ()) + serialized_size (p.rest ());
+        return serialized_size (first (p)) + serialized_size (rest (p));
     }
 
     bool inline is_push (program p) {
         if (empty (p)) return true;
-        return is_push (p.first ().Op) && is_push (p.rest ());
+        return is_push (first (p).Op) && is_push (rest (p));
     }
     
     size_t inline serialized_size (const instruction &o) {

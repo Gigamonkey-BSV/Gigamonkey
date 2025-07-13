@@ -121,12 +121,12 @@ namespace Gigamonkey::HD {
         
         secret inline derive (const secret &s, path l) {
             if (l.empty ()) return s;
-            return derive (derive (s, l.first ()), l.rest());
+            return derive (derive (s, first (l)), rest (l));
         }
         
         pubkey inline derive (const pubkey &p, path l) {
             if (l.empty ()) return p;
-            return derive (derive (p, l.first ()), l.rest ());
+            return derive (derive (p, first (l)), rest (l));
         }
         
         pubkey inline pubkey::derive (path l) const {

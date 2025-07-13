@@ -135,9 +135,9 @@ namespace Gigamonkey {
     
     template <typename X>
     writer inline &write (writer &b, list<X> ls) {
-        while (!ls.empty ()) {
-            b << ls.first ();
-            ls = ls.rest ();
+        while (!empty (ls)) {
+            b << first (ls);
+            ls = rest (ls);
         }
         return b;
     }

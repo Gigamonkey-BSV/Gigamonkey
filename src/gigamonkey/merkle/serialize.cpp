@@ -32,7 +32,7 @@ namespace Gigamonkey {
         JSON::array_t nodes (b.Digests.size ());
 
         for (JSON& j : nodes) {
-            j = bool (b.Digests.first ()) ? write_digest (*b.Digests.first ()) : std::string {"*"};
+            j = bool (first (b.Digests)) ? write_digest (*first (b.Digests)) : std::string {"*"};
             b = b.rest ();
         }
 

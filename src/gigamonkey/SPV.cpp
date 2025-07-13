@@ -122,8 +122,8 @@ namespace Gigamonkey::SPV {
             //check that all txs are unique.
             auto pp = u.Payment;
             while (!empty (pp)) {
-                auto x = pp.first ();
-                pp = pp.rest ();
+                const auto &x = first (pp);
+                pp = rest (pp);
                 for (const auto &p : pp) if (x == p) return false;
             }
 

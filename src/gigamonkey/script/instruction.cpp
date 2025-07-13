@@ -59,7 +59,7 @@ namespace Gigamonkey::Bitcoin {
             }
             
             script_writer &operator << (program p) {
-                return p.size () == 0 ? *this : (*this << p.first () << p.rest ());
+                return p.size () == 0 ? *this : (*this << first (p) << rest (p));
             }
             
             script_writer (W &w) : Writer {w} {}
@@ -328,13 +328,13 @@ namespace Gigamonkey::Bitcoin {
             
             if (i.Op == OP_ENDIF) {
                 if (Control.empty ()) throw invalid_program {SCRIPT_ERR_UNBALANCED_CONDITIONAL};
-                op prev = Control.first ();
-                Control = Control.rest ();
+                op prev = first (Control);
+                Control = rest (Control);
 
                 if (prev == OP_ELSE) {
                     if (Control.empty ()) throw invalid_program {SCRIPT_ERR_UNBALANCED_CONDITIONAL};
-                    prev = Control.first ();
-                    Control = Control.rest ();
+                    prev = first (Control);
+                    Control = rest (Control);
                 }
 
                 if (prev != OP_IF && prev != OP_NOTIF) invalid_program {SCRIPT_ERR_UNBALANCED_CONDITIONAL};
@@ -350,11 +350,11 @@ namespace Gigamonkey::Bitcoin {
     ScriptError valid_program (program p, stack<op> x, flag flags) {
         
         if (empty (p)) {
-            if (x.empty ()) return SCRIPT_ERR_OK;
+            if (empty (x)) return SCRIPT_ERR_OK;
             return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
         }
         
-        const instruction &i = p.first ();
+        const instruction &i = first (p);
         
         auto script_error = i.verify (flags);
         if (script_error != SCRIPT_ERR_OK) return script_error;
@@ -374,19 +374,19 @@ namespace Gigamonkey::Bitcoin {
         
         if (o == OP_ENDIF) {
             if (x.empty ()) return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
-            op prev = x.first ();
-            x = x.rest ();
+            op prev = first (x);
+            x = rest (x);
 
             if (prev == OP_ELSE) {
                 if (x.empty ()) return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
-                prev = x.first ();
-                x = x.rest ();
+                prev = first (x);
+                x = rest (x);
             }
 
             if (prev != OP_IF && prev != OP_NOTIF) return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
         } else if (o == OP_ELSE || o == OP_IF || o == OP_NOTIF) x = x >> o;
         
-        return valid_program (p.rest (), x, flags);
+        return valid_program (rest (p), x, flags);
     }
 
     ScriptError pre_verify (program p, flag flags) {
@@ -394,9 +394,9 @@ namespace Gigamonkey::Bitcoin {
 
         // first we check for OP_RETURN data.
         if (safe_return_data (flags)) {
-            if (p.size () == 2 && p.first ().Op == OP_FALSE && p.first ().valid () && p.rest ().first ().Op == OP_RETURN)
+            if (p.size () == 2 && first (p).Op == OP_FALSE && data::valid (first (p)) && first (rest (p)).Op == OP_RETURN)
                 return SCRIPT_ERR_OK;
-        } else if (p.size () == 1 && p.first ().Op == OP_RETURN) return SCRIPT_ERR_OK;
+        } else if (p.size () == 1 && first (p).Op == OP_RETURN) return SCRIPT_ERR_OK;
 
         return valid_program (p, {}, flags);
     }

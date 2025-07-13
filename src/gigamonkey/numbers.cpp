@@ -87,16 +87,16 @@ namespace Gigamonkey::Bitcoin {
         uint8_t mask = make_rshift_mask (bit_shift);
         uint8_t overflow_mask = ~mask;
 
-        integer result = integer::zero (x.size ());
-        for (integer::size_type i = 0; i < x.size (); i++) {
+        integer result = integer::zero (data::size (x));
+        for (integer::size_type i = 0; i < data::size (x); i++) {
             integer::size_type k = i + byte_shift;
-            if (k < x.size ()) {
+            if (k < data::size (x)) {
                 uint8_t val = (x[i] & mask);
                 val >>= bit_shift;
                 result[k] |= val;
             }
 
-            if (k + 1 < x.size ()) {
+            if (k + 1 < data::size (x)) {
                 uint8_t carryval = (x[i] & overflow_mask);
                 carryval <<= 8 - bit_shift;
                 result[k + 1] |= carryval;
@@ -114,8 +114,8 @@ namespace Gigamonkey::Bitcoin {
         uint8_t mask = make_lshift_mask (bit_shift);
         uint8_t overflow_mask = ~mask;
 
-        integer result = integer::zero (x.size ());
-        for (integer::size_type index = x.size (); index > 0; index--) {
+        integer result = integer::zero (data::size (x));
+        for (integer::size_type index = data::size (x); index > 0; index--) {
             integer::size_type i = index - 1;
             // make sure that k is always >= 0
             if (byte_shift <= i) {

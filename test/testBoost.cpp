@@ -21,28 +21,28 @@ namespace Gigamonkey::Boost {
 
     template <typename f, typename X, typename Y>
     bool dot_cross (f foo, list<X> x, list<Y> y) {
-        if (x.size () != y.size ()) return false;
-        if (x.size () == 0) return true;
+        if (size (x) != y.size ()) return false;
+        if (size (x) == 0) return true;
         list<X> input = x;
         list<Y> expected = y;
-        while (!input.empty ()) {
+        while (!empty (input)) {
             list<Y> uuu = expected;
             X in = input.first ();
             Y ex = uuu.first ();
             
             if (!foo (in, ex)) return false;
 
-            uuu = uuu.rest ();
+            uuu = rest (uuu);
             
             while (!uuu.empty ()) {
-                ex = uuu.first ();
+                ex = first (uuu);
                 
                 if (foo (in, ex)) return false;
-                uuu = uuu.rest ();
+                uuu = rest (uuu);
             }
             
-            expected = expected.rest ();
-            input = input.rest ();
+            expected = rest (expected);
+            input = rest (input);
         }
         
         return true;
@@ -57,11 +57,11 @@ namespace Gigamonkey::Boost {
     
     template <typename X>
     static bool test_equal (list<X> a, list<X> b) {
-        if (a.size () != b.size ()) return false;
-        while (!a.empty ()) {
-            if (a.first () != b.first ()) return false;
-            a = a.rest ();
-            b = b.rest ();
+        if (size (a) != size (b)) return false;
+        while (!empty (a)) {
+            if (first (a) != first (b)) return false;
+            a = rest (a);
+            b = rest (b);
         }
         return true;
     }
@@ -69,9 +69,9 @@ namespace Gigamonkey::Boost {
     template <typename X, typename f, typename Y>
     static list<X> for_each (f fun, list<Y> y) {
         list<X> x;
-        while(!y.empty ()) {
-            x = x << fun(y.first ());
-            y = y.rest ();
+        while (!y.empty ()) {
+            x <<= fun (first (y));
+            y = rest (y);
         }
         return x;
     }
@@ -79,11 +79,11 @@ namespace Gigamonkey::Boost {
     template <typename X, typename f, typename Y, typename Z>
     static list<X> map_thread (f fun, list<Y> y, list<Z> z) {
         list<X> x;
-        if (y.size () != z.size ()) return x;
-        while(!y.empty ()) {
-            x = x << fun(y.first (), z.first ());
-            y = y.rest ();
-            z = z.rest ();
+        if (size (y) != size (z)) return x;
+        while (!empty (y)) {
+            x <<= fun (first (y), first (z));
+            y = rest (y);
+            z = rest (z);
         }
         return x;
     }
@@ -417,7 +417,7 @@ namespace Gigamonkey::Boost {
 
         bool check_scripts = dot_cross ([] (slice<const byte> in, slice<const byte> out) {
             return Bitcoin::evaluate (in, out);
-        }, serialized_input_scripts.rest (), serialized_output_scripts.rest ());
+        }, rest (serialized_input_scripts), rest (serialized_output_scripts));
         
         EXPECT_TRUE (check_scripts) << "Boost scripts are not valid.";
         

@@ -130,7 +130,7 @@ namespace Gigamonkey::MAPI {
                 list<conflicted_with> cw;
                 for (const JSON& w : j["conflictedWith"]) {
                     cw = cw << conflicted_with {w};
-                    if (!cw.first ().valid ()) return {};
+                    if (!first (cw).valid ()) return {};
                 }
                 x.ConflictedWith = cw;
             }
@@ -462,7 +462,7 @@ namespace Gigamonkey::MAPI {
         list<status> sr;
         for (const JSON& w : j["txs"]) {
             sr = sr << read_status (w);
-            if (!sr.first ().valid ()) return;
+            if (!first (sr).valid ()) return;
         }
         
         auto pk_hex = encoding::hex::read (string (j["minerId"]));

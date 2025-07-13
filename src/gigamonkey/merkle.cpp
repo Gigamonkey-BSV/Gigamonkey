@@ -7,73 +7,75 @@
 #include <algorithm>
 
 namespace Gigamonkey::Merkle {
+
+    template <typename X> using dt = data::tree<X>;
     
     namespace {
     
         leaf_digests round (leaf_digests l) {
             leaf_digests r {};
             while (l.size () >= 2) {
-                r <<= hash_concatinated (l.first (), l.rest ().first ());
-                l = l.rest ().rest ();
+                r <<= hash_concatinated (first (l), first (rest (l)));
+                l = rest (rest (l));
             }
-            if (l.size () == 1) r <<= hash_concatinated (l.first (), l.first ());
+            if (l.size () == 1) r <<= hash_concatinated (first (l), first (l));
             return r;
         }
     
-        void append_proofs (list<proof> &p, uint32 index, digests l, data::tree<digest256> t, const digest256 &r, uint32 height) {
+        void append_proofs (list<proof> &p, uint32 index, digests l, dt<digest256> t, const digest256 &r, uint32 height) {
             if (height == 1) {
-                p = p << proof {branch {leaf {t.root (), index}, l}, r};
+                p = p << proof {branch {leaf {root (t), index}, l}, r};
                 return;
             }
             
-            if (!t.right ().empty ()) {
-                append_proofs (p, (index << 1), l >> t.right ().root (), t.left (), r, height - 1);
-                append_proofs (p, (index << 1) + 1, l >> t.left ().root (), t.right (), r, height - 1);
-            } else append_proofs (p, index << 1, l >> t.left ().root (), t.left (), r, height - 1);
+            if (!empty (right (t))) {
+                append_proofs (p, (index << 1), l >> root (right (t)), left (t), r, height - 1);
+                append_proofs (p, (index << 1) + 1, l >> root (left (t)), right (t), r, height - 1);
+            } else append_proofs (p, index << 1, l >> root (left (t)), left (t), r, height - 1);
         }
     
         template <typename it>
-        void write_at_height (it &i, const data::tree<digest256> &t, uint32 height) {
+        void write_at_height (it &i, const dt<digest256> &t, uint32 height) {
             if (height == 0) {
-                *i = t.root ();
+                *i = root (t);
                 ++i;
                 return;
             }
             
             write_at_height (i, t.left(), height - 1);
-            if (!t.right ().empty ()) write_at_height (i, t.right (), height - 1);
+            if (!empty (right (t))) write_at_height (i, t.right (), height - 1);
         }
     
-        uint32 height (data::tree<digest256> t) {
-            if (t.empty ()) return 0;
-            uint32 right_height = height (t.right ());
-            uint32 left_height = height (t.left ());
+        uint32 height (dt<digest256> t) {
+            if (empty (t)) return 0;
+            uint32 right_height = height (right (t));
+            uint32 left_height = height (left (t));
             if (right_height != left_height) return 0;
             return right_height + 1;
         }
         
-        bool check_tree (const data::tree<digest256> &t, uint32 expected_width, uint32 expected_height) {
+        bool check_tree (const dt<digest256> &t, uint32 expected_width, uint32 expected_height) {
             if (expected_height == 0) return false;
             if (expected_height == 1)
-                return expected_width == 1 && !t.empty () && t.left ().empty () && t.right ().empty () && t.root ().valid ();
+                return expected_width == 1 && !empty (t) && empty (left (t)) && empty (t.right ()) && root (t).valid ();
             
-            if (t.left ().empty ()) return false;
+            if (empty (left (t))) return false;
             
             uint32 expected_left_width;
             digest256 expected_value;
             
-            if (t.right ().empty ()) {
+            if (empty (right (t))) {
                 expected_left_width = expected_width;
-                expected_value = hash_concatinated (t.left ().root (), t.left ().root ());
+                expected_value = hash_concatinated (root (left (t)), root (left (t)));
             } else {
                 expected_left_width = 1 << (expected_height - 2);
-                expected_value = hash_concatinated (t.left ().root (), t.right ().root ());
-                if (!check_tree (t.right (), expected_width - expected_left_width, expected_height - 1)) return false;
+                expected_value = hash_concatinated (root (left (t)), root (right (t)));
+                if (!check_tree (right (t), expected_width - expected_left_width, expected_height - 1)) return false;
             }
             
-            if (!check_tree (t.left (), expected_left_width, expected_height - 1)) return false;
+            if (!check_tree (left (t), expected_left_width, expected_height - 1)) return false;
             
-            return t.root () == expected_value;
+            return root (t) == expected_value;
         }
     
     }
@@ -81,32 +83,32 @@ namespace Gigamonkey::Merkle {
     tree tree::make (leaf_digests h) {
         
         if (h.size () == 0) tree {};
-        if (h.size () == 1) return tree {h.first ()};
+        if (h.size () == 1) return tree {first (h)};
         
         uint32 width = h.size ();
         uint32 height = 2;
         
         leaf_digests next_round = round (h);
         
-        using trees = list<data::tree<digest256>>;
+        using trees = list<dt<digest256>>;
         trees Trees {};
         
         leaf_digests last = h;
         leaf_digests next = next_round;
 
         while (!next.empty ()) {
-            if (last.size () >= 2) {
-                Trees = Trees << data::tree<digest256> {next.first (),
-                    data::tree<digest256> {last.first ()},
-                    data::tree<digest256> {last.rest ().first ()}};
-                last = last.rest ().rest ();
+            if (data::size (last) >= 2) {
+                Trees = Trees << dt<digest256> {first (next),
+                    dt<digest256> {first (last)},
+                    dt<digest256> {first (rest (last))}};
+                last = rest (rest (last));
             } else {
-                Trees = Trees << data::tree<digest256> {next.first (),
-                    data::tree<digest256> {last.first ()},
-                    data::tree<digest256> {}};
-                last = last.rest ();
+                Trees = Trees << dt<digest256> {first (next),
+                    dt<digest256> {first (last)},
+                    dt<digest256> {}};
+                last = rest (last);
             }
-            next = next.rest ();
+            next = rest (next);
         }
         
         while (next_round.size () > 1) {
@@ -118,35 +120,35 @@ namespace Gigamonkey::Merkle {
             
             while (!next.empty ()) {
                 if (last_trees.size () >= 2) {
-                    Trees = Trees << data::tree<digest256> {next.first (),
-                        data::tree<digest256> {last_trees.first ()},
-                        data::tree<digest256> {last_trees.rest ().first ()}};
-                    last_trees = last_trees.rest ().rest ();
+                    Trees = Trees << dt<digest256> {first (next),
+                        dt<digest256> {first (last_trees)},
+                        dt<digest256> {first (rest (last_trees))}};
+                    last_trees = rest (rest (last_trees));
                 } else {
-                    Trees = Trees << data::tree<digest256> {next.first (),
-                        data::tree<digest256> {last_trees.first ()},
-                        data::tree<digest256> {}};
-                    last_trees = last_trees.rest ();
+                    Trees = Trees << dt<digest256> {first (next),
+                        dt<digest256> {first (last_trees)},
+                        dt<digest256> {}};
+                    last_trees = rest (last_trees);
                 }
 
-                next = next.rest ();
+                next = rest (next);
             }
         }
         
         // trees should have size 1 by this point. 
-        return tree {Trees.first (), width, height};
+        return tree {first (Trees), width, height};
     }
     
     digest root (list<digest> l) {
         if (l.size () == 0) return {};
         while (l.size () > 1) l = round (l);
-        return l.first ();
+        return first (l);
     }
     
     digest root (leaf l, digests d) {
         while (d.size () > 0) {
-            l = l.next (bool (d.first ()) ? *d.first () : l.Digest);
-            d = d.rest ();
+            l = l.next (bool (first (d)) ? *first (d) : l.Digest);
+            d = rest (d);
         }
         return l.Digest;
     }
@@ -154,15 +156,15 @@ namespace Gigamonkey::Merkle {
     const list<proof> tree::proofs () const {
         
         if (Height == 0 || Width == 0) return {};
-        if (Height == 1) return list<proof> {}.append (proof {data::tree<digest256>::root ()});
+        if (Height == 1) return list<proof> {}.append (proof {dt<digest256>::root ()});
         
         list<proof> p;
         
         append_proofs (p, 0,
-            {data::tree<digest256>::right ().root ()}, data::tree<digest256>::left (), data::tree<digest256>::root (), Height - 1);
+            {dt<digest256>::right ().root ()}, dt<digest256>::left (), dt<digest256>::root (), Height - 1);
 
         append_proofs (p, 1,
-            {data::tree<digest256>::left ().root ()}, data::tree<digest256>::right (), data::tree<digest256>::root (), Height - 1);
+            {dt<digest256>::left ().root ()}, dt<digest256>::right (), dt<digest256>::root (), Height - 1);
         
         return p;
     }
@@ -176,23 +178,23 @@ namespace Gigamonkey::Merkle {
         if (i >= Width) return {};
         
         uint32 max_index = Width - 1;
-        data::tree<digest256> t = *this;
+        dt<digest256> t = *this;
         uint32 next_height = Height - 1;
         stack<maybe<digest256>> digests;
         
         while (next_height > 0) {
-            digests = digests >> t.root ();
+            digests = digests >> data::root (t);
             
             if ((i >> next_height) & 0 || i == max_index) {
-                t = t.right ();
+                t = data::right (t);
             } else {
-                t = t.left ();
+                t = data::left (t);
             }
             
             next_height--;
         }
         
-        return proof {branch {leaf {t.root (), i}, digests}, data::tree<digest256>::root ()};
+        return proof {branch {leaf {t.root (), i}, digests}, dt<digest256>::root ()};
     }
     
     namespace {
@@ -212,14 +214,14 @@ namespace Gigamonkey::Merkle {
                 digests b = d;
             
                 for (int i = 0; i <= height; i++) {
-                    x = x.rest ();
-                    z >>= b.first ();
-                    b = b.rest ();
+                    x = rest (x);
+                    z >>= first (b);
+                    b = rest (b);
                 }
             
-                while (!z.empty ()) {
-                    x >>= z.first ();
-                    z = z.rest ();
+                while (!empty (z)) {
+                    x >>= first (z);
+                    z = rest (z);
                 }
                 
                 Branches.insert_or_assign (index, x);
@@ -290,8 +292,8 @@ namespace Gigamonkey::Merkle {
             
             operator dual () const {
                 map m;
-                for (const auto &b : Branches) m = m.insert (*b.second.first (), path {b.first, b.second.rest ()});
-                return dual{m, Root};
+                for (const auto &[k, v] : Branches) m = m.insert (*first (v), path {k, rest (v)});
+                return dual {m, Root};
             }
             
             bool add_all (ordst<proof> p) {
@@ -351,7 +353,7 @@ namespace Gigamonkey::Merkle {
     server::operator tree () const {
         if (Width == 0 || Height == 0) return tree {};
             
-        list<data::tree<digest256>> trees {};
+        list<dt<digest256>> trees {};
         
         auto b = Digests.begin ();
         for (int i = 0; i < Width; i++) {
@@ -360,30 +362,30 @@ namespace Gigamonkey::Merkle {
         }
         
         while (trees.size () > 1) {
-            list<data::tree<digest256>> new_trees {};
+            list<dt<digest256>> new_trees {};
             
             while (trees.size () > 1) {
-                new_trees = new_trees << data::tree<digest256> {*b, trees.first(), trees.rest().first()};
-                trees = trees.rest().rest();
+                new_trees = new_trees << dt<digest256> {*b, data::first (trees), data::first (data::rest (trees))};
+                trees = data::rest (data::rest (trees));
                 b++;
             }
             
             if (trees.size () == 1) {
-                new_trees = new_trees << data::tree<digest256> {*b, trees.first(), data::tree<digest256>{}};
-                trees = trees.rest ();
+                new_trees = new_trees << dt<digest256> {*b, data::first (trees), dt<digest256> {}};
+                trees = data::rest (trees);
                 b++;
             }
             
             trees = new_trees;
         }
         
-        return tree {trees.first (), Width, Height};
+        return tree {first (trees), Width, Height};
     }
     
     server::server (leaf_digests l) : server{} {
-        if (l.size () == 0) return;
+        if (size (l) == 0) return;
         
-        Width = l.size ();
+        Width = size (l);
         Height = 1;
         
         uint32 width = Width;
@@ -400,13 +402,13 @@ namespace Gigamonkey::Merkle {
         
         while (true) {
             leaf_digests x = v;
-            while (!x.empty ()) {
-                Digests[i] = x.first ();
-                x = x.rest ();
+            while (!empty (x)) {
+                Digests[i] = first (x);
+                x = rest (x);
                 i++;
             }
             if (i == total) break;
-            v = round(v);
+            v = round (v);
         } 
         
         auto a = Digests[total - 1];

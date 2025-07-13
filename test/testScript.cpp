@@ -745,19 +745,19 @@ namespace Gigamonkey::Bitcoin {
             {{0xf0, 0x00}, {0xf0, 0x00, 0x00}}};
 
         while (data::size (equals_test_cases) > 0) {
-            list<bytes> current_set = data::first (equals_test_cases);
-            equals_test_cases = data::rest (equals_test_cases);
+            list<bytes> current_set = first (equals_test_cases);
+            equals_test_cases = rest (equals_test_cases);
 
             while (data::size (current_set) > 0) {
-                bytes left = data::first (current_set);
+                bytes left = first (current_set);
                 list<bytes> right_set = current_set;
 
-                current_set = data::rest (current_set);
+                current_set = rest (current_set);
 
                 while (data::size (right_set) > 0) {
 
-                    bytes right = data::first (right_set);
-                    right_set = data::rest (right_set);
+                    bytes right = first (right_set);
+                    right_set = rest (right_set);
 
                     success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_NUMEQUAL}, flag {}));
                     success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_NUMEQUAL}, flag {}));
@@ -779,12 +779,12 @@ namespace Gigamonkey::Bitcoin {
 
                 auto right_sets = equals_test_cases;
                 while (data::size (right_sets) > 0) {
-                    right_set = data::first (right_sets);
-                    right_sets = data::rest (right_sets);
+                    right_set = first (right_sets);
+                    right_sets = rest (right_sets);
 
                     while (data::size (right_set) > 0) {
-                        bytes right = data::first (right_set);
-                        right_set = data::rest (right_set);
+                        bytes right = first (right_set);
+                        right_set = rest (right_set);
 
                         failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_NUMEQUAL}, flag {}));
                         failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_NUMEQUAL}, flag {}));

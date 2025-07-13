@@ -732,7 +732,7 @@ namespace Gigamonkey {
         }
         
         inline candidate::candidate (list<Bitcoin::prevout> utxos) :
-            Script {utxos.first ().script ()}, Prevouts {
+            Script {first (utxos).script ()}, Prevouts {
                 data::fold ([] (set<prevout> x, const Bitcoin::prevout &p) -> set<prevout> {
                     return x.insert (prevout {p.outpoint (), p.value ()});
                 }, set<prevout> {}, utxos)} {}

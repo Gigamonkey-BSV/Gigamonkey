@@ -302,9 +302,9 @@ namespace Gigamonkey::Bitcoin {
         bool valid () const {
             if (!Header.valid ()) return false;
             list<transaction> txs = Transactions;
-            while(!txs.empty ()) {
-                if (!txs.first ().valid ()) return false;
-                txs = txs.rest ();
+            while(!empty (txs)) {
+                if (!first (txs).valid ()) return false;
+                txs = rest (txs);
             }
             return true;
         }

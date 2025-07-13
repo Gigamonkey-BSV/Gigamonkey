@@ -219,24 +219,24 @@ namespace Gigamonkey::Merkle {
 
             ordst<BUMP::node> result;
             while (!empty (a) || !empty (b))
-                if (!empty (a) && (empty (b) || a.first ().Offset < b.first ().Offset)) {
-                    result = result.insert (a.first ());
-                    a = a.rest ();
-                } else if (!empty (b) && (empty (a) || a.first ().Offset > b.first ().Offset)) {
-                    result = result.insert (b.first ());
-                    b = b.rest ();
+                if (!empty (a) && (empty (b) || first (a).Offset < first (b).Offset)) {
+                    result = result.insert (first (a));
+                    a = rest (a);
+                } else if (!empty (b) && (empty (a) || first (a).Offset > first (b).Offset)) {
+                    result = result.insert (first (b));
+                    b = rest (b);
                 } else {
                     // in this case, we are combining two lists with the same node. It doesn't matter
                     // which one we pick unless one is a client tx and the other isn't.
                     // it is also possible that one of these says to duplicate the hash and the
                     // other doesn't. In that case we pick the one that says to duplicate.
                     result = result.insert (
-                        a.first ().Flag == BUMP::flag::client ? a.first () :
-                        b.first ().Flag == BUMP::flag::client ? b.first () :
-                        a.first ().Flag == BUMP::flag::duplicate ? a.first () :
-                        b.first ().Flag == BUMP::flag::duplicate ? b.first () : a.first ());
-                    a = a.rest ();
-                    b = b.rest ();
+                        first (a).Flag == BUMP::flag::client ? first (a) :
+                        first (b).Flag == BUMP::flag::client ? first (b) :
+                        first (a).Flag == BUMP::flag::duplicate ? first (a) :
+                        first (b).Flag == BUMP::flag::duplicate ? first (b) : first (a));
+                    a = rest (a);
+                    b = rest (b);
                 }
             return result;
         }
@@ -261,7 +261,7 @@ namespace Gigamonkey::Merkle {
                 result = result.insert (BUMP::node {nodes[0].Offset >> 1, BUMP::flag::intermediate, hash_concatinated (*nodes[1].Digest,
                     nodes[0].Flag == BUMP::flag::duplicate ? *nodes[1].Digest : *nodes[0].Digest)});
 
-                nodes = nodes.rest ().rest ();
+                nodes = rest (rest (nodes));
 
             }
 
@@ -286,9 +286,9 @@ namespace Gigamonkey::Merkle {
 
         uint32 height = 0;
         while (size (left) > 0) {
-            result <<= combine (left.first (), right.first ());
-            left = left.rest ();
-            right = right.rest ();
+            result <<= combine (first (left), first (right));
+            left = rest (left);
+            right = rest (right);
             height++;
         }
 
@@ -316,33 +316,33 @@ namespace Gigamonkey::Merkle {
 
             ordst<uint64> available = available_last_level;
             while (!empty (available)) {
-                generated_next_level = generated_next_level.insert (available.first () >> 1);
-                available = available.rest ().rest ();
+                generated_next_level = generated_next_level.insert (first (available) >> 1);
+                available = rest (rest (available));
             }
 
             unnecessary_removed result;
 
             while (!empty (current) || !empty (generated_next_level))
                 if (!empty (current) && (empty (generated_next_level) ||
-                    current.first ().Offset <= generated_next_level.first ())) {
+                    first (current).Offset <= first (generated_next_level))) {
 
-                    while (!empty (available_last_level) && available_last_level.first () < (current.first ().Offset << 1))
-                        available_last_level = available_last_level.rest ();
+                    while (!empty (available_last_level) && first (available_last_level) < (first (current).Offset << 1))
+                        available_last_level = rest (available_last_level);
 
                     // if we didn't generate both of the lower nodes, then we can remove this one.
                     if (size (available_last_level) < 2 ||
-                        available_last_level[0] != (current.first ().Offset << 1) ||
-                        available_last_level[1] != (current.first ().Offset << 1) + 1)
-                        result.UnnecessaryRemoved = result.UnnecessaryRemoved.insert (current.first ());
+                        available_last_level[0] != (first (current).Offset << 1) ||
+                        available_last_level[1] != (first (current).Offset << 1) + 1)
+                        result.UnnecessaryRemoved = result.UnnecessaryRemoved.insert (first (current));
 
-                    result.AvailableNodesLastLevel = result.AvailableNodesLastLevel.insert (current.first ().Offset);
-                    if (!empty (generated_next_level) && current.first ().Offset == generated_next_level.first ())
-                        generated_next_level = generated_next_level.rest ();
+                    result.AvailableNodesLastLevel = result.AvailableNodesLastLevel.insert (first (current).Offset);
+                    if (!empty (generated_next_level) && first (current).Offset == first (generated_next_level))
+                        generated_next_level = rest (generated_next_level);
 
-                    current = current.rest ();
+                    current = rest (current);
                 } else {
-                    result.AvailableNodesLastLevel = result.AvailableNodesLastLevel.insert (generated_next_level.first ());
-                    generated_next_level = generated_next_level.rest ();
+                    result.AvailableNodesLastLevel = result.AvailableNodesLastLevel.insert (first (generated_next_level));
+                    generated_next_level = rest (generated_next_level);
                 }
 
             return result;
@@ -410,16 +410,16 @@ namespace Gigamonkey::Merkle {
 
             ordst<ptr<smash>> to_smash;
             while (!empty (generated) || !empty (provided)) {
-                if (!empty (generated) && (empty (provided) || generated.first ()->Offset < provided.first ().Offset)) {
-                    to_smash = to_smash.insert (generated.first ());
-                    generated = generated.rest ();
-                } else if (!empty (provided) && (empty (generated) || generated.first ()->Offset > provided.first ().Offset)) {
-                    to_smash = to_smash.insert (std::make_shared<smash> (provided.first ()));
-                    provided = provided.rest ();
+                if (!empty (generated) && (empty (provided) || first (generated)->Offset < first (provided).Offset)) {
+                    to_smash = to_smash.insert (first (generated));
+                    generated = rest (generated);
+                } else if (!empty (provided) && (empty (generated) || first (generated)->Offset > first (provided).Offset)) {
+                    to_smash = to_smash.insert (std::make_shared<smash> (first (provided)));
+                    provided = rest (provided);
                 } else {
-                    to_smash = to_smash.insert (generated.first ());
-                    generated = generated.rest ();
-                    provided = provided.rest ();
+                    to_smash = to_smash.insert (first (generated));
+                    generated = rest (generated);
+                    provided = rest (provided);
                 }
             }
 
@@ -427,7 +427,7 @@ namespace Gigamonkey::Merkle {
 
             while (!empty (to_smash)) {
                 smashed = smashed.insert (smash_together (to_smash[0], to_smash[1]));
-                to_smash = to_smash.rest ().rest ();
+                to_smash = rest (rest (to_smash));
             }
 
             return smashed;
