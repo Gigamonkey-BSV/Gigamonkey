@@ -7,7 +7,7 @@
 #include <gigamonkey/hash.hpp>
 #include <gigamonkey/incomplete.hpp>
 #include <gigamonkey/script/instruction.hpp>
-#include <data/tools.hpp>
+#include <data/tools/lazy_writer.hpp>
 
 namespace Gigamonkey::Bitcoin {
     namespace sighash {

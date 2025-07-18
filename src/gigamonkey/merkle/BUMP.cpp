@@ -214,8 +214,8 @@ namespace Gigamonkey::Merkle {
 
     namespace {
         ordst<BUMP::node> combine (ordst<BUMP::node> A, ordst<BUMP::node> B) {
-            stack<BUMP::node> a = reverse (static_cast<stack<BUMP::node>> (A));
-            stack<BUMP::node> b = reverse (static_cast<stack<BUMP::node>> (B));
+            auto a = reverse (A);
+            auto b = reverse (B);
 
             ordst<BUMP::node> result;
             while (!empty (a) || !empty (b))
@@ -252,7 +252,7 @@ namespace Gigamonkey::Merkle {
             // to duplicate it.
             if (size (x) % 2 == 1) throw validation_error {};
 
-            stack<BUMP::node> nodes = reverse (static_cast<stack<BUMP::node>> (x));
+            auto nodes = reverse (x);
 
             ordst<BUMP::node> result;
             while (size (nodes) > 0) {
@@ -405,8 +405,8 @@ namespace Gigamonkey::Merkle {
 
         ordst<ptr<smash>> path_next_layer (ordst<ptr<smash>> Generated, ordst<BUMP::node> Provided) {
 
-            stack<ptr<smash>> generated = reverse (static_cast<stack<ptr<smash>>> (Generated));
-            stack<BUMP::node> provided = reverse (static_cast<stack<BUMP::node>> (Provided));
+            auto generated = reverse (Generated);
+            auto provided = reverse (Provided);
 
             ordst<ptr<smash>> to_smash;
             while (!empty (generated) || !empty (provided)) {

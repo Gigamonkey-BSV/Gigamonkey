@@ -89,7 +89,7 @@ namespace Gigamonkey::Bitcoin {
         var_sequence (const list<X> &b) : List {const_cast<list<X> &> (b)} {};
         var_sequence (list<X> &b) : List {b} {};
         
-        template <data::Stack<X> Q> static reader &read (reader &r, Q &l);
+        template <data::Stack Q> requires data::SequenceOf<Q, X> static reader &read (reader &r, Q &l);
         template <data::SequenceOf<X> Q> static writer &write (writer &w, Q l);
         static uint64 size (list<X> q);
         uint64 size () const {
@@ -126,7 +126,7 @@ namespace Gigamonkey::Bitcoin {
         return var_sequence<X>::read (r, x.List);
     }
 
-    template <typename X> template <data::Stack<X> Q>
+    template <typename X> template <data::Stack Q> requires data::SequenceOf<Q, X>
     reader &var_sequence<X>::read (reader &r, Q &l) {
         l = Q {};
         var_int size;
