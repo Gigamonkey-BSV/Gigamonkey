@@ -13,7 +13,7 @@ set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake" CA
 
 project (
   gigamonkey
-  VERSION 0.0.15
+  VERSION 0.0.16
   DESCRIPTION "open-source Bitcoin library in c++"
   LANGUAGES CXX
 )
