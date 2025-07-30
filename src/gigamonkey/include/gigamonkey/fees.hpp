@@ -15,8 +15,8 @@
 
 namespace Gigamonkey::Bitcoin {
 
-    struct prevout : data::entry<Bitcoin::outpoint, Bitcoin::output> {
-        using data::entry<Bitcoin::outpoint, Bitcoin::output>::entry;
+    struct prevout : entry<Bitcoin::outpoint, Bitcoin::output> {
+        using entry<Bitcoin::outpoint, Bitcoin::output>::entry;
 
         Bitcoin::outpoint outpoint () const {
             return this->Key;
@@ -62,7 +62,7 @@ namespace Gigamonkey {
 
             bytes script_so_far () const;
 
-            extended::input complete (bytes_view script) const {
+            extended::input complete (slice<const byte> script) const {
                 return extended::input {Prevout, static_cast<const Bitcoin::incomplete::input &> (*this).complete (script)};
             }
         };
@@ -96,7 +96,7 @@ namespace Gigamonkey {
 
     bytes inline transaction_design::input::script_so_far () const {
         return write_bytes (Prevout.Script.size () + InputScriptSoFar.size () + 1,
-            InputScriptSoFar, byte (OP_CODESEPARATOR), Prevout.Script);
+            InputScriptSoFar, byte (Bitcoin::OP_CODESEPARATOR), Prevout.Script);
     }
 
     uint64 inline transaction_design::expected_size () const {

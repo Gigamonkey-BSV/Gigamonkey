@@ -7,101 +7,14 @@
 #ifndef GIGAMONKEY_SCRIPT_INSTRUCTION
 #define GIGAMONKEY_SCRIPT_INSTRUCTION
 
-#include <gigamonkey/script/opcodes.h>
-#include <gigamonkey/script/flags.h>
+#include <gigamonkey/script/config.hpp>
 #include <gigamonkey/script/error.h>
 //#include <sv/policy/policy.h>
 
 #include <gigamonkey/hash.hpp>
+#include <gigamonkey/numbers.hpp>
 
 namespace Gigamonkey::Bitcoin { 
-    
-    using op = opcodetype;
-    
-    // instructions which can appear in script programs but which 
-    // do not have names in the original Satoshi client. 
-    const op OP_PUSHSIZE1 = op (0x01);
-    const op OP_PUSHSIZE2 = op (0x02);
-    const op OP_PUSHSIZE3 = op (0x03);
-    const op OP_PUSHSIZE4 = op (0x04);
-    const op OP_PUSHSIZE5 = op (0x05);
-    const op OP_PUSHSIZE6 = op (0x06);
-    const op OP_PUSHSIZE7 = op (0x07);
-    const op OP_PUSHSIZE8 = op (0x08);
-    const op OP_PUSHSIZE9 = op (0x09);
-    
-    const op OP_PUSHSIZE10 = op (0x0a); 
-    const op OP_PUSHSIZE11 = op (0x0b);
-    const op OP_PUSHSIZE12 = op (0x0c);
-    const op OP_PUSHSIZE13 = op (0x0d);
-    const op OP_PUSHSIZE14 = op (0x0e);
-    const op OP_PUSHSIZE15 = op (0x0f);
-    const op OP_PUSHSIZE16 = op (0x10);
-    const op OP_PUSHSIZE17 = op (0x11);
-    const op OP_PUSHSIZE18 = op (0x12);
-    const op OP_PUSHSIZE19 = op (0x13);
-    
-    const op OP_PUSHSIZE20 = op (0x14);
-    const op OP_PUSHSIZE21 = op (0x15);
-    const op OP_PUSHSIZE22 = op (0x16);
-    const op OP_PUSHSIZE23 = op (0x17);
-    const op OP_PUSHSIZE24 = op (0x18);
-    const op OP_PUSHSIZE25 = op (0x19);
-    const op OP_PUSHSIZE26 = op (0x1a);
-    const op OP_PUSHSIZE27 = op (0x1b);
-    const op OP_PUSHSIZE28 = op (0x1c);
-    const op OP_PUSHSIZE29 = op (0x1d);
-
-    const op OP_PUSHSIZE30 = op (0x1e);
-    const op OP_PUSHSIZE31 = op (0x1f);
-    const op OP_PUSHSIZE32 = op (0x20);
-    const op OP_PUSHSIZE33 = op (0x21);
-    const op OP_PUSHSIZE34 = op (0x22);
-    const op OP_PUSHSIZE35 = op (0x23);
-    const op OP_PUSHSIZE36 = op (0x24);
-    const op OP_PUSHSIZE37 = op (0x25);
-    const op OP_PUSHSIZE38 = op (0x26);
-    const op OP_PUSHSIZE39 = op (0x27);
-    
-    const op OP_PUSHSIZE40 = op (0x28);
-    const op OP_PUSHSIZE41 = op (0x29);
-    const op OP_PUSHSIZE42 = op (0x2a);
-    const op OP_PUSHSIZE43 = op (0x2b);
-    const op OP_PUSHSIZE44 = op (0x2c);
-    const op OP_PUSHSIZE45 = op (0x2d);
-    const op OP_PUSHSIZE46 = op (0x2e);
-    const op OP_PUSHSIZE47 = op (0x2f);
-    const op OP_PUSHSIZE48 = op (0x30);
-    const op OP_PUSHSIZE49 = op (0x31);
-    
-    const op OP_PUSHSIZE50 = op (0x32);
-    const op OP_PUSHSIZE51 = op (0x33);
-    const op OP_PUSHSIZE52 = op (0x34);
-    const op OP_PUSHSIZE53 = op (0x35);
-    const op OP_PUSHSIZE54 = op (0x36);
-    const op OP_PUSHSIZE55 = op (0x37);
-    const op OP_PUSHSIZE56 = op (0x38);
-    const op OP_PUSHSIZE57 = op (0x39);
-    const op OP_PUSHSIZE58 = op (0x3a);
-    const op OP_PUSHSIZE59 = op (0x3b);
-    
-    const op OP_PUSHSIZE60 = op (0x3c);
-    const op OP_PUSHSIZE61 = op (0x3d);
-    const op OP_PUSHSIZE62 = op (0x3e);
-    const op OP_PUSHSIZE63 = op (0x3f);
-    const op OP_PUSHSIZE64 = op (0x40);
-    const op OP_PUSHSIZE65 = op (0x41);
-    const op OP_PUSHSIZE66 = op (0x42);
-    const op OP_PUSHSIZE67 = op (0x43);
-    const op OP_PUSHSIZE68 = op (0x44);
-    const op OP_PUSHSIZE69 = op (0x45);
-    
-    const op OP_PUSHSIZE70 = op (0x46);
-    const op OP_PUSHSIZE71 = op (0x47);
-    const op OP_PUSHSIZE72 = op (0x48);
-    const op OP_PUSHSIZE73 = op (0x49);
-    const op OP_PUSHSIZE74 = op (0x4a);
-    const op OP_PUSHSIZE75 = op (0x4b);
 
     bool inline is_push (op o) {
         return o <= OP_16 && o != OP_RESERVED;
@@ -111,10 +24,10 @@ namespace Gigamonkey::Bitcoin {
         return o <= OP_PUSHDATA4;
     }
     
-    bool is_minimal (bytes_view);
+    bool is_minimal_script (slice<const byte>);
     
     // ASM is a standard human format for Bitcoin scripts that is unique only if the script is minimally encoded. 
-    string ASM (bytes_view);
+    string ASM (slice<const byte>);
     
     // a single step in a program. 
     struct instruction; 
@@ -130,12 +43,12 @@ namespace Gigamonkey::Bitcoin {
     
     instruction push_data (int);
     instruction push_data (const Z &z);
-    instruction push_data (bytes_view);
+    instruction push_data (slice<const byte>);
+
+    template <data::endian::order Order, class T, std::size_t n_bits, boost::endian::align Align>
+    instruction push_data (const boost::endian::endian_arithmetic<Order, T, n_bits, Align> &x);
     
-    template <bool is_signed, boost::endian::order o, std::size_t size>
-    instruction push_data (const arithmetic::endian_integral<is_signed, o, size> &x);
-    
-    bool is_minimal (const instruction &);
+    bool is_minimal_instruction (const instruction &);
     
     // Representation of a Bitcoin script instruction, which is either an op code
     // by itself or an op code for pushing data to the stack along with data. 
@@ -145,14 +58,14 @@ namespace Gigamonkey::Bitcoin {
         
         instruction ();
         instruction (op p);
-        instruction (bytes_view d) : instruction {push (d)} {}
+        instruction (slice<const byte> d) : instruction {push (d)} {}
         
         integer push_data () const;
         
-        ScriptError verify (uint32 flags = 0) const;
+        ScriptError verify (flag flags) const;
         
         bool valid () const {
-            return verify () == SCRIPT_ERR_OK;
+            return verify (genesis_profile ()) == SCRIPT_ERR_OK;
         };
         
         uint32 serialized_size () const;
@@ -161,10 +74,10 @@ namespace Gigamonkey::Bitcoin {
         bool operator != (op o) const;
         
         static instruction op_code (op o);
-        static instruction read (bytes_view b);
-        static instruction push (bytes_view d);
+        static instruction read (slice<const byte> b);
+        static instruction push (slice<const byte> d);
         
-        static size_t min_push_size (bytes_view b) {
+        static size_t min_push_size (slice<const byte> b) {
             auto x = b.size ();
             return x == 0 || (x == 1 && (b[0] == 0x81 || (b[0] >= 1 && b[0] <= 16))) ? 1 : 
                 x < 75 ? x + 1 : x < 0xff ? x + 2 : x < 0xffff ? x + 3 : x + 5;
@@ -175,13 +88,22 @@ namespace Gigamonkey::Bitcoin {
     private:
         instruction (op p, const integer &d);
     };
-    
+
     using program = list<instruction>;
 
     bool is_push (program);
 
     // check flags that can be checked without running the program.
-    ScriptError pre_verify (program, uint32 flags = 0);
+    ScriptError pre_verify (program, flag flags);
+
+    // delete the script up to and including the last instance of OP_CODESEPARATOR.
+    // if no OP_CODESEPARATOR is found, nothing is removed.
+    // this function is needed for correctly checking and generating signatures.
+    program remove_after_last_code_separator (slice<const byte>);
+
+    // used in the original sighash algorithm to remove instances of the same
+    // signature that might have been used previously in the script.
+    program find_and_delete (program script_code, const instruction &sig);
 
     // make the full program from the two scripts.
     program full (const program unlock, const program lock, bool support_p2sh);
@@ -190,39 +112,51 @@ namespace Gigamonkey::Bitcoin {
     bool is_P2SH (const program p);
 
     bool inline valid (program p) {
-        return pre_verify (p) == SCRIPT_ERR_OK;
+        return pre_verify (p, genesis_profile ()) == SCRIPT_ERR_OK;
     };
-    
-    bytes compile (program p); 
-    
-    bytes compile (instruction i); 
-    
-    program decompile (bytes_view); 
-    
+
+    bytes compile (program p);
+
+    bytes compile (instruction i);
+
+    program decompile (slice<const byte>);
+
+    // thrown if you try to decompile an invalid program.
+    struct invalid_program : exception {
+        ScriptError Error;
+        invalid_program (ScriptError err): Error {err} {
+            *this << "program is invalid: " << err;
+        }
+    };
+
     size_t serialized_size (program p);
 
-    bool inline is_P2SH (bytes_view script) {
+    bool inline is_P2SH (slice<const byte> script) {
         return script.size () == 23 && script[0] == OP_HASH160 &&
             script[1] == 0x14 && script[22] == OP_EQUAL;
     }
 
-    // not really an efficient way to accomplish this.
     bool inline is_P2SH (const program p) {
         return is_P2SH (compile (p));
     }
 
     size_t inline serialized_size (program p) {
-        if (data::empty (p)) return 0;
-        return serialized_size (p.first ()) + serialized_size (p.rest ());
+        if (empty (p)) return 0;
+        return serialized_size (first (p)) + serialized_size (rest (p));
     }
 
     bool inline is_push (program p) {
-        if (data::empty (p)) return true;
-        return is_push (p.first ().Op) && is_push (p.rest ());
+        if (empty (p)) return true;
+        return is_push (first (p).Op) && is_push (rest (p));
     }
     
     size_t inline serialized_size (const instruction &o) {
         return o.serialized_size ();
+    }
+
+    bool inline provably_unspendable (slice<const byte> script, bool after_genesis) {
+        if (after_genesis) return script.size () >= 2 && script[0] == OP_FALSE && script[1] == OP_RETURN;
+        return script.size () >= 1 && script[0] == OP_RETURN;
     }
     
     bool inline operator == (const instruction &a, const instruction &b) {
@@ -255,17 +189,22 @@ namespace Gigamonkey::Bitcoin {
         return push_data (integer {i});
     }
     
-    instruction inline push_data (bytes_view b) {
+    instruction inline push_data (slice<const byte> b) {
         return instruction::push (b);
     }
 
     instruction inline push_data (const Z &z) {
-        return push_data (integer {z});
+        return push_data (slice<const byte> (integer {z}));
     }
-    
-    template <bool is_signed, boost::endian::order o, std::size_t size>
-    instruction inline push_data (const arithmetic::endian_integral<is_signed, o, size> &x) {
-        return push_data (bytes_view (x));
+
+    template <data::endian::order Order, class T, std::size_t n_bits, boost::endian::align Align>
+    instruction inline push_data (const boost::endian::endian_arithmetic<Order, T, n_bits, Align> &x) {
+        return push_data (slice<const byte> (x));
+    }
+
+    bool inline is_minimal_script (slice<const byte> b) {
+        for (const instruction &i : decompile (b)) if (!is_minimal_instruction (i)) return false;
+        return true;
     }
 }
 

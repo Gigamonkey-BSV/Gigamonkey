@@ -52,7 +52,7 @@ namespace Gigamonkey::Merkle {
             }, proofs ());
         }
         
-        const ordered_list<proof> proofs () const;
+        const ordst<proof> proofs () const;
         
         dual operator + (const dual &d) const;
         

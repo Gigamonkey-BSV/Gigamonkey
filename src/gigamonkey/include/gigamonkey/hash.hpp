@@ -5,21 +5,22 @@
 #define GIGAMONKEY_HASH
 
 #include "types.hpp"
-#include <data/crypto/hash/hash.hpp>
+#include <data/crypto/hash.hpp>
 
 namespace Gigamonkey {
+    namespace crypto = data::crypto;
 
-    template<size_t size>
+    template <size_t size>
     using digest = crypto::digest<size>;
 
     // because of a bug in bitcoind long ago, many bitcoin
     // applications expect hashes to be provided backwards.
-    template<size_t size>
+    template <size_t size>
     string inline write_reverse_hex (const digest<size> &x) {
-        return drop (encoding::hexidecimal::write (x), 2);
+        return data::drop (encoding::hexidecimal::write (x), 2);
     }
 
-    template<size_t size>
+    template <size_t size>
     digest<size> inline read_reverse_hex (const std::string &x) {
         return digest<size> {std::string {"0x"} + x};
     }
@@ -40,46 +41,46 @@ namespace Gigamonkey {
     using digest512 = digest<64>;
 
     // supported hash functions.
-    digest160 SHA1 (bytes_view);
+    digest160 SHA1 (slice<const byte>);
     digest160 SHA1 (string_view);
 
-    digest256 SHA2_256 (bytes_view);
+    digest256 SHA2_256 (slice<const byte>);
     digest256 SHA2_256 (string_view);
 
-    digest160 RIPEMD_160 (bytes_view);
+    digest160 RIPEMD_160 (slice<const byte>);
     digest160 RIPEMD_160 (string_view);
 
-    digest256 double_SHA2_256 (bytes_view b);
+    digest256 double_SHA2_256 (slice<const byte> b);
 }
     
 namespace Gigamonkey::Bitcoin {
     
     // bitcoin hash functions.
-    digest160 inline Hash160 (bytes_view b) {
+    digest160 inline Hash160 (slice<const byte> b) {
         return crypto::RIPEMD_160 (SHA2_256 (b));
     }
 
-    digest256 inline Hash256 (bytes_view b) {
+    digest256 inline Hash256 (slice<const byte> b) {
         return double_SHA2_256 (b);
     }
 
     digest160 Hash160 (string_view b);
     digest256 Hash256 (string_view b);
         
-    digest160 inline address_hash (bytes_view b) {
+    digest160 inline address_hash (slice<const byte> b) {
         return Hash160 (b);
     }
         
-    digest256 inline signature_hash (bytes_view b) {
+    digest256 inline signature_hash (slice<const byte> b) {
         return Hash256 (b);
     }
 
     digest160 inline Hash160 (string_view b) {
-        return Hash160 (bytes_view {(const byte*) (b.data ()), b.size ()});
+        return Hash160 (slice<const byte> {(const byte*) (b.data ()), b.size ()});
     }
 
     digest256 inline Hash256 (string_view b) {
-        return Hash256 (bytes_view {(const byte*) (b.data ()), b.size ()});
+        return Hash256 (slice<const byte> {(const byte*) (b.data ()), b.size ()});
     }
 
 }
@@ -100,13 +101,13 @@ namespace Gigamonkey::Bitcoin {
 
 namespace Gigamonkey {
 
-    digest256 inline double_SHA2_256 (bytes_view b) {
+    digest256 inline double_SHA2_256 (slice<const byte> b) {
         return crypto::SHA2_256 (SHA2_256 (b));
     }
 
     template <size_t size>
     writer inline &operator << (writer &w, const digest<size> &s) {
-        return w << bytes_view (s);
+        return w << slice<const byte> (s);
     }
 
     template <size_t size>
@@ -116,26 +117,26 @@ namespace Gigamonkey {
     }
 
     digest160 inline SHA1 (string_view b) {
-        return SHA1 (bytes_view {(const byte*) (b.data ()), b.size ()});
+        return SHA1 (slice<const byte> {(const byte*) (b.data ()), b.size ()});
     }
 
     digest256 inline SHA2_256 (string_view b) {
-        return SHA2_256 (bytes_view {(const byte*) (b.data ()), b.size ()});
+        return SHA2_256 (slice<const byte> {(const byte*) (b.data ()), b.size ()});
     }
 
     digest160 inline RIPEMD_160 (string_view b) {
-        return RIPEMD_160 (bytes_view {(const byte*) (b.data ()), b.size ()});
+        return RIPEMD_160 (slice<const byte> {(const byte*) (b.data ()), b.size ()});
     }
 
-    digest160 inline RIPEMD_160 (bytes_view b) {
+    digest160 inline RIPEMD_160 (slice<const byte> b) {
         return crypto::RIPEMD_160 (b);
     }
 
-    digest256 inline SHA2_256 (bytes_view b) {
+    digest256 inline SHA2_256 (slice<const byte> b) {
         return crypto::SHA2_256 (b);
     }
 
-    digest160 inline SHA1 (bytes_view b) {
+    digest160 inline SHA1 (slice<const byte> b) {
         return crypto::SHA1 (b);
     }
     

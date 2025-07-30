@@ -10,44 +10,44 @@
 #include <gigamonkey/script/stack.hpp>
 
 namespace Gigamonkey::Bitcoin {
+    result verify_signature (slice<const byte> sig, slice<const byte> pub, const sighash::document &doc, flag P) {
 
-    result verify_signature (bytes_view sig, bytes_view pub, const sighash::document &doc, uint32 flags) {
+        if (verify_compressed_pubkey (P))
+            if (!secp256k1::pubkey::compressed (pub)) return SCRIPT_ERR_NONCOMPRESSED_PUBKEY;
 
-        if (flags & SCRIPT_VERIFY_COMPRESSED_PUBKEYTYPE && !secp256k1::pubkey::compressed (pub))
-            return SCRIPT_ERR_NONCOMPRESSED_PUBKEY;
-
-        else if (flags & SCRIPT_VERIFY_STRICTENC && !secp256k1::pubkey::valid (pub))
-            return SCRIPT_ERR_PUBKEYTYPE;
+        if (verify_signature_strict (P))
+            if (!secp256k1::pubkey::valid (pub)) return SCRIPT_ERR_PUBKEYTYPE;
 
         auto d = signature::directive (sig);
         auto raw = signature::raw (sig);
 
         if (!sighash::valid (d)) return SCRIPT_ERR_SIG_HASHTYPE;
 
-        if (sighash::has_fork_id (d) && !(flags & SCRIPT_ENABLE_SIGHASH_FORKID))
-            return SCRIPT_ERR_ILLEGAL_FORKID;
+        //std::cout << "Signature; fork id enabled ? " << std::boolalpha << fork_ID_enabled (P) << "; required ? " <<  std::endl;
 
-        if (!sighash::has_fork_id (d) && (flags & SCRIPT_ENABLE_SIGHASH_FORKID))
-            return SCRIPT_ERR_MUST_USE_FORKID;
+        if (!fork_ID_enabled (P))
+            if (sighash::has_fork_id (d)) return SCRIPT_ERR_ILLEGAL_FORKID;
 
-        if ((flags & (SCRIPT_VERIFY_DERSIG | SCRIPT_VERIFY_LOW_S | SCRIPT_VERIFY_STRICTENC)) && !signature::DER (sig))
-            return SCRIPT_ERR_SIG_DER;
+        if (fork_ID_required (P))
+            if (!sighash::has_fork_id (d)) return SCRIPT_ERR_MUST_USE_FORKID;
 
-        if ((flags & SCRIPT_VERIFY_LOW_S) && !secp256k1::signature::normalized (raw))
-            return SCRIPT_ERR_SIG_HIGH_S;
+        if (verify_signature_DER (P) || verify_signature_low_S (P) || verify_signature_strict (P))
+            if (!signature::DER (sig)) return SCRIPT_ERR_SIG_DER;
+
+        if (verify_signature_low_S (P))
+            if (!secp256k1::signature::normalized (raw)) return SCRIPT_ERR_SIG_HIGH_S;
 
         if (signature::verify (sig, pub, doc)) return true;
 
-        if (flags & SCRIPT_VERIFY_NULLFAIL && sig.size () != 0)
-            return SCRIPT_ERR_SIG_NULLFAIL;
+        if (verify_null_fail (P)) if (sig.size () != 0) return SCRIPT_ERR_SIG_NULLFAIL;
 
         return false;
     }
 
-    bytes_view remove_until_last_code_separator (bytes_view b) {
+    program remove_after_last_code_separator (slice<const byte> b) {
         program_counter counter {b};
         while (counter.Next.size () > 0) counter = counter.next ();
-        return counter.from_last_code_separator ();
+        return counter.to_last_code_separator ();
     }
     
     bool redemption_document::check_locktime (const uint32_little &nLockTime) const {

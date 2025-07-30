@@ -24,7 +24,11 @@ namespace Gigamonkey {
     // A type representing a redeem function. This function has the ability to look up
     // the necessary keys based on an output script and produce the appropriate input script.
     // There could be many such functions depending on the types of scripts that are known.
-    using redeem = function<Bitcoin::script (const Bitcoin::output &, const Bitcoin::sighash::document &, list<sigop>, const bytes &script_code)>;
+    using redeem = data::function<
+        Bitcoin::script (
+            const Bitcoin::output &,
+            const Bitcoin::sighash::document &,
+            list<sigop>, const bytes &script_code)>;
 
     // default redeem function.
     Bitcoin::script redeem_p2pkh_and_p2pk (const Bitcoin::output &, const Bitcoin::sighash::document &, list<sigop>, const bytes &script_code);

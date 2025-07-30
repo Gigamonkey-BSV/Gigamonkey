@@ -10,6 +10,7 @@ namespace Gigamonkey::Bitcoin {
 
     // a Bitcoin script interpreter that can be advanced step-by-step.
     struct interpreter {
+
         machine Machine;
         bytes Script;
         program_counter Counter;
@@ -24,32 +25,24 @@ namespace Gigamonkey::Bitcoin {
 
         program unread () const;
 
-    private:
-
-        interpreter (maybe<redemption_document> doc, const program unlock, const program lock, const script_config &);
     };
 
     std::ostream &operator << (std::ostream &, const interpreter &);
 
     result step_through (interpreter &m);
 
+    // evaluate with real signatures.
     result inline evaluate (const script &unlock, const script &lock, const redemption_document &doc, const script_config &conf) {
         return interpreter (unlock, lock, doc, conf).run ();
     }
 
-    // if the redemption document is not provided, all signature operations will succeed.
+    // if the redemption document is not provided, all signature operations will succeed automatically.
     result inline evaluate (const script &unlock, const script &lock, const script_config &conf) {
         return interpreter (unlock, lock, conf).run ();
     }
 
-    inline interpreter::interpreter (const script &unlock, const script &lock, const redemption_document &doc, const script_config &conf) :
-        interpreter {{doc}, decompile (unlock), decompile (lock), conf} {}
-
-    inline interpreter::interpreter (const script &unlock, const script &lock, const script_config &conf) :
-        interpreter {{}, decompile (unlock), decompile (lock), conf} {}
-
     program inline interpreter::unread () const {
-        return decompile (bytes_view {Counter.Script}.substr (Counter.Counter));
+        return decompile (byte_slice {Counter.Script}.drop (Counter.Counter));
     }
 
 }

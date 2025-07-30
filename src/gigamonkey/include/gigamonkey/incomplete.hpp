@@ -21,7 +21,7 @@ namespace Gigamonkey::Bitcoin::incomplete {
             Reference {r}, Sequence {x} {}
         input (const Bitcoin::input &in) : Reference {in.Reference}, Sequence {in.Sequence} {}
         
-        Bitcoin::input complete (bytes_view script) const {
+        Bitcoin::input complete (const Bitcoin::script &script) const {
             return Bitcoin::input {Reference, script, Sequence};
         }
     };
@@ -47,7 +47,7 @@ namespace Gigamonkey::Bitcoin::incomplete {
                 }, tx.Inputs)}, LockTime {tx.LockTime} {}
         
         explicit operator bytes () const;
-        explicit transaction (bytes_view);
+        explicit transaction (byte_slice);
         
         Bitcoin::transaction complete (list<bytes> scripts) const;
 

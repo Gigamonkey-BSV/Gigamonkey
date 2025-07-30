@@ -26,15 +26,15 @@ namespace Gigamonkey::HD::BIP_39 {
 
 namespace Gigamonkey::HD {
 
-    BIP_44::account_secret inline simply_cash_wallet (const string &words, uint32 account = 0, BIP_32::type net = BIP_32::main) {
+    BIP_44::account_secret inline simply_cash_wallet (const string &words, uint32 account = 0, Bitcoin::net net = Bitcoin::net::Main) {
         return BIP_44::master {BIP_32::secret::from_seed (BIP_39::read (words), net)}.account (BIP_44::simply_cash_coin_type, account);
     }
 
-    BIP_44::account_secret inline moneybutton_wallet (const string &words, uint32 account = 0, BIP_32::type net = BIP_32::main) {
+    BIP_44::account_secret inline moneybutton_wallet (const string &words, uint32 account = 0, Bitcoin::net net = Bitcoin::net::Main) {
         return BIP_44::master {BIP_32::secret::from_seed (BIP_39::read (words), net)}.account (BIP_44::moneybutton_coin_type, account);
     }
 
-    BIP_44::account_secret inline relay_x_wallet (const string &words, uint32 account = 0, BIP_32::type net = BIP_32::main) {
+    BIP_44::account_secret inline relay_x_wallet (const string &words, uint32 account = 0, Bitcoin::net net = Bitcoin::net::Main) {
         return BIP_44::master {BIP_32::secret::from_seed (BIP_39::read (words), net)}.account (BIP_44::relay_x_coin_type, account);
     }
 
@@ -42,8 +42,8 @@ namespace Gigamonkey::HD {
     // made with the standard set of words, but we do not load electrum words here yet.
     BIP_44::account_secret electrum_sv_wallet (const string &words, const string &passphrase = ""); // TODO
 
-    // CentBee uses a non-standard derivation path. .
-    BIP_44::account_secret inline centbee_wallet (const string &words, uint32 pin, BIP_32::type net = BIP_32::main) {
+    // CentBee uses a non-standard derivation path.
+    BIP_44::account_secret inline centbee_wallet (const string &words, uint32 pin, Bitcoin::net net = Bitcoin::net::Main) {
         return BIP_32::secret::from_seed
             (BIP_39::read (words, std::to_string (pin)), net).derive ({BIP_44::purpose, BIP_44::centbee_coin_type});
     }

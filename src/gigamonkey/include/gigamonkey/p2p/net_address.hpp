@@ -23,8 +23,8 @@ namespace Gigamonkey::Bitcoin::p2p {
 
         endpoint () : IPAddress {0}, Port {0} {}
         endpoint (const uint_little<16> &ip_address, uint16_little port): IPAddress {ip_address}, Port {port} {}
-        endpoint (const net::IP::TCP::endpoint &e): endpoint {e.address (), e.port ()} {}
-        endpoint (const net::IP::address &addr, uint16 port) : endpoint {} {
+        endpoint (const data::net::IP::TCP::endpoint &e): endpoint {e.address (), e.port ()} {}
+        endpoint (const data::net::IP::address &addr, uint16 port) : endpoint {} {
             if (!addr.valid ()) return;
 
             Port = port;

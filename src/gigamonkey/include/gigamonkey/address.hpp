@@ -19,48 +19,47 @@ namespace Gigamonkey::Bitcoin {
     struct address : string {
         // the decoded form of the address has a prefix that
         // specifies the type of address.
-        enum type : byte {
+        enum prefix : byte {
             main = 0x00,
             test = 0x6F
         };
 
         static bool valid (string_view);
-        static type prefix (string_view);
+        static net network (string_view);
         static digest160 digest (string_view);
 
         bool valid () const;
 
-        type prefix () const;
+        net network () const;
         digest160 digest () const;
 
         address ();
-        address (type p, const digest160 &d);
+        address (net p, const digest160 &d);
 
         explicit address (string_view s);
 
-        static address encode (char prefix, const digest160 &d);
+        static address encode (net network, const digest160 &d);
 
-        static bool valid_prefix (type p);
+        static bool valid_prefix (prefix p);
 
         // the decoded form of the address, consisting
         // of a prefix and the Hash160 digest.
         struct decoded {
-            type Prefix;
+            net Network;
             digest160 Digest;
 
             bool valid () const;
 
             decoded ();
-            decoded (type, const digest160 &);
+            decoded (net, const digest160 &);
             decoded (string_view);
 
             address encode () const;
 
             bool operator == (const decoded &d) const {
-                return Prefix == d.Prefix && Digest == d.Digest;
+                return Network == d.Network && Digest == d.Digest;
             }
 
-            std::strong_ordering operator <=> (const decoded &) const;
             explicit operator string () const;
         };
 
@@ -77,7 +76,7 @@ namespace Gigamonkey::Bitcoin {
         using secp256k1::pubkey::pubkey;
         pubkey (const secp256k1::pubkey &p) : secp256k1::pubkey {p} {}
 
-        explicit pubkey (const hex_string &x): pubkey {string_view {x}} {}
+        explicit pubkey (const data::hex_string &x): pubkey {string_view {x}} {}
         explicit pubkey (string_view s) : secp256k1::pubkey {} {
             maybe<bytes> hex = encoding::hex::read (s);
             if (bool (hex)) {
@@ -107,16 +106,16 @@ namespace Gigamonkey::Bitcoin {
         return decode (x).valid ();
     }
 
-    address::type inline address::prefix (string_view x) {
-        return decode (x).Prefix;
+    net inline address::network (string_view x) {
+        return decode (x).Network;
     }
 
     digest160 inline address::digest (string_view x) {
         return decode (x).Digest;
     }
 
-    address::type inline address::prefix () const {
-        return prefix (*this);
+    net inline address::network () const {
+        return network (*this);
     }
 
     digest160 inline address::digest () const {
@@ -127,18 +126,18 @@ namespace Gigamonkey::Bitcoin {
         return valid (*this);
     }
 
-    inline address::decoded::decoded () : Prefix {}, Digest {} {}
-    inline address::decoded::decoded (type p, const digest160 &d) : Prefix {p}, Digest {d} {}
+    inline address::decoded::decoded () : Network {net::Invalid}, Digest {} {}
+    inline address::decoded::decoded (net network, const digest160 &dig) : Network {network}, Digest {dig} {}
 
     inline address::address () : string {} {}
-    inline address::address (type p, const digest160& d) : address {encode (p, d)} {}
+    inline address::address (net network, const digest160 &dig) : address {encode (network, dig)} {}
 
-    bool inline address::valid_prefix (type p) {
+    bool inline address::valid_prefix (prefix p) {
         return p == main || p == test;
     }
 
     bool inline address::decoded::valid () const {
-        return Digest.valid () && valid_prefix (Prefix);
+        return Digest.valid () && (Network == net::Main || Network == net::Test);
     }
 
     inline address::address (address::decoded d) : address {d.encode ()} {}
@@ -146,7 +145,7 @@ namespace Gigamonkey::Bitcoin {
     inline address::address (string_view s) : string {s} {}
 
     address inline address::decoded::encode () const {
-        return address::encode (Prefix, Digest);
+        return address::encode (Network, Digest);
     }
 
     address::decoded inline address::decode () const {

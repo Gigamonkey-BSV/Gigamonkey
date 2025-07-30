@@ -19,7 +19,7 @@ namespace Gigamonkey {
 
     struct BEEF {
         explicit BEEF () = default;
-        explicit BEEF (bytes_view);
+        explicit BEEF (slice<const byte>);
         explicit operator bytes () const;
 
         explicit BEEF (const SPV::proof &);
@@ -103,8 +103,8 @@ namespace Gigamonkey {
         return 4 + Bitcoin::var_sequence<Merkle::BUMP>::size (BUMPs) + Bitcoin::var_sequence<transaction>::size (Transactions);
     }
 
-    inline BEEF::BEEF (bytes_view b) {
-        iterator_reader r {b.data (), b.data () + b.size ()};
+    inline BEEF::BEEF (slice<const byte> b) {
+        it_rdr r {b.data (), b.data () + b.size ()};
         r >> *this;
     }
 

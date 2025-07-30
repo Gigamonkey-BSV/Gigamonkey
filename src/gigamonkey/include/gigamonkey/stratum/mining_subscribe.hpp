@@ -130,7 +130,7 @@ namespace Gigamonkey::Stratum::mining {
     }
     
     bool inline subscribe_request::parameters::valid () const {
-        return UserAgent != "" && (!bool (ExtraNonce1) || data::valid (*ExtraNonce1));
+        return UserAgent != "" && (!bool (ExtraNonce1) || ::data::valid (*ExtraNonce1));
     }
     
     bool inline subscribe_request::parameters::operator == (const parameters &p) const {

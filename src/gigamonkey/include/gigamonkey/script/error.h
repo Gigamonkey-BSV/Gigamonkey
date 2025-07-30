@@ -77,6 +77,10 @@ typedef enum ScriptError_t {
 
     SCRIPT_ERR_BIG_INT,
 
+    // Returned when the script code has binary data
+    // that doesn't decompile to a valid script.
+    SCRIPT_ERR_INVALID_SCRIPT_CODE,
+
     SCRIPT_ERR_ERROR_COUNT
 } ScriptError;
 
@@ -84,7 +88,7 @@ typedef enum ScriptError_t {
 
 const char *ScriptErrorString (const ScriptError error);
 
-std::ostream& operator << (std::ostream &, const ScriptError);
+std::ostream &operator << (std::ostream &, const ScriptError);
 
 namespace Gigamonkey::Bitcoin {
     struct script_exception {

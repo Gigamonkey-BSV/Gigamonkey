@@ -6,47 +6,46 @@
 #include <gigamonkey/work/ASICBoost.hpp>
 #include <gigamonkey/script/opcodes.h>
 
-namespace Gigamonkey {
-    bool header_valid_work (slice<80> h) {
-        return work::string::valid (h);
-    }
-    
-    bool header_valid (const Bitcoin::header &h) {
-        return h.Version >= 1 && h.MerkleRoot.valid () && h.Timestamp != Bitcoin::timestamp {};
-    }
-}
-
 namespace Gigamonkey::Bitcoin {
+    namespace {
+        bool header_valid_work (header::slice h) {
+            return work::string::valid (h);
+        }
+
+        bool header_valid (const Bitcoin::header &h) {
+            return h.Version >= 1 && h.MerkleRoot.valid () && h.Timestamp != Bitcoin::timestamp {};
+        }
+    }
     
-    int32_little header::version (const slice<80> x) {
+    int32_little header::version (slice x) {
         int32_little version;
-        slice<4> v = x.range<0, 4> ();
+        auto v = x.range<0, 4> ();
         std::copy (v.begin (), v.end (), version.data ());
         return version;
     }
     
-    Bitcoin::timestamp header::timestamp (const slice<80> x) {
+    Bitcoin::timestamp header::timestamp (slice x) {
         Bitcoin::timestamp time;
-        slice<4> v = x.range<68, 72> ();
+        auto v = x.range<68, 72> ();
         std::copy (v.begin (), v.end (), time.data ());
         return time;
     }
     
-    work::compact header::target (const slice<80> x) {
+    work::compact header::target (slice x) {
         work::compact work;
-        slice<4> v = x.range<72, 76> ();
+        auto v = x.range<72, 76> ();
         std::copy (v.begin (), v.end (), work.data ());
         return work;
     }
     
-    uint32_little header::nonce (const slice<80> x) {
+    uint32_little header::nonce (slice x) {
         uint32_little n;
-        slice<4> v = x.range<76, 80> ();
+        auto v = x.range<76, 80> ();
         std::copy (v.begin (), v.end (), n.data ());
         return n;
     }
     
-    bool header::valid (const slice<80> h) {
+    bool header::valid (slice h) {
         return header_valid (Bitcoin::header {h}) && header_valid_work (h);
     }
         
@@ -59,7 +58,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     bool output::valid () const {
-        return Value < 2100000000000000 && decompile (Script) != program {};
+        return Value < 2100000000000000 && (Value > 0 || provably_unspendable (Script));
     }
     
     uint64 transaction::serialized_size () const {
@@ -79,27 +78,27 @@ namespace Gigamonkey::Bitcoin {
         }, 0u, Transactions);
     }
 
-    input::input (bytes_view b) : input {} {
+    input::input (slice<const byte> b) : input {} {
         try {
-            iterator_reader r {b.begin (), b.end ()};
+            it_rdr r {b.begin (), b.end ()};
             r >> *this;
         } catch (data::end_of_stream n) {
             *this = input {};
         }
     }
     
-    transaction::transaction (bytes_view b) : transaction {} {
+    transaction::transaction (slice<const byte> b) : transaction {} {
         try {
-            iterator_reader r {b.begin (), b.end ()};
+            it_rdr r {b.begin (), b.end ()};
             r >> *this;
         } catch (data::end_of_stream n) {
             *this = transaction {};
         }
     }
         
-    block::block (bytes_view b) : block {} {
+    block::block (slice<const byte> b) : block {} {
         try {
-            iterator_reader r {b.begin (), b.end()};
+            it_rdr r {b.begin (), b.end()};
             r >> *this;
         } catch (data::end_of_stream n) {
             *this = block {};
@@ -110,40 +109,42 @@ namespace Gigamonkey::Bitcoin {
 
     input::operator bytes () const {
         bytes b (serialized_size ());
-        iterator_writer w {b.begin (), b.end ()};
+        it_wtr w {b.begin (), b.end ()};
         w << *this;
         return b;
     }
     
     output::operator bytes () const {
         bytes b (serialized_size ());
-        iterator_writer w {b.begin (), b.end ()};
+        it_wtr w {b.begin (), b.end ()};
         w << *this;
         return b;
     }
     
     transaction::operator bytes () const {
         bytes b (serialized_size ());
-        iterator_writer w {b.begin (), b.end ()};
+        it_wtr w {b.begin (), b.end ()};
         w << *this;
         return b;
     }
     
-    std::vector<bytes_view> block::transactions (bytes_view b) {
-        iterator_reader r (b.data (), b.data () + b.size ());
+    std::vector<slice<const byte>> block::transactions (slice<const byte> b) {
+        it_rdr r (b.data (), b.data () + b.size ());
         Bitcoin::header h;
         var_int num_txs; 
         r >> h >> num_txs;
-        std::vector<bytes_view> x;
+        std::vector<slice<const byte>> x;
         x.resize (num_txs);
         auto prev = r.Begin;
+
         for (int i = 0; i < num_txs; i++) {
             transaction tx;
             r >> tx;
             auto next = r.Begin;
-            x[i] = bytes_view {prev, static_cast<size_t> (next - prev)};
+            x[i] = slice<const byte> {prev, static_cast<size_t> (next - prev)};
             prev = next;
         }
+
         return x;
     }
     
@@ -165,42 +166,42 @@ namespace Gigamonkey::Bitcoin {
     }
 
     template <typename it>
-    void scan_input (iterator_reader<it> &r, bytes_view &i) {
-        const byte *begin = r.Begin;
+    void scan_input (it_rdr<it> &r, slice<const byte> &i) {
+        auto begin = r.Begin;
         outpoint o;
         var_int script_size;
         r >> o >> script_size;
         r.skip (script_size + 4);
-        i = bytes_view {begin, script_size + 40 + var_int::size (script_size)};
+        i = slice<const byte> {begin, script_size + 40 + var_int::size (script_size)};
     }
 
     template <typename it>
-    bool to_transaction_outputs (iterator_reader<it> &r) {
+    bool to_transaction_outputs (it_rdr<it> &r) {
         if (!to_transaction_inputs (r)) return false;
         auto inputs = var_int::read (r);
-        bytes_view in;
+        slice<const byte> in;
         for (uint64 i; i < inputs; i++) scan_input (r, in);
         return true;
     }
     
     template <typename it>
-    void scan_output (iterator_reader<it> &r, bytes_view &o) {
+    void scan_output (it_rdr<it> &r, slice<const byte> &o) {
         satoshi value;
-        const byte *begin = r.Begin;
+        auto begin = r.Begin;
         var_int script_size; 
         r >> value >> script_size;
         r.skip (script_size);
-        o = bytes_view {begin, script_size + 8 + var_int::size (script_size)};
+        o = slice<const byte> {begin, script_size + 8 + var_int::size (script_size)};
     }
 
-    bytes_view transaction::input (bytes_view b, index i) {
-        iterator_reader r {b.begin (), b.end ()};
+    slice<const byte> transaction::input (slice<const byte> b, index i) {
+        it_rdr r {b.begin (), b.end ()};
         try {
             if (!to_transaction_inputs (r)) return {};
             var_int num_outputs;
             r >> num_outputs;
             if (num_outputs == 0 || num_outputs <= i) return {};
-            bytes_view input;
+            slice<const byte> input;
             do {
                 scan_input (r, input);
                 if (input.size () == 0) return {};
@@ -212,14 +213,14 @@ namespace Gigamonkey::Bitcoin {
         }
     }
     
-    bytes_view transaction::output (bytes_view b, index i) {
-        iterator_reader r {b.begin (), b.end ()};
+    slice<const byte> transaction::output (slice<const byte> b, index i) {
+        it_rdr r {b.begin (), b.end ()};
         try {
             if (!to_transaction_outputs (r)) return {};
             var_int num_outputs;
             r >> num_outputs;
             if (num_outputs == 0 || num_outputs <= i) return {};
-            bytes_view output;
+            slice<const byte> output;
             do {
                 scan_output (r, output);
                 if (output.size () == 0) return {};
@@ -231,8 +232,8 @@ namespace Gigamonkey::Bitcoin {
         }
     }
     
-    output::output (bytes_view b) {
-        iterator_reader r {b.begin (), b.end ()};
+    output::output (slice<const byte> b) {
+        it_rdr r {b.begin (), b.end ()};
         try {
             r >> Value >> var_string {Script};
         } catch (data::end_of_stream) {
@@ -241,24 +242,26 @@ namespace Gigamonkey::Bitcoin {
         }
     }
     
-    satoshi output::value (bytes_view z) {
-        iterator_reader r {z.begin (), z.end ()};
+    satoshi output::value (slice<const byte> z) {
+        it_rdr r {z.begin (), z.end ()};
         satoshi Value;
+
         try {
             r >> Value;
         } catch (data::end_of_stream) {
             Value = -1;
         }
+
         return Value;
     }
     
-    bytes_view output::script (bytes_view z) {
-        iterator_reader r {z.begin (), z.end ()};
+    slice<const byte> output::script (slice<const byte> z) {
+        it_rdr r {z.begin (), z.end ()};
         satoshi Value;
         try {
             var_int script_size; 
             r >> Value >> script_size;
-            return bytes_view {r.Begin, script_size};
+            return slice<const byte> {r.Begin, script_size};
         } catch (data::end_of_stream) {
             return {};
         }
@@ -266,7 +269,7 @@ namespace Gigamonkey::Bitcoin {
 
     byte_array<80> header::write () const {
         byte_array<80> x; 
-        iterator_writer w {x.begin (), x.end ()};
+        it_wtr w {x.begin (), x.end ()};
         w << Version << Previous << MerkleRoot << Timestamp << Target << Nonce;
         return x;
     }
@@ -280,6 +283,25 @@ namespace Gigamonkey::Bitcoin {
             if (op == OP_CHECKSIG || op == OP_CHECKSIGVERIFY) sigops++;
             else if (op == OP_CHECKMULTISIG || op == OP_CHECKMULTISIGVERIFY) sigops += 20;
         return 0;
+    }
+
+    Bitcoin::TXID outpoint::digest (slice x) {
+        Bitcoin::TXID txid;
+        std::copy (x.begin (), x.begin () + 32, txid.begin ());
+        return txid;
+    }
+
+    Bitcoin::index outpoint::index (slice x) {
+        Bitcoin::index ind;
+        std::copy (x.begin () + 32, x.end (), ind.begin ());
+        return ind;
+    }
+
+    byte_array<36> outpoint::write () const {
+        byte_array<36> rar;
+        std::copy (Digest.begin (), Digest.end (), rar.begin ());
+        std::copy (Index.begin (), Index.end (), rar.begin () + 32);
+        return rar;
     }
 
 }

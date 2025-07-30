@@ -9,38 +9,47 @@
 #include <gigamonkey/pay/extended.hpp>
 
 // https://bitcoin-sv.github.io/arc/api.html
+namespace Gigamonkey {
+    namespace HTTP = data::net::HTTP;
+
+    using URL = data::net::URL;
+    using ASCII = data::ASCII;
+    using unicode = data::unicode;
+    using UTF8 = data::UTF8;
+    using ip_address = data::net::IP::address;
+
+    template <typename X> using awaitable = boost::asio::awaitable<X>;
+}
+
 namespace Gigamonkey::ARC {
 
-    net::HTTP::REST::request policy_request ();
     struct policy_response;
-    net::HTTP::REST::request health_request ();
     struct health_response;
-    net::HTTP::REST::request status_request (const Bitcoin::TXID &);
     struct status_response;
     struct submit_request;
     struct submit_response;
     struct submit_txs_request;
     struct submit_txs_response;
 
-    struct client : net::HTTP::client_blocking {
-        using net::HTTP::client_blocking::client_blocking;
+    struct client : HTTP::client {
+        using HTTP::client::client;
 
         // there are five calls in ARC
-        policy_response policy ();
-        health_response health ();
-        status_response status (const Bitcoin::TXID &);
-        submit_response submit (const submit_request &);
-        submit_txs_response submit_txs (const submit_txs_request &);
+        awaitable<policy_response> policy ();
+        awaitable<health_response> health ();
+        awaitable<status_response> status (const Bitcoin::TXID &);
+        awaitable<submit_response> submit (const submit_request &);
+        awaitable<submit_txs_response> submit_txs (const submit_txs_request &);
     };
 
     // failed queries may contain errors.
-    struct error : net::error {
-        using net::error::error;
+    struct error : data::net::error {
+        using ::data::net::error::error;
         maybe<Bitcoin::TXID> txid () const;
         maybe<string> extra_info () const;
     };
 
-    struct response : net::HTTP::response {
+    struct response : HTTP::response {
         maybe<JSON> body () const;
         bool is_error () const;
         // return an error if there is one.
@@ -54,14 +63,14 @@ namespace Gigamonkey::ARC {
             return !is_error ();
         }
 
-        using net::HTTP::response::response;
-        response (net::HTTP::response &&);
+        using HTTP::response::response;
+        response (HTTP::response &&);
 
-        static maybe<JSON> body (const net::HTTP::response &r);
+        static maybe<JSON> body (const HTTP::response &r);
 
-        static bool valid (const net::HTTP::response &r);
-        static bool is_error (const net::HTTP::response &r);
-        static ARC::error error (const net::HTTP::response &r);
+        static bool valid (const HTTP::response &r);
+        static bool is_error (const HTTP::response &r);
+        static ARC::error error (const HTTP::response &r);
     };
 
     struct health : JSON {
@@ -86,8 +95,8 @@ namespace Gigamonkey::ARC {
         ARC::health health () const;
 
         bool valid () const;
-        static bool valid (const net::HTTP::response &r);
-        static ARC::health health (const net::HTTP::response &r);
+        static bool valid (const HTTP::response &r);
+        static ARC::health health (const HTTP::response &r);
     };
 
     // the body of a successful query other than health.
@@ -127,9 +136,9 @@ namespace Gigamonkey::ARC {
         string timestamp () const;
         ARC::policy policy () const;
 
-        static bool valid (const net::HTTP::response &r);
-        static string timestamp (const net::HTTP::response &r);
-        static ARC::policy policy (const net::HTTP::response &r);
+        static bool valid (const HTTP::response &r);
+        static string timestamp (const HTTP::response &r);
+        static ARC::policy policy (const HTTP::response &r);
     };
 
     enum status_value : uint32 {
@@ -169,8 +178,8 @@ namespace Gigamonkey::ARC {
         ARC::status status () const;
         bool valid () const;
 
-        static ARC::status status (const net::HTTP::response &r);
-        static bool valid (const net::HTTP::response &r);
+        static ARC::status status (const HTTP::response &r);
+        static bool valid (const HTTP::response &r);
     };
 
     enum content_type_option {text, json, octet};
@@ -178,7 +187,7 @@ namespace Gigamonkey::ARC {
     // parameters for submit methods.
     struct submit {
         content_type_option ContentType {octet};
-        maybe<net::URL> CallbackURL {};
+        maybe<URL> CallbackURL {};
         maybe<bool> FullStatusUpdates {};
         maybe<int> MaxTimeout {};
         maybe<bool> SkipFeeValidation {};
@@ -188,18 +197,15 @@ namespace Gigamonkey::ARC {
         maybe<ASCII> CallbackToken {};
         maybe<status_value> WaitFor {};
 
-        map<net::HTTP::header, ASCII> headers () const;
+        dispatch<HTTP::header, ASCII> headers () const;
     };
 
-    struct submit_request : net::HTTP::REST::request {
+    struct submit_request {
         submit_request (const extended::transaction &x) : submit_request {x, submit {}} {}
-        submit_request (const extended::transaction &, submit);
+        submit_request (const extended::transaction &tx, submit x): Transaction {tx}, Submit {x} {}
 
-        bool valid () const;
-
-        submit_request (net::HTTP::REST::request &&);
-        static bool valid (const net::HTTP::REST::request &);
-
+        extended::transaction Transaction;
+        submit Submit;
     };
 
     struct submit_response : response {
@@ -207,60 +213,27 @@ namespace Gigamonkey::ARC {
         bool valid () const;
         ARC::status status () const;
 
-        static bool valid (const net::HTTP::response &);
-        static ARC::status status (const net::HTTP::response &);
+        static bool valid (const HTTP::response &);
+        static ARC::status status (const HTTP::response &);
     };
 
-    struct submit_txs_request : net::HTTP::REST::request {
-        submit_txs_request (net::HTTP::REST::request &&);
+    struct submit_txs_request {
         submit_txs_request (list<extended::transaction> x) : submit_txs_request {x, submit {}} {}
-        submit_txs_request (list<extended::transaction>, submit);
+        submit_txs_request (list<extended::transaction> txs, submit x): Transactions {txs}, Submit {x} {}
 
-        bool valid () const;
-        static bool valid (const net::HTTP::REST::request &);
+        list<extended::transaction> Transactions;
+        submit Submit;
     };
 
     struct submit_txs_response : response {
         using response::response;
         bool valid () const;
         list<ARC::status> status () const;
-        static bool valid (const net::HTTP::response &);
-        static list<ARC::status> status (const net::HTTP::response &);
+        static bool valid (const HTTP::response &);
+        static list<ARC::status> status (const HTTP::response &);
     };
 
-    net::HTTP::REST::request inline policy_request () {
-        return net::HTTP::REST::request {net::HTTP::method::get, "/v1/policy"};
-    }
-
-    net::HTTP::REST::request inline health_request () {
-        return net::HTTP::REST::request {net::HTTP::method::get, "/v1/health"};
-    }
-
-    net::HTTP::REST::request inline status_request (const Bitcoin::TXID &txid) {
-        return net::HTTP::REST::request {net::HTTP::method::get, std::string {"/v1/tx/"} + Gigamonkey::write_reverse_hex (txid)};
-    }
-
-    policy_response inline client::policy () {
-        return this->operator () (this->REST (policy_request ()));
-    }
-
-    health_response inline client::health () {
-        return this->operator () (this->REST (health_request ()));
-    }
-
-    status_response inline client::status (const Bitcoin::TXID &txid) {
-        return this->operator () (this->REST (status_request (txid)));
-    }
-
-    submit_response inline client::submit (const submit_request &x) {
-        return this->operator () (this->REST (x));
-    }
-
-    submit_txs_response inline client::submit_txs (const submit_txs_request &x) {
-        return this->operator () (this->REST (x));
-    }
-
-    inline response::response (net::HTTP::response &&r): net::HTTP::response (r) {}
+    inline response::response (HTTP::response &&r): HTTP::response (r) {}
 
     maybe<JSON> inline response::body () const {
         return body (*this);
@@ -274,8 +247,8 @@ namespace Gigamonkey::ARC {
         return valid (*this);
     }
 
-    bool inline response::is_error (const net::HTTP::response &r) {
-        return r.Status != net::HTTP::status::ok;
+    bool inline response::is_error (const HTTP::response &r) {
+        return r.Status != HTTP::status::ok;
     }
 
     ARC::error inline response::error () const {
@@ -343,7 +316,7 @@ namespace Gigamonkey::ARC {
         return health (*this);
     }
 
-    health inline health_response::health (const net::HTTP::response &r) {
+    health inline health_response::health (const HTTP::response &r) {
         if (response::is_error (r)) return JSON (nullptr);
         else return *response::body (r);
     }
@@ -404,11 +377,11 @@ namespace Gigamonkey::ARC {
         return policy (*this);
     }
 
-    ARC::policy inline policy_response::policy (const net::HTTP::response &r) {
+    ARC::policy inline policy_response::policy (const HTTP::response &r) {
         return (*response::body (r))["policy"];
     }
 
-    string inline policy_response::timestamp (const net::HTTP::response &r) {
+    string inline policy_response::timestamp (const HTTP::response &r) {
         return (*response::body (r))["timestamp"];
     }
 
@@ -444,7 +417,7 @@ namespace Gigamonkey::ARC {
         return status (*this);
     }
 
-    ARC::status inline status_response::status (const net::HTTP::response &r) {
+    ARC::status inline status_response::status (const HTTP::response &r) {
         return *response::body (r);
     }
 
@@ -452,23 +425,11 @@ namespace Gigamonkey::ARC {
         return valid (*this);
     }
 
-    inline submit_request::submit_request (net::HTTP::REST::request &&r): net::HTTP::REST::request (r) {}
-
-    inline submit_txs_request::submit_txs_request (net::HTTP::REST::request &&r): net::HTTP::REST::request (r) {}
-
-    bool inline submit_request::valid () const {
-        return valid (*this);
-    }
-
-    bool inline submit_txs_request::valid () const {
-        return valid (*this);
-    }
-
     ARC::status inline submit_response::status () const {
         return status (*this);
     }
 
-    ARC::status inline submit_response::status (const net::HTTP::response &r) {
+    ARC::status inline submit_response::status (const HTTP::response &r) {
         return *response::body (r);
     }
 

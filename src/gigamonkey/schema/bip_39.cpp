@@ -3,7 +3,7 @@
 
 #include <gigamonkey/schema/bip_39.hpp>
 #include <data/encoding/base58.hpp>
-#include <data/arithmetic/endian.hpp>
+#include <data/encoding/endian.hpp>
 #include <data/io/unimplemented.hpp>
 #include <cryptopp/cryptlib.h>
 #include <cryptopp/hmac.h>

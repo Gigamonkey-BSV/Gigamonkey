@@ -11,12 +11,13 @@ namespace Gigamonkey {
     // an obsolete pattern that was introduced by Gavin. 
     struct pay_to_script_hash {
         static Gigamonkey::pattern pattern (bytes &hash) {
+            using namespace Bitcoin;
             return {OP_HASH160, push_size {20, hash}, OP_EQUAL};
         }
         
         static bytes script (const digest160 &a) {
             using namespace Bitcoin;
-            return compile (program {OP_HASH160, bytes_view (a), OP_EQUAL});
+            return compile (program {OP_HASH160, slice<const byte> (a), OP_EQUAL});
         }
         
         digest160 Hash;
@@ -29,14 +30,14 @@ namespace Gigamonkey {
             return script (Hash);
         }
         
-        pay_to_script_hash (bytes_view script) : Hash {} {
+        pay_to_script_hash (slice<const byte> script) : Hash {} {
             using namespace Bitcoin;
             bytes hash {20};
             if (!pattern (hash).match (script)) return;
             std::copy (hash.begin (), hash.end (), Hash.begin ());
         }
         
-        static bytes redeem (const bytes_view s) {
+        static bytes redeem (slice<const byte> s) {
             using namespace Bitcoin;
             return compile (program {} << push_data (s));
         }

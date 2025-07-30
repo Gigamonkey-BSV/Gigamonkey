@@ -16,7 +16,7 @@ namespace Gigamonkey::Stratum::mining {
         encoding::hex::fixed<32> inline write (const uint256 &x) {
             uint256 z = x;
             for (int i = 0; i < 32; i+=4) std::reverse (z.begin () + i, z.begin () + i + 3);
-            return encoding::hex::write (z, hex_case::lower);
+            return encoding::hex::write (z, data::hex_case::lower);
         }
         
         bool read (const JSON &j, uint256 &x) {
@@ -30,7 +30,7 @@ namespace Gigamonkey::Stratum::mining {
         }
         
         encoding::hex::string inline write (const bytes &b) {
-            return encoding::hex::write (b, hex_case::lower);
+            return encoding::hex::write (b, data::hex_case::lower);
         }
         
         bool read (const JSON &j, bytes &x) {
@@ -47,8 +47,8 @@ namespace Gigamonkey::Stratum::mining {
             Merkle::digests n;
             p.resize (x.size ());
             for (auto it = p.rbegin (); it != p.rend (); ++it) {
-                *it = write (*n.first ());
-                n = n.rest ();
+                *it = write (*first (n));
+                n = rest (n);
             }
             return p;
         }
@@ -59,13 +59,13 @@ namespace Gigamonkey::Stratum::mining {
             for (JSON d : j) {
                 uint256 o;
                 if (!read (d, o)) return false;
-                x = x << digest256 {o};
+                x >>= digest256 {o};
             }
             return true;
         }
         
         encoding::hex::fixed<4> inline write (const int32_little &x) {
-            return encoding::hex::write (x, hex_case::lower);
+            return encoding::hex::write (x, data::hex_case::lower);
         }
         
         bool read (const JSON &j, int32_little &x) {
@@ -81,7 +81,7 @@ namespace Gigamonkey::Stratum::mining {
         }
         
         encoding::hex::fixed<4> inline write (const work::compact &x) {
-            return encoding::hex::write (uint32_big {static_cast<uint32_little> (x)}, hex_case::lower);
+            return encoding::hex::write (uint32_big {static_cast<uint32_little> (x)}, data::hex_case::lower);
         }
         
         bool read (const JSON &j, work::compact &x) {
@@ -97,7 +97,7 @@ namespace Gigamonkey::Stratum::mining {
         }
         
         encoding::hex::fixed<4> inline write (const Bitcoin::timestamp &x) {
-            return encoding::hex::write (uint32_big {x.Value}, hex_case::lower);
+            return encoding::hex::write (uint32_big {x.Value}, data::hex_case::lower);
         }
         
         bool read (const JSON &j, Bitcoin::timestamp &x) {
@@ -113,7 +113,7 @@ namespace Gigamonkey::Stratum::mining {
         }
 
         encoding::hex::fixed<8> inline write (const uint64_big &x) {
-            return encoding::hex::write (x, hex_case::lower);
+            return encoding::hex::write (x, data::hex_case::lower);
         }
         
         bool inline read (const JSON &j, uint64_big &x) {
@@ -126,7 +126,7 @@ namespace Gigamonkey::Stratum::mining {
         }
         
         encoding::hex::fixed<4> inline write (const Bitcoin::nonce &x) {
-            return encoding::hex::write (uint32_big {x}, hex_case::lower);
+            return encoding::hex::write (uint32_big {x}, data::hex_case::lower);
         }
         
         bool read (const JSON &j, Bitcoin::nonce &x) {

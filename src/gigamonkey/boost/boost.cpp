@@ -205,13 +205,13 @@ namespace Gigamonkey::Boost {
     program input_script::program () const {
         if (Type == Boost::invalid) return {};
         Bitcoin::program p {
-            push_data (bytes_view (Signature)),
+            push_data (byte_slice (Signature)),
             push_data (Pubkey),
             push_data (Nonce),
-            push_data (bytes_view (Timestamp)),
-            push_data (bytes_view (ExtraNonce2)),
-            push_data (bytes_view (ExtraNonce1))};
-        if (GeneralPurposeBits) p = p << push_data (bytes_view (*GeneralPurposeBits));
+            push_data (byte_slice (Timestamp)),
+            push_data (byte_slice (ExtraNonce2)),
+            push_data (byte_slice (ExtraNonce1))};
+        if (GeneralPurposeBits) p = p << push_data (byte_slice (*GeneralPurposeBits));
         if (Type == Boost::bounty) p = p << push_data (MinerPubkeyHash);
         return p;
     }
@@ -229,7 +229,7 @@ namespace Gigamonkey::Boost {
             push_data (Target),
             push_data (Tag),
             push_data (UserNonce),
-            push_data (bytes_view (AdditionalData)),
+            push_data (byte_slice (AdditionalData)),
             OP_CAT, OP_SWAP, 
             // copy mining pool’s pubkey hash to alt stack. A copy remains on the stack.
             OP_5, OP_ROLL, OP_DUP, OP_TOALTSTACK, OP_CAT,              
@@ -264,7 +264,7 @@ namespace Gigamonkey::Boost {
             push_data (Target),
             push_data (Tag),
             push_data (UserNonce),
-            push_data (bytes_view(AdditionalData)),
+            push_data (byte_slice(AdditionalData)),
             OP_CAT, OP_SWAP, 
             // copy mining pool’s pubkey hash to alt stack. A copy remains on the stack.
             OP_5, OP_ROLL, OP_DUP, OP_TOALTSTACK, OP_CAT,              
@@ -421,7 +421,7 @@ namespace Gigamonkey::Boost {
                 const incomplete::input &i, 
                 const prevout &prev) -> input {
                 return input {i.Reference, input_script {
-                    sk.sign (sighash::document {incomplete, index++, prev.Value, script}, directive (sighash::all)),
+                    sk.sign (sighash::document {incomplete, index++, prev.Value, decompile (script)}, directive (sighash::all)),
                 pk, solution, boost_type, category_mask}.write (), i.Sequence};
             }, incomplete_inputs, Prevouts.values ()), outs, 0});
         

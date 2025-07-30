@@ -6,9 +6,8 @@
 #define GIGAMONKEY_INTERPRETER_STACK
 
 //#include <data/tools/store.hpp>
-#include <gigamonkey/types.hpp>
+#include <gigamonkey/numbers.hpp>
 #include <gigamonkey/script/config.hpp>
-#include <gigamonkey/script/flags.h>
 #include <gigamonkey/script/error.h>
 
 namespace Gigamonkey::Bitcoin {
@@ -54,7 +53,7 @@ namespace Gigamonkey::Bitcoin {
         bool empty () const;
 
         virtual void pop_back () = 0;
-        virtual void push_back (bytes_view) = 0;
+        virtual void push_back (slice<const byte>) = 0;
 
         // erase elements from including (top - first). element until excluding (top - last). element
         // first and last should be negative numbers (distance from the top)
@@ -64,7 +63,7 @@ namespace Gigamonkey::Bitcoin {
         virtual void erase (int index) = 0;
 
         // position should be negative number (distance from the top)
-        virtual void insert (int position, bytes_view) = 0;
+        virtual void insert (int position, slice<const byte>) = 0;
 
         void to_alt ();
         void from_alt ();
@@ -102,7 +101,7 @@ namespace Gigamonkey::Bitcoin {
         bool valid () const;
 
         void pop_back () override;
-        void push_back (bytes_view) override;
+        void push_back (slice<const byte>) override;
 
         // erase elements from including (top - first). element until excluding (top - last). element
         // first and last should be negative numbers (distance from the top)
@@ -112,7 +111,7 @@ namespace Gigamonkey::Bitcoin {
         void erase (int index) override;
 
         // position should be negative number (distance from the top)
-        void insert (int position, bytes_view) override;
+        void insert (int position, slice<const byte>) override;
 
         void modify_top (std::function<void (bytes &)> f, int index = -1) override;
 
@@ -137,7 +136,7 @@ namespace Gigamonkey::Bitcoin {
         void decrease_memory_usage (uint64_t additionalSize);
 
         void pop_back () override;
-        void push_back (bytes_view) override;
+        void push_back (slice<const byte>) override;
 
         // erase elements from including (top - first). element until excluding (top - last). element
         // first and last should be negative numbers (distance from the top)
@@ -147,7 +146,7 @@ namespace Gigamonkey::Bitcoin {
         void erase (int index) override;
 
         // position should be negative number (distance from the top)
-        void insert (int position, bytes_view) override;
+        void insert (int position, slice<const byte>) override;
 
         void modify_top (std::function<void (bytes &)> f, int index = -1) override;
     };
@@ -310,12 +309,12 @@ namespace Gigamonkey::Bitcoin {
         MemoryUsage += additionalSize;
     }
 
-    void inline limited_two_stack<true>::push_back (bytes_view element) {
+    void inline limited_two_stack<true>::push_back (slice<const byte> element) {
         increase_memory_usage (element.size () + ELEMENT_OVERHEAD);
         Stack.emplace_back (element);
     }
 
-    void inline limited_two_stack<false>::push_back (bytes_view element) {
+    void inline limited_two_stack<false>::push_back (slice<const byte> element) {
         if (element.size () > MaxScriptElementSize) throw_push_size_exception ();
         if (this->combined_size () == MaxStackElements) throw_stack_overflow_exception ();
         Stack.emplace_back (element);

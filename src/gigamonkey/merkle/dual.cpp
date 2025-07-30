@@ -11,27 +11,26 @@ namespace Gigamonkey::Merkle {
     bool dual::valid () const {
         if (!Root.valid () || !Paths.valid () || Paths.size () == 0) return false;
 
-        ordered_list<branch> current;
+        ordst<branch> current;
 
-        for (const auto &e : Paths)
-            current <<= branch {e.Key, e.Value};
+        for (const auto &e : Paths) current >>= branch {e.Key, e.Value};
 
         while (true) {
-            if (current.size () == 1 && current.first ().Digests.size () == 0) break;
+            if (current.size () == 1 && first (current).Digests.size () == 0) break;
 
             stack<branch> next;
-            for (const auto &b : current) next <<= b;
+            for (const auto &b : current) next >>= b;
 
-            current = ordered_list<branch> {};
+            current = ordst<branch> {};
 
             for (const auto &b : next) {
                 branch n = b.rest ();
-                if (current.size () == 0 || current.first () != n) current <<= n;
+                if (size (current) == 0 || first (current) != n) current >>= n;
             }
 
         }
 
-        return Root == current.first ().Leaf.Digest;
+        return Root == first (current).Leaf.Digest;
 
     }
     

@@ -21,28 +21,28 @@ namespace Gigamonkey::Boost {
 
     template <typename f, typename X, typename Y>
     bool dot_cross (f foo, list<X> x, list<Y> y) {
-        if (x.size () != y.size ()) return false;
-        if (x.size () == 0) return true;
+        if (size (x) != y.size ()) return false;
+        if (size (x) == 0) return true;
         list<X> input = x;
         list<Y> expected = y;
-        while (!input.empty ()) {
+        while (!empty (input)) {
             list<Y> uuu = expected;
             X in = input.first ();
             Y ex = uuu.first ();
             
             if (!foo (in, ex)) return false;
 
-            uuu = uuu.rest ();
+            uuu = rest (uuu);
             
             while (!uuu.empty ()) {
-                ex = uuu.first ();
+                ex = first (uuu);
                 
                 if (foo (in, ex)) return false;
-                uuu = uuu.rest ();
+                uuu = rest (uuu);
             }
             
-            expected = expected.rest ();
-            input = input.rest ();
+            expected = rest (expected);
+            input = rest (input);
         }
         
         return true;
@@ -57,11 +57,11 @@ namespace Gigamonkey::Boost {
     
     template <typename X>
     static bool test_equal (list<X> a, list<X> b) {
-        if (a.size () != b.size ()) return false;
-        while (!a.empty ()) {
-            if (a.first () != b.first ()) return false;
-            a = a.rest ();
-            b = b.rest ();
+        if (size (a) != size (b)) return false;
+        while (!empty (a)) {
+            if (first (a) != first (b)) return false;
+            a = rest (a);
+            b = rest (b);
         }
         return true;
     }
@@ -69,9 +69,9 @@ namespace Gigamonkey::Boost {
     template <typename X, typename f, typename Y>
     static list<X> for_each (f fun, list<Y> y) {
         list<X> x;
-        while(!y.empty ()) {
-            x = x << fun(y.first ());
-            y = y.rest ();
+        while (!y.empty ()) {
+            x <<= fun (first (y));
+            y = rest (y);
         }
         return x;
     }
@@ -79,11 +79,11 @@ namespace Gigamonkey::Boost {
     template <typename X, typename f, typename Y, typename Z>
     static list<X> map_thread (f fun, list<Y> y, list<Z> z) {
         list<X> x;
-        if (y.size () != z.size ()) return x;
-        while(!y.empty ()) {
-            x = x << fun(y.first (), z.first ());
-            y = y.rest ();
-            z = z.rest ();
+        if (size (y) != size (z)) return x;
+        while (!empty (y)) {
+            x <<= fun (first (y), first (z));
+            y = rest (y);
+            z = rest (z);
         }
         return x;
     }
@@ -111,7 +111,7 @@ namespace Gigamonkey::Boost {
             Bitcoin::timestamp start, 
             Stratum::session_id n1, 
             uint64_big n2, uint64 key) {
-            Bitcoin::secret s (Bitcoin::secret::main, secp256k1::secret (uint256 (key)));
+            Bitcoin::secret s (Bitcoin::net::Main, secp256k1::secret (uint256 (key)));
             
             bytes extra_nonce_2 (8);
             std::copy (n2.begin (), n2.end (), extra_nonce_2.begin ());
@@ -129,7 +129,7 @@ namespace Gigamonkey::Boost {
             Stratum::session_id n1,  
             uint64_big n2, 
             uint64 key) { 
-            Bitcoin::secret s (Bitcoin::secret::main, secp256k1::secret (uint256 (key)));
+            Bitcoin::secret s (Bitcoin::net::Main, secp256k1::secret (uint256 (key)));
             digest160 address = Bitcoin::Hash160 (s.to_public ());
             
             output_script o = type == contract ? 
@@ -153,7 +153,7 @@ namespace Gigamonkey::Boost {
             Stratum::session_id n1, 
             uint64_big n2, 
             uint64 key) { 
-            Bitcoin::secret s (Bitcoin::secret::main, secp256k1::secret (uint256 (key)));
+            Bitcoin::secret s (Bitcoin::net::Main, secp256k1::secret (uint256 (key)));
             digest160 address = Bitcoin::Hash160 (s.to_public ());
             
             output_script o = type == contract ? 
@@ -261,7 +261,7 @@ namespace Gigamonkey::Boost {
                 Boost::bounty, 
                 ContentsA, 
                 Target, 
-                bytes_view (Tag),
+                slice<const byte> (Tag),
                 UserNonce, 
                 AdditionalData, 
                 Start, 
@@ -272,7 +272,7 @@ namespace Gigamonkey::Boost {
                 Boost::contract, 
                 ContentsA, 
                 Target,
-                bytes_view (Tag),
+                slice<const byte> (Tag),
                 UserNonce + 1, 
                 AdditionalData, 
                 Start, 
@@ -283,7 +283,7 @@ namespace Gigamonkey::Boost {
                 Boost::bounty, 
                 ContentsB, 
                 Target,
-                bytes_view (Tag),
+                slice<const byte> (Tag),
                 UserNonce + 2, 
                 AdditionalData,
                 Start, 
@@ -294,7 +294,7 @@ namespace Gigamonkey::Boost {
                 Boost::contract, 
                 ContentsB, 
                 Target,
-                bytes_view (Tag),
+                slice<const byte> (Tag),
                 UserNonce + 3, 
                 AdditionalData,
                 Start, 
@@ -305,7 +305,7 @@ namespace Gigamonkey::Boost {
                 Boost::bounty, 
                 ContentsA, 
                 Target, 
-                bytes_view (Tag),
+                slice<const byte> (Tag),
                 UserNonce, 
                 AdditionalData, 
                 0xabcd,
@@ -317,7 +317,7 @@ namespace Gigamonkey::Boost {
                 Boost::contract, 
                 ContentsA, 
                 Target,
-                bytes_view (Tag),
+                slice<const byte> (Tag),
                 UserNonce + 1, 
                 AdditionalData, 
                 0xabcd,
@@ -329,7 +329,7 @@ namespace Gigamonkey::Boost {
                 Boost::bounty, 
                 ContentsB, 
                 Target,
-                bytes_view (Tag),
+                slice<const byte> (Tag),
                 UserNonce + 2, 
                 AdditionalData,
                 0xabcd,
@@ -341,7 +341,7 @@ namespace Gigamonkey::Boost {
                 Boost::contract, 
                 ContentsB, 
                 Target,
-                bytes_view (Tag),
+                slice<const byte> (Tag),
                 UserNonce + 3, 
                 AdditionalData,
                 0xabcd,
@@ -415,9 +415,9 @@ namespace Gigamonkey::Boost {
             return scripts {in, out};
         }, serialized_input_scripts, serialized_output_scripts);
 
-        bool check_scripts = dot_cross ([] (bytes_view in, bytes_view out) {
+        bool check_scripts = dot_cross ([] (slice<const byte> in, slice<const byte> out) {
             return Bitcoin::evaluate (in, out);
-        }, serialized_input_scripts.rest (), serialized_output_scripts.rest ());
+        }, rest (serialized_input_scripts), rest (serialized_output_scripts));
         
         EXPECT_TRUE (check_scripts) << "Boost scripts are not valid.";
         
@@ -536,11 +536,11 @@ namespace Gigamonkey::Boost {
         bytes minerPubKeyHash_bytes = bytes (minerPubKeyHash_hex);
             
         std::copy (signature_bytes.begin (), signature_bytes.end(), signature.begin ());
-        std::copy (minerPubKey_bytes.begin(), minerPubKey_bytes.end(), pubkey.begin());
+        std::copy (minerPubKey_bytes.begin (), minerPubKey_bytes.end(), pubkey.begin ());
         
         std::copy (time_bytes.begin (), time_bytes.end(), timestamp.begin ());
         
-        std::copy (minerPubKeyHash_bytes.begin (), minerPubKeyHash_bytes.end (), miner_address.begin());
+        std::copy (minerPubKeyHash_bytes.begin (), minerPubKeyHash_bytes.end (), miner_address.begin ());
         
         work::puzzle puzzle {work::candidate{boost_script.Category,
             boost_script.Content, boost_script.Target, Merkle::path {}},
@@ -548,11 +548,11 @@ namespace Gigamonkey::Boost {
             Boost::puzzle::body (boost_script.UserNonce, boost_script.AdditionalData)};
         
         uint64_big n2;
-        std::copy (extra_nonce_2.begin (), extra_nonce_2.end (), n2.begin());
+        std::copy (extra_nonce_2.begin (), extra_nonce_2.end (), n2.begin ());
         n2 += 5;
         std::copy (n2.begin (), n2.end (), extra_nonce_2.begin ());
         
-        work::proof pr = work::cpu_solve (puzzle, work::solution{Bitcoin::timestamp{timestamp}, nonce, extra_nonce_2, extra_nonce_1});
+        work::proof pr = work::cpu_solve (puzzle, work::solution {Bitcoin::timestamp {timestamp}, nonce, extra_nonce_2, extra_nonce_1});
         
         EXPECT_EQ (pr.Solution.Share.Nonce, nonce);
         
@@ -626,7 +626,7 @@ namespace Gigamonkey::Boost {
         
         // getExtraNonce1Number() => 33554432
         uint32_big expected_extra_nonce_1_number;
-        boost::algorithm::unhex (given_extra_nonce_1.begin (), given_extra_nonce_1.end (), expected_extra_nonce_1_number.begin());
+        boost::algorithm::unhex (given_extra_nonce_1.begin (), given_extra_nonce_1.end (), expected_extra_nonce_1_number.begin ());
         
         // getExtraNonce2Number() => 12884901891
         uint64_big expected_extra_nonce_2_number;
@@ -854,7 +854,7 @@ namespace Gigamonkey::Boost {
     // this is used to test against the boostpow-js library. 
     TEST (BoostTest, TestAgainstBoostPoWJSRedeem) {
         
-        Bitcoin::secret from_key {Bitcoin::secret::main,
+        Bitcoin::secret from_key {Bitcoin::net::Main,
             secp256k1::secret {uint256 {"0x0000000000000000000000000000000000000000000000000000000000000003"}}};
         
         bytes content_string = bytes (string ("hello animal"));
@@ -910,12 +910,12 @@ namespace Gigamonkey::Boost {
         
         // getExtraNonce1Number() => 33554432
         Stratum::session_id expected_extra_nonce_1_number;
-        boost::algorithm::unhex (given_extra_nonce_1.begin (), given_extra_nonce_1.end (), expected_extra_nonce_1_number.begin());
+        boost::algorithm::unhex (given_extra_nonce_1.begin (), given_extra_nonce_1.end (), expected_extra_nonce_1_number.begin ());
         
         bytes expected_extra_nonce_2_v1 (8);
         bytes expected_extra_nonce_2_v2 (32);
-        boost::algorithm::unhex (given_extra_nonce_2_v1.begin (), given_extra_nonce_2_v1.end(), expected_extra_nonce_2_v1.begin());
-        boost::algorithm::unhex (given_extra_nonce_2_v2.begin (), given_extra_nonce_2_v2.end(), expected_extra_nonce_2_v2.begin());
+        boost::algorithm::unhex (given_extra_nonce_2_v1.begin (), given_extra_nonce_2_v1.end(), expected_extra_nonce_2_v1.begin ());
+        boost::algorithm::unhex (given_extra_nonce_2_v2.begin (), given_extra_nonce_2_v2.end(), expected_extra_nonce_2_v2.begin ());
         
         work::puzzle puzzle_bounty_v1 = work_puzzle (
             output_script::bounty (

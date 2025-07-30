@@ -4,24 +4,43 @@
 #include <gigamonkey/script/interpreter.hpp>
 #include <gigamonkey/script/bitcoin_core.hpp>
 #include <sv/policy/policy.h>
+#include <data/io/wait_for_enter.hpp>
 
 namespace Gigamonkey::Bitcoin {
 
-    interpreter::interpreter (maybe<redemption_document> doc, const program unlock, const program lock, const script_config &conf) :
-        Machine {doc, conf} {
+    void setup_interpreter (interpreter &I, const script &ux, const script &lx, const script_config &conf) {
+        program p;
 
-        program p = full (unlock, lock, conf.support_P2SH ());
+        try {
+            program unlock = decompile (ux);
+            program lock = decompile (lx);
 
-        if (conf.verify_sig_push_only () && !is_push (unlock)) Machine.Result = SCRIPT_ERR_SIG_PUSHONLY;
-        else if (conf.support_P2SH () && is_P2SH (lock)) {
-            if (data::empty (unlock)) Machine.Result =  SCRIPT_ERR_INVALID_STACK_OPERATION;
-            else if (!is_push (unlock)) Machine.Result = SCRIPT_ERR_SIG_PUSHONLY;
-        } else Machine.Result = pre_verify (p, conf.Flags);
+            p = full (unlock, lock, conf.verify_P2SH ());
 
-        if (Machine.Result.Error != SCRIPT_ERR_OK) Machine.Halt = true;
+            if (conf.verify_unlock_push_only () && !is_push (unlock)) I.Machine.Result = SCRIPT_ERR_SIG_PUSHONLY;
+            else if (conf.verify_P2SH () && is_P2SH (lock)) {
+                if (empty (unlock)) I.Machine.Result =  SCRIPT_ERR_INVALID_STACK_OPERATION;
+                else if (!is_push (unlock)) I.Machine.Result = SCRIPT_ERR_SIG_PUSHONLY;
+            } else I.Machine.Result = pre_verify (p, conf.Flags);
 
-        Script = compile (p);
-        Counter = program_counter {Script};
+        } catch (const invalid_program &x) {
+            I.Machine.Result.Error = x.Error;
+        }
+
+        if (I.Machine.Result.Error != SCRIPT_ERR_OK) I.Machine.Halt = true;
+
+        I.Script = compile (p);
+        I.Counter = program_counter {I.Script};
+    }
+
+    interpreter::interpreter (const script &unlock, const script &lock, const redemption_document &doc, const script_config &conf) :
+        Machine {{doc}, conf} {
+        setup_interpreter (*this, unlock, lock, conf);
+    }
+
+    interpreter::interpreter (const script &unlock, const script &lock, const script_config &conf) :
+        Machine {{}, conf} {
+        setup_interpreter (*this, unlock, lock, conf);
     }
 
     list<bool> make_list (const std::vector<bool> &v) {
@@ -39,11 +58,10 @@ namespace Gigamonkey::Bitcoin {
     }
 
     result step_through (interpreter &m) {
-        std::cout << "begin program" << std::endl;
         while (true) {
             std::cout << m << std::endl;
             if (m.Machine.Halt) break;
-            wait_for_enter ();
+            data::wait_for_enter ();
             m.step ();
         }
 
@@ -94,8 +112,11 @@ namespace Gigamonkey::Bitcoin {
     }
 
     result interpreter::run () {
-        Machine.Result = catch_all_errors<result> (machine_run, Machine, Counter);
-        Machine.Halt = true;
+        if (!Machine.Halt) {
+            Machine.Result = catch_all_errors<result> (machine_run, Machine, Counter);
+            Machine.Halt = true;
+        }
+
         return Machine.Result;
     }
 }

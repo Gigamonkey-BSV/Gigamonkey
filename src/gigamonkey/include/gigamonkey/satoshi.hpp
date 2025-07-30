@@ -75,11 +75,11 @@ namespace Gigamonkey {
     }
 
     std::weak_ordering inline operator <=> (const satoshis_per_byte &a, const satoshis_per_byte &b) {
-        return math::fraction<int64, uint64> (int64 (a.Satoshis), a.Bytes) <=> math::fraction<int64, uint64> (int64 (b.Satoshis), b.Bytes);
+        return int64 (a.Satoshis) * static_cast<int64> (b.Bytes) <=> int64 (b.Satoshis) * static_cast<int64> (a.Bytes);
     }
 
     bool inline operator == (const satoshis_per_byte &a, const satoshis_per_byte &b) {
-        return math::fraction<int64, uint64> (int64 (a.Satoshis), a.Bytes) == math::fraction<int64, uint64> (int64 (b.Satoshis), b.Bytes);
+        return int64 (a.Satoshis) * static_cast<int64> (b.Bytes) == int64 (b.Satoshis) * static_cast<int64> (a.Bytes);
     }
 }
 

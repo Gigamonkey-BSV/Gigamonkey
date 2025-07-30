@@ -151,7 +151,7 @@ namespace Gigamonkey::work {
         std::copy ((byte*) (&mantissa), (byte*) (&mantissa) + 8, (byte*) (&mantissa_bits));
         mantissa_bits = (mantissa_bits & 0x000fffffffffffff) + 0x0010000000000000;
         
-        return uint256 (mantissa_bits) << (exp - standard_binary_interchange_format_mantissa_bits<64> () - 1);
+        return uint256 (mantissa_bits) << (exp - data::standard_binary_interchange_format_mantissa_bits<64> () - 1);
     }
         
 }

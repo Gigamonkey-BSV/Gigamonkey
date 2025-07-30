@@ -36,7 +36,7 @@ namespace Gigamonkey::Bitcoin {
         
         static timestamp now ();
         
-        explicit operator bytes_view () const;
+        explicit operator byte_slice () const;
         explicit operator time_t () const;
         explicit operator uint32 () const;
         explicit operator string () const;
@@ -121,8 +121,8 @@ namespace Gigamonkey::Bitcoin {
         return s.str ();
     }
     
-    inline timestamp::operator bytes_view () const {
-        return bytes_view {data (), 4};
+    inline timestamp::operator byte_slice () const {
+        return byte_slice {data (), 4};
     }
         
     bool inline timestamp::operator == (const timestamp& d) const {

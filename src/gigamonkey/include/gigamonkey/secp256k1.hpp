@@ -6,6 +6,7 @@
 
 #include <gigamonkey/p2p/var_int.hpp>
 #include <gigamonkey/hash.hpp>
+#include <gigamonkey/numbers.hpp>
 #include <data/encoding/integer.hpp>
 #include <data/crypto/encrypted.hpp>
 
@@ -41,14 +42,14 @@ namespace Gigamonkey::secp256k1 {
         // max size is 6 + 2 * 33
         constexpr static size_t MaxSize = 72; 
         
-        static bool valid (bytes_view x);
-        static bool minimal (bytes_view x);
-        static bool normalized (bytes_view);
+        static bool valid (slice<const byte> x);
+        static bool minimal (slice<const byte> x);
+        static bool normalized (slice<const byte>);
         
-        static bytes_view R (bytes_view);
-        static bytes_view S (bytes_view);
+        static slice<const byte> R (slice<const byte>);
+        static slice<const byte> S (slice<const byte>);
         
-        explicit signature (bytes_view b) : bytes {b} {}
+        explicit signature (slice<const byte> b) : bytes {b} {}
         
         explicit operator point () const;
         explicit signature (const point &);
@@ -81,26 +82,26 @@ namespace Gigamonkey::secp256k1 {
         constexpr static size_t CompressedSize {33};
         constexpr static size_t UncompressedSize {65};
         
-        static bool valid (bytes_view);
+        static bool valid (slice<const byte>);
         
-        static bool compressed (bytes_view b) {
+        static bool compressed (slice<const byte> b) {
             return valid (b) && b.size () == CompressedSize;
         }
         
-        static bool verify (bytes_view pubkey, const digest&, bytes_view sig);
-        static bytes compress (bytes_view);
-        static bytes decompress (bytes_view);
-        static bytes negate (bytes_view);
-        static bytes plus_pubkey (bytes_view, bytes_view);
-        static bytes plus_secret (bytes_view, const uint256 &);
-        static bytes times (bytes_view, bytes_view);
+        static bool verify (slice<const byte> pubkey, const digest&, slice<const byte> sig);
+        static bytes compress (slice<const byte>);
+        static bytes decompress (slice<const byte>);
+        static bytes negate (slice<const byte>);
+        static bytes plus_pubkey (slice<const byte>, slice<const byte>);
+        static bytes plus_secret (slice<const byte>, const uint256 &);
+        static bytes times (slice<const byte>, slice<const byte>);
         
         static bool valid_size (size_t size) {
             return size == CompressedSize || size == UncompressedSize;
         }
         
         pubkey () : bytes () {}
-        explicit pubkey (bytes_view v) : bytes {v} {}
+        explicit pubkey (slice<const byte> v) : bytes {v} {}
         
         bool valid () const;
         
@@ -132,10 +133,10 @@ namespace Gigamonkey::secp256k1 {
     
     struct secret final : public nonzero<uint256> {
         
-        static bool valid (bytes_view);
-        static bytes to_public_compressed (bytes_view);
-        static bytes to_public_uncompressed (bytes_view);
-        static signature sign (bytes_view, const digest &);
+        static bool valid (slice<const byte>);
+        static bytes to_public_compressed (slice<const byte>);
+        static bytes to_public_uncompressed (slice<const byte>);
+        static signature sign (slice<const byte>, const digest &);
         
         static uint256 negate (const uint256 &);
         static uint256 plus (const uint256 &, const uint256 &);
@@ -154,7 +155,7 @@ namespace Gigamonkey::secp256k1 {
         
         signature sign (const digest &d) const;
         
-        pubkey to_public () const;
+        pubkey to_public (bool compressed = true) const;
     
         secret operator - () const;
         secret operator + (const secret &) const;
@@ -180,11 +181,11 @@ namespace Gigamonkey::secp256k1 {
     }
 
     std::ostream inline &operator << (std::ostream &o, const pubkey &p) {
-        return o << "pubkey{" << data::encoding::hex::write (p) << "}";
+        return o << "pubkey{" << encoding::hex::write (p) << "}";
     }
 
     std::ostream inline &operator << (std::ostream &o, const signature &x) {
-        return o << "signature{" << data::encoding::hex::write (bytes (x)) << "}";
+        return o << "signature{" << encoding::hex::write (bytes (x)) << "}";
     }
     
     bool inline valid (const secret &s) {
@@ -203,8 +204,8 @@ namespace Gigamonkey::secp256k1 {
         return a + b;
     }
     
-    pubkey inline to_public (const secret &s) {
-        return s.to_public ();
+    pubkey inline to_public (const secret &s, bool compressed = true) {
+        return s.to_public (compressed);
     }
     
     bool inline valid (const pubkey& p) {
@@ -251,8 +252,8 @@ namespace Gigamonkey::secp256k1 {
         return sign (Value, d);
     }
     
-    pubkey inline secret::to_public () const {
-        return pubkey {to_public_compressed (bytes_view (Value))};
+    pubkey inline secret::to_public (bool compressed) const {
+        return pubkey {(compressed ? to_public_compressed : to_public_uncompressed) (slice<const byte> (Value))};
     }
     
     secret inline secret::operator - () const {

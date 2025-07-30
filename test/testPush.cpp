@@ -17,7 +17,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
             if (p.size () != 1) return false;
             instruction i = p.first ();
             if (!i.valid ()) return false;
-            return is_minimal (i) == Expected;
+            return is_minimal_instruction (i) == Expected;
         }
     };
 
@@ -46,8 +46,8 @@ namespace Gigamonkey::Bitcoin::interpreter {
             program p = decompile (*b);
             ASSERT_TRUE (p.size () == 1) << "decompiled " << x.Bytes << " as " << p << "; size is " << p.size ();
             instruction i = p.first ();
-            ASSERT_TRUE (i.verify (0) == SCRIPT_ERR_OK) << x.Bytes << " failed to verify";
-            EXPECT_TRUE (is_minimal (i) == x.Expected) << "expect " << x.Expected << " for " << x.Bytes << "\n\t";
+            ASSERT_TRUE (i.verify ({}) == SCRIPT_ERR_OK) << x.Bytes << " failed to verify";
+            EXPECT_TRUE (is_minimal_instruction (i) == x.Expected) << "expect " << x.Expected << " for " << x.Bytes << "\n\t";
         }
         
     }

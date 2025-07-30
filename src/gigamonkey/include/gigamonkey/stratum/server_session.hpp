@@ -40,7 +40,7 @@ namespace Gigamonkey::Stratum {
             options () {};
         };
         
-        server_session  (ptr<net::session<JSON>> p, const options &x) : remote_receive_handler {p}, State {x} {}
+        server_session  (session p, const options &x) : remote_receive_handler {p}, State {x} {}
         virtual ~server_session () {}
         
         Stratum::difficulty difficulty () const;

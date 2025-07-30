@@ -128,6 +128,7 @@ namespace Gigamonkey::Bitcoin {
         
         maybe<bytes> tx = encoding::hex::read (tx_hex);
         
+        // this is a valid transaction.
         ASSERT_TRUE (bool (tx));
         
         EXPECT_EQ (tx->size (), 7676);
@@ -135,9 +136,9 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_EQ (Hash256 (*tx), digest256 {"0x0473718d87e0bd19437d19da0454873c074d5c9698d9e6e41b0c5cae2dcbe202"});
         
         transaction t = transaction {*tx};
-        
+
         EXPECT_TRUE (t.valid ());
-        
+
         EXPECT_EQ (t.Version, 1);
         
         EXPECT_EQ (t.Inputs.size (), 1);
@@ -147,10 +148,12 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_EQ (t.LockTime, 0);
         
         EXPECT_EQ (t.serialized_size (), 7676);
-        
+
         EXPECT_FALSE (pay_to_address {t.Outputs.first ().Script}.valid ());
+
+        bytes rewritten = bytes (t);
         
-        EXPECT_EQ (bytes (t), *tx);
+        EXPECT_EQ (rewritten, *tx);
         
     }
 

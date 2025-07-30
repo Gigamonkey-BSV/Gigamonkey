@@ -112,7 +112,7 @@ namespace Gigamonkey::work {
         
         solution () : Share {}, ExtraNonce1 {} {}
         solution (const share &x, Stratum::session_id n1) : Share {x}, ExtraNonce1 {n1} {}
-        solution (Bitcoin::timestamp t, Bitcoin::nonce n, bytes_view b, Stratum::session_id n1) : solution {share {t, n, b}, n1} {}
+        solution (Bitcoin::timestamp t, Bitcoin::nonce n, slice<const byte> b, Stratum::session_id n1) : solution {share {t, n, b}, n1} {}
         
         bool valid () const {
             return Share.valid ();

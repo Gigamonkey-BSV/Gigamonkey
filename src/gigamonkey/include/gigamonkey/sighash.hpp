@@ -6,7 +6,8 @@
 
 #include <gigamonkey/hash.hpp>
 #include <gigamonkey/incomplete.hpp>
-#include <data/tools.hpp>
+#include <gigamonkey/script/instruction.hpp>
+#include <data/tools/lazy_writer.hpp>
 
 namespace Gigamonkey::Bitcoin {
     namespace sighash {
@@ -19,15 +20,21 @@ namespace Gigamonkey::Bitcoin {
     
         enum type : byte {
             unsupported = 0,
+
             // all outputs are signed
             all = 1,
+
             // no outputs are signed, meaning they can be changed and the signature is still valid.
             none = 2, 
+
             // the output with the same index number as the input in which this sig
             single = 3, 
+
             // added in Bitcoin Cash, used to implement replace protection. The signature algorithm 
             // is different when enabled. Will be depricated eventually. 
+
             fork_id = 0x40,
+
             // If enabled, inputs are not signed, meaning anybody can add new inputs to this tx.
             anyone_can_pay = 0x80
         };
@@ -76,13 +83,13 @@ namespace Gigamonkey::Bitcoin {
             // the script code contains the previous output script with the 
             // latest instance of OP_CODESEPARATOR before the signature operation 
             // being evaluated and everything earlier removed.
-            script ScriptCode; 
+            program ScriptCode;
             
             bool valid () const {
                 return RedeemedValue >= 0 && InputIndex < Transaction.Inputs.size ();
             }
             
-            document (incomplete::transaction &tx, index i, satoshi r, bytes_view script_code) :
+            document (incomplete::transaction &tx, index i, satoshi r, program script_code) :
                 Transaction {tx}, InputIndex {i}, RedeemedValue {r}, ScriptCode {script_code} {}
             
         };
@@ -92,7 +99,7 @@ namespace Gigamonkey::Bitcoin {
         writer &write (writer &w, const document &doc, sighash::directive d);
         
         bytes inline write (const document &doc, sighash::directive d) {
-            lazy_bytes_writer w;
+            data::lazy_bytes_writer w;
             write (w, doc, d);
             return w;
         }
@@ -105,13 +112,13 @@ namespace Gigamonkey::Bitcoin {
         writer &write_Bitcoin_Cash (writer &, const document &, sighash::directive);
         
         bytes inline write_original (const document &doc, sighash::directive d) {
-            lazy_bytes_writer w;
+            data::lazy_bytes_writer w;
             write_original (w, doc, d);
             return w;
         }
         
         bytes inline write_Bitcoin_Cash (const document &doc, sighash::directive d) {
-            lazy_bytes_writer w;
+            data::lazy_bytes_writer w;
             write_Bitcoin_Cash (w, doc, d);
             return w;
         }
@@ -142,7 +149,7 @@ namespace Gigamonkey::Bitcoin {
         namespace Amaury {
         
             bytes inline write (const document &doc, sighash::directive d) {
-                lazy_bytes_writer w;
+                data::lazy_bytes_writer w;
                 Amaury::write (w, doc, d);
                 return w;
             }

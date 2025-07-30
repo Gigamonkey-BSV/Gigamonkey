@@ -33,6 +33,8 @@ namespace Gigamonkey::SPV {
     // database for storing headers, merkle proofs, and transactions.
     struct database;
 
+    using time_limit = data::math::signed_limit<Bitcoin::timestamp>;
+
     // a proof consists of a transaction + previous transactions that are being redeemed
     // with merkle proofs or previous transactions with merkle proofs, etc
     // this is what you would send to a peer when you wanted to make a payment.
@@ -89,11 +91,9 @@ namespace Gigamonkey::SPV {
 
         proof (): Payment {}, Proof {} {}
 
-        bool valid () const;
-
         // check valid and check that all headers are in our database.
         // and check all scripts for txs that have no merkle proof.
-        bool validate (database &) const;
+        bool validate (database &, time_limit genesis_upgrade_time = time_limit::negative_infinity ()) const;
 
         explicit operator list<extended::transaction> () const;
 
@@ -109,18 +109,19 @@ namespace Gigamonkey::SPV {
     // this proof can be sent to a merchant who can use it to confirm that
     // the transaction is valid.
     maybe<proof> generate_proof (database &d, list<Bitcoin::transaction> payment);
-    maybe<extended::transaction> extend (database &d, Bitcoin::transaction);
+    maybe<extended::transaction> extend (database &d, const Bitcoin::transaction &);
 
     // interface for database containing headers, transactions, and merkle paths.
     struct database {
+        using block_header = ptr<const data::entry<data::N, Bitcoin::header>>;
 
         // get a block header by height.
-        virtual const Bitcoin::header *header (const N &) = 0;
+        virtual block_header header (const N &) = 0;
 
-        virtual const entry<N, Bitcoin::header> *latest () = 0;
+        virtual block_header latest () = 0;
 
         // get by hash or merkle root
-        virtual const entry<N, Bitcoin::header> *header (const digest256 &) = 0;
+        virtual block_header header (const digest256 &) = 0;
 
         // a transaction in the database, which may include a merkle proof if we have one.
         struct tx {
@@ -130,6 +131,7 @@ namespace Gigamonkey::SPV {
 
             tx (ptr<const Bitcoin::transaction> t, const confirmation &x);
             tx (ptr<const Bitcoin::transaction> t);
+            tx () : Transaction {}, Confirmation {} {}
 
             bool valid () const;
             // whether a proof is included.
@@ -146,7 +148,7 @@ namespace Gigamonkey::SPV {
         virtual set<Bitcoin::TXID> unconfirmed () = 0;
 
         // an in-memory implementation of the database.
-        class memory;
+        struct memory;
 
         virtual ~database () {}
 
@@ -162,21 +164,40 @@ namespace Gigamonkey::SPV {
         virtual void remove (const Bitcoin::TXID &) = 0;
         
         // providing a merkle proof removes a tx from pending.
+        // the bool is for checking the proofs.
         virtual bool insert (const Merkle::dual &) = 0;
-        virtual const data::entry<N, Bitcoin::header> *insert (const data::N &height, const Bitcoin::header &h) = 0;
+
+        // add a transaction and its merkle proof at the same time.
+        virtual bool insert (const Bitcoin::transaction &, const Merkle::path &) = 0;
+
+        virtual database::block_header insert (const data::N &height, const Bitcoin::header &h) = 0;
+
+        // can only remove the latest header (for reorgs)
+        virtual void remove_header (const data::N &) = 0;
+        virtual void remove_header (const digest256 &) = 0;
 
         virtual ~writable () {}
     };
     
     struct database::memory : public virtual database, public virtual writable {
-        struct entry {
-            data::entry<data::N, Bitcoin::header> Header;
-            Merkle::map Paths;
-            ptr<entry> Last;
+        using database::block_header;
 
-            entry (data::N n, Bitcoin::header h) : Header {n, h}, Paths {}, Last {nullptr} {}
-            entry (data::N n, Bitcoin::header h, Merkle::map tree) : Header {n, h}, Paths {tree}, Last {nullptr} {}
-            entry (Bitcoin::header h, const Merkle::BUMP &bump) : Header {bump.BlockHeight, h}, Paths {bump.paths ()}, Last {nullptr} {}
+        struct entry {
+            block_header Header;
+            Merkle::map Paths;
+            ptr<entry> Previous;
+
+            entry (data::N n, Bitcoin::header h) :
+                Header {std::make_shared<data::entry<data::N, Bitcoin::header>> (n, h)},
+                Paths {}, Previous {nullptr} {}
+
+            entry (data::N n, Bitcoin::header h, Merkle::map tree) :
+                Header {std::make_shared<data::entry<data::N, Bitcoin::header>> (n, h)},
+                Paths {tree}, Previous {nullptr} {}
+
+            entry (Bitcoin::header h, const Merkle::BUMP &bump) :
+                Header {std::make_shared<data::entry<data::N, Bitcoin::header>> (bump.BlockHeight, h)},
+                Paths {bump.paths ()}, Previous {nullptr} {}
 
             Merkle::dual dual_tree () const;
 
@@ -198,26 +219,32 @@ namespace Gigamonkey::SPV {
 
         memory () : memory (Bitcoin::genesis ().Header) {}
         
-        const data::entry<data::N, Bitcoin::header> *latest () final override {
+        block_header latest () final override {
             // always present because we always start with at least one header.
-            return &Latest->Header;
+            return Latest->Header;
         }
         
-        const Bitcoin::header *header (const data::N &n) final override;
-        const data::entry<data::N, Bitcoin::header> *header (const digest256 &n) override;
+        block_header header (const data::N &n) final override;
+        block_header header (const digest256 &n) override;
 
         tx transaction (const Bitcoin::TXID &t) final override;
         Merkle::dual dual_tree (const digest256 &d) const;
 
-        const data::entry<N, Bitcoin::header> *insert (const data::N &height, const Bitcoin::header &h) final override;
+        block_header insert (const data::N &height, const Bitcoin::header &h) final override;
+
         bool insert (const Merkle::dual &p) final override;
         void insert (const Bitcoin::transaction &) final override;
+        bool insert (const Bitcoin::transaction &, const Merkle::path &) final override;
 
         // all unconfirmed txs in the database.
         set<Bitcoin::TXID> unconfirmed () final override;
 
         // only txs in unconfirmed can be removed.
         void remove (const Bitcoin::TXID &) final override;
+
+        // remove a header and all headers after it.
+        void remove_header (const data::N &) final override;
+        void remove_header (const digest256 &) final override;
 
     };
 
@@ -236,7 +263,8 @@ namespace Gigamonkey::SPV {
     }
 
     inline confirmation::confirmation (): Path {}, Height {0}, Header {} {}
-    inline confirmation::confirmation (Merkle::path p, const N &height, const Bitcoin::header &h): Path {p}, Height {height}, Header {h} {}
+    inline confirmation::confirmation (Merkle::path p, const N &height, const Bitcoin::header &h):
+        Path {p}, Height {height}, Header {h} {}
 
     bool inline confirmation::operator == (const confirmation &t) const {
         return Header == t.Header && t.Height == Height && Path.Index == t.Path.Index;
@@ -289,7 +317,7 @@ namespace Gigamonkey::SPV {
     }
 
     bool inline proof::tree::valid () const {
-        return this->is<map> () && !data::empty (this->get<map> ()) ||
+        return this->is<map> () && !empty (this->get<map> ()) ||
             this->is<confirmation> () && this->get<confirmation> ().valid ();
     }
 
@@ -318,11 +346,11 @@ namespace Gigamonkey::SPV {
     }
 
     Merkle::dual inline database::memory::entry::dual_tree () const {
-        return Merkle::dual {Paths, Header.Value.MerkleRoot};
+        return Merkle::dual {Paths, Header->Value.MerkleRoot};
     }
 
     Merkle::BUMP inline database::memory::entry::BUMP () const {
-        return Merkle::BUMP {uint64 (Header.Key), Paths};
+        return Merkle::BUMP {uint64 (Header->Key), Paths};
     }
 }
 

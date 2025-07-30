@@ -10,12 +10,12 @@ namespace Gigamonkey {
     
     struct pay_to_pubkey {
         static Gigamonkey::pattern pattern (bytes &pubkey) {
-            return {pubkey_pattern (pubkey), OP_CHECKSIG};
+            return {pubkey_pattern (pubkey), Bitcoin::OP_CHECKSIG};
         }
         
         static bytes script (Bitcoin::pubkey p) {
             using namespace Bitcoin;
-            return compile (program {push_data (p), OP_CHECKSIG});
+            return compile (program {push_data (p), Bitcoin::OP_CHECKSIG});
         }
         
         Bitcoin::pubkey Pubkey;
@@ -28,7 +28,7 @@ namespace Gigamonkey {
             return script (Pubkey);
         }
         
-        pay_to_pubkey (bytes_view script) : Pubkey {} {
+        pay_to_pubkey (slice<const byte> script) : Pubkey {} {
             using namespace Bitcoin;
             pubkey p;
             if (!pattern (p).match (script)) return;

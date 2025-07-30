@@ -14,6 +14,8 @@
 
 namespace Gigamonkey {
 
+    // TODO include an INCORRECT script to ensure that scripts are being checked.
+
     // We test extended format, SPV proof format, and BEEF format.
 
     // Bitcoin SPV proofs are in general a DAG. There are txs I will call
@@ -37,13 +39,13 @@ namespace Gigamonkey {
     //      * the same.
     //      * different.
 
-    Bitcoin::transaction make_fake_root_tx (uint32 num_inputs, uint32 num_outputs, crypto::random &r);
+    Bitcoin::transaction make_fake_root_tx (uint32 num_inputs, uint32 num_outputs, crypto::entropy &r);
 
-    Bitcoin::transaction make_fake_node_tx (list<Bitcoin::prevout> inputs, uint32 num_outputs, Bitcoin::satoshi sats_per_output, crypto::random &r);
+    Bitcoin::transaction make_fake_node_tx (list<Bitcoin::prevout> inputs, uint32 num_outputs, Bitcoin::satoshi sats_per_output, crypto::entropy &r);
 
-    Merkle::dual make_fake_merkle (uint32 txs_in_block, map<uint32, digest256> roots, crypto::random &r);
+    Merkle::dual make_fake_merkle (uint32 txs_in_block, map<uint32, digest256> roots, crypto::entropy &r);
 
-    Bitcoin::header make_next_fake_block (const digest256 &merkle_root, crypto::random &r);
+    Bitcoin::header make_next_fake_block (const digest256 &merkle_root, crypto::entropy &r);
 
     Bitcoin::prevout inline get_prevout (const Bitcoin::transaction &t, uint32_little i) {
         return Bitcoin::prevout {Bitcoin::outpoint {t.id (), i}, t.Outputs[i]};
@@ -66,7 +68,7 @@ namespace Gigamonkey {
         }
 
         // check SPV proof
-        EXPECT_TRUE (proof->valid ()) << "proof should be valid but is not";
+        EXPECT_TRUE (proof->validate (d)) << "proof should be valid but is not";
 
         // make BEEF
         BEEF beef {*proof};
@@ -86,7 +88,7 @@ namespace Gigamonkey {
 
     TEST (SPVTest, TestSPV) {
 
-        crypto::fixed_entropy e {bytes {hex_string {"abcdef0123456789abcdef0123456789"}}};
+        crypto::fixed_entropy e {bytes {data::hex_string {"abcdef0123456789abcdef0123456789"}}};
         crypto::NIST::DRBG r {crypto::NIST::DRBG::Hash, e};
 
         // We will need at least two fake blocks for testing containing
@@ -182,32 +184,34 @@ namespace Gigamonkey {
     std::map<digest160, Bitcoin::secret> keys;
 
     Bitcoin::secret get_next_key () {
-        Bitcoin::secret key {Bitcoin::secret::test, secp256k1::secret {next_key}};
+        Bitcoin::secret key {Bitcoin::net::Test, secp256k1::secret {next_key}};
         keys[key.address ().Digest] = key;
         next_key++;
         return key;
     }
 
     digest160 get_next_address () {
-        Bitcoin::secret key {Bitcoin::secret::test, secp256k1::secret {next_key}};
+        Bitcoin::secret key {Bitcoin::net::Test, secp256k1::secret {next_key}};
         digest160 address = key.address ().Digest;
         keys[address] = key;
         next_key++;
         return address;
     }
 
-    Bitcoin::input random_input (crypto::random &r) {
+    Bitcoin::input random_input (crypto::entropy &r) {
+        using namespace Bitcoin;
+
         digest256 d;
         r >> d;
         uint32_little i;
         r >> i;
 
-        bytes Script = Bitcoin::compile (Bitcoin::program {OP_1});
+        bytes Script = compile (program {OP_1});
 
-        return Bitcoin::input {Bitcoin::outpoint {d, i}, Script};
+        return input {outpoint {d, i}, Script};
     }
 
-    Bitcoin::transaction make_fake_root_tx (uint32 num_inputs, uint32 num_outputs, crypto::random &r) {
+    Bitcoin::transaction make_fake_root_tx (uint32 num_inputs, uint32 num_outputs, crypto::entropy &r) {
         list<Bitcoin::output> out;
         list<Bitcoin::input> in;
 
@@ -220,7 +224,7 @@ namespace Gigamonkey {
         return Bitcoin::transaction {1, in, out, 0};
     }
 
-    Merkle::dual make_fake_merkle (uint32 txs_in_block, map<uint32, digest256> roots, crypto::random &r) {
+    Merkle::dual make_fake_merkle (uint32 txs_in_block, map<uint32, digest256> roots, crypto::entropy &r) {
         Merkle::leaf_digests ddd {};
 
         for (uint32 i = 0; i < txs_in_block; i++) {
@@ -242,17 +246,20 @@ namespace Gigamonkey {
 
     stack<Bitcoin::header> Blocks;
 
-    Bitcoin::header make_next_fake_block (const digest256 &merkle_root, crypto::random &r) {
+    Bitcoin::header make_next_fake_block (const digest256 &merkle_root, crypto::entropy &r) {
         digest256 previous {0};
         if (data::size (Blocks) != 0) previous = Blocks.first ().hash ();
         Bitcoin::header h {1, previous, merkle_root, Bitcoin::timestamp {1}, work::compact::max (), 0};
-        Blocks = Blocks << h;
+        Blocks >>= h;
         return h;
     }
 
     Bitcoin::sighash::directive directive = Bitcoin::directive (Bitcoin::sighash::all);
 
-    Bitcoin::transaction make_fake_node_tx (list<Bitcoin::prevout> inputs, uint32 num_outputs, Bitcoin::satoshi sats_per_output, crypto::random &r) {
+    Bitcoin::transaction make_fake_node_tx (
+        list<Bitcoin::prevout> inputs, uint32 num_outputs,
+        Bitcoin::satoshi sats_per_output, crypto::entropy &r) {
+
         list<Bitcoin::output> out;
         list<Bitcoin::incomplete::input> in;
 
@@ -269,7 +276,7 @@ namespace Gigamonkey {
         uint32_little i = 0;
         for (const Bitcoin::prevout &p : inputs) {
             auto key = keys[pay_to_address {p.script ()}.Address];
-            auto doc = Bitcoin::sighash::document {tx, i, p.value (), p.script ()};
+            auto doc = Bitcoin::sighash::document {tx, i, p.value (), Bitcoin::decompile (p.script ())};
             auto sig = key.sign (doc, directive);
             scripts <<= pay_to_address::redeem (sig, key.to_public ());
             i++;

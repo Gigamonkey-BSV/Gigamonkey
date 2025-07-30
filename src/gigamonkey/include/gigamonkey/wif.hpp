@@ -27,14 +27,7 @@ namespace Gigamonkey::Bitcoin {
     // changes the address. 
     struct secret {
         
-        // The serialized form of the key has a different prefix 
-        // depending on whether it is for testnet or mainnet. 
-        enum type : byte {
-            main = 0x80, 
-            test = 0xef
-        };
-        
-        type Prefix;
+        net Network;
         secp256k1::secret Secret;
         
         // whether the corresponding public key is compressed. 
@@ -45,7 +38,7 @@ namespace Gigamonkey::Bitcoin {
         bool valid () const;
         
         secret ();
-        secret (type p, secp256k1::secret s, bool c = true);
+        secret (net p, secp256k1::secret s, bool c = true);
         
         secret (string_view s);
         
@@ -63,12 +56,16 @@ namespace Gigamonkey::Bitcoin {
         WIF encode () const;
 
         operator string () const;
-        
-    private:
-        static Bitcoin::address::type to_address_type (type t);
     };
 
     struct WIF : string {
+
+        // The serialized form of the key has a different prefix
+        // depending on whether it is for testnet or mainnet.
+        enum prefix : byte {
+            main = 0x80,
+            test = 0xef
+        };
 
         // why is wif compressed bigger than wif uncompressed?
         // because compressed keys were invented after uncompressed keys.
@@ -80,15 +77,15 @@ namespace Gigamonkey::Bitcoin {
         constexpr static byte CompressedSuffix = 0x01;
 
         static bool valid (string_view);
-        static Bitcoin::secret::type prefix (string_view);
+        static net network (string_view);
         static secp256k1::secret secret (string_view);
         static bool compressed (string_view);
 
-        static WIF encode (byte, const secp256k1::secret &, bool compressed = true);
+        static WIF encode (net, const secp256k1::secret &, bool compressed = true);
         static Bitcoin::secret decode (string_view);
 
         bool valid () const;
-        Bitcoin::secret::type prefix () const;
+        net network () const;
         secp256k1::secret secret () const;
         bool compressed () const;
 
@@ -98,7 +95,7 @@ namespace Gigamonkey::Bitcoin {
     };
     
     bool inline operator == (const secret &a, const secret &b) {
-        return a.Prefix == b.Prefix && a.Secret == b.Secret && a.Compressed == b.Compressed;
+        return a.Network == b.Network && a.Secret == b.Secret && a.Compressed == b.Compressed;
     }
     
     bool inline operator != (const secret &a, const secret &b) {
@@ -114,21 +111,17 @@ namespace Gigamonkey::Bitcoin {
     }
     
     bool inline secret::valid () const {
-        return Secret.valid () && (Prefix == main || Prefix == test);
+        return Secret.valid () && (Network == net::Main || Network == net::Test);
     }
     
-    inline secret::secret () : Prefix {0}, Secret {}, Compressed {false} {}
+    inline secret::secret () : Network {net::Invalid}, Secret {}, Compressed {false} {}
     
-    Bitcoin::address::type inline secret::to_address_type (secret::type t) {
-        return t == main ? Bitcoin::address::main : Bitcoin::address::test;
-    }
-    
-    inline secret::secret (type p, secp256k1::secret s, bool c) : Prefix {p}, Secret {s}, Compressed {c} {}
+    inline secret::secret (net p, secp256k1::secret s, bool c) : Network {p}, Secret {s}, Compressed {c} {}
     
     inline secret::secret (string_view s) : secret {WIF::decode (s)} {}
         
     WIF inline secret::encode () const {
-        return WIF::encode (Prefix, Secret, Compressed);
+        return WIF::encode (Network, Secret, Compressed);
     }
 
     inline secret::operator string () const {
@@ -140,7 +133,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     Bitcoin::address::decoded inline secret::address () const {
-        return {to_address_type (Prefix), to_public ().address_hash ()};
+        return {Network, to_public ().address_hash ()};
     }
     
     secp256k1::signature inline secret::sign (const digest256 &d) const {
@@ -163,8 +156,8 @@ namespace Gigamonkey::Bitcoin {
         return decode (x).valid ();
     }
 
-    secret::type inline WIF::prefix (string_view x) {
-        return decode (x).Prefix;
+    net inline WIF::network (string_view x) {
+        return decode (x).Network;
     }
 
     secp256k1::secret inline WIF::secret (string_view x) {
@@ -179,8 +172,8 @@ namespace Gigamonkey::Bitcoin {
         return valid (*this);
     }
 
-    secret::type inline WIF::prefix () const {
-        return prefix (*this);
+    net inline WIF::network () const {
+        return network (*this);
     }
 
     secp256k1::secret inline WIF::secret () const {

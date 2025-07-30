@@ -27,14 +27,14 @@ namespace Gigamonkey {
             }
         }
         
-        static Gigamonkey::script script (const bytes_view data, bool safe_script = true) {
+        static Gigamonkey::script script (const byte_slice data, bool safe_script = true) {
             using namespace Bitcoin;
             return compile (safe_script ? 
                 program {OP_FALSE, instruction::op_return_data (data)} : 
                 program {instruction::op_return_data (data)});
         }
         
-        static bool match (const bytes_view p) {
+        static bool match (const byte_slice p) {
             return (p.size () > 1 && p[0] == 0x6a) || (p.size () > 2 && p[0] == 0x00 && p[1] == 0x6a);
         }
         
@@ -49,7 +49,7 @@ namespace Gigamonkey {
             return Bitcoin::output {0, script (Data, Safe)};
         }
         
-        op_return (bytes_view b, bool safe_script = true) : Data {b}, Safe {safe} {}
+        op_return (byte_slice b, bool safe_script = true) : Data {b}, Safe {safe} {}
     };
 } 
 

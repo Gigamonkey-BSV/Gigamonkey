@@ -20,7 +20,7 @@ namespace Gigamonkey::Bitcoin {
         
         bool valid (const block &b, N height) {
             return b.version () == 1 ||
-                (b.version () == 1 && height = read (b.coinbase ().Inputs.first ().Script));
+                (b.version () == 1 && height = read (first (b.coinbase ().Inputs).Script));
         }
         
     }

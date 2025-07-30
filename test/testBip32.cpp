@@ -19,18 +19,6 @@ namespace Gigamonkey::HD {
                 ("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi");
     }
 
-    std::vector<char> HexToBytes (const std::string &hex) {
-        std::vector<char> bytes;
-
-        for (unsigned int i = 0; i < hex.length (); i += 2) {
-            std::string byteString = hex.substr (i, 2);
-            char byte = (char) strtol (byteString.c_str (), NULL, 16);
-            bytes.push_back (byte);
-        }
-
-        return bytes;
-    }
-
     TEST (Bip32, DeriveChain) {
         string path1 = "0\'";
         string path2 = "0\'/1";
@@ -70,13 +58,13 @@ namespace Gigamonkey::HD {
     TEST (Bip32, PublicRead) {
         BIP_32::pubkey read = BIP_32::pubkey::read
             ("xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8");
-        ASSERT_EQ (read.Sequence,0) << "Invalid Sequence";
-        ASSERT_EQ (read.Depth,0) << "Invalid Depth";
-        ASSERT_EQ (read.Parent,0) << "Invalid Parent Fingerprint";
-        ASSERT_EQ (read.Net,0x78) << "Invalid Network";
-        ASSERT_THAT (read.ChainCode, testing::ElementsAre
-            (0x87, 0x3D, 0xFF, 0x81, 0xC0, 0x2F, 0x52, 0x56, 0x23, 0xFD, 0x1F, 0xE5, 0x16, 0x7E, 0xAC, 0x3A, 0x55,0xA0, 0x49,
-             0xDE, 0x3D, 0x31, 0x4B, 0xB4, 0x2E, 0xE2, 0x27, 0xFF, 0xED, 0x37, 0xD5, 0x08)) << "Invalid ChainCode";
+        ASSERT_EQ (read.Sequence, 0) << "Invalid Sequence";
+        ASSERT_EQ (read.Depth, 0) << "Invalid Depth";
+        ASSERT_EQ (read.Parent, 0) << "Invalid Parent Fingerprint";
+        ASSERT_EQ (read.Network, Bitcoin::net::Main) << "Invalid Network";
+        ASSERT_EQ ((static_cast<data::array<byte, 32>> (read.ChainCode)), (data::array<byte, 32>
+            {0x87, 0x3D, 0xFF, 0x81, 0xC0, 0x2F, 0x52, 0x56, 0x23, 0xFD, 0x1F, 0xE5, 0x16, 0x7E, 0xAC, 0x3A, 0x55, 0xA0, 0x49,
+             0xDE, 0x3D, 0x31, 0x4B, 0xB4, 0x2E, 0xE2, 0x27, 0xFF, 0xED, 0x37, 0xD5, 0x08})) << "Invalid ChainCode";
         ASSERT_THAT (read.Pubkey, testing::ElementsAre
             (0x03, 0x39, 0xA3, 0x60, 0x13, 0x30, 0x15, 0x97, 0xDA, 0xEF, 0x41, 0xFB, 0xE5, 0x93, 0xA0, 0x2C, 0xC5, 0x13, 0xD0,
              0xB5, 0x55, 0x27, 0xEC, 0x2D, 0xF1, 0x05, 0x0E, 0x2E, 0x8F, 0xF4, 0x9C, 0x85, 0xC2)) << "Invalid Secret Key";
@@ -90,12 +78,9 @@ namespace Gigamonkey::HD {
     }
 
     TEST (Bip32, ToPublic) {
-        std::vector<char> input = HexToBytes ("000102030405060708090a0b0c0d0e0f");
+        data::bytes seed = *data::encoding::hex::read ("000102030405060708090a0b0c0d0e0f");
 
-        Gigamonkey::bytes seed (input.size ());
-        std::copy (input.begin (),input.end (), seed.begin ());
-
-        BIP_32::secret secret = BIP_32::secret::from_seed (seed,BIP_32::main);
+        BIP_32::secret secret = BIP_32::secret::from_seed (seed, Bitcoin::net::Main);
         BIP_32::secret secret2 = BIP_32::secret::read
             ("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi");
         BIP_32::pubkey pubkey = secret.to_public ();

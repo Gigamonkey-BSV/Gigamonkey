@@ -35,7 +35,7 @@ namespace Gigamonkey::Stratum {
     };
     
     std::ostream inline &operator << (std::ostream &o, const session_id id) {
-        return o << data::encoding::hex::fixed<4> (id);
+        return o << encoding::hex::fixed<4> (id);
     }
     
     inline session_id::session_id () : uint32_big {0} {}
@@ -50,7 +50,7 @@ namespace Gigamonkey::Stratum {
     }
     
     inline session_id::operator encoding::hex::fixed<4> () const {
-        return encoding::hex::write (*this, hex_case::lower);
+        return encoding::hex::write (*this, data::hex_case::lower);
     }
 
 }

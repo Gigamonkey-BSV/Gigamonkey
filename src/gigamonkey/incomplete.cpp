@@ -21,13 +21,13 @@ namespace Gigamonkey::Bitcoin {
     }
 
     namespace {
-        transaction read_from_bytes (bytes_view b) {
+        transaction read_from_bytes (byte_slice b) {
             auto tx = Bitcoin::transaction {b};
             if (!tx.valid ()) throw std::invalid_argument {"invalid transaction"};
             return transaction {tx};
         }
     }
     
-    incomplete::transaction::transaction (bytes_view b) : transaction {read_from_bytes (b)} {}
+    incomplete::transaction::transaction (byte_slice b) : transaction {read_from_bytes (b)} {}
 
 }

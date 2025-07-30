@@ -16,9 +16,9 @@ namespace Gigamonkey::work {
             list<Z> zz = z;
             while (!zz.empty ()) {
                 x = x << fun (y.first (), zz.first ());
-                zz = zz.rest ();
+                zz = rest (zz);
             }
-            y = y.rest ();
+            y = rest (y);
         }
         return x;
     }
@@ -68,14 +68,14 @@ namespace Gigamonkey::work {
         
         auto proofs = data::for_each ([&extra_nonce] (puzzle p) -> proof {
             extra_nonce++;
-            return cpu_solve (p, solution (Bitcoin::timestamp (1), 0, (bytes_view) (extra_nonce), 353));
+            return cpu_solve (p, solution (Bitcoin::timestamp (1), 0, slice<const byte> (extra_nonce), 353));
         }, puzzles); 
         
         // we add a non-trivial version mask. 
         auto proofs_with_mask = data::for_each ([&extra_nonce] (puzzle p) -> proof {
             // add a non-trivial version bits field. 
             extra_nonce++;
-            return cpu_solve (p, solution (share {Bitcoin::timestamp (1), 0, (bytes_view) (extra_nonce), -1}, 353));
+            return cpu_solve (p, solution (share {Bitcoin::timestamp (1), 0, slice<const byte> (extra_nonce), -1}, 353));
         }, puzzles_with_mask); 
         
         EXPECT_TRUE (dot_cross ([] (proof a, proof b) -> bool {

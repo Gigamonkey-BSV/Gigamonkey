@@ -13,7 +13,7 @@ namespace Gigamonkey {
     Bitcoin::header read_header (const string &x) {
         maybe<bytes> b = encoding::hex::read (x);
         if (!bool (b) || b->size () != 80) return {};
-        return Bitcoin::header {slice<80> {b->data ()}};
+        return Bitcoin::header {slice<const byte, 80> {b->data ()}};
     }
     
     string inline write_header (const Bitcoin::header &h) {
@@ -23,16 +23,16 @@ namespace Gigamonkey {
     Merkle::digests read_path (const JSON::array_t &j) {
         Merkle::digests d;
 
-        for (const JSON &n : j) d = d << (n == "*" ? maybe<digest256> {} : maybe<digest256> {read_digest (n)});
+        for (const JSON &n : j) d >>= (n == "*" ? maybe<digest256> {} : maybe<digest256> {read_digest (n)});
 
-        return data::reverse (d);
+        return reverse (d);
     }
     
     JSON write_path (Merkle::branch b) {
         JSON::array_t nodes (b.Digests.size ());
 
         for (JSON& j : nodes) {
-            j = bool (b.Digests.first ()) ? write_digest (*b.Digests.first ()) : std::string {"*"};
+            j = bool (first (b.Digests)) ? write_digest (*first (b.Digests)) : std::string {"*"};
             b = b.rest ();
         }
 
@@ -113,7 +113,7 @@ namespace Gigamonkey {
         if (j["txOrId"].size () == 64) {
             return read_digest (j["txOrId"]);
         } else {
-            return Bitcoin::transaction::id(*encoding::hex::read (string (j["txOrId"])));
+            return Bitcoin::transaction::id (*encoding::hex::read (string (j["txOrId"])));
         }
     }
     
@@ -170,19 +170,19 @@ namespace Gigamonkey {
         for (int i = 0; i < size; i++) {
             maybe<digest256> next;
             r = read_node (r, next);
-            d = d << next;
+            d >>= next;
         }
 
-        p = data::reverse (d);
+        p = reverse (d);
         return r;
     }
     
-    proofs_serialization_standard proofs_serialization_standard::read_binary (bytes_view b) {
+    proofs_serialization_standard proofs_serialization_standard::read_binary (slice<const byte> b) {
         try {
             proofs_serialization_standard x;
             
             byte flags;
-            iterator_reader r {b.data (), b.data () + b.size ()};
+            it_rdr r {b.data (), b.data () + b.size ()};
             Bitcoin::var_int index; 
             r >> flags >> index;
             x.Path.Index = index;
@@ -206,7 +206,7 @@ namespace Gigamonkey {
                 case target_type_block_header: {
                     bytes header (80);
                     r >> header;
-                    x.BlockHeader = Bitcoin::header {slice<80> (header.data ())};
+                    x.BlockHeader = Bitcoin::header {slice<const byte, 80> (header.data ())};
                     break;
                 }
                 case target_type_Merkle_root: {
@@ -262,7 +262,7 @@ namespace Gigamonkey {
             Bitcoin::var_int::size (Path.Index) +
             Bitcoin::var_int::size (Path.Digests.size ()) +
             (tx_included ? Bitcoin::var_int::size (Transaction->size ()) + Transaction->size () : 32);
-        for (const maybe<digest256>& d : path) size += (bool (d) ? 33 : 1);
+        for (const maybe<digest256> &d : path) size += (bool (d) ? 33 : 1);
         if (tt == target_type_block_hash || tt == target_type_Merkle_root) size += 32;
         else if (tt == target_type_block_header) size += 80;
         
@@ -270,8 +270,8 @@ namespace Gigamonkey {
         bytes b (size);
         
         // write flags and index. 
-        iterator_writer w {b.begin (), b.end ()};
-        w << flags() << Bitcoin::var_int {index ()};
+        it_wtr w {b.begin (), b.end ()};
+        w << flags () << Bitcoin::var_int {index ()};
         
         if (tx_included) write_transaction (w, *Transaction);
         else write_txid (w, *TXID);
@@ -328,7 +328,7 @@ namespace Gigamonkey {
 
         digest256 root = Path.derive_root (txid);
 
-        const data::entry<N, Bitcoin::header> *header = d.header (root);
+        ptr<const data::entry<N, Bitcoin::header>> header = d.header (root);
         if (header == nullptr) return false;
 
         if (bool (MerkleRoot) && root != *MerkleRoot) return false;
