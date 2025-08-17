@@ -25,14 +25,16 @@ namespace Gigamonkey {
 
 namespace Gigamonkey::Stratum {
 
-    using session = ptr<data::net::session<JSON>>;
+    using stream = ptr<data::net::out_stream<JSON>>;
+
+    template <typename X> using awaitable = data::awaitable<X>;
     
     // can be used for a remote server or a remote client. 
     struct remote_receive_handler {
-        session Send;
+        stream Send;
     
         virtual void receive_notification (const notification &) = 0;
-        virtual void receive_request (const Stratum::request &) = 0;
+        virtual awaitable<void> receive_request (const Stratum::request &) = 0;
         virtual void receive_response (method, const Stratum::response &) = 0;
         
         virtual void parse_error (const string &invalid);
@@ -40,15 +42,15 @@ namespace Gigamonkey::Stratum {
         uint32 Requests {0};
         std::map<request_id, method> Request;
         
-        void operator () (const JSON &next);
+        awaitable<void> operator () (const JSON &next);
         
         // there are two ways to talk to a server: request and notify. 
         // request expects a response and notify does not. 
         request_id send_request (method m, parameters p);
         
-        void send_notification (method m, parameters p);
+        awaitable<bool> send_notification (method m, parameters p);
         
-        remote_receive_handler (session x): Send {x} {}
+        remote_receive_handler (stream x): Send {x} {}
         
     };
     
@@ -64,8 +66,8 @@ namespace Gigamonkey::Stratum {
         }
     };
     
-    void inline remote_receive_handler::send_notification (method m, parameters p) {
-        Send->send (notification {m, p});
+    awaitable<bool> inline remote_receive_handler::send_notification (method m, parameters p) {
+        co_return co_await Send->send (notification {m, p});
     }
     
     void inline remote_receive_handler::parse_error (const string &invalid) {
