@@ -15,7 +15,7 @@ namespace Gigamonkey::Stratum {
     
     bool server_session::state::set_extranonce (const Stratum::extranonce &n) {
         if (!subscribed ()) throw exception {"Cannot set extra nonce before client is subscribed"};
-        if (NextExtranonce == n || (NextExtranonce == Stratum::extranonce{} && Extranonce == n)) return false;
+        if (NextExtranonce == n || (NextExtranonce == Stratum::extranonce {} && Extranonce == n)) return false;
         NextExtranonce = n;
         return true;
     }

@@ -31,7 +31,7 @@ namespace Gigamonkey::Stratum {
             optional<mining::subscribe_request::parameters> SubscribeRequest;
         };
         
-        client_session (session p, const options &o) : remote_receive_handler {p}, Options {o} {}
+        client_session (stream p, const options &o) : remote_receive_handler {p}, Options {o} {}
         virtual ~client_session () {}
         
     private:
@@ -51,7 +51,7 @@ namespace Gigamonkey::Stratum {
         }
         
         void receive_notification (const notification &n) final override;
-        void receive_request (const Stratum::request &r) final override;
+        awaitable<void> receive_request (const Stratum::request &r) final override;
         void receive_response (method, const Stratum::response &r) final override;
         void solved (const work::solution &) final override;
         
