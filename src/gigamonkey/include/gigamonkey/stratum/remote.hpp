@@ -48,7 +48,7 @@ namespace Gigamonkey::Stratum {
         // request expects a response and notify does not. 
         request_id send_request (method m, parameters p);
         
-        awaitable<bool> send_notification (method m, parameters p);
+        awaitable<void> send_notification (method m, parameters p);
         
         remote_receive_handler (stream x): Send {x} {}
         
@@ -66,8 +66,8 @@ namespace Gigamonkey::Stratum {
         }
     };
     
-    awaitable<bool> inline remote_receive_handler::send_notification (method m, parameters p) {
-        co_return co_await Send->send (notification {m, p});
+    awaitable<void> inline remote_receive_handler::send_notification (method m, parameters p) {
+        co_await Send->send (notification {m, p});
     }
     
     void inline remote_receive_handler::parse_error (const string &invalid) {

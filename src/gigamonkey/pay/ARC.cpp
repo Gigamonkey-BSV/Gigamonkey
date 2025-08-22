@@ -100,7 +100,7 @@ namespace Gigamonkey::ARC {
             case (text): {
                 r = r.body (encoding::hex::write (bytes (x.Transaction)));
             } break;
-            default: throw exception {} << "Invalid ARC content type";
+            default: throw data::exception {} << "Invalid ARC content type";
         }
         co_return co_await this->operator () (this->REST (r));
     }
@@ -133,7 +133,7 @@ namespace Gigamonkey::ARC {
                     return encoding::hex::write (bytes (tx));
                 }, x.Transactions), "\n"));
             } break;
-            default: throw exception {} << "Invalid ARC content type";
+            default: throw data::exception {} << "Invalid ARC content type";
         }
 
         co_return co_await this->operator () (this->REST (r));
@@ -145,7 +145,7 @@ namespace Gigamonkey::ARC {
                 case text: return "text/plain";
                 case json: return "application/json";
                 case octet: return "application/octet-stream";
-                default: throw exception {} << "unknown ARC content type";
+                default: throw data::exception {} << "unknown ARC content type";
             }
         }
 
@@ -158,7 +158,7 @@ namespace Gigamonkey::ARC {
                 case SENT_TO_NETWORK : return "SENT_TO_NETWORK";
                 case ACCEPTED_BY_NETWORK : return "ACCEPTED_BY_NETWORK";
                 case SEEN_ON_NETWORK : return "SEEN_ON_NETWORK";
-                default: throw exception {} << "unknown ARC status";
+                default: throw data::exception {} << "unknown ARC status";
             }
         }
 

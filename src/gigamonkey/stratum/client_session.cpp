@@ -14,11 +14,9 @@ namespace Gigamonkey::Stratum {
     
     awaitable<void> client_session::receive_request (const Stratum::request &r) {
         if (client::get_version_request::valid (r))
-            if (!co_await this->Send->send (client::get_version_response {r.id (), Options.Version}))
-                throw exception {} << "failed to send message, channel closed";
+            co_await this->Send->send (client::get_version_response {r.id (), Options.Version});
         
-        if (!co_await this->Send->send (response {r.id (), nullptr, error {ILLEGAL_METHOD}}))
-            throw exception {} << "failed to send message, channel closed";
+        co_await this->Send->send (response {r.id (), nullptr, error {ILLEGAL_METHOD}});
         
         throw exception {} << "unknown request received: " << r;
     }

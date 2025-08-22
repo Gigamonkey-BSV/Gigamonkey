@@ -233,6 +233,10 @@ namespace Gigamonkey::ARC {
         static list<ARC::status> status (const HTTP::response &);
     };
 
+    struct exception : HTTP::exception {
+        using HTTP::exception::exception;
+    };
+
     inline response::response (HTTP::response &&r): HTTP::response (r) {}
 
     maybe<JSON> inline response::body () const {
