@@ -341,6 +341,10 @@ namespace Gigamonkey::MAPI {
 
     };
 
+    struct exception : HTTP::exception {
+        using HTTP::exception::exception;
+    };
+
     HTTP::request inline client::get_policy_quote_HTTP_request () const {
         return this->REST.GET ("/mapi/policyQuote");
     }

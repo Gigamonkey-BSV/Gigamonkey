@@ -77,13 +77,12 @@ FetchContent_MakeAvailable (ctre)
 
 find_package (data CONFIG REQUIRED)
 
-# Check if GTests is installed. If not, install it
-
 option (PACKAGE_TESTS "Build the tests" ON)
 include (CTest)
 
 if (PACKAGE_TESTS)
   include (CTest)
+  # Check if GTests is installed. If not, install it
   FetchContent_Declare (
     googletest
     GIT_REPOSITORY https://github.com/google/googletest.git
