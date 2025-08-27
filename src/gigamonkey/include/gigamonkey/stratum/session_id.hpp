@@ -5,6 +5,11 @@
 #define GIGAMONKEY_STRATUM_SESSION_ID
 
 #include <gigamonkey/types.hpp>
+#include <data/net/JSON.hpp>
+
+namespace Gigamonkey {
+    using JSON = data::JSON;
+}
 
 namespace Gigamonkey::Stratum {
     struct session_id;

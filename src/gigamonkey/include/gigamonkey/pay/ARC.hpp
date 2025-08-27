@@ -7,9 +7,11 @@
 #include <data/net/error.hpp>
 #include <data/net/HTTP_client.hpp>
 #include <gigamonkey/pay/extended.hpp>
+#include <data/net/JSON.hpp>
 
 // https://bitcoin-sv.github.io/arc/api.html
 namespace Gigamonkey {
+    using JSON = data::JSON;
     namespace HTTP = data::net::HTTP;
 
     using URL = data::net::URL;
