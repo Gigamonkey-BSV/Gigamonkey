@@ -1,17 +1,29 @@
-add_library(sv_giga OBJECT
-random.cpp
+add_library (sv_giga
+  OBJECT
+  random.cpp
+)
+
+target_link_libraries (
+  sv_giga
+
+  PUBLIC
+
+  Data::sv
+
 )
 
 target_include_directories(sv_giga PUBLIC
 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
+include (GNUInstallDirs)
 
-include(GNUInstallDirs)
-install(DIRECTORY
-include/sv
+install (DIRECTORY
+  include/sv
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
-install(TARGETS sv_giga
-EXPORT sv_gigaTargets ARCHIVE 
+
+install (
+  TARGETS sv_giga
+  EXPORT sv_gigaTargets ARCHIVE
 )
