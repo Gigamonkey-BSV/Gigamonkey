@@ -1,8 +1,11 @@
-add_library (base58_check STATIC
+add_library (
+  base58_check
 
-    p2p/var_int.cpp
-    p2p/checksum.cpp
-    p2p/version.cpp
+  STATIC
+
+  p2p/var_int.cpp
+  p2p/checksum.cpp
+  p2p/version.cpp
 
 )
 
@@ -100,21 +103,18 @@ target_include_directories (
 
 target_link_libraries (
   gigamonkey
+
   PUBLIC
+
+  base58_check
+  Data::data
   nlohmann_json::nlohmann_json
   PkgConfig::cryptopp
-  Data::data
   util
   sv_giga
-  base58_check
   
   secp256k1
 
-  # boost::boost
-  # openssl::openssl
-  # cryptopp::cryptopp
-
-  # gmp::gmp
 )
 
 
