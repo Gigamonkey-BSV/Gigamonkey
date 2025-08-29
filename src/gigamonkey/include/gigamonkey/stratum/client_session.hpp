@@ -17,10 +17,10 @@ namespace Gigamonkey::Stratum {
     
     // A client talking to a remote server. 
     struct client_session : public remote_receive_handler, public virtual work::solver {
-        request_id send_configure (const extensions::requests &);
-        request_id send_authorize (const mining::authorize_request::parameters &);
-        request_id send_subscribe (const mining::subscribe_request::parameters &);
-        request_id send_submit (const share &x);
+        awaitable<request_id> send_configure (const extensions::requests &);
+        awaitable<request_id> send_authorize (const mining::authorize_request::parameters &);
+        awaitable<request_id> send_subscribe (const mining::subscribe_request::parameters &);
+        awaitable<request_id> send_submit (const share &x);
         
         struct options {
             // how to respond to get_version requests. 
@@ -31,7 +31,7 @@ namespace Gigamonkey::Stratum {
             optional<mining::subscribe_request::parameters> SubscribeRequest;
         };
         
-        client_session (session p, const options &o) : remote_receive_handler {p}, Options {o} {}
+        client_session (stream p, const options &o) : remote_receive_handler {p}, Options {o} {}
         virtual ~client_session () {}
         
     private:
@@ -51,7 +51,7 @@ namespace Gigamonkey::Stratum {
         }
         
         void receive_notification (const notification &n) final override;
-        void receive_request (const Stratum::request &r) final override;
+        awaitable<void> receive_request (const Stratum::request &r) final override;
         void receive_response (method, const Stratum::response &r) final override;
         void solved (const work::solution &) final override;
         
@@ -84,21 +84,21 @@ namespace Gigamonkey::Stratum {
         
     };
     
-    request_id inline client_session::send_configure (const extensions::requests &q) {
-        return send_request (mining_configure, mining::configure_request::serialize (mining::configure_request::parameters {q}));
+    awaitable<request_id> inline client_session::send_configure (const extensions::requests &q) {
+        co_return send_request (mining_configure, mining::configure_request::serialize (mining::configure_request::parameters {q}));
     }
     
-    request_id inline client_session::send_authorize (const mining::authorize_request::parameters &p) {
-        return send_request (mining_authorize, mining::authorize_request::serialize (p));
+    awaitable<request_id> inline client_session::send_authorize (const mining::authorize_request::parameters &p) {
+        co_return send_request (mining_authorize, mining::authorize_request::serialize (p));
     }
     
-    request_id inline client_session::send_subscribe (const mining::subscribe_request::parameters &p) {
-        return send_request (mining_subscribe, mining::subscribe_request::serialize (p));
+    awaitable<request_id> inline client_session::send_subscribe (const mining::subscribe_request::parameters &p) {
+        co_return send_request (mining_subscribe, mining::subscribe_request::serialize (p));
     }
     
-    request_id inline client_session::send_submit (const share &x) {
+    awaitable<request_id> inline client_session::send_submit (const share &x) {
         SharesSubmitted++;
-        return send_request (mining_submit, mining::submit_request::serialize (x));
+        co_return send_request (mining_submit, mining::submit_request::serialize (x));
     }
     
     void inline client_session::receive_submit (bool b) {

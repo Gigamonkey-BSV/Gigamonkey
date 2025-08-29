@@ -5,10 +5,10 @@
 
 namespace Gigamonkey::Stratum {
     
-    void remote_receive_handler::operator () (const JSON &next) {
+    awaitable<void> remote_receive_handler::operator () (const JSON &next) {
         if (notification::valid (next)) {
             receive_notification (notification {next});
-            return;
+            co_return;
         }
         
         if (response::valid (next)) {
@@ -16,18 +16,18 @@ namespace Gigamonkey::Stratum {
             response r {next};
             {
                 auto x = Request.find (r.id ());
-                if (x == Request.end ()) throw exception{"response with unknown message id returned"};
+                if (x == Request.end ()) throw exception {"response with unknown message id returned"};
                 m = x->second;
                 Request.erase (x);
             }
             
             receive_response (m, r);
-            return;
+            co_return;
         }
         
         if (Stratum::request::valid (next)) {
             receive_request (Stratum::request {next});
-            return;
+            co_return;
         }
         
         throw exception {} << "invalid Stratum message received: " << next.dump ();

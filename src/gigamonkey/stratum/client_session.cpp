@@ -12,11 +12,11 @@ namespace Gigamonkey::Stratum {
         throw exception{} << "unknown notification received: " + n.dump ();
     }
     
-    void client_session::receive_request (const Stratum::request &r) {
+    awaitable<void> client_session::receive_request (const Stratum::request &r) {
         if (client::get_version_request::valid (r))
-            return this->Send->send (client::get_version_response {r.id (), Options.Version});
+            co_await this->Send->send (client::get_version_response {r.id (), Options.Version});
         
-        this->Send->send (response {r.id (), nullptr, error {ILLEGAL_METHOD}});
+        co_await this->Send->send (response {r.id (), nullptr, error {ILLEGAL_METHOD}});
         
         throw exception {} << "unknown request received: " << r;
     }

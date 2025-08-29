@@ -19,7 +19,6 @@
 #include <data/string.hpp>
 #include <data/encoding/hex.hpp>
 #include <data/math/nonnegative.hpp>
-#include <data/net/JSON.hpp>
 
 inline bool implies (bool a, bool b) {
     return (!a) || b;
@@ -83,8 +82,6 @@ namespace Gigamonkey {
         using check = bytes_array<byte, 4>;
 
     }
-    
-    using JSON = nlohmann::json;
     
     template <typename X> using nonzero = data::math::nonzero<X>;
 

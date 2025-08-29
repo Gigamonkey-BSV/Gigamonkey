@@ -7,9 +7,11 @@
 #include <data/net/error.hpp>
 #include <data/net/HTTP_client.hpp>
 #include <gigamonkey/pay/extended.hpp>
+#include <data/net/JSON.hpp>
 
 // https://bitcoin-sv.github.io/arc/api.html
 namespace Gigamonkey {
+    using JSON = data::JSON;
     namespace HTTP = data::net::HTTP;
 
     using URL = data::net::URL;
@@ -231,6 +233,10 @@ namespace Gigamonkey::ARC {
         list<ARC::status> status () const;
         static bool valid (const HTTP::response &);
         static list<ARC::status> status (const HTTP::response &);
+    };
+
+    struct exception : HTTP::exception {
+        using HTTP::exception::exception;
     };
 
     inline response::response (HTTP::response &&r): HTTP::response (r) {}

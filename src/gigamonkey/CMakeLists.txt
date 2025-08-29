@@ -1,9 +1,37 @@
+add_library (
+  base58_check
+
+  STATIC
+
+  p2p/var_int.cpp
+  p2p/checksum.cpp
+  p2p/version.cpp
+
+)
+
+target_include_directories (
+  base58_check
+  PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated/>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+target_link_libraries (
+  base58_check
+
+  PUBLIC
+
+  Data::numbers
+)
+
+# Set C++ version
+target_compile_features (base58_check PUBLIC cxx_std_23)
+set_target_properties (base58_check PROPERTIES CXX_EXTENSIONS OFF)
+#target_compile_options (base85_check PUBLIC "-fconcepts")
+
 add_library (gigamonkey STATIC
     
-    p2p/var_int.cpp
-    p2p/checksum.cpp
-    p2p/version.cpp
-
     secp256k1.cpp
     numbers.cpp
     timestamp.cpp
@@ -63,42 +91,39 @@ add_library (gigamonkey STATIC
     boost/boost.cpp  
 )
 
-configure_file (include/gigamonkey/version.hpp.in generated/gigamonkey/version.hpp )
+configure_file (include/gigamonkey/version.hpp.in generated/gigamonkey/version.hpp)
 
 target_include_directories (
   gigamonkey
-  PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated/> $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated/>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
 )
 
-target_include_directories (
+target_link_libraries (
   gigamonkey
-  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>
-)
 
-target_link_libraries (gigamonkey PUBLIC
+  PUBLIC
+
+  base58_check
+  Data::data
   nlohmann_json::nlohmann_json
   PkgConfig::cryptopp
-  Data::data
   util
   sv_giga
   
   secp256k1
 
-  # boost::boost
-  # openssl::openssl
-  # cryptopp::cryptopp
-
-  # gmp::gmp
 )
 
 
 # Set C++ version
-target_compile_features (gigamonkey PUBLIC cxx_std_20)
+target_compile_features (gigamonkey PUBLIC cxx_std_23)
 set_target_properties (gigamonkey PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_options (gigamonkey PUBLIC "-fconcepts")
 
-
-include(GNUInstallDirs)
+include (GNUInstallDirs)
 
 # copy include directory into install destination
 install (
@@ -107,7 +132,7 @@ install (
 )
 
 install (
-  TARGETS gigamonkey sv_giga nlohmann_json
+  TARGETS gigamonkey base58_check sv_giga nlohmann_json
   EXPORT GigamonkeyTargets
   ARCHIVE
 )

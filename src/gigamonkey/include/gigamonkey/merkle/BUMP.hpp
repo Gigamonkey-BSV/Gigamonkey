@@ -6,6 +6,11 @@
 
 #include <gigamonkey/merkle/dual.hpp>
 #include <gigamonkey/timechain.hpp>
+#include <data/net/JSON.hpp>
+
+namespace Gigamonkey {
+    using JSON = data::JSON;
+}
 
 // https://bsv.brc.dev/transactions/0074
 

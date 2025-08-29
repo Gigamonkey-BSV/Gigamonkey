@@ -11,7 +11,7 @@ namespace Gigamonkey {
     namespace crypto = data::crypto;
 
     template <size_t size>
-    using digest = crypto::digest<size>;
+    using digest = data::digest<size>;
 
     // because of a bug in bitcoind long ago, many bitcoin
     // applications expect hashes to be provided backwards.

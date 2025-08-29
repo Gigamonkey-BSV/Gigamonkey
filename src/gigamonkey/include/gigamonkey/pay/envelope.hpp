@@ -7,6 +7,11 @@
 #include <gigamonkey/secp256k1.hpp>
 #include <data/encoding/base64.hpp>
 #include <data/encoding/unicode.hpp>
+#include <data/net/JSON.hpp>
+
+namespace Gigamonkey {
+    using JSON = data::JSON;
+}
 
 // https://github.com/bitcoin-sv-specs/brfc-misc/tree/master/jsonenvelope
 

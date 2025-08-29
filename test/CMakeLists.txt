@@ -33,7 +33,10 @@ add_executable (unit_tests
     testStratum.cpp
 )
 
-target_link_libraries (unit_tests
-    PRIVATE gigamonkey Data::data util gtest_main gmock)
+target_link_libraries (
+    unit_tests
+    PRIVATE
+    gigamonkey base58_check Data::data util gtest_main gmock
+)
 
 gtest_discover_tests (unit_tests)

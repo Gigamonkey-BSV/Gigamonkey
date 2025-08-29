@@ -5,6 +5,11 @@
 #define GIGAMONKEY_STRATUM_ERROR
 
 #include <gigamonkey/types.hpp>
+#include <data/net/JSON.hpp>
+
+namespace Gigamonkey {
+    using JSON = data::JSON;
+}
 
 namespace Gigamonkey::Stratum {
     

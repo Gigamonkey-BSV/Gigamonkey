@@ -5,10 +5,10 @@
 #define GIGAMONKEY_SCHEMA_RANDOM
 
 #include "keysource.hpp"
-#include <data/crypto/random.hpp>
+#include <data/random.hpp>
 
 namespace Gigamonkey {
-    struct bitcoind_entropy final : data::crypto::entropy {
+    struct bitcoind_entropy final : data::entropy {
         byte_array<32> Data;
         uint32 Position;
         bitcoind_entropy () : Data {}, Position {32} {}
@@ -19,7 +19,7 @@ namespace Gigamonkey {
 namespace Gigamonkey::Bitcoin {
     
     class random_key_source final : public key_source {
-        data::crypto::entropy &Random;
+        data::entropy &Random;
         net Network;
         bool Compressed;
         
@@ -35,7 +35,7 @@ namespace Gigamonkey::Bitcoin {
             return x;
         }
         
-        random_key_source (data::crypto::entropy &r, net net = net::Main, bool compressed = true) :
+        random_key_source (data::entropy &r, net net = net::Main, bool compressed = true) :
             Random {r}, Network {net}, Compressed {compressed} {}
     };
 

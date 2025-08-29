@@ -40,7 +40,7 @@ namespace Gigamonkey::Stratum {
             options () {};
         };
         
-        server_session  (session p, const options &x) : remote_receive_handler {p}, State {x} {}
+        server_session  (stream p, const options &x) : remote_receive_handler {p}, State {x} {}
         virtual ~server_session () {}
         
         Stratum::difficulty difficulty () const;
@@ -48,26 +48,26 @@ namespace Gigamonkey::Stratum {
         // send a set_difficulty message to the client. 
         // this will not go into effect until the next 
         // notify message is sent. 
-        void send_set_difficulty (const Stratum::difficulty& d);
+        awaitable<void> send_set_difficulty (const Stratum::difficulty &d);
         
         optional<string> username () const;
         
         // notify the client of a new job. 
-        void send_notify (const mining::notify::parameters& p);
+        awaitable<void> send_notify (const mining::notify::parameters &p);
         
         optional<string> client_version () const;
         
         extensions::version_mask version_mask () const;
         
         // send a set_version_mask message to the client. 
-        void send_set_version_mask (const extensions::version_mask& p);
+        void send_set_version_mask (const extensions::version_mask &p);
         
         Stratum::extranonce extranonce () const;
         
         // send a set_extranonce message to the client. 
         // this will not go into effect until the next 
         // notify message is sent. 
-        void send_set_extranonce (const Stratum::extranonce &n);
+        awaitable<void> send_set_extranonce (const Stratum::extranonce &n);
         
         // get_version is the only request that the server sends to the client.
         // It doesn't depend on state so can be sent at any time. 
@@ -87,11 +87,11 @@ namespace Gigamonkey::Stratum {
         virtual mining::subscribe_response::parameters subscribe (const mining::subscribe_request::parameters&) = 0;
         
         // typically the client does not send notifications to the server.
-        virtual void receive_notification(const notification &n) override {
+        virtual void receive_notification (const notification &n) override {
             throw exception {} << "unknown notification received: " + n.dump ();
         }
         
-        void receive_request (const Stratum::request &) final override;
+        awaitable<void> receive_request (const Stratum::request &) final override;
         void receive_response (method, const Stratum::response &) final override;
         work::puzzle select () final override;
         
@@ -156,21 +156,21 @@ namespace Gigamonkey::Stratum {
             bool subscribed () const;
         
             Stratum::difficulty difficulty () const;
-            bool set_difficulty(const Stratum::difficulty& d);
+            bool set_difficulty (const Stratum::difficulty& d);
             
             Stratum::extranonce extranonce () const;
-            bool set_extranonce(const Stratum::extranonce &n);
+            bool set_extranonce (const Stratum::extranonce &n);
             
             // version mask that the client is using. 
             optional<extensions::version_mask> version_mask () const;
             
             // return value is whether the version mask has changed. 
-            bool set_version_mask(const extensions::version_mask &x);
+            bool set_version_mask (const extensions::version_mask &x);
             
             Stratum::difficulty minimum_difficulty () const;
-            void set_minimum_difficulty(optional<Stratum::difficulty> d);
+            void set_minimum_difficulty (optional<Stratum::difficulty> d);
             
-            extensions::result configure_result(
+            extensions::result configure_result (
                 const string &extension, 
                 const extensions::request &request);
             
@@ -245,8 +245,10 @@ namespace Gigamonkey::Stratum {
         return State.extranonce ();
     }
     
-    void inline server_session::send_set_extranonce (const Stratum::extranonce &n) {
-        if (State.set_extranonce (n)) this->send_notification (mining_set_extranonce, mining::set_extranonce::serialize (n));
+    awaitable<void> inline server_session::send_set_extranonce (const Stratum::extranonce &n) {
+        if (State.set_extranonce (n)) co_return co_await this->send_notification (
+            mining_set_extranonce,
+            mining::set_extranonce::serialize (n));
     }
     
     extensions::version_mask inline server_session::version_mask () const {
@@ -254,7 +256,7 @@ namespace Gigamonkey::Stratum {
         return bool (mask) ? *mask : extensions::version_mask {0};
     }
     
-    void inline server_session::send_set_version_mask(const extensions::version_mask &n) {
+    void inline server_session::send_set_version_mask (const extensions::version_mask &n) {
         if (State.set_version_mask (n))
             this->send_notification (mining_set_extranonce, mining::set_version_mask::serialize (*State.version_mask ()));
     }
@@ -263,11 +265,11 @@ namespace Gigamonkey::Stratum {
         return State.difficulty ();
     }
     
-    void inline server_session::send_set_difficulty(const Stratum::difficulty& d) {
+    awaitable<void> inline server_session::send_set_difficulty (const Stratum::difficulty &d) {
         if (State.set_difficulty (d)) this->send_notification (mining_set_difficulty, mining::set_difficulty::serialize (d));
     }
     
-    void inline server_session::send_notify(const mining::notify::parameters& p) {
+    awaitable<void> inline server_session::send_notify (const mining::notify::parameters &p) {
         State.notify (p);
         this->send_notification (mining_notify, mining::notify::serialize (p));
     }

@@ -11,17 +11,17 @@ namespace Gigamonkey::MAPI {
         
         if (static_cast<unsigned int> (r.Status) < 200 ||
             static_cast<unsigned int> (r.Status) >= 300)
-            throw HTTP::exception {q, r, "response code"};
+            throw exception {q, r, "response code"};
         auto v = r.content_type ();
-        if (!bool (v)) throw HTTP::exception {q, r, "content-type missing"};
+        if (!bool (v)) throw exception {q, r, "content-type missing"};
         if (*v != "application/json")
-            throw HTTP::exception {q, r, string {"content type is not JSON; it is "} + *v};
+            throw exception {q, r, string {"content type is not JSON; it is "} + *v};
 
         JSON res = JSON::parse (r.Body);
         
         auto envelope = JSON_JSON_envelope {JSON_envelope {res}};
         
-        if (!envelope.verify ()) throw HTTP::exception {q, r, "MAPI signature verify fail"};
+        if (!envelope.verify ()) throw exception {q, r, "MAPI signature verify fail"};
         
         co_return res;
     }

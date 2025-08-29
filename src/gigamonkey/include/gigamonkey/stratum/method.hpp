@@ -28,9 +28,9 @@ namespace Gigamonkey::Stratum {
         client_show_message
     };
     
-    std::string method_to_string(method m);
+    std::string method_to_string (method m);
     
-    method method_from_string(std::string st);
+    method method_from_string (std::string st);
 
 }
 
