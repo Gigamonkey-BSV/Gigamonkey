@@ -26,18 +26,18 @@ namespace Gigamonkey::Stratum {
         }
         
         if (Stratum::request::valid (next)) {
-            receive_request (Stratum::request {next});
+            co_await receive_request (Stratum::request {next});
             co_return;
         }
         
         throw exception {} << "invalid Stratum message received: " << next.dump ();
     }
     
-    request_id remote_receive_handler::send_request (method m, parameters p) {
+    awaitable<request_id> remote_receive_handler::send_request (method m, parameters p) {
         message_id id (Requests);
-        Send->send (Stratum::request {id, m, p});
+        co_await Send->send (Stratum::request {id, m, p});
         Request[id] = m;
-        return Requests++;
+        co_return Requests++;
     }
     
 }

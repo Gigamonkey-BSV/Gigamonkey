@@ -46,7 +46,7 @@ namespace Gigamonkey::Stratum {
         
         // there are two ways to talk to a server: request and notify. 
         // request expects a response and notify does not. 
-        request_id send_request (method m, parameters p);
+        awaitable<request_id> send_request (method m, parameters p);
         
         awaitable<void> send_notification (method m, parameters p);
         

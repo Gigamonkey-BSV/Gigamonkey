@@ -85,20 +85,20 @@ namespace Gigamonkey::Stratum {
     };
     
     awaitable<request_id> inline client_session::send_configure (const extensions::requests &q) {
-        co_return send_request (mining_configure, mining::configure_request::serialize (mining::configure_request::parameters {q}));
+        co_return co_await send_request (mining_configure, mining::configure_request::serialize (mining::configure_request::parameters {q}));
     }
     
     awaitable<request_id> inline client_session::send_authorize (const mining::authorize_request::parameters &p) {
-        co_return send_request (mining_authorize, mining::authorize_request::serialize (p));
+        co_return co_await send_request (mining_authorize, mining::authorize_request::serialize (p));
     }
     
     awaitable<request_id> inline client_session::send_subscribe (const mining::subscribe_request::parameters &p) {
-        co_return send_request (mining_subscribe, mining::subscribe_request::serialize (p));
+        co_return co_await send_request (mining_subscribe, mining::subscribe_request::serialize (p));
     }
     
     awaitable<request_id> inline client_session::send_submit (const share &x) {
         SharesSubmitted++;
-        co_return send_request (mining_submit, mining::submit_request::serialize (x));
+        co_return co_await send_request (mining_submit, mining::submit_request::serialize (x));
     }
     
     void inline client_session::receive_submit (bool b) {
