@@ -60,7 +60,7 @@ namespace Gigamonkey::Stratum {
         extensions::version_mask version_mask () const;
         
         // send a set_version_mask message to the client. 
-        void send_set_version_mask (const extensions::version_mask &p);
+        awaitable<void> send_set_version_mask (const extensions::version_mask &p);
         
         Stratum::extranonce extranonce () const;
         
@@ -71,7 +71,7 @@ namespace Gigamonkey::Stratum {
         
         // get_version is the only request that the server sends to the client.
         // It doesn't depend on state so can be sent at any time. 
-        request_id send_get_version ();
+        awaitable<request_id> send_get_version ();
         
     private:
         virtual void receive_get_version (const string &) {};
@@ -256,9 +256,9 @@ namespace Gigamonkey::Stratum {
         return bool (mask) ? *mask : extensions::version_mask {0};
     }
     
-    void inline server_session::send_set_version_mask (const extensions::version_mask &n) {
+    awaitable<void> inline server_session::send_set_version_mask (const extensions::version_mask &n) {
         if (State.set_version_mask (n))
-            this->send_notification (mining_set_extranonce, mining::set_version_mask::serialize (*State.version_mask ()));
+            co_return co_await this->send_notification (mining_set_extranonce, mining::set_version_mask::serialize (*State.version_mask ()));
     }
     
     Stratum::difficulty inline server_session::difficulty () const {
@@ -266,16 +266,18 @@ namespace Gigamonkey::Stratum {
     }
     
     awaitable<void> inline server_session::send_set_difficulty (const Stratum::difficulty &d) {
-        if (State.set_difficulty (d)) this->send_notification (mining_set_difficulty, mining::set_difficulty::serialize (d));
+        if (State.set_difficulty (d)) co_await this->send_notification (mining_set_difficulty, mining::set_difficulty::serialize (d));
+        co_return;
     }
     
     awaitable<void> inline server_session::send_notify (const mining::notify::parameters &p) {
         State.notify (p);
-        this->send_notification (mining_notify, mining::notify::serialize (p));
+        co_await this->send_notification (mining_notify, mining::notify::serialize (p));
+        co_return;
     }
     
-    request_id inline server_session::send_get_version () {
-        return this->send_request (client_get_version, {});
+    awaitable<request_id> inline server_session::send_get_version () {
+        co_return co_await this->send_request (client_get_version, {});
     }
     
     optional<string> inline server_session::client_version () const {
@@ -287,24 +289,24 @@ namespace Gigamonkey::Stratum {
     }
     
     // whether we have received and responded to a mining.configure message. 
-    bool inline server_session::state::configured() const {
+    bool inline server_session::state::configured () const {
         return Configured;
     }
     
     // whether we have received and responded 'true' to a mining.authorize message.
-    bool inline server_session::state::authorized() const {
+    bool inline server_session::state::authorized () const {
         return bool (Name);
     }
     
-    string inline server_session::state::name() const {
+    string inline server_session::state::name () const {
         return bool (Name) ? *Name : "";
     }
     
-    void inline server_session::state::set_name(const string &x) {
+    void inline server_session::state::set_name (const string &x) {
         Name = x;
     }
     
-    optional<string> inline server_session::state::client_version() const {
+    optional<string> inline server_session::state::client_version () const {
         return ClientVersion;
     }
     
