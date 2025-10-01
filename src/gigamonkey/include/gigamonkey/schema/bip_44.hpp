@@ -88,6 +88,7 @@ namespace Gigamonkey::HD::BIP_44 {
     
     constexpr uint32 electrum_sv_coin_type = coin_type_Bitcoin_Cash;
 
+    // FALSE! Centbee cointype is nonexistent.
     constexpr uint32 centbee_coin_type = 0;
     
 }

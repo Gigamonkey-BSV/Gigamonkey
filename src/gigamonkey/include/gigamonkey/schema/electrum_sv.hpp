@@ -6,6 +6,7 @@
 
 #include <gigamonkey/schema/bip_39.hpp>
 #include <data/encoding/unicode.hpp>
+#include <data/io/unimplemented.hpp>
 
 namespace Gigamonkey {
     using unicode = data::unicode;
@@ -15,11 +16,19 @@ namespace Gigamonkey {
 // electrum SV uses a different method of working with a seed phrase with the same interface as BIP_39
 namespace Gigamonkey::HD::Electrum_SV {
 
-    const cross<std::string> &english_words ();
+    const cross<UTF8> &english_words ();
 
-    byte_array<64> read (const unicode &words, const unicode &passphrase = {});
-    unicode generate (entropy, BIP_39::language lang = BIP_39::language::english);
-    bool valid (unicode words, BIP_39::language lang = BIP_39::language::english);
+    seed read (const UTF8 &words, const UTF8 &passphrase = {});
+    UTF8 generate (entropy, BIP_39::language lang = BIP_39::language::english);
+    bool valid (UTF8 words, BIP_39::language lang = BIP_39::language::english);
+
+    UTF8 generate (entropy, BIP_39::language lang) {
+        throw data::method::unimplemented {"Electrum_SV::generate"};
+    }
+
+    bool inline valid (UTF8 words, BIP_39::language lang) {
+        throw data::method::unimplemented {"Electrum_SV::valid"};
+    }
 
 }
 

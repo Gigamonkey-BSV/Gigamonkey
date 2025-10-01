@@ -25,6 +25,7 @@ namespace Gigamonkey::Bitcoin {
     const integer &read_integer (const bytes &span, bool RequireMinimal, const size_t nMaxNumSize = MAXIMUM_ELEMENT_SIZE);
 
     // implements OP_0NOTEQUAL
+    // also how we cast a number to bool.
     bool nonzero (slice<const byte> b);
 
     bool is_zero (slice<const byte>);
