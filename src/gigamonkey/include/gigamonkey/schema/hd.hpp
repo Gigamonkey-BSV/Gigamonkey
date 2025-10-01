@@ -21,12 +21,25 @@ namespace Gigamonkey::HD {
     // bip 32 defines the basic format. See: https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki
     namespace BIP_32 {
         
+        // Derivations in BIP 32 may be hardened or non-hardened.
+        // a hardened derivation can be performed only by Alice
+        // with the private key. A non-hardened derivation can
+        // be performed by Bob with Alice's private key, and will
+        // generate the corresponding public key to the private
+        // key derived by Alice.
+
+        // hardened versus non-hardened derivations are specified
+        // by the sign bit of an int 32 using one's complement.
         constexpr bool inline hardened (uint32 child) {
             return child >= 0x80000000;
         }
         
         constexpr uint32 inline harden (uint32 child) {
             return child | 0x80000000;
+        }
+
+        constexpr uint32 inline soften (uint32 child) {
+            return child & ~0x80000000;
         }
         
         using path = list<uint32>;
@@ -40,8 +53,8 @@ namespace Gigamonkey::HD {
             chain_code ChainCode;
             Bitcoin::net Network;
             byte Depth;
-            uint32_t Parent;
-            uint32_t Sequence;
+            uint32 Parent;
+            uint32 Sequence;
             
             bool valid () const {
                 return Pubkey.valid () && Pubkey.size () == secp256k1::pubkey::CompressedSize &&
@@ -81,8 +94,8 @@ namespace Gigamonkey::HD {
             chain_code ChainCode;
             Bitcoin::net Network;
             byte Depth;
-            uint32_t Parent;
-            uint32_t Sequence;
+            uint32 Parent;
+            uint32 Sequence;
 
             secret (const secp256k1::secret &s, const chain_code &cc, Bitcoin::net network) : Secret {s}, ChainCode {cc}, Network {network} {}
             secret (string_view s) : secret {read (s)} {}

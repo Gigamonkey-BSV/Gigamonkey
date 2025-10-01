@@ -6,6 +6,11 @@
 
 #include <gigamonkey/schema/hd.hpp>
 #include <gigamonkey/schema/bip_44.hpp>
+#include <data/encoding/unicode.hpp>
+
+namespace Gigamonkey {
+    using UTF8 = data::UTF8;
+}
 
 // BIP 39 defines a way of generating a BIP 32 master key from a seed phrase.
 namespace Gigamonkey::HD::BIP_39 {
@@ -15,13 +20,13 @@ namespace Gigamonkey::HD::BIP_39 {
         japanese
     };
     
-    seed read (std::string words, const string &passphrase = "", language lang = language::english);
+    seed read (UTF8 words, const UTF8 &passphrase = "", language lang = language::english);
     
-    std::string generate (entropy, language lang = language::english);
-    bool valid (std::string words, language lang = language::english);
+    data::UTF8 generate (entropy, language lang = language::english);
+    bool valid (UTF8 words, language lang = language::english);
     
-    const cross<std::string> &english_words ();
-    const cross<std::string> &japanese_words ();
+    const cross<UTF8> &english_words ();
+    const cross<UTF8> &japanese_words ();
 }
 
 namespace Gigamonkey::HD {
@@ -38,8 +43,7 @@ namespace Gigamonkey::HD {
         return BIP_44::master {BIP_32::secret::from_seed (BIP_39::read (words), net)}.account (BIP_44::relay_x_coin_type, account);
     }
 
-    // Note: electrum sv has its own set of words. It is able to load wallets that were
-    // made with the standard set of words, but we do not load electrum words here yet.
+    // Note: electrum sv has its own set of words.
     BIP_44::account_secret electrum_sv_wallet (const string &words, const string &passphrase = ""); // TODO
 
     // CentBee uses a non-standard derivation path.

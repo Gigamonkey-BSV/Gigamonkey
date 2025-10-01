@@ -57,7 +57,8 @@ namespace Gigamonkey {
             // a part of the input script that has been previously generated.
             bytes InputScriptSoFar;
 
-            input (Bitcoin::prevout p, uint64 x, uint32_little q = Bitcoin::input::Finalized, bytes z = {});
+            input (Bitcoin::prevout p, uint64 expected_script_size, uint32_little q = Bitcoin::input::Finalized, bytes z = {});
+
             uint64 expected_size () const;
 
             bytes script_so_far () const;
@@ -86,9 +87,9 @@ namespace Gigamonkey {
 
     };
 
-    inline transaction_design::input::input (Bitcoin::prevout p, uint64 x, uint32_little q, bytes z):
+    inline transaction_design::input::input (Bitcoin::prevout p, uint64 expected_script_size, uint32_little q, bytes z):
         Bitcoin::incomplete::input {p.Key, q}, Prevout {p.Value},
-        ExpectedScriptSize {x}, InputScriptSoFar {z} {}
+        ExpectedScriptSize {expected_script_size}, InputScriptSoFar {z} {}
 
     uint64 inline transaction_design::input::expected_size () const {
         return 40 + Bitcoin::var_int::size (ExpectedScriptSize) + ExpectedScriptSize;
