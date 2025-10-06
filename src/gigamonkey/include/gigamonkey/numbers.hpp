@@ -12,9 +12,9 @@ namespace Gigamonkey::Bitcoin {
     // and arbitrary size integers, little endian two's complement.
     using integer = data::Z_bytes_BC_little;
 
-    size_t minimal_number_size (slice<const byte>);
+    size_t minimal_number_size (byte_slice);
 
-    bool is_minimal_number (slice<const byte>);
+    bool is_minimal_number (byte_slice);
     bytes &extend_number (bytes &, size_t size);
 
     // trim to minimal size;
@@ -24,95 +24,106 @@ namespace Gigamonkey::Bitcoin {
 
     const integer &read_integer (const bytes &span, bool RequireMinimal, const size_t nMaxNumSize = MAXIMUM_ELEMENT_SIZE);
 
+    // concatinate, implements OP_CAT
+    integer cat (byte_slice, byte_slice);
+    data::string cat (string_view, string_view);
+
+    // implements OP_LEFT
+    // take the n leftmost bytes from the given string.
+    byte_slice left (byte_slice, size_t n);
+    string_view left (string_view, size_t n);
+
+    // implements OP_RIGHT
+    // take the n rightmost bytes from the given string.
+    byte_slice right (byte_slice, size_t n);
+    string_view right (string_view, size_t n);
+
+    // implements OP_SPLIT
+    std::pair<byte_slice, byte_slice> split (byte_slice, size_t);
+    std::pair<string_view, string_view> split (string_view, size_t);
+
     // implements OP_0NOTEQUAL
     // also how we cast a number to bool.
-    bool nonzero (slice<const byte> b);
+    bool nonzero (byte_slice b);
 
-    bool is_zero (slice<const byte>);
-    bool is_negative (slice<const byte>);
-    bool is_positive (slice<const byte>);
+    bool is_zero (byte_slice);
+    bool is_negative (byte_slice);
+    bool is_positive (byte_slice);
 
     template <size_t size> size_t serialized_size (const uint_little<size> &u);
 
     size_t serialized_size (const integer &i);
 
     // implements OP_INVERT
-    integer bit_not (slice<const byte>);
+    integer bit_not (byte_slice);
 
     // implements OP_AND
-    integer bit_and (slice<const byte>, slice<const byte>);
+    integer bit_and (byte_slice, byte_slice);
 
     // implements OP_XOR
-    integer bit_xor (slice<const byte>, slice<const byte>);
+    integer bit_xor (byte_slice, byte_slice);
 
     // implements OP_OR
-    integer bit_or (slice<const byte>, slice<const byte>);
-
-    // implements OP_NOT
-    bool bool_not (slice<const byte>);
-
-    // implements OP_BOOLAND
-    bool bool_and (slice<const byte>, slice<const byte>);
-
-    // implements OP_BOOLOR
-    bool bool_or (slice<const byte>, slice<const byte>);
-
-    bool num_equal (slice<const byte>, slice<const byte>);
-    bool num_not_equal (slice<const byte>, slice<const byte>);
-    bool less (slice<const byte>, slice<const byte>);
-    bool greater (slice<const byte>, slice<const byte>);
-    bool less_equal (slice<const byte>, slice<const byte>);
-    bool greater_equal (slice<const byte>, slice<const byte>);
-
-    bytes negate (slice<const byte>);
-    bytes abs (slice<const byte>);
-    bytes plus (slice<const byte>, slice<const byte>);
-    bytes minus (slice<const byte>, slice<const byte>);
-    bytes times (slice<const byte>, slice<const byte>);
-    bytes divide (slice<const byte>, slice<const byte>);
-    bytes mod (slice<const byte>, slice<const byte>);
-
-    // concatinate, implements OP_CAT
-    integer cat (slice<const byte>, slice<const byte>);
-    data::string cat (string_view, string_view);
-
-    // implements OP_LEFT
-    // take the n leftmost bytes from the given string.
-    slice<const byte> left (slice<const byte>, size_t n);
-    string_view left (string_view, size_t n);
-
-    // implements OP_RIGHT
-    // take the n rightmost bytes from the given string.
-    slice<const byte> right (slice<const byte>, size_t n);
-    string_view right (string_view, size_t n);
-
-    // implements OP_SPLIT
-    std::pair<slice<const byte>, slice<const byte>> split (slice<const byte>, size_t);
-    std::pair<string_view, string_view> split (string_view, size_t);
+    integer bit_or (byte_slice, byte_slice);
 
     // shift right by n bits, implements OP_RSHIFT
-    integer right_shift (slice<const byte>, int32 n);
+    integer right_shift (byte_slice, int32 n);
 
     // shift left by n bits, implements OP_LSHIFT
-    integer left_shift (slice<const byte>, int32 n);
+    integer left_shift (byte_slice, int32 n);
 
-    bool inline nonzero (slice<const byte> b) {
+    // implements OP_NOT
+    bool bool_not (byte_slice);
+
+    // implements OP_BOOLAND
+    bool bool_and (byte_slice, byte_slice);
+
+    // implements OP_BOOLOR
+    bool bool_or (byte_slice, byte_slice);
+
+    // implements OP_NUMEQUAL
+    bool num_equal (byte_slice, byte_slice);
+    bool num_not_equal (byte_slice, byte_slice);
+    bool less (byte_slice, byte_slice);
+    bool greater (byte_slice, byte_slice);
+    bool less_equal (byte_slice, byte_slice);
+    bool greater_equal (byte_slice, byte_slice);
+    bool within (byte_slice, byte_slice, byte_slice);
+
+    // Implements OP_1ADD
+    bytes increment (byte_slice);
+
+    // implements OP_1SUB
+    bytes decrement (byte_slice);
+
+    bytes mul_2 (byte_slice);
+    bytes div_2 (byte_slice);
+
+    bytes negate (byte_slice);
+    bytes abs (byte_slice);
+    bytes plus (byte_slice, byte_slice);
+    bytes minus (byte_slice, byte_slice);
+    bytes times (byte_slice, byte_slice);
+    bytes divide (byte_slice, byte_slice);
+    bytes mod (byte_slice, byte_slice);
+
+    bool inline nonzero (byte_slice b) {
         if (b.size () == 0) return false;
         for (int i = 0; i < b.size () - 1; i++) if (b[i] != 0) return true;
         return b[b.size () - 1] != 0x00 && b[b.size () - 1] != 0x80;
     }
 
-    bool inline is_zero (slice<const byte> b) {
+    bool inline is_zero (byte_slice b) {
         if (b.size () == 0) return true;
         for (int i = 0; i < b.size () - 1; i++) if (b[i] != 0) return false;
         return b[b.size () - 1] == 0x00 || b[b.size () - 1] == 0x80;
     }
 
-    bool inline is_negative (slice<const byte> b) {
+    bool inline is_negative (byte_slice b) {
         return nonzero (b) && (b[b.size () - 1] & 0x80);
     }
 
-    bool inline is_positive (slice<const byte> b) {
+    bool inline is_positive (byte_slice b) {
         return nonzero (b) && !(b[b.size () - 1] & 0x80);
     }
 
@@ -126,7 +137,7 @@ namespace Gigamonkey::Bitcoin {
         return i.size ();
     }
 
-    size_t inline minimal_number_size (slice<const byte> b) {
+    size_t inline minimal_number_size (byte_slice b) {
         return data::arithmetic::minimal_size<data::endian::little, data::arithmetic::negativity::BC, byte> (b);
     }
 
@@ -136,7 +147,7 @@ namespace Gigamonkey::Bitcoin {
         return static_cast<const integer &> (span);
     }
 
-    bool inline is_minimal_number (slice<const byte> span) {
+    bool inline is_minimal_number (byte_slice span) {
         return data::arithmetic::is_minimal<data::endian::little, data::arithmetic::negativity::BC, byte> (span);
     }
 
@@ -152,14 +163,14 @@ namespace Gigamonkey::Bitcoin {
 
     // implements OP_LEFT
     // take the n leftmost bytes from the given string.
-    slice<const byte> inline left (slice<const byte> x, size_t n) {
+    byte_slice inline left (byte_slice x, size_t n) {
         if (n < 0 || n > x.size ()) throw exception {} << "invalid split range";
         return x.range (n);
     }
 
     // implements OP_RIGHT
     // take the n rightmost bytes from the given string.
-    slice<const byte> inline right (slice<const byte> x, size_t n) {
+    byte_slice inline right (byte_slice x, size_t n) {
         if (n < 0 || n > x.size ()) throw exception {} << "invalid split range";
         return x.range (x.size () - n, x.size ());
     }
@@ -175,7 +186,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     // implements OP_SPLIT
-    std::pair<slice<const byte>, slice<const byte>> inline split (slice<const byte> x, size_t n) {
+    std::pair<byte_slice, byte_slice> inline split (byte_slice x, size_t n) {
         if (n < 0 || n > x.size ()) throw exception {} << "invalid split range";
         return {x.range (0, n), x.drop (n)};
     }
@@ -185,67 +196,67 @@ namespace Gigamonkey::Bitcoin {
         return {x.substr (0, n), x.substr (n)};
     }
 
-    bool inline bool_not (slice<const byte> x) {
+    bool inline bool_not (byte_slice x) {
         return is_zero (x);
     }
 
-    bool inline bool_and (slice<const byte> x, slice<const byte> y) {
+    bool inline bool_and (byte_slice x, byte_slice y) {
         return nonzero (x) && nonzero (y);
     }
 
-    bool inline bool_or (slice<const byte> x, slice<const byte> y) {
+    bool inline bool_or (byte_slice x, byte_slice y) {
         return nonzero (x) || nonzero (y);
     }
 
-    bool inline num_not_equal (slice<const byte> x, slice<const byte> y) {
+    bool inline num_not_equal (byte_slice x, byte_slice y) {
         return !num_equal (x, y);
     }
 
-    bool inline num_equal (slice<const byte> x, slice<const byte> y) {
+    bool inline num_equal (byte_slice x, byte_slice y) {
         return integer {x} == integer {y};
     }
 
-    bool inline less (slice<const byte> x, slice<const byte> y) {
+    bool inline less (byte_slice x, byte_slice y) {
         return integer {x} < integer {y};
     }
 
-    bool inline greater (slice<const byte> x, slice<const byte> y) {
+    bool inline greater (byte_slice x, byte_slice y) {
         return integer {x} > integer {y};
     }
 
-    bool inline less_equal (slice<const byte> x, slice<const byte> y) {
+    bool inline less_equal (byte_slice x, byte_slice y) {
         return integer {x} <= integer {y};
     }
 
-    bool inline greater_equal (slice<const byte> x, slice<const byte> y) {
+    bool inline greater_equal (byte_slice x, byte_slice y) {
         return integer {x} >= integer {y};
     }
 
-    bytes inline negate (slice<const byte> x) {
+    bytes inline negate (byte_slice x) {
         return -integer {x};
     }
 
-    bytes inline plus (slice<const byte> x, slice<const byte> y) {
+    bytes inline plus (byte_slice x, byte_slice y) {
         return integer {x} + integer {y};
     }
 
-    bytes inline minus (slice<const byte> x, slice<const byte> y) {
+    bytes inline minus (byte_slice x, byte_slice y) {
         return integer {x} - integer {y};
     }
 
-    bytes inline times (slice<const byte> x, slice<const byte> y) {
+    bytes inline times (byte_slice x, byte_slice y) {
         return integer {x} * integer {y};
     }
 
-    bytes inline divide (slice<const byte> x, slice<const byte> y) {
+    bytes inline divide (byte_slice x, byte_slice y) {
         return integer {x} / integer {y};
     }
 
-    bytes inline mod (slice<const byte> x, slice<const byte> y) {
+    bytes inline mod (byte_slice x, byte_slice y) {
         return integer {x} % integer {y};
     }
 
-    bytes inline abs (slice<const byte> x) {
+    bytes inline abs (byte_slice x) {
         if (is_negative (x)) return negate (x);
         return bytes (x);
     }
