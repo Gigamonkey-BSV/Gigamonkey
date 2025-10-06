@@ -49,19 +49,23 @@ namespace Gigamonkey::HD {
 
         struct pubkey {
             
-            secp256k1::pubkey Pubkey;
-            chain_code ChainCode;
-            Bitcoin::net Network;
-            byte Depth;
-            uint32 Parent;
-            uint32 Sequence;
+            secp256k1::pubkey Pubkey {};
+            chain_code ChainCode {};
+            Bitcoin::net Network {Bitcoin::net::Main};
+            byte Depth {0};
+            uint32 Parent {0};
+            uint32 Sequence {0};
             
             bool valid () const {
                 return Pubkey.valid () && Pubkey.size () == secp256k1::pubkey::CompressedSize &&
                     (Network == Bitcoin::net::Main || Network == Bitcoin::net::Test);
             }
             
-            pubkey (const secp256k1::pubkey &p, const chain_code &cc) : Pubkey {p}, ChainCode {cc} {}
+            pubkey (const secp256k1::pubkey &p, const chain_code &cc,
+                Bitcoin::net network = Bitcoin::net::Main,
+                byte depth = 0, uint32 parent = 0, uint32 sequence = 0) :
+                Pubkey {p}, ChainCode {cc}, Network {network}, Depth {depth}, Parent {parent}, Sequence {sequence} {}
+
             pubkey (string_view s) : pubkey {read (s)} {}
             pubkey () = default;
             
@@ -90,14 +94,18 @@ namespace Gigamonkey::HD {
         
         struct secret {
             
-            secp256k1::secret Secret;
-            chain_code ChainCode;
-            Bitcoin::net Network;
-            byte Depth;
-            uint32 Parent;
-            uint32 Sequence;
+            secp256k1::secret Secret {};
+            chain_code ChainCode {};
+            Bitcoin::net Network {Bitcoin::net::Main};
+            byte Depth {0};
+            uint32 Parent {0};
+            uint32 Sequence {0};
 
-            secret (const secp256k1::secret &s, const chain_code &cc, Bitcoin::net network) : Secret {s}, ChainCode {cc}, Network {network} {}
+            secret (const secp256k1::secret &s, const chain_code &cc,
+                Bitcoin::net network = Bitcoin::net::Main,
+                byte depth = 0, uint32 parent = 0, uint32 sequence = 0) :
+                Secret {s}, ChainCode {cc}, Network {network}, Depth {depth}, Parent {parent}, Sequence {sequence} {}
+
             secret (string_view s) : secret {read (s)} {}
             secret () = default;
 
