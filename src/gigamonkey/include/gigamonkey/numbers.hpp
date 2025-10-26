@@ -232,6 +232,21 @@ namespace Gigamonkey::Bitcoin {
         return integer {x} >= integer {y};
     }
 
+    // implements OP_AND
+    integer inline bit_and (byte_slice x, byte_slice y) {
+        return data::bit_and (integer {x}, integer {y});
+    }
+
+    // implements OP_XOR
+    integer inline bit_xor (byte_slice x, byte_slice y) {
+        return data::bit_xor (integer {x}, integer {y});
+    }
+
+    // implements OP_OR
+    integer inline bit_or (byte_slice x, byte_slice y) {
+        return data::bit_or (integer {x}, integer {y});
+    }
+
     bytes inline negate (byte_slice x) {
         return -integer {x};
     }
@@ -259,6 +274,14 @@ namespace Gigamonkey::Bitcoin {
     bytes inline abs (byte_slice x) {
         if (is_negative (x)) return negate (x);
         return bytes (x);
+    }
+
+    bytes inline mul_2 (byte_slice x) {
+        return data::mul_2 (integer {x});
+    }
+
+    bytes inline div_2 (byte_slice x) {
+        return data::mul_2 (integer {x});
     }
 }
 

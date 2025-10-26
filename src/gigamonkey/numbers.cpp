@@ -2,34 +2,10 @@
 
 namespace Gigamonkey::Bitcoin {
 
-    // concatinate, implements OP_AND
+    // implements OP_AND
     integer bit_not (slice<const byte> x) {
         integer result = integer::zero (x.size ());
         data::arithmetic::bit_negate<byte> (result.end (), result.begin (), x.begin ());
-        return result;
-    }
-
-    // concatinate, implements OP_AND
-    integer bit_and (slice<const byte> x, slice<const byte> y) {
-        if (x.size () != y.size ()) throw exception {"bit and on strings of unequal size"};
-        integer result = integer::zero (x.size ());
-        data::arithmetic::bit_and<byte> (result.end (), result.begin (), x.begin (), y.begin ());
-        return result;
-    }
-
-    // concatinate, implements OP_XOR
-    integer bit_xor (slice<const byte> x, slice<const byte> y) {
-        if (x.size () != y.size ()) throw exception {"bit xor on strings of unequal size"};
-        integer result = integer::zero (x.size ());
-        data::arithmetic::bit_xor<byte> (result.end (), result.begin (), x.begin (), y.begin ());
-        return result;
-    }
-
-    // concatinate, implements OP_OR
-    integer bit_or (slice<const byte> x, slice<const byte> y) {
-        if (x.size () != y.size ()) throw exception {"bit or on strings of unequal size"};
-        integer result = integer::zero (x.size ());
-        data::arithmetic::bit_or<byte> (result.end (), result.begin (), x.begin (), y.begin ());
         return result;
     }
 
