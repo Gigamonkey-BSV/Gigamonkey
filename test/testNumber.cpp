@@ -7,7 +7,7 @@
 
 namespace Gigamonkey::Bitcoin {
     
-    TEST (NumberTest, TestPushNumber) {
+    TEST (Number, Push) {
         
         EXPECT_EQ (compile (push_data (0)), bytes {OP_0});
         EXPECT_EQ (compile (push_data (integer (0))), bytes {OP_0});
@@ -41,7 +41,7 @@ namespace Gigamonkey::Bitcoin {
         
     }
 
-    TEST (NumberTest, TestNumberConstructorsInt) {
+    TEST (Number, ConstructorsInt) {
         
         EXPECT_EQ (slice<const byte> (integer (0)), bytes ());
         EXPECT_EQ (slice<const byte> (integer (1)), *encoding::hex::read  ("01"));
@@ -55,7 +55,7 @@ namespace Gigamonkey::Bitcoin {
         
     }
     
-    TEST (NumberTest, TestNumberConstructorsDecimalPositive) {
+    TEST (Number, ConstructorsDecimalPositive) {
 
         EXPECT_EQ (slice<const byte> (integer ("0")), *encoding::hex::read (""));
         EXPECT_EQ (slice<const byte> (integer ("127")), *encoding::hex::read ("7f"));
@@ -64,7 +64,15 @@ namespace Gigamonkey::Bitcoin {
         
     }
 
-    TEST (NumberTest, TestNumberConstructorsHexidecZ) {
+    TEST (Number, ConstructorsDecimalNegative) {
+
+        EXPECT_EQ (slice<const byte> (integer ("-127")), *encoding::hex::read  ("ff"));
+        EXPECT_EQ (slice<const byte> (integer ("-128")), *encoding::hex::read  ("8080"));
+        EXPECT_EQ (slice<const byte> (integer ("-256")), *encoding::hex::read  ("0081"));
+
+    }
+
+    TEST (Number, ConstructorsHexidec) {
         
         EXPECT_EQ (slice<const byte> (integer ("0")), bytes ());
         EXPECT_EQ (slice<const byte> (integer ("0x")), *encoding::hex::read  (""));
@@ -93,7 +101,7 @@ namespace Gigamonkey::Bitcoin {
         
     }
 
-    TEST (NumberTest, TestNumberMinimalZ) {
+    TEST (Number, Minimal) {
         
         EXPECT_TRUE (is_minimal (integer ("0")));
         EXPECT_FALSE (is_minimal (integer ("0x00")));
@@ -119,7 +127,7 @@ namespace Gigamonkey::Bitcoin {
         
     }
     
-    TEST (NumberTest, TestNumberTrimZ) {
+    TEST (Number, Trim) {
         
         EXPECT_EQ (slice<const byte> (trim (integer ("0x00"))), bytes ());
         EXPECT_EQ (slice<const byte> (trim (integer ("0x80"))), bytes ());
@@ -144,7 +152,7 @@ namespace Gigamonkey::Bitcoin {
         
     }
 
-    TEST (NumberTest, TestNumberSignZ) {
+    TEST (Number, Sign) {
         
         EXPECT_TRUE (is_zero (integer ("0x00")));
         EXPECT_TRUE (is_zero (integer ("0x80")));
@@ -233,15 +241,7 @@ namespace Gigamonkey::Bitcoin {
     
     }
 
-    TEST (NumberTest, TestNumberConstructorsDecimalNegative) {
-        
-        EXPECT_EQ (slice<const byte> (integer ("-127")), *encoding::hex::read  ("ff"));
-        EXPECT_EQ (slice<const byte> (integer ("-128")), *encoding::hex::read  ("8080"));
-        EXPECT_EQ (slice<const byte> (integer ("-256")), *encoding::hex::read  ("0081"));
-
-    }
-
-    TEST (NumberTest, TestNumberCompare) {
+    TEST (Number, Compare) {
         
         EXPECT_EQ (integer (0), integer ("0"));
         EXPECT_EQ (integer (0), integer ("0x00"));
@@ -334,7 +334,7 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_TRUE (is_minimal (n));
     }
 
-    TEST (NumberTest, TestNumberNegate) {
+    TEST (Number, Negate) {
 
         test_number_negate (integer (0), integer (0));
         test_number_negate (integer (1), integer (-1));
@@ -370,7 +370,7 @@ namespace Gigamonkey::Bitcoin {
         }
     }
 
-    TEST (NumberTest, TestNumberAbs) {
+    TEST (Number, Abs) {
         
         test_number_abs (integer (0), integer (0));
         test_number_abs (integer (1), integer (1));
@@ -405,11 +405,11 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_TRUE (is_minimal (b));
     }
 
-    TEST (NumberTest, TestNumberIncrementAndDecrement) {
-
+    TEST (Number, IncrementAndDecrement) {
+        // TODO
     }
 
-    TEST (NumberTest, TestNumberPlus) {
+    TEST (Number, Plus) {
         
         EXPECT_EQ (integer (0) + integer (0), integer (0));
         EXPECT_EQ (integer (-1) + integer (1), integer (0));
@@ -464,7 +464,7 @@ namespace Gigamonkey::Bitcoin {
         
     }
 
-    TEST (NumberTest, TestNumberMinus) {
+    TEST (Number, Minus) {
         
         EXPECT_EQ (integer (0) - integer (0), integer (0));
         EXPECT_EQ (integer (1) - integer (1), integer (0));
@@ -562,7 +562,7 @@ namespace Gigamonkey::Bitcoin {
 
     }
     
-    TEST (NumberTest, TestNumberTimes) {
+    TEST (Number, Times) {
 
         EXPECT_EQ (integer (0) * integer (0), integer (0));
         EXPECT_EQ (integer (0) * integer (1), integer (0));
@@ -615,6 +615,17 @@ namespace Gigamonkey::Bitcoin {
         
         EXPECT_EQ (integer (-256) * integer (256), integer (-65536));
 
+    }
+
+    TEST (Number, DivMod) {
+        EXPECT_EQ (integer {10} / integer {3}, integer {3});
+        EXPECT_EQ (integer {10} % integer {3}, integer {1});
+        EXPECT_EQ (integer {-10} / integer {3}, integer {-3});
+        EXPECT_EQ (integer {-10} % integer {3}, integer {-1});
+        EXPECT_EQ (integer {10} / integer {-3}, integer {-3});
+        EXPECT_EQ (integer {10} % integer {-3}, integer {1});
+        EXPECT_EQ (integer {-10} / integer {-3}, integer {3});
+        EXPECT_EQ (integer {-10} % integer {-3}, integer {-1});
     }
 
 }

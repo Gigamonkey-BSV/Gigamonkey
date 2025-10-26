@@ -88,10 +88,10 @@ namespace Gigamonkey::SPV {
         if (height == 0 || Latest == nullptr || Latest->Header->Key < height)
             Latest = new_entry;
 
-        if (height > 0) if (auto i = ByHeight.find (height - 1); i != ByHeight.end ())
+        if (height > 0) if (auto i = ByHeight.find (height - 1u); i != ByHeight.end ())
             new_entry->Previous = i->second;
 
-        if (auto i = ByHeight.find (height + 1); i != ByHeight.end ())
+        if (auto i = ByHeight.find (height + 1u); i != ByHeight.end ())
             i->second->Previous = new_entry;
 
         return new_entry->Header;
