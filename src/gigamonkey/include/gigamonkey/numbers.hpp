@@ -72,6 +72,9 @@ namespace Gigamonkey::Bitcoin {
     // shift left by n bits, implements OP_LSHIFT
     integer left_shift (byte_slice, int32 n);
 
+    // bit shift, not an op code.
+    integer bit_shift (byte_slice, int32 n);
+
     // implements OP_NOT
     bool bool_not (byte_slice);
 
@@ -81,6 +84,8 @@ namespace Gigamonkey::Bitcoin {
     // implements OP_BOOLOR
     bool bool_or (byte_slice, byte_slice);
 
+    std::weak_ordering compare (byte_slice, byte_slice);
+
     // implements OP_NUMEQUAL
     bool num_equal (byte_slice, byte_slice);
     bool num_not_equal (byte_slice, byte_slice);
@@ -88,24 +93,27 @@ namespace Gigamonkey::Bitcoin {
     bool greater (byte_slice, byte_slice);
     bool less_equal (byte_slice, byte_slice);
     bool greater_equal (byte_slice, byte_slice);
-    bool within (byte_slice, byte_slice, byte_slice);
+    bool within (byte_slice b, byte_slice min, byte_slice max);
 
     // Implements OP_1ADD
-    bytes increment (byte_slice);
+    integer increment (byte_slice);
 
     // implements OP_1SUB
-    bytes decrement (byte_slice);
+    integer decrement (byte_slice);
 
-    bytes mul_2 (byte_slice);
-    bytes div_2 (byte_slice);
+    // implements OP_2MUL
+    integer mul_2 (byte_slice);
 
-    bytes negate (byte_slice);
-    bytes abs (byte_slice);
-    bytes plus (byte_slice, byte_slice);
-    bytes minus (byte_slice, byte_slice);
-    bytes times (byte_slice, byte_slice);
-    bytes divide (byte_slice, byte_slice);
-    bytes mod (byte_slice, byte_slice);
+    // implements OP_2DIV
+    integer div_2 (byte_slice);
+
+    integer negate (byte_slice);
+    integer abs (byte_slice);
+    integer plus (byte_slice, byte_slice);
+    integer minus (byte_slice, byte_slice);
+    integer times (byte_slice, byte_slice);
+    integer divide (byte_slice, byte_slice);
+    integer mod (byte_slice, byte_slice);
 
     bool inline nonzero (byte_slice b) {
         if (b.size () == 0) return false;
@@ -212,76 +220,74 @@ namespace Gigamonkey::Bitcoin {
         return !num_equal (x, y);
     }
 
-    bool inline num_equal (byte_slice x, byte_slice y) {
-        return integer {x} == integer {y};
-    }
-
-    bool inline less (byte_slice x, byte_slice y) {
-        return integer {x} < integer {y};
-    }
-
-    bool inline greater (byte_slice x, byte_slice y) {
-        return integer {x} > integer {y};
-    }
-
-    bool inline less_equal (byte_slice x, byte_slice y) {
-        return integer {x} <= integer {y};
-    }
-
-    bool inline greater_equal (byte_slice x, byte_slice y) {
-        return integer {x} >= integer {y};
-    }
-
-    // implements OP_AND
-    integer inline bit_and (byte_slice x, byte_slice y) {
-        return data::bit_and (integer {x}, integer {y});
-    }
-
-    // implements OP_XOR
-    integer inline bit_xor (byte_slice x, byte_slice y) {
-        return data::bit_xor (integer {x}, integer {y});
-    }
-
-    // implements OP_OR
-    integer inline bit_or (byte_slice x, byte_slice y) {
-        return data::bit_or (integer {x}, integer {y});
-    }
-
-    bytes inline negate (byte_slice x) {
+    integer inline negate (byte_slice x) {
         return -integer {x};
     }
 
-    bytes inline plus (byte_slice x, byte_slice y) {
+    integer inline plus (byte_slice x, byte_slice y) {
         return integer {x} + integer {y};
     }
 
-    bytes inline minus (byte_slice x, byte_slice y) {
+    integer inline minus (byte_slice x, byte_slice y) {
         return integer {x} - integer {y};
     }
 
-    bytes inline times (byte_slice x, byte_slice y) {
+    integer inline times (byte_slice x, byte_slice y) {
         return integer {x} * integer {y};
     }
 
-    bytes inline divide (byte_slice x, byte_slice y) {
+    integer inline divide (byte_slice x, byte_slice y) {
         return integer {x} / integer {y};
     }
 
-    bytes inline mod (byte_slice x, byte_slice y) {
+    integer inline mod (byte_slice x, byte_slice y) {
         return integer {x} % integer {y};
     }
 
-    bytes inline abs (byte_slice x) {
+    integer inline bit_shift (byte_slice x, int32 n) {
+        return integer {x} << n;
+    }
+
+    integer inline abs (byte_slice x) {
         if (is_negative (x)) return negate (x);
         return bytes (x);
     }
 
-    bytes inline mul_2 (byte_slice x) {
-        return data::mul_2 (integer {x});
+    integer inline mul_2 (byte_slice x) {
+        return data::math::bit_mul_2_pow (integer {x}, 1);
     }
 
-    bytes inline div_2 (byte_slice x) {
-        return data::mul_2 (integer {x});
+    integer inline div_2 (byte_slice x) {
+        return data::math::bit_div_2_negative_mod (integer {x});
+    }
+
+    std::weak_ordering inline compare (byte_slice a, byte_slice b) {
+        return data::arithmetic::BC::compare<data::endian::little, byte> (a, b);
+    }
+
+    // implements OP_NUMEQUAL
+    bool inline num_equal (byte_slice a, byte_slice b) {
+        return compare (a, b) == 0;
+    }
+
+    bool inline less (byte_slice a, byte_slice b) {
+        return compare (a, b) < 0;
+    }
+
+    bool inline greater (byte_slice a, byte_slice b) {
+        return compare (a, b) > 0;
+    }
+
+    bool inline less_equal (byte_slice a, byte_slice b) {
+        return compare (a, b) <= 0;
+    }
+
+    bool inline greater_equal (byte_slice a, byte_slice b) {
+        return compare (a, b) >= 0;
+    }
+
+    bool inline within (byte_slice b, byte_slice min, byte_slice max) {
+        return greater_equal (b, min) && less (b, max);
     }
 }
 

@@ -706,9 +706,9 @@ namespace Gigamonkey::Bitcoin {
                 // (x min max -- out)
                 if (Stack->size () < 3) return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 
-                const auto& bn1 = read_integer (Stack->top (-3), RequireMinimal, Config.MaxScriptNumLength);
-                const auto& bn2 = read_integer (Stack->top (-2), RequireMinimal, Config.MaxScriptNumLength);
-                const auto& bn3 = read_integer (Stack->top (-1), RequireMinimal, Config.MaxScriptNumLength);
+                const auto &bn1 = read_integer (Stack->top (-3), RequireMinimal, Config.MaxScriptNumLength);
+                const auto &bn2 = read_integer (Stack->top (-2), RequireMinimal, Config.MaxScriptNumLength);
+                const auto &bn3 = read_integer (Stack->top (-1), RequireMinimal, Config.MaxScriptNumLength);
                     
                 const bool fValue = (bn2 <= bn1 && bn1 < bn3);
                 Stack->pop_back ();
