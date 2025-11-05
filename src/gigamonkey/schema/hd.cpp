@@ -141,7 +141,7 @@ namespace Gigamonkey::HD::BIP_32 {
 
         secp256k1::secret key;
         std::copy (left.begin (), left.end (), key.Value.begin ());
-        secp256k1::pubkey pubkey = pub.Pubkey + key;
+        secp256k1::pubkey pubkey = secp256k1::tweak (pub.Pubkey, key);
         derived.Pubkey = pubkey;
         bytes child_key;
         std::copy (hmaced + 32, hmaced + 64, derived.ChainCode.begin ());

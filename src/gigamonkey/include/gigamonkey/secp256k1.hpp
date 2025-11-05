@@ -89,8 +89,8 @@ namespace Gigamonkey::secp256k1 {
         static bytes compress (slice<const byte>);
         static bytes decompress (slice<const byte>);
         static bytes negate (slice<const byte>);
-        static bytes plus_pubkey (slice<const byte>, slice<const byte>);
-        static bytes plus_secret (slice<const byte>, const uint256 &);
+        static bytes plus (slice<const byte>, slice<const byte>);
+        static bytes tweak (slice<const byte>, const uint256 &);
         static bytes times (slice<const byte>, slice<const byte>);
         
         static bool valid_size (size_t size) {
@@ -98,7 +98,7 @@ namespace Gigamonkey::secp256k1 {
         }
         
         pubkey () : bytes () {}
-        explicit pubkey (slice<const byte> v) : bytes {v} {}
+        explicit pubkey (byte_slice v) : bytes {v} {}
         
         bool valid () const;
         
@@ -120,7 +120,6 @@ namespace Gigamonkey::secp256k1 {
     
         pubkey operator - () const;
         pubkey operator + (const pubkey &) const;
-        pubkey operator + (const secret &) const;
         pubkey operator * (const secret &) const;
         
     private:
@@ -217,8 +216,8 @@ namespace Gigamonkey::secp256k1 {
         return a + b;
     }
     
-    pubkey inline plus (const pubkey &a, const secret &b) {
-        return a + b;
+    pubkey inline tweak (const pubkey &a, const secret &b) {
+        return pubkey {byte_slice (pubkey::tweak (a, b.Value))};
     }
     
     secret inline times (const secret &a, const secret &b) {
@@ -292,11 +291,7 @@ namespace Gigamonkey::secp256k1 {
     }
     
     pubkey inline pubkey::operator + (const pubkey &b) const {
-        return pubkey {pubkey::plus_pubkey (*this, b)};
-    }
-    
-    pubkey inline pubkey::operator + (const secret &s) const {
-        return pubkey {pubkey::plus_secret (*this, s.Value)};
+        return pubkey {pubkey::plus (*this, b)};
     }
     
     pubkey inline pubkey::operator * (const secret &s) const {
