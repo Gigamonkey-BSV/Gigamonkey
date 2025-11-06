@@ -334,7 +334,7 @@ namespace Gigamonkey::secp256k1 {
         return secp256k1_ec_seckey_tweak_mul (context, out.data (), sk_b.data ()) == 1;
     }
     
-    bytes pubkey::plus_pubkey (const slice<const byte> pk_a, slice<const byte> pk_b) {
+    bytes pubkey::plus (const slice<const byte> pk_a, slice<const byte> pk_b) {
         const auto context = Verification ();
         secp256k1_pubkey pubkey;
         secp256k1_pubkey b;
@@ -346,7 +346,7 @@ namespace Gigamonkey::secp256k1 {
         return secp256k1_ec_pubkey_combine (context, &pubkey, keys, 1) == 1 && serialize (context, out, pubkey) ? out : bytes {};
     }
     
-    bytes pubkey::plus_secret (const slice<const byte> pk, const uint256 &sk) {
+    bytes pubkey::tweak (const slice<const byte> pk, const uint256 &sk) {
         const auto context = Verification ();
         bytes out = bytes (pk.size ());
         secp256k1_pubkey pubkey;

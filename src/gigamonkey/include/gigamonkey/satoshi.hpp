@@ -83,7 +83,8 @@ namespace Gigamonkey {
     }
 }
 
-namespace data::math {
+// Ensure that satoshis form a mathematical ring. I'm not sure we need this.
+namespace data::math::def {
     
     template <> struct identity<plus<Gigamonkey::Bitcoin::satoshi>, Gigamonkey::Bitcoin::satoshi> {
         Gigamonkey::Bitcoin::satoshi operator () () {

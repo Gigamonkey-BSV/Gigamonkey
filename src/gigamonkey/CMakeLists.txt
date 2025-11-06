@@ -30,7 +30,9 @@ target_compile_features (base58_check PUBLIC cxx_std_23)
 set_target_properties (base58_check PROPERTIES CXX_EXTENSIONS OFF)
 #target_compile_options (base85_check PUBLIC "-fconcepts")
 
-add_library (gigamonkey STATIC
+add_library (gigamonkey
+
+    STATIC
     
     secp256k1.cpp
     numbers.cpp

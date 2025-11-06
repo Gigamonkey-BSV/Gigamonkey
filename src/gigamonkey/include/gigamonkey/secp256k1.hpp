@@ -25,16 +25,13 @@ namespace Gigamonkey::secp256k1 {
     reader &operator >> (reader &, point &);
     
     bool operator == (const point &, const point &);
-    bool operator != (const point &, const point &);
     
     struct secret;
     struct pubkey;
     
     bool operator == (const secret &, const secret &);
-    bool operator != (const secret &, const secret &);
     
     bool operator == (const pubkey &, const pubkey &);
-    bool operator != (const pubkey &, const pubkey &);
     
     struct signature final : bytes {
         
@@ -92,8 +89,8 @@ namespace Gigamonkey::secp256k1 {
         static bytes compress (slice<const byte>);
         static bytes decompress (slice<const byte>);
         static bytes negate (slice<const byte>);
-        static bytes plus_pubkey (slice<const byte>, slice<const byte>);
-        static bytes plus_secret (slice<const byte>, const uint256 &);
+        static bytes plus (slice<const byte>, slice<const byte>);
+        static bytes tweak (slice<const byte>, const uint256 &);
         static bytes times (slice<const byte>, slice<const byte>);
         
         static bool valid_size (size_t size) {
@@ -101,7 +98,7 @@ namespace Gigamonkey::secp256k1 {
         }
         
         pubkey () : bytes () {}
-        explicit pubkey (slice<const byte> v) : bytes {v} {}
+        explicit pubkey (byte_slice v) : bytes {v} {}
         
         bool valid () const;
         
@@ -123,7 +120,6 @@ namespace Gigamonkey::secp256k1 {
     
         pubkey operator - () const;
         pubkey operator + (const pubkey &) const;
-        pubkey operator + (const secret &) const;
         pubkey operator * (const secret &) const;
         
     private:
@@ -165,10 +161,6 @@ namespace Gigamonkey::secp256k1 {
     
     bool inline operator == (const point &a, const point &b) {
         return a.R == b.R && a.S == b.S;
-    }
-    
-    bool inline operator != (const point &a, const point &b) {
-        return !(a == b);
     }
     
     writer inline &operator << (writer &w, const point &p) {
@@ -224,8 +216,8 @@ namespace Gigamonkey::secp256k1 {
         return a + b;
     }
     
-    pubkey inline plus (const pubkey &a, const secret &b) {
-        return a + b;
+    pubkey inline tweak (const pubkey &a, const secret &b) {
+        return pubkey {byte_slice (pubkey::tweak (a, b.Value))};
     }
     
     secret inline times (const secret &a, const secret &b) {
@@ -242,10 +234,6 @@ namespace Gigamonkey::secp256k1 {
     
     bool inline operator == (const secret &a, const secret &b) {
         return a.Value == b.Value;
-    }
-    
-    bool inline operator != (const secret &a, const secret &b) {
-        return a.Value != b.Value;
     }
     
     signature inline secret::sign (const digest &d) const {
@@ -273,11 +261,9 @@ namespace Gigamonkey::secp256k1 {
     }
     
     bool inline operator == (const pubkey &a, const pubkey &b) {
-        return static_cast<bytes> (a) == static_cast<bytes> (b);
-    }
-    
-    bool inline operator != (const pubkey &a, const pubkey &b) {
-        return static_cast<bytes> (a) != static_cast<bytes> (b);
+        if (!valid (a) || !valid (b) || a.size () == b.size ())
+            return static_cast<bytes> (a) == static_cast<bytes> (b);
+        return static_cast<bytes> (a.decompress ()) == static_cast<bytes> (b.decompress ());
     }
     
     bool inline pubkey::verify (const digest &d, const signature &s) const {
@@ -305,11 +291,7 @@ namespace Gigamonkey::secp256k1 {
     }
     
     pubkey inline pubkey::operator + (const pubkey &b) const {
-        return pubkey {pubkey::plus_pubkey (*this, b)};
-    }
-    
-    pubkey inline pubkey::operator + (const secret &s) const {
-        return pubkey {pubkey::plus_secret (*this, s.Value)};
+        return pubkey {pubkey::plus (*this, b)};
     }
     
     pubkey inline pubkey::operator * (const secret &s) const {

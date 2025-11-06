@@ -18,7 +18,7 @@
 #include <data/for_each.hpp>
 #include <data/string.hpp>
 #include <data/encoding/hex.hpp>
-#include <data/math/nonnegative.hpp>
+#include <data/math/nonzero.hpp>
 
 inline bool implies (bool a, bool b) {
     return (!a) || b;
