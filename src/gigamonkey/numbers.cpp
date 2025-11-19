@@ -139,4 +139,20 @@ namespace Gigamonkey::Bitcoin {
         return result;
     }
 
+    data::string right_shift (const data::string &x, int32 n) {
+        integer z = right_shift (byte_slice {(const byte *) x.data (), x.size ()}, n);
+        data::string result;
+        result.resize (z.size ());
+        std::copy (z.data (), z.data () + z.size (), (byte *) result.data ());
+        return result;
+    }
+
+    data::string left_shift (const data::string &x, int32 n) {
+        integer z = left_shift (byte_slice {(const byte *) x.data (), x.size ()}, n);
+        data::string result;
+        result.resize (z.size ());
+        std::copy (z.data (), z.data () + z.size (), (byte *) result.data ());
+        return result;
+    }
+
 }

@@ -72,7 +72,13 @@ namespace Gigamonkey::Bitcoin {
     // shift left by n bits, implements OP_LSHIFT
     integer left_shift (byte_slice, int32 n);
 
-    // bit shift, not an op code.
+    // shift right by n bits
+    data::string right_shift (const data::string &, int32 n);
+
+    // shift left by n bits
+    data::string left_shift (const data::string &, int32 n);
+
+    // integral bit shift, not an op code.
     integer bit_shift (byte_slice, int32 n);
 
     // implements OP_NOT
