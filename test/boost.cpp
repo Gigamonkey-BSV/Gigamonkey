@@ -216,7 +216,7 @@ namespace Gigamonkey::Boost {
         }
     };
 
-    TEST (BoostTest, TestBoost) {
+    TEST (Boost, Boost) {
         
         const digest256 ContentsA = SHA2_256 (std::string {} +
             "Capitalists will always be able to expend more energy that socialists.");
@@ -353,19 +353,19 @@ namespace Gigamonkey::Boost {
         // Phase 1: generate solutions and check validity.
                 
         // Here is the list of output scripts. 
-        const list<output_script> output_scripts = data::for_each ([] (const test_case t) -> output_script {
+        const list<output_script> output_scripts = data::lift ([] (const test_case t) -> output_script {
             return t.Script;
         }, test_cases);
         
-        auto output_script_validity = data::for_each ([] (const output_script p) -> bool {
+        auto output_script_validity = data::lift ([] (const output_script p) -> bool {
             return p.valid ();
         }, output_scripts);
         
-        list<work::proof> proofs = data::for_each ([] (const test_case t) -> work::proof {
+        list<work::proof> proofs = data::lift ([] (const test_case t) -> work::proof {
             return t.solve ();
         }, test_cases);
         
-        auto proof_validity = data::for_each ([] (work::proof p) -> bool {
+        auto proof_validity = data::lift ([] (work::proof p) -> bool {
             return p.valid ();
         }, proofs);
         
@@ -387,25 +387,25 @@ namespace Gigamonkey::Boost {
         // Phase 3: check scripts valid. 
         
         // serialized forms of the output and input scripts. 
-        list<Bitcoin::script> serialized_output_scripts = data::for_each ([] (const output_script o) -> Bitcoin::script {
+        list<Bitcoin::script> serialized_output_scripts = data::lift ([] (const output_script o) -> Bitcoin::script {
             auto script = o.write ();
             EXPECT_EQ (script.size (), o.serialized_size ());
             return script;
         }, output_scripts);
         
-        auto unserialized_output_scripts = data::for_each ([] (const Bitcoin::script o) -> output_script {
+        auto unserialized_output_scripts = data::lift ([] (const Bitcoin::script o) -> output_script {
             return output_script (o);
         }, serialized_output_scripts);
         
         EXPECT_TRUE (test_orthogonal (output_scripts, unserialized_output_scripts)) << "could not serialize and deserialize output scripts.";
         
-        list<Bitcoin::script> serialized_input_scripts = data::for_each ([] (const input_script i) -> Bitcoin::script {
+        list<Bitcoin::script> serialized_input_scripts = data::lift ([] (const input_script i) -> Bitcoin::script {
             auto script = i.write ();
             EXPECT_EQ (script.size (), i.serialized_size ());
             return script;
         }, input_scripts);
         
-        auto unserialized_input_scripts = data::for_each ([] (const Bitcoin::script o) -> input_script {
+        auto unserialized_input_scripts = data::lift ([] (const Bitcoin::script o) -> input_script {
             return input_script (o);
         }, serialized_input_scripts);
         
@@ -423,7 +423,7 @@ namespace Gigamonkey::Boost {
         
     }
     
-    TEST (BoostTest, DoExtraPoW1) {
+    TEST (Boost, DoExtraPoW1) {
         
         Bitcoin::transaction tx = Bitcoin::transaction {*data::encoding::hex::read (encoding::hex::string {
             "010000000174d9f6dc235207fbbcdff7bdc412dcb375eb634da698ed164cc1e9aa1b88729a040000006b4830450221008596410738406e0e85892"
@@ -489,7 +489,7 @@ namespace Gigamonkey::Boost {
         
     }
 
-    TEST (BoostTest, DoExtraPoW2) {
+    TEST (Boost, DoExtraPoW2) {
         
         Bitcoin::transaction tx = Bitcoin::transaction {*data::encoding::hex::read (encoding::hex::string {
             "01000000018ff2fe10e8629051853507b4189bf3981569a0d358e0506033a11618f2e3b10c010000006b483045022100f82288631d8c8b6b6fba"
@@ -559,7 +559,7 @@ namespace Gigamonkey::Boost {
     }
     
     // this is used to test against the boostpow-js library. 
-    TEST (BoostTest, TestAgainstBoostPoWJS) {
+    TEST (Boost, AgainstBoostPoWJS) {
         bytes content_string = bytes (string ("hello animal"));
         bytes tag_string = bytes (string ("this is a tag"));
         bytes data_string = bytes (string ("this is more additionalData"));
@@ -852,7 +852,7 @@ namespace Gigamonkey::Boost {
     }
     
     // this is used to test against the boostpow-js library. 
-    TEST (BoostTest, TestAgainstBoostPoWJSRedeem) {
+    TEST (Boost, AgainstBoostPoWJSRedeem) {
         
         Bitcoin::secret from_key {Bitcoin::net::Main,
             secp256k1::secret {uint256 {"0x0000000000000000000000000000000000000000000000000000000000000003"}}};

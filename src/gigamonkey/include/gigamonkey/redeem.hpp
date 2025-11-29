@@ -50,9 +50,9 @@ namespace Gigamonkey {
 
     inline redeemable_transaction::redeemable_transaction
     (int32_little version, list<redeemer> inputs, list<Bitcoin::output> outputs, uint32_little locktime):
-        transaction_design {version, for_each ([] (const redeemer r) -> transaction_design::input {
+        transaction_design {version, lift ([] (const redeemer r) -> transaction_design::input {
             return static_cast<transaction_design::input> (r);
-        }, inputs), outputs, locktime}, Signatures {for_each ([] (const redeemer r) -> list<sigop> {
+        }, inputs), outputs, locktime}, Signatures {lift ([] (const redeemer r) -> list<sigop> {
             return r.Signatures;
         }, inputs)} {}
     

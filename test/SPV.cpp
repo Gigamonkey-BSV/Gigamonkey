@@ -86,7 +86,7 @@ namespace Gigamonkey {
         EXPECT_NO_THROW (EXPECT_EQ (*proof, beef.read_SPV_proof (d)));
     }
 
-    TEST (SPVTest, TestSPV) {
+    TEST (SPV, SPV) {
 
         data::fixed_entropy e {bytes {data::hex_string {"abcdef0123456789abcdef0123456789"}}};
         crypto::NIST::DRBG r {crypto::NIST::DRBG::Hash, e};

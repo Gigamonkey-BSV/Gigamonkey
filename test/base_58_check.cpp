@@ -6,7 +6,7 @@
 
 namespace Gigamonkey::base58 {
 
-    TEST (Base58Test, TestBase58Check) {
+    TEST (Base58, Base58Check) {
         
         std::string hex {"010203fdfeff"};
         std::string encoded_0 {"14HV44ipwoaqfg"};

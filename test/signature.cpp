@@ -66,7 +66,7 @@ namespace Gigamonkey::Bitcoin {
         return {doc.Transaction, doc.InputIndex, doc.RedeemedValue + satoshi {1}, doc.ScriptCode};
     }
     
-    TEST (SignatureTest, TestSighash) {
+    TEST (Signature, Sighash) {
         index input_index = 0;
         satoshi redeemed_value {0xfeee};
         auto scriptx = decompile (pay_to_address::script (digest160 {uint160 {"0xdddddddddd000000000000000000006767676791"}}));
@@ -142,7 +142,7 @@ namespace Gigamonkey::Bitcoin {
         
     }
     
-    TEST (SignatureTest, TestFindAndDelete) {
+    TEST (Signature, FindAndDelete) {
         
         auto p1 = secp256k1::point (uint256 {123}, uint256 {456});
         auto p2 = secp256k1::point (uint256 {789}, uint256 {101});
@@ -166,7 +166,7 @@ namespace Gigamonkey::Bitcoin {
         
     }
 
-    TEST (SignatureTest, TestFlags) {
+    TEST (Signature, Flags) {
         // compressed pubkey
         // strict encoding
         // invalid sighash

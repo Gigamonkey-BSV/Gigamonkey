@@ -168,7 +168,7 @@ namespace Gigamonkey::extended {
     }
 
     inline transaction::operator Bitcoin::transaction () const {
-        return Bitcoin::transaction {Version, for_each ([] (const input &in) -> Bitcoin::input {
+        return Bitcoin::transaction {Version, lift ([] (const input &in) -> Bitcoin::input {
             return static_cast<Bitcoin::input> (in);
         }, Inputs), Outputs, LockTime};
     }

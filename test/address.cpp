@@ -211,16 +211,16 @@ namespace Gigamonkey::Bitcoin {
 
     };
 
-    TEST (AddressTest, TestAddresses) {
+    TEST (Address, Addresses) {
         test_standard_scripts {}.test_p2pk_and_p2pkh ();
     }
 
     // use the address tests above to test P2SH
-    TEST (AddressTest, TestP2SH) {
+    TEST (Address, P2SH) {
         test_standard_scripts {}.test_p2sh ();
     }
     
-    TEST (AddressTest, TestRecoverBase58) {
+    TEST (Address, RecoverBase58) {
         
         ptr<data::entropy> entropy = std::static_pointer_cast<data::entropy> (std::make_shared<data::fixed_entropy> (
             byte_slice (bytes (string ("atehu=eSRCjt.r83085[934[498[35")))));
@@ -283,7 +283,7 @@ namespace Gigamonkey::Bitcoin {
         
     }
     
-    TEST (ScriptTest, TestBIP276) {
+    TEST (Script, BIP276) {
         
         digest160 digest_one {"0x1111111111111111111111111111111111111111"};
         digest160 digest_two {"0x2222222222222222222222222222222222222222"};

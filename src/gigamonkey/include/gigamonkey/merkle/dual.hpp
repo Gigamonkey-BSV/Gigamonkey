@@ -47,7 +47,7 @@ namespace Gigamonkey::Merkle {
         }
         
         list<leaf> leaves () const {
-            return data::for_each ([] (const proof &p) -> leaf {
+            return data::lift ([] (const proof &p) -> leaf {
                 return p.Branch.Leaf;
             }, proofs ());
         }

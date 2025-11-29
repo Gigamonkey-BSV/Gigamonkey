@@ -176,7 +176,7 @@ namespace Gigamonkey::Merkle {
         ]
     })";
 
-    TEST (BUMPTest, TestBUMP) {
+    TEST (BUMP, BUMP) {
         bytes bump_bytes = *encoding::hex::read (binary_BUMP_HEX);
         BUMP from_bytes {bump_bytes};
 
