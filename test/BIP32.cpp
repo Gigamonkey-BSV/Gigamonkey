@@ -43,7 +43,7 @@ namespace Gigamonkey::HD {
         ASSERT_EQ (derived.to_public (), expected_pubkey);
 
         ASSERT_EQ (derived.to_public ().write (), expected_pubkey.write ());
-/*
+
         EXPECT_NE (secret.to_public ().derive (path1), expected_pubkey);
         EXPECT_FALSE (secret.to_public ().derive (path1).valid ());
 
@@ -51,7 +51,7 @@ namespace Gigamonkey::HD {
             BIP_32::secret::read
                 ("xprv9wTYmMFdV23N2TdNG573QoEsfRrWKQgWeibmLntzniatZvR9BmLnvSxqu53Kw1UmYPxLgboyZQaXwTCg8MSY3H2EU4pWcQDnRnrVA1xe8fs");
 
-        ASSERT_EQ (expected2, BIP_32::derive (secret, path2));*/
+        ASSERT_EQ (expected2, BIP_32::derive (secret, path2));
     }
 
 

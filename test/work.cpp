@@ -23,7 +23,7 @@ namespace Gigamonkey::work {
         return x;
     }
     
-    TEST (WorkTest, TestWork) {
+    TEST (Work, Work) {
         
         std::string message1 {"Capitalists can spend more energy than socialists."};
         std::string message2 {"If you can't transform energy, why should anyone listen to you?"};
@@ -66,13 +66,13 @@ namespace Gigamonkey::work {
         
         uint64_big extra_nonce = 90983;
         
-        auto proofs = data::for_each ([&extra_nonce] (puzzle p) -> proof {
+        auto proofs = data::lift ([&extra_nonce] (puzzle p) -> proof {
             extra_nonce++;
             return cpu_solve (p, solution (Bitcoin::timestamp (1), 0, slice<const byte> (extra_nonce), 353));
         }, puzzles); 
         
         // we add a non-trivial version mask. 
-        auto proofs_with_mask = data::for_each ([&extra_nonce] (puzzle p) -> proof {
+        auto proofs_with_mask = data::lift ([&extra_nonce] (puzzle p) -> proof {
             // add a non-trivial version bits field. 
             extra_nonce++;
             return cpu_solve (p, solution (share {Bitcoin::timestamp (1), 0, slice<const byte> (extra_nonce), -1}, 353));
@@ -82,7 +82,7 @@ namespace Gigamonkey::work {
             return proof {a.Puzzle, b.Solution}.valid ();
         }, proofs, proofs));
         
-        EXPECT_TRUE (dot_cross([] (proof a, proof b) -> bool {
+        EXPECT_TRUE (dot_cross ([] (proof a, proof b) -> bool {
             return proof {a.Puzzle, b.Solution}.valid ();
         }, proofs_with_mask, proofs_with_mask));
         

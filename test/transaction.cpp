@@ -9,7 +9,7 @@
 namespace Gigamonkey::Bitcoin {
 
     // can result in stack smashing
-    TEST (TransactionTest, TestTransaction1) {
+    TEST (Transaction, Transaction1) {
 
         string tx_hex = string {} +
         "0100000001DB78AC273A4113615B5FC2D5BC24904884988201A7DB977FEEE56F73F5BF718CB00000006A4730440220295348C95DBAA2E0CF67F2EDA2A442AFF7D6D8DCA2" + 
@@ -157,7 +157,7 @@ namespace Gigamonkey::Bitcoin {
         
     }
 
-    TEST (TransactionTest, TestTransaction2) {
+    TEST (Transaction, Transaction2) {
         std::string tx1_hex =
             "0100000001cd4e4cac3c7b56920d1e7655e7e260d31f29d9a388d04910f1bbd72304a7902901"
             "0000006b483045022100e75279a205a547c445719420aa3138bf14743e3f42618e5f86a19bde"

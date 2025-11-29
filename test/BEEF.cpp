@@ -36,7 +36,7 @@ namespace Gigamonkey {
         "00" // above tx doesn't have merkle path, but instead has local parent
         ;
 
-    TEST (BEEFTest, TestBEEF) {
+    TEST (BEEF, BEEF) {
 
         bytes beef_bytes = *encoding::hex::read (binary_BEEF_HEX);
         BEEF beef {beef_bytes};

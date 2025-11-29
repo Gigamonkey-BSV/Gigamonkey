@@ -9,7 +9,7 @@
 
 namespace Gigamonkey::Merkle {
     
-    TEST (MerkleTest, TestMerkle) {
+    TEST (Merkle, Merkle) {
         EXPECT_FALSE (leaf {}.valid ());
         EXPECT_FALSE (proof {}.valid ());
         EXPECT_FALSE (tree {}.valid ());
@@ -17,7 +17,7 @@ namespace Gigamonkey::Merkle {
         
         list<std::string> transactions {"a", "b", "c", "d", "e", "f", "g", "h"};
         
-        list<digest256> leaves = take (for_each ([] (const std::string x) -> digest256 {
+        list<digest256> leaves = take (lift ([] (const std::string x) -> digest256 {
             return Bitcoin::Hash256 (x);
         }, transactions), 8);
         
@@ -100,7 +100,7 @@ namespace Gigamonkey::Merkle {
     // This test comes from 
     // https://tsc.bitcoinassociation.net/standards/merkle-proof-standardised-format/
     // and is not very good but it's better than nothing. 
-    TEST (MerkleTest, TestMerkleSerilization) {
+    TEST (Merkle, Serilization) {
         bytes binary_format = *encoding::hex::read (
             "000cef65a4611570303539143dabd6aa64dbd0f41ed89074406dc0e7cd251cf1efff69f17b44cfe9c2a23285168fe05084e125"
             "4daa5305311ed8cd95b19ea6b0ed7505008e66d81026ddb2dae0bd88082632790fc6921b299ca798088bef5325a607efb9004d"

@@ -6,7 +6,7 @@
 
 namespace Gigamonkey::Bitcoin {
 
-    TEST (TimestampTest, TestTimestamp) {
+    TEST (Timestamp, Timestamp) {
         time_t t = 1601529910;
         timestamp tb {t};
         uint32 ut = uint32 (tb);

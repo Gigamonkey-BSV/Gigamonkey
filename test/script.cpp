@@ -26,7 +26,7 @@ namespace Gigamonkey::Bitcoin {
         }
     }
 
-    TEST (ScriptTest, TestProgram) {
+    TEST (Script, Program) {
         // empty program
         test_program (bytes {}, true);
 
@@ -73,7 +73,7 @@ namespace Gigamonkey::Bitcoin {
 
     // There's an option having to do with malleability which says that the
     // stack has to have one element at the end or else it's an error.
-    TEST (ScriptTest, TestCleanStack) {
+    TEST (Script, CleanStack) {
 
         success (evaluate (bytes {}, bytes {OP_1}, flag::VERIFY_CLEANSTACK), "Clean stack A1");
         success (evaluate (bytes {}, bytes {OP_2}, flag::VERIFY_CLEANSTACK), "Clean stack A2");
@@ -90,7 +90,7 @@ namespace Gigamonkey::Bitcoin {
 
     }
 
-    TEST (ScriptTest, TestMinimalPush) {
+    TEST (Script, MinimalPush) {
 
         failure (evaluate (bytes {OP_FALSE}, bytes {}, flag::VERIFY_MINIMALDATA), "OP_FALSE require minimal");
         failure (evaluate (bytes {OP_FALSE}, bytes {}, flag {}), "OP_FALSE");
@@ -162,7 +162,7 @@ namespace Gigamonkey::Bitcoin {
 
     }
 
-    TEST (ScriptTest, TestPush) {
+    TEST (Script, Push) {
 
         error (evaluate (bytes {}, bytes {}), "empty script");
 
@@ -204,7 +204,7 @@ namespace Gigamonkey::Bitcoin {
         error (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00}, bytes {}, flag {}), "PUSHDATA4 invalid push");
     }
 
-    TEST (ScriptTest, TestUnlockPushOnly) {
+    TEST (Script, UnlockPushOnly) {
 
         success (evaluate (bytes {}, bytes {OP_TRUE}, flag {}));
         success (evaluate (bytes {}, bytes {OP_TRUE}, flag::VERIFY_SIGPUSHONLY));
@@ -220,7 +220,7 @@ namespace Gigamonkey::Bitcoin {
 
     }
 
-    TEST (ScriptTest, TestInvalidStack) {
+    TEST (Script, InvalidStack) {
 
         // ops requiring at least one argument.
         error (evaluate (bytes {OP_IF}, bytes {}, flag {}), "OP_IF");
@@ -388,7 +388,7 @@ namespace Gigamonkey::Bitcoin {
 
     }
 
-    TEST (ScriptTest, TestOpcodes) {
+    TEST (Script, Opcodes) {
 
         // OP_NOP
         failure (evaluate (bytes {OP_NOP}, bytes {}, flag {}), "OP_NOP 1");
@@ -420,7 +420,7 @@ namespace Gigamonkey::Bitcoin {
 
     }
 
-    TEST (ScriptTest, TestAltStack) {
+    TEST (Script, AltStack) {
         // OP_TOALTSTACK
         failure (evaluate (bytes {OP_1}, bytes {OP_TOALTSTACK}, flag {}), "alt stack 1");
         // OP_FROMALTSTACK
@@ -469,7 +469,7 @@ namespace Gigamonkey::Bitcoin {
         test_op<int> (OP_ROLL, start, expected_roll, explanation);
     }
 
-    TEST (ScriptTest, TestPickRoll) {
+    TEST (Script, PickRoll) {
 
         test_pick_roll_error ({0}, "error 0");
         test_pick_roll_error ({9, 1}, "error 1");
@@ -486,7 +486,7 @@ namespace Gigamonkey::Bitcoin {
 
     auto test_stack_op = &test_op<int>;
 
-    TEST (ScriptTest, TestStackOps) {
+    TEST (Script, StackOps) {
 
         test_stack_op (OP_DROP, {3}, {}, "DROP");
         test_stack_op (OP_2DROP, {4, 5}, {}, "2DROP");
@@ -521,7 +521,7 @@ namespace Gigamonkey::Bitcoin {
         else failure (evaluate (compile (push_data (input)), compile (program {Op, push_data (result), OP_EQUAL}), {}));
     }
 
-    TEST (ScriptTest, TestHashOps) {
+    TEST (Script, HashOps) {
 
         test_hash_op (OP_SHA1, bytes {}, *encoding::hex::read ("da39a3ee5e6b4b0d3255bfef95601890afd80709"));
         test_hash_op (OP_SHA256, bytes {}, *encoding::hex::read ("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"));
@@ -541,7 +541,7 @@ namespace Gigamonkey::Bitcoin {
         test_op (Op, start, expected, explanation);
     }
 
-    TEST (ScriptTest, TestBoolOps) {
+    TEST (Script, BoolOps) {
 
         // should replace 0 to 1, everything other than zero to zero
         test_data_op (OP_NOT, {{}}, {{0x01}});
@@ -571,7 +571,7 @@ namespace Gigamonkey::Bitcoin {
 
     }
 
-    TEST (ScriptTest, TestBitOps) {
+    TEST (Script, BitOps) {
 
         test_data_op_error (OP_AND, {{}, {0x00}}, "AND args must be the same size 1");
         test_data_op_error (OP_OR, {{}, {0x00}}, "OR args must be the same size 1");
@@ -600,7 +600,7 @@ namespace Gigamonkey::Bitcoin {
 
     }
 
-    TEST (ScriptTest, TestStringOps) {
+    TEST (Script, StringOps) {
 
         test_data_op (OP_CAT, {{}, {}}, {{}});
         test_data_op (OP_CAT, {{0x78}, {}}, {{0x78}});
@@ -645,7 +645,7 @@ namespace Gigamonkey::Bitcoin {
 
     }
 
-    TEST (ScriptTest, TestBitShift) {
+    TEST (Script, BitShift) {
 
         // negative numbers not allowed.
         test_data_op_error (OP_LSHIFT, {{}, {0x81}});
@@ -680,7 +680,7 @@ namespace Gigamonkey::Bitcoin {
 
     }
 
-    TEST (ScriptTest, TestBin2Num2Bin) {
+    TEST (Script, Bin2Num2Bin) {
 
         // Different representations of zero.
         test_data_op (OP_BIN2NUM, {{}}, {{}});
@@ -734,7 +734,7 @@ namespace Gigamonkey::Bitcoin {
 
     }
 
-    TEST (ScriptTest, TestNumberCompare) {
+    TEST (Script, NumberCompare) {
 
         // number representations organized in equal sets ordered from least to greatest.
         list<list<bytes>> equals_test_cases {
@@ -809,7 +809,7 @@ namespace Gigamonkey::Bitcoin {
 
     }
 
-    TEST (ScriptTest, TestNumberWithin) {
+    TEST (Script, NumberWithin) {
 
         failure (evaluate (bytes {OP_0, OP_0, OP_0}, bytes {OP_WITHIN}, flag {}), "Within 1");
         success (evaluate (bytes {OP_0, OP_0, OP_1}, bytes {OP_WITHIN}, flag {}), "Within 2");
@@ -818,14 +818,14 @@ namespace Gigamonkey::Bitcoin {
 
     }
 
-    TEST (ScriptTest, TestNumberEqualVerify) {
+    TEST (Script, NumberEqualVerify) {
 
         test_data_op (OP_NUMEQUALVERIFY, {{0x01}, {0x01, 0x00}}, {});
         test_data_op_error (OP_NUMEQUALVERIFY, {{0x81}, {0x01}});
 
     }
 
-    TEST (ScriptTest, TestNumberOps) {
+    TEST (Script, NumberOps) {
 
         test_data_op (OP_0NOTEQUAL, {{}}, {{}}, "OP_0NOTEQUAL 1");
         test_data_op (OP_0NOTEQUAL, {{0x00}}, {{}}, "OP_0NOTEQUAL 2");
@@ -937,7 +937,7 @@ namespace Gigamonkey::Bitcoin {
         return multisig_script (doc, s, p, OP_0);
     }
     
-    TEST (ScriptTest, TestMultisig) {
+    TEST (Script, Multisig) {
         incomplete::transaction tx {
             {incomplete::input {
                 outpoint {
@@ -1004,7 +1004,7 @@ namespace Gigamonkey::Bitcoin {
         
     }
 /*
-    TEST (ScriptTest, TestVerify) {
+    TEST (Script, Verify) {
 
         test_data_op (OP_NUMEQUALVERIFY);
         test_data_op (OP_CHECKSIGVERIFY);
@@ -1012,15 +1012,15 @@ namespace Gigamonkey::Bitcoin {
 
     }
 
-    TEST (ScriptTest, TestOP_VER) {
+    TEST (Script, OP_VER) {
         OP_VER
     }
 
-    TEST (ScriptTest, TestReturn) {
+    TEST (Script, Return) {
         OP_RETURN
     }
 
-    TEST (ScriptTest, TestControlOps) {
+    TEST (Script, ControlOps) {
 
         OP_IF
         OP_NOTIF

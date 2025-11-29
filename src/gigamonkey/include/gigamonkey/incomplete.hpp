@@ -42,7 +42,7 @@ namespace Gigamonkey::Bitcoin::incomplete {
         
         transaction (const Bitcoin::transaction &tx) : 
             Version {tx.Version}, Outputs {tx.Outputs}, Inputs {
-                data::for_each ([] (const Bitcoin::input &i) -> input {
+                data::lift ([] (const Bitcoin::input &i) -> input {
                     return input {i};
                 }, tx.Inputs)}, LockTime {tx.LockTime} {}
         

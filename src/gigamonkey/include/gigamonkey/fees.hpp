@@ -132,14 +132,14 @@ namespace Gigamonkey {
 
     // convert to an incomplete tx for signing.
     inline transaction_design::operator Bitcoin::incomplete::transaction () const {
-        return Bitcoin::incomplete::transaction {Version, data::for_each ([] (const input &in) -> Bitcoin::incomplete::input {
+        return Bitcoin::incomplete::transaction {Version, data::lift ([] (const input &in) -> Bitcoin::incomplete::input {
             return in;
         }, Inputs), Outputs, LockTime};
     }
 
     extended::transaction inline transaction_design::complete (list<Bitcoin::script> scripts) const {
         if (scripts.size () != Inputs.size ()) throw std::logic_error {"need one script for each input."};
-        return extended::transaction {Version, data::map_thread ([] (const input &in, const bytes &script) -> extended::input {
+        return extended::transaction {Version, data::lift ([] (const input &in, const bytes &script) -> extended::input {
             return in.complete (script);
         }, Inputs, scripts), Outputs, LockTime};
     }

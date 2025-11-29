@@ -129,7 +129,7 @@ namespace Gigamonkey::ARC {
                 r = r.body (JSON (a).dump ());
             } break;
             case text: {
-                r = r.body (string_join (for_each ([] (const extended::transaction &tx) -> string {
+                r = r.body (string_join (lift ([] (const extended::transaction &tx) -> string {
                     return encoding::hex::write (bytes (tx));
                 }, x.Transactions), "\n"));
             } break;

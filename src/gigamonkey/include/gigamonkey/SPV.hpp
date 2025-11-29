@@ -249,15 +249,15 @@ namespace Gigamonkey::SPV {
     };
 
     list<extended::transaction> inline extended_transactions (list<Bitcoin::transaction> payment, proof::map proof) {
-        return for_each ([proof] (const Bitcoin::transaction &tx) -> extended::transaction {
-            return extended::transaction {tx.Version, for_each ([proof] (const Bitcoin::input &in) -> extended::input {
+        return lift ([proof] (const Bitcoin::transaction &tx) -> extended::transaction {
+            return extended::transaction {tx.Version, lift ([proof] (const Bitcoin::input &in) -> extended::input {
                 return extended::input {proof[in.Reference.Digest]->Transaction.Outputs[in.Reference.Index], in};
             }, tx.Inputs), tx.Outputs, tx.LockTime};
         }, payment);
     }
 
     extended::transaction inline extended_transaction (Bitcoin::transaction tx, proof::map proof) {
-        return extended::transaction {tx.Version, for_each ([proof] (const Bitcoin::input &in) -> extended::input {
+        return extended::transaction {tx.Version, lift ([proof] (const Bitcoin::input &in) -> extended::input {
             return extended::input {proof[in.Reference.Digest]->Transaction.Outputs[in.Reference.Index], in};
         }, tx.Inputs), tx.Outputs, tx.LockTime};
     }

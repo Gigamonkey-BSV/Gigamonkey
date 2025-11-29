@@ -7,7 +7,7 @@ namespace Gigamonkey::Bitcoin {
     
     transaction incomplete::transaction::complete (list<bytes> scripts) const {
         if (scripts.size () != Inputs.size ()) throw std::logic_error {"need one script for each input."};
-        return Bitcoin::transaction {Version, data::map_thread ([] (const input &in, const bytes &script) -> Bitcoin::input {
+        return Bitcoin::transaction {Version, data::lift ([] (const input &in, const bytes &script) -> Bitcoin::input {
             return in.complete (script);
         }, Inputs, scripts), Outputs, LockTime};
     }

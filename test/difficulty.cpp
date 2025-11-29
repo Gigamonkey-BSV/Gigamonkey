@@ -7,7 +7,7 @@
 
 namespace Gigamonkey::work {
 
-    TEST (DifficultyTest, TestDifficulty) {
+    TEST (Difficulty, Difficulty) {
 
         EXPECT_TRUE (difficulty::minimum ().valid ());
         EXPECT_TRUE (difficulty (1).valid ());

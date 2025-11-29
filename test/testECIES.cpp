@@ -9,7 +9,7 @@
 
 namespace Gigamonkey::ECIES {
 
-    TEST(ECIESTest, TestBitcore) {
+    TEST (ECIESTest, TestBitcore) {
         using namespace bitcore;
         
         Bitcoin::secret aliceKey {"L1Ejc5dAigm5XrM3mNptMEsNnHzS7s51YxU7J61ewGshZTKkbmzJ"};

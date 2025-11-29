@@ -7,7 +7,7 @@
 
 namespace Gigamonkey::Bitcoin {
 
-    TEST (WorkStringTest, TestWorkSTring) {
+    TEST (StringTest, WorkSTring) {
         
         std::string genesis_header_string = std::string {} +
             // version
@@ -53,7 +53,7 @@ namespace Gigamonkey::Bitcoin {
         
     }
 
-    TEST (WorkStringTest, TestASICBoost) {
+    TEST (StringTest, ASICBoost) {
         
         int32 VERSIONBITS_IGNORE_MASK = 0xE0001FFFUL;
         int32 VERSIONBITS_IGNORE_LEFT = 0xE0000000UL;

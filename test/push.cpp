@@ -22,7 +22,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
     };
 
     // can result in stack smashing
-    TEST (PushTest, TestPushMinimal) {
+    TEST (Push, Minimal) {
         for (const auto &x : list<test_case> {
             test_case {true,  "00"},
             test_case {true,  "51"},
@@ -53,7 +53,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
     }
 
     // can result in stack smashing
-    TEST (PushTest, TestPushExpectedSize) {
+    TEST (Push, ExpectedSize) {
         auto test_size = [] (size_t actual, size_t expected, string test_case) -> void {
             EXPECT_EQ (expected, actual) << "Failure on " << test_case << "; expected " << expected << " got " << actual;
         };

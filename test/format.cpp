@@ -10,12 +10,12 @@
 
 namespace Gigamonkey::Bitcoin {
     
-    TEST (FormatTest, TestWIF) {
+    TEST (Format, WIF) {
         std::string wiki_wif = "5HueCGU8rMjxEXxiPuD5BDku4MkFqeZyd4dZ1jvhTVqvbTLvyTJ";
         EXPECT_TRUE (secret {wiki_wif}.encode () == wiki_wif);
     }
     
-    TEST (FormatTest, TestAddress) {
+    TEST (Format, Address) {
         std::string addr = "127NVqnjf8gB9BFAW2dnQeM6wqmy1gbGtv";
         EXPECT_TRUE (address {addr}.decode ().encode () == addr);
     }
@@ -86,7 +86,7 @@ namespace Gigamonkey::Bitcoin {
         }
     };
     
-    TEST(FormatTest, TestFormat) {
+    TEST(Format, Format) {
     
         auto positive_tests = list<test_data> {} <<
                 test_data ("L2rW8amvjR19iSZ1wVU9keXBqEjQ9fMSCw9bsSKSmSCXTxqfz2Bn",
@@ -126,7 +126,7 @@ namespace Gigamonkey::Bitcoin {
                         "043EA79C33BC2100835ACA4C0E06A896014D94AD5216F54C44A3A94E1C8B39B1B1F252B4B35D4CA96B8C6D7601A75D36F06BDB333B0E4F0C13C5E4004E49C5FE2A",
                         "1DKsEVtWQ6QGWBQ32fVDuCYQasxaCApdqm");
         
-        list<bool> success = data::for_each ([] (test_data t) -> bool {
+        list<bool> success = data::lift ([] (test_data t) -> bool {
             bool b;
             test_case x {t};
             EXPECT_TRUE (b = x.valid ());
@@ -134,7 +134,7 @@ namespace Gigamonkey::Bitcoin {
             return b;
         }, positive_tests);
 
-        list<bool> failure = data::for_each ([] (test_data t) -> bool {
+        list<bool> failure = data::lift ([] (test_data t) -> bool {
             bool b;
             EXPECT_FALSE (b = test_case {t}.valid ());
             return b;

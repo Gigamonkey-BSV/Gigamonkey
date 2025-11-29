@@ -276,7 +276,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     digest256 inline merkle_root (const list<transaction> t) {
-        return Merkle::root (data::for_each (id, t));
+        return Merkle::root (data::lift (id, t));
     }
     
     struct block {

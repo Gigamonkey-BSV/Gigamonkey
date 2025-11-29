@@ -11,12 +11,12 @@
 #include <boost/endian/conversion.hpp>
 
 #include <data/stream.hpp>
-#include <data/tools.hpp>
+#include <data/dispatch.hpp>
+#include <data/string.hpp>
 #include <data/numbers.hpp>
 #include <data/math.hpp>
 #include <data/fold.hpp>
-#include <data/for_each.hpp>
-#include <data/string.hpp>
+#include <data/lift.hpp>
 #include <data/encoding/hex.hpp>
 #include <data/math/nonzero.hpp>
 
