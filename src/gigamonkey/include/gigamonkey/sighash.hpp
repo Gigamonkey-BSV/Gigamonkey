@@ -137,9 +137,9 @@ namespace Gigamonkey::Bitcoin {
         namespace Amaury {
             bytes write (const document &, sighash::directive);
             writer &write (writer &w, const document &doc, sighash::directive d);
-            digest256 hash_prevouts (const incomplete::transaction &);
-            digest256 hash_sequence (const incomplete::transaction &);
-            digest256 hash_outputs (const incomplete::transaction &);
+            void hash_prevouts (digest256 &, const incomplete::transaction &);
+            void hash_sequence (digest256 &, const incomplete::transaction &);
+            void hash_outputs (digest256 &, const incomplete::transaction &);
         }
         
         writer inline &write_Bitcoin_Cash (writer &w, const document &doc, sighash::directive d) {
@@ -154,22 +154,19 @@ namespace Gigamonkey::Bitcoin {
                 return w;
             }
 
-            digest256 inline hash_prevouts (const incomplete::transaction &tx) {
-                Hash256_writer w;
+            void inline hash_prevouts (digest256 &d, const incomplete::transaction &tx) {
+                Hash256_writer w {d};
                 for (const incomplete::input &in : tx.Inputs) w << in.Reference;
-                return w.complete ();
             }
 
-            digest256 inline hash_sequence (const incomplete::transaction &tx) {
-                Hash256_writer w;
+            void inline hash_sequence (digest256 &d, const incomplete::transaction &tx) {
+                Hash256_writer w {d};
                 for (const incomplete::input &in : tx.Inputs) w << in.Sequence;
-                return w.complete ();
             }
 
-            digest256 inline hash_outputs (const incomplete::transaction &tx) {
-                Hash256_writer w;
+            void inline hash_outputs (digest256 &d, const incomplete::transaction &tx) {
+                Hash256_writer w {d};
                 for (const output &out : tx.Outputs) w << out;
-                return w.complete ();
             }
             
         }
@@ -177,18 +174,24 @@ namespace Gigamonkey::Bitcoin {
     }
 
     const digest256 inline &incomplete::transaction::hash_prevouts () {
-        if (Cached.HashPrevouts == nullptr) Cached.HashPrevouts = new digest256 {sighash::Amaury::hash_prevouts (*this)};
-        return *Cached.HashPrevouts;
+        if (Cached.HashPrevouts == nullptr) {
+            Cached.HashPrevouts = new digest256 {};
+            sighash::Amaury::hash_prevouts (*Cached.HashPrevouts, *this);
+        } return *Cached.HashPrevouts;
     }
 
     const digest256 inline &incomplete::transaction::hash_sequence () {
-        if (Cached.HashSequence == nullptr) Cached.HashSequence = new digest256 {sighash::Amaury::hash_sequence (*this)};
-        return *Cached.HashSequence;
+        if (Cached.HashSequence == nullptr) {
+            Cached.HashSequence = new digest256 {};
+            sighash::Amaury::hash_sequence (*Cached.HashSequence, *this);
+        } return *Cached.HashSequence;
     }
 
     const digest256 inline &incomplete::transaction::hash_outputs () {
-        if (Cached.HashOutputs == nullptr) Cached.HashOutputs = new digest256 {sighash::Amaury::hash_outputs (*this)};
-        return *Cached.HashOutputs;
+        if (Cached.HashOutputs == nullptr) {
+            Cached.HashOutputs = new digest256 {};
+            sighash::Amaury::hash_outputs (*Cached.HashOutputs, *this);
+        } return *Cached.HashOutputs;
     }
     
 }
