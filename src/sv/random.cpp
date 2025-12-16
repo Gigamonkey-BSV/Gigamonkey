@@ -290,18 +290,19 @@ static uint64_t rng_counter = 0;
 
 static void AddDataToRng(void *data, size_t len) {
     CSHA512 hasher;
-    hasher.Write((const uint8_t *) &len, sizeof (len));
-    hasher.Write((const uint8_t *) data, len);
+    hasher.Update ((const uint8_t *) &len, sizeof (len));
+    hasher.Update ((const uint8_t *) data, len);
     uint8_t buf[64];
     {
         std::unique_lock<std::mutex> lock (cs_rng_state);
-        hasher.Write (rng_state, sizeof (rng_state));
-        hasher.Write ((const uint8_t *) &rng_counter, sizeof (rng_counter));
+        hasher.Update (rng_state, sizeof (rng_state));
+        hasher.Update ((const uint8_t *) &rng_counter, sizeof (rng_counter));
         ++rng_counter;
-        hasher.Finalize(buf);
-        memcpy(rng_state, buf + 32, 32);
+        hasher.Final (buf);
+        memcpy (rng_state, buf + 32, 32);
     }
-    memory_cleanse(buf, 64);
+
+    memory_cleanse (buf, 64);
 }
 
 void GetStrongRandBytes (uint8_t *out, int num) {
@@ -312,24 +313,22 @@ void GetStrongRandBytes (uint8_t *out, int num) {
     // First source: OpenSSL's RNG
     RandAddSeedPerfmon ();
     GetRandBytes (buf, 32);
-    hasher.Write (buf, 32);
+    hasher.Update (buf, 32);
 
     // Second source: OS RNG
     GetOSRand (buf);
-    hasher.Write (buf, 32);
+    hasher.Update (buf, 32);
 
     // Third source: HW RNG, if available.
-    if (GetHWRand (buf)) {
-        hasher.Write (buf, 32);
-    }
+    if (GetHWRand (buf)) hasher.Update (buf, 32);
 
     // Combine with and update state
     {
         std::unique_lock<std::mutex> lock (cs_rng_state);
-        hasher.Write (rng_state, sizeof (rng_state));
-        hasher.Write ((const uint8_t *)&rng_counter, sizeof (rng_counter));
+        hasher.Update (rng_state, sizeof (rng_state));
+        hasher.Update ((const uint8_t *)&rng_counter, sizeof (rng_counter));
         ++rng_counter;
-        hasher.Finalize (buf);
+        hasher.Final (buf);
         memcpy (rng_state, buf + 32, 32);
     }
 

@@ -8,7 +8,7 @@ target_link_libraries (
 
   PUBLIC
 
-  Data::sv
+  Data::hash
 
 )
 

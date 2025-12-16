@@ -11,7 +11,7 @@ namespace Gigamonkey {
     namespace crypto = data::crypto;
 
     template <size_t size>
-    using digest = data::digest<size>;
+    using digest = data::hash::digest<size>;
 
     // because of a bug in bitcoind long ago, many bitcoin
     // applications expect hashes to be provided backwards.
@@ -90,13 +90,13 @@ namespace Gigamonkey::Bitcoin {
 // document to the hash writer incrementally and the hash will be
 // calculated as we go along.
 namespace Gigamonkey {
-    using SHA_2_256_writer = crypto::hash::SHA2<32>;
-    using RIPEMD_160_writer = crypto::hash::RIPEMD<20>;
+    using SHA_2_256_writer = data::hash::writer<crypto::hash::SHA2<32>>;
+    using RIPEMD_160_writer = data::hash::writer<crypto::hash::RIPEMD<20>>;
 }
 
 namespace Gigamonkey::Bitcoin {
-    using Hash160_writer = crypto::hash::Bitcoin<20>;
-    using Hash256_writer = crypto::hash::Bitcoin<32>;
+    using Hash160_writer = data::hash::writer<crypto::hash::Bitcoin<20>>;
+    using Hash256_writer = data::hash::writer<crypto::hash::Bitcoin<32>>;
 }
 
 namespace Gigamonkey {
