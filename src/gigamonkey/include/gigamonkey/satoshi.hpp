@@ -13,31 +13,31 @@ namespace Gigamonkey::Bitcoin {
     // for accounting purposes. 
     struct satoshi : int64_little {
         using int64_little::int64_little;
-        explicit satoshi (uint64_little x);
-        satoshi (): int64_little {0} {}
+        constexpr explicit satoshi (uint64_little x);
+        constexpr satoshi (): int64_little {0} {}
         
-        bool valid () const {
+        constexpr bool valid () const {
             return *this >= 0 && *this < 2100000000000000;
         }
         
-        satoshi operator + (satoshi x) const;
-        satoshi operator - (satoshi x) const;
-        satoshi operator - () const;
+        constexpr satoshi operator + (satoshi x) const;
+        constexpr satoshi operator - (satoshi x) const;
+        constexpr satoshi operator - () const;
     };
     
-    inline satoshi::satoshi (uint64_little x) {
+    constexpr inline satoshi::satoshi (uint64_little x) {
         std::copy (x.begin (), x.end (), int64_little::begin ());
     }
         
-    satoshi inline satoshi::operator + (satoshi x) const {
+    constexpr satoshi inline satoshi::operator + (satoshi x) const {
         return static_cast<int64_little>(*this) + static_cast<int64_little> (x);
     }
     
-    satoshi inline satoshi::operator - (satoshi x) const {
+    constexpr satoshi inline satoshi::operator - (satoshi x) const {
         return static_cast<int64_little> (*this) - static_cast<int64_little> (x);
     }
     
-    satoshi inline satoshi::operator - () const {
+    constexpr satoshi inline satoshi::operator - () const {
         return satoshi {-static_cast<int64_little> (*this)};
     }
 
@@ -48,16 +48,16 @@ namespace Gigamonkey {
         Bitcoin::satoshi Satoshis;
         uint64 Bytes;
 
-        satoshis_per_byte (): Satoshis {}, Bytes {0} {}
-        satoshis_per_byte (Bitcoin::satoshi sats, uint64 bytes): Satoshis {sats}, Bytes {bytes} {}
+        constexpr satoshis_per_byte (): Satoshis {}, Bytes {0} {}
+        constexpr satoshis_per_byte (Bitcoin::satoshi sats, uint64 bytes): Satoshis {sats}, Bytes {bytes} {}
 
-        operator double () const;
-        bool valid () const;
+        constexpr operator double () const;
+        constexpr bool valid () const;
     };
 
-    std::weak_ordering inline operator <=> (const satoshis_per_byte &a, const satoshis_per_byte &b);
+    constexpr std::weak_ordering inline operator <=> (const satoshis_per_byte &a, const satoshis_per_byte &b);
 
-    bool operator == (const satoshis_per_byte &a, const satoshis_per_byte &b);
+    constexpr bool operator == (const satoshis_per_byte &a, const satoshis_per_byte &b);
 
     // given a tx size, what fee should we pay?
     Bitcoin::satoshi inline calculate_fee (satoshis_per_byte v, uint64 size) {
@@ -65,20 +65,20 @@ namespace Gigamonkey {
         return std::ceil (double (v.Satoshis) * double (size) / double (v.Bytes));
     }
 
-    inline satoshis_per_byte::operator double () const {
+    constexpr inline satoshis_per_byte::operator double () const {
         if (Bytes == 0) throw data::math::division_by_zero {};
         return double (Satoshis) / double (Bytes);
     }
 
-    bool inline satoshis_per_byte::valid () const {
+    constexpr bool inline satoshis_per_byte::valid () const {
         return Bytes != 0;
     }
 
-    std::weak_ordering inline operator <=> (const satoshis_per_byte &a, const satoshis_per_byte &b) {
+    constexpr std::weak_ordering inline operator <=> (const satoshis_per_byte &a, const satoshis_per_byte &b) {
         return int64 (a.Satoshis) * static_cast<int64> (b.Bytes) <=> int64 (b.Satoshis) * static_cast<int64> (a.Bytes);
     }
 
-    bool inline operator == (const satoshis_per_byte &a, const satoshis_per_byte &b) {
+    constexpr bool inline operator == (const satoshis_per_byte &a, const satoshis_per_byte &b) {
         return int64 (a.Satoshis) * static_cast<int64> (b.Bytes) == int64 (b.Satoshis) * static_cast<int64> (a.Bytes);
     }
 }
@@ -87,13 +87,13 @@ namespace Gigamonkey {
 namespace data::math::def {
     
     template <> struct identity<plus<Gigamonkey::Bitcoin::satoshi>, Gigamonkey::Bitcoin::satoshi> {
-        Gigamonkey::Bitcoin::satoshi operator () () {
+        constexpr Gigamonkey::Bitcoin::satoshi operator () () {
             return {0};
         }
     };
     
     template <> struct inverse<plus<Gigamonkey::Bitcoin::satoshi>, Gigamonkey::Bitcoin::satoshi> {
-        Gigamonkey::Bitcoin::satoshi operator () (const Gigamonkey::Bitcoin::satoshi &a, const Gigamonkey::Bitcoin::satoshi &b) {
+        constexpr Gigamonkey::Bitcoin::satoshi operator () (const Gigamonkey::Bitcoin::satoshi &a, const Gigamonkey::Bitcoin::satoshi &b) {
             return b - a;
         }
     };
