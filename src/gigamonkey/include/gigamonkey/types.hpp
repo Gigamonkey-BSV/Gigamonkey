@@ -116,17 +116,17 @@ namespace Gigamonkey {
     }
     
     template <typename X, typename ... P>
-    writer inline &write (writer &b, X x, P... p) {
-        return write (write (b, x), p...);
+    writer inline &write (writer &b, X &&x, P &&...p) {
+        return write (write (b, std::forward<X> (x)), std::forward<P> (p)...);
     }
 
     template <typename word, typename it> using it_wtr = data::iterator_writer<word, it>;
     template <typename it> using it_rdr = data::iterator_reader<it>;
 
-    template <typename ... P> inline bytes write (size_t size, P... p) {
+    template <typename ... P> inline bytes write (size_t size, P &&...p) {
         bytes x (size);
         it_wtr w {x.begin (), x.end ()};
-        write (w, p...);
+        write (w, std::forward<P> (p)...);
         return x;
     }
     

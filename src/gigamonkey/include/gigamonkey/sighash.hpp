@@ -99,9 +99,9 @@ namespace Gigamonkey::Bitcoin {
         writer &write (writer &w, const document &doc, sighash::directive d);
         
         bytes inline write (const document &doc, sighash::directive d) {
-            data::lazy_bytes_writer w;
-            write (w, doc, d);
-            return w;
+            return data::build_with<bytes, byte, data::lazy_bytes_writer> ([&] (auto &&w) {
+                write (w, doc, d);
+            });
         }
         
         // two different functions are in use, due to the bitcoin Cash hard fork. 
@@ -112,15 +112,15 @@ namespace Gigamonkey::Bitcoin {
         writer &write_Bitcoin_Cash (writer &, const document &, sighash::directive);
         
         bytes inline write_original (const document &doc, sighash::directive d) {
-            data::lazy_bytes_writer w;
-            write_original (w, doc, d);
-            return w;
+            return data::build_with<bytes, byte, data::lazy_bytes_writer> ([&] (auto &&w) {
+                write_original (w, doc, d);
+            });
         }
         
         bytes inline write_Bitcoin_Cash (const document &doc, sighash::directive d) {
-            data::lazy_bytes_writer w;
-            write_Bitcoin_Cash (w, doc, d);
-            return w;
+            return data::build_with<bytes, byte, data::lazy_bytes_writer> ([&] (auto &&w) {
+                write_Bitcoin_Cash (w, doc, d);
+            });
         }
         
         writer inline &write (writer &w, const document &doc, sighash::directive d) {
@@ -149,24 +149,27 @@ namespace Gigamonkey::Bitcoin {
         namespace Amaury {
         
             bytes inline write (const document &doc, sighash::directive d) {
-                data::lazy_bytes_writer w;
-                Amaury::write (w, doc, d);
-                return w;
+                return data::build_with<bytes, byte, data::lazy_bytes_writer> ([&] (auto &&w) {
+                    Amaury::write (w, doc, d);
+                });
             }
 
-            void inline hash_prevouts (digest256 &d, const incomplete::transaction &tx) {
-                Hash256_writer w {d};
-                for (const incomplete::input &in : tx.Inputs) w << in.Reference;
+            digest256 inline hash_prevouts (const incomplete::transaction &tx) {
+                return data::hash::write<Hash256_writer> ([&] (auto &&w) {
+                    for (const incomplete::input &in : tx.Inputs) w << in.Reference;
+                });
             }
 
-            void inline hash_sequence (digest256 &d, const incomplete::transaction &tx) {
-                Hash256_writer w {d};
-                for (const incomplete::input &in : tx.Inputs) w << in.Sequence;
+            digest256 inline hash_sequence (const incomplete::transaction &tx) {
+                return data::hash::write<Hash256_writer> ([&] (auto &&w) {
+                    for (const incomplete::input &in : tx.Inputs) w << in.Sequence;
+                });
             }
 
-            void inline hash_outputs (digest256 &d, const incomplete::transaction &tx) {
-                Hash256_writer w {d};
-                for (const output &out : tx.Outputs) w << out;
+            digest256 inline hash_outputs (const incomplete::transaction &tx) {
+                return data::hash::write<Hash256_writer> ([&] (auto &&w) {
+                    for (const output &out : tx.Outputs) w << out;
+                });
             }
             
         }
@@ -174,24 +177,18 @@ namespace Gigamonkey::Bitcoin {
     }
 
     const digest256 inline &incomplete::transaction::hash_prevouts () {
-        if (Cached.HashPrevouts == nullptr) {
-            Cached.HashPrevouts = new digest256 {};
-            sighash::Amaury::hash_prevouts (*Cached.HashPrevouts, *this);
-        } return *Cached.HashPrevouts;
+        if (Cached.HashPrevouts == nullptr) Cached.HashPrevouts = new digest256 {sighash::Amaury::hash_prevouts (*this)};
+        return *Cached.HashPrevouts;
     }
 
     const digest256 inline &incomplete::transaction::hash_sequence () {
-        if (Cached.HashSequence == nullptr) {
-            Cached.HashSequence = new digest256 {};
-            sighash::Amaury::hash_sequence (*Cached.HashSequence, *this);
-        } return *Cached.HashSequence;
+        if (Cached.HashSequence == nullptr) Cached.HashSequence = new digest256 {sighash::Amaury::hash_sequence (*this)};
+        return *Cached.HashSequence;
     }
 
     const digest256 inline &incomplete::transaction::hash_outputs () {
-        if (Cached.HashOutputs == nullptr) {
-            Cached.HashOutputs = new digest256 {};
-            sighash::Amaury::hash_outputs (*Cached.HashOutputs, *this);
-        } return *Cached.HashOutputs;
+        if (Cached.HashOutputs == nullptr) Cached.HashOutputs = new digest256 {sighash::Amaury::hash_outputs (*this)};
+        return *Cached.HashOutputs;
     }
     
 }
