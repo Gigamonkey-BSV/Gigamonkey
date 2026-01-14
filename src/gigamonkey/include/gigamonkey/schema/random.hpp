@@ -8,7 +8,7 @@
 #include <data/random.hpp>
 
 namespace Gigamonkey {
-    struct bitcoind_entropy final : data::random::entropy {
+    struct bitcoind_entropy final : data::random::source {
         byte_array<32> Data;
         uint32 Position;
         bitcoind_entropy () : Data {}, Position {32} {}
@@ -19,7 +19,7 @@ namespace Gigamonkey {
 namespace Gigamonkey::Bitcoin {
     
     class random_key_source final : public key_source {
-        data::random::entropy &Random;
+        data::random::source &Random;
         net Network;
         bool Compressed;
         
@@ -35,7 +35,7 @@ namespace Gigamonkey::Bitcoin {
             return x;
         }
         
-        random_key_source (data::random::entropy &r, net net = net::Main, bool compressed = true) :
+        random_key_source (data::random::source &r, net net = net::Main, bool compressed = true) :
             Random {r}, Network {net}, Compressed {compressed} {}
     };
 

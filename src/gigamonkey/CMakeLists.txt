@@ -109,6 +109,8 @@ target_link_libraries (
   PUBLIC
 
   base58_check
+  Data::crypto
+  Data::net
   Data::data
   nlohmann_json::nlohmann_json
   PkgConfig::cryptopp
