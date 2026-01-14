@@ -14,7 +14,7 @@ namespace Gigamonkey {
             default: throw "invalid data type";
         }
         
-        bytes data = write_bytes (b.size () + 2, version, byte (n), b);
+        bytes data = data::write<bytes> (b.size () + 2, version, byte (n), b);
         
         ss << ':' << encoding::hex::write (data, data::hex_case::lower);
         
