@@ -91,7 +91,7 @@ namespace Gigamonkey::Bitcoin {
 
         Bitcoin::secret decode () const;
 
-        WIF (): string {} {}
+        using string::string;
     };
     
     bool inline operator == (const secret &a, const secret &b) {
