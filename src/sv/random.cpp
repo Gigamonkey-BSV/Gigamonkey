@@ -350,8 +350,8 @@ uint64_t GetRand (uint64_t nMax) {
     return (nRand % nMax);
 }
 
-int GetRandInt(int nMax) {
-    return GetRand(nMax);
+int GetRandInt (int nMax) {
+    return GetRand (nMax);
 }
 
 uint256 GetRandHash () {

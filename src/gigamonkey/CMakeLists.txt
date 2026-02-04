@@ -1,10 +1,12 @@
 
 add_library (base58_check STATIC)
 add_library (numbers STATIC)
+add_library (gigamonkey_secp256k1 STATIC)
 add_library (gigamonkey STATIC)
 
 add_library (Gigamonkey::base58_check ALIAS base58_check)
 add_library (Gigamonkey::numbers ALIAS numbers)
+add_library (Gigamonkey::secp256k1 ALIAS gigamonkey_secp256k1)
 add_library (Gigamonkey::gigamonkey ALIAS gigamonkey)
 
 set_target_properties (base58_check PROPERTIES
@@ -13,6 +15,10 @@ set_target_properties (base58_check PROPERTIES
 
 set_target_properties (numbers PROPERTIES
   OUTPUT_NAME "gigamonkey_numbers"
+)
+
+set_target_properties (gigamonkey_secp256k1 PROPERTIES
+  OUTPUT_NAME "gigamonkey_secp256k1"
 )
 
 set_target_properties (gigamonkey PROPERTIES
@@ -38,6 +44,9 @@ target_include_directories (
   $<INSTALL_INTERFACE:include>
 )
 
+target_compile_features (base58_check PUBLIC cxx_std_23)
+set_target_properties (base58_check PROPERTIES CXX_EXTENSIONS OFF)
+
 target_link_libraries (
   base58_check
 
@@ -46,9 +55,36 @@ target_link_libraries (
   Data::numbers
 )
 
+target_sources (
+  gigamonkey_secp256k1
+
+  PRIVATE
+
+  secp256k1.cpp
+
+)
+
+target_include_directories (
+  gigamonkey_secp256k1
+  PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated/>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+target_link_libraries (
+  gigamonkey_secp256k1
+
+  PUBLIC
+
+  Data::numbers
+
+  secp256k1
+)
+
 # Set C++ version
-target_compile_features (base58_check PUBLIC cxx_std_23)
-set_target_properties (base58_check PROPERTIES CXX_EXTENSIONS OFF)
+target_compile_features (gigamonkey_secp256k1 PUBLIC cxx_std_23)
+set_target_properties (gigamonkey_secp256k1 PROPERTIES CXX_EXTENSIONS OFF)
 
 target_sources (
   numbers
@@ -56,8 +92,9 @@ target_sources (
   PRIVATE
 
   numbers.cpp
-
 )
+
+add_library (Gigamonkey::numbers ALIAS numbers)
 
 target_include_directories (
   numbers
@@ -84,7 +121,6 @@ target_sources (
 
     PRIVATE
     
-    secp256k1.cpp
     timestamp.cpp
     incomplete.cpp
     sighash.cpp
@@ -142,6 +178,8 @@ target_sources (
     boost/boost.cpp  
 )
 
+add_library (Gigamonkey::gigamonkey ALIAS gigamonkey)
+
 configure_file (include/gigamonkey/version.hpp.in generated/gigamonkey/version.hpp)
 
 target_include_directories (
@@ -158,6 +196,7 @@ target_link_libraries (
   PUBLIC
 
   Gigamonkey::base58_check
+  Gigamonkey::secp256k1
   Gigamonkey::numbers
   Data::crypto
   Data::net
@@ -166,8 +205,6 @@ target_link_libraries (
   PkgConfig::cryptopp
   util
   sv_giga
-  
-  secp256k1
 
 )
 
@@ -186,7 +223,7 @@ install (
 )
 
 install (
-  TARGETS gigamonkey numbers base58_check sv_giga nlohmann_json
+  TARGETS gigamonkey numbers gigamonkey_secp256k1 base58_check sv_giga nlohmann_json
   EXPORT GigamonkeyTargets
   ARCHIVE
 )
