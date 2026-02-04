@@ -1,15 +1,34 @@
-add_library (
+
+add_library (base58_check STATIC)
+add_library (numbers STATIC)
+add_library (gigamonkey STATIC)
+
+add_library (Gigamonkey::base58_check ALIAS base58_check)
+add_library (Gigamonkey::numbers ALIAS numbers)
+add_library (Gigamonkey::gigamonkey ALIAS gigamonkey)
+
+set_target_properties (base58_check PROPERTIES
+  OUTPUT_NAME "gigamonkey_base58_check"
+)
+
+set_target_properties (numbers PROPERTIES
+  OUTPUT_NAME "gigamonkey_numbers"
+)
+
+set_target_properties (gigamonkey PROPERTIES
+  OUTPUT_NAME "gigamonkey_gigamonkey"
+)
+
+target_sources (
   base58_check
 
-  STATIC
+  PRIVATE
 
   p2p/var_int.cpp
   p2p/checksum.cpp
   p2p/version.cpp
 
 )
-
-add_library (Gigamonkey::base58_check ALIAS base58_check)
 
 target_include_directories (
   base58_check
@@ -30,14 +49,42 @@ target_link_libraries (
 # Set C++ version
 target_compile_features (base58_check PUBLIC cxx_std_23)
 set_target_properties (base58_check PROPERTIES CXX_EXTENSIONS OFF)
-#target_compile_options (base85_check PUBLIC "-fconcepts")
 
-add_library (gigamonkey
+target_sources (
+  numbers
 
-    STATIC
+  PRIVATE
+
+  numbers.cpp
+
+)
+
+target_include_directories (
+  numbers
+  PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated/>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+target_link_libraries (
+  numbers
+
+  PUBLIC
+
+  Data::numbers
+)
+
+# Set C++ version
+target_compile_features (numbers PUBLIC cxx_std_23)
+set_target_properties (numbers PROPERTIES CXX_EXTENSIONS OFF)
+
+target_sources (
+    gigamonkey
+
+    PRIVATE
     
     secp256k1.cpp
-    numbers.cpp
     timestamp.cpp
     incomplete.cpp
     sighash.cpp
@@ -111,6 +158,7 @@ target_link_libraries (
   PUBLIC
 
   Gigamonkey::base58_check
+  Gigamonkey::numbers
   Data::crypto
   Data::net
   Data::data
@@ -138,7 +186,7 @@ install (
 )
 
 install (
-  TARGETS gigamonkey base58_check sv_giga nlohmann_json
+  TARGETS gigamonkey numbers base58_check sv_giga nlohmann_json
   EXPORT GigamonkeyTargets
   ARCHIVE
 )
