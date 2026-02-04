@@ -72,7 +72,6 @@ namespace Gigamonkey::Bitcoin {
         }
                                 
         bool valid () const {
-            
             return SecretWIFCompressed.valid () && SecretWIFUncompressed.valid () &&
                 SecretWIFCompressed.Secret == SecretWIFUncompressed.Secret &&
                 PubkeyHexCompressed.valid () && PubkeyHexUncompressed.valid () &&

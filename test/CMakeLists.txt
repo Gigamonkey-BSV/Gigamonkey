@@ -37,7 +37,7 @@ target_link_libraries (
     unit_tests
     PRIVATE
 
-    Gigamonkey::gigamonkey
+    Gigamonkey::Stratum
     util
     gtest_main
     gmock
