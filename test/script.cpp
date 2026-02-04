@@ -2,9 +2,9 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include <gigamonkey/hash.hpp>
 #include <gigamonkey/script/pattern/pay_to_address.hpp>
 #include <gigamonkey/script/interpreter.hpp>
-#include <data/crypto/NIST_DRBG.hpp>
 #include <gigamonkey/address.hpp>
 #include <data/encoding/hex.hpp>
 #include "gtest/gtest.h"
@@ -522,15 +522,11 @@ namespace Gigamonkey::Bitcoin {
     }
 
     TEST (Script, HashOps) {
-
         test_hash_op (OP_SHA1, bytes {}, *encoding::hex::read ("da39a3ee5e6b4b0d3255bfef95601890afd80709"));
         test_hash_op (OP_SHA256, bytes {}, *encoding::hex::read ("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"));
-
         test_hash_op (OP_RIPEMD160, bytes {}, *encoding::hex::read ("9c1185a5c5e9fc54612808977ee8f548b2258d31"));
-
-        test_hash_op (OP_HASH160, bytes {}, crypto::RIPEMD_160 (crypto::SHA2_256 (bytes {})));
-        test_hash_op (OP_HASH256, bytes {}, crypto::SHA2_256 (crypto::SHA2_256 (bytes {})));
-
+        test_hash_op (OP_HASH160, bytes {}, RIPEMD_160 (SHA2_256 (bytes {})));
+        test_hash_op (OP_HASH256, bytes {}, SHA2_256 (SHA2_256 (bytes {})));
     }
 
     void test_data_op_error (op Op, list<bytes> start, string explanation = "") {
