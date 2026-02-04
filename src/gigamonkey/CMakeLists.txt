@@ -9,6 +9,8 @@ add_library (
 
 )
 
+add_library (Gigamonkey::base58_check ALIAS base58_check)
+
 target_include_directories (
   base58_check
   PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated/>
@@ -108,7 +110,7 @@ target_link_libraries (
 
   PUBLIC
 
-  base58_check
+  Gigamonkey::base58_check
   Data::crypto
   Data::net
   Data::data

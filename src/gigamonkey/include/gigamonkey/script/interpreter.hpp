@@ -29,8 +29,6 @@ namespace Gigamonkey::Bitcoin {
 
     std::ostream &operator << (std::ostream &, const interpreter &);
 
-    result step_through (interpreter &m);
-
     // evaluate with real signatures.
     result inline evaluate (const script &unlock, const script &lock, const redemption_document &doc, const script_config &conf) {
         return interpreter (unlock, lock, doc, conf).run ();

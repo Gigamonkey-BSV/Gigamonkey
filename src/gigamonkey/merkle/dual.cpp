@@ -2,7 +2,6 @@
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/merkle/dual.hpp>
-#include <data/io/wait_for_enter.hpp>
 
 // This file contains a method of serializing and deserializing dual merkle trees. 
 namespace Gigamonkey::Merkle {
