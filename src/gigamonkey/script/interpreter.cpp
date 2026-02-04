@@ -4,7 +4,6 @@
 #include <gigamonkey/script/interpreter.hpp>
 #include <gigamonkey/script/bitcoin_core.hpp>
 #include <sv/policy/policy.h>
-#include <data/io/wait_for_enter.hpp>
 
 namespace Gigamonkey::Bitcoin {
 
@@ -55,18 +54,6 @@ namespace Gigamonkey::Bitcoin {
             << ", Result: " << i.Machine.Result << ", Flags: " << i.Machine.Config.Flags
             << ",\n\t" << *i.Machine.Stack << ", Exec: " << make_list (i.Machine.Exec)
             << ", Else: " << make_list (i.Machine.Else) << "}";
-    }
-
-    result step_through (interpreter &m) {
-        while (true) {
-            std::cout << m << std::endl;
-            if (m.Machine.Halt) break;
-            data::wait_for_enter ();
-            m.step ();
-        }
-
-        std::cout << "Result " << m.Machine.Result << std::endl;
-        return m.Machine.Result;
     }
 
     maybe<result> machine_step (machine &x, program_counter &p) {
