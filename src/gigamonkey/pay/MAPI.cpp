@@ -193,22 +193,20 @@ namespace Gigamonkey::MAPI {
     HTTP::request client::submit_transaction_HTTP_request (const submit_transaction_request &request) const {
         if (!request.valid ()) throw std::invalid_argument {"invalid transaction submission request"};
 
-        HTTP::request::make r = HTTP::request::make {}.method (HTTP::method::post).path (REST.Path + "/mapi/tx");
+        HTTP::request::make r = REST (HTTP::method::post, "/mapi/tx");
 
         if (request.ContentType == application_JSON)
-            r = r.body (JSON (static_cast<const transaction_submission> (request)));
-        else r = r.query (to_url_params (request.Parameters)).body (request.Transaction);
-
-        return REST (r);
+            return r.body (JSON (static_cast<const transaction_submission> (request)));
+        else return r.query (to_url_params (request.Parameters)).body (request.Transaction);
 
     }
     
     HTTP::request client::submit_transactions_HTTP_request (const submit_transactions_request &request) const {
         if (!request.valid ()) throw std::invalid_argument {"invalid transactions submission request"};
 
-        return REST (HTTP::request::make {}.method (HTTP::method::post).path (REST.Path + "/mapi/txs").
+        return REST (HTTP::method::post, "/mapi/txs").
             query (to_url_params (request.DefaultParameters)).
-            body (to_JSON (request.Submissions)));
+            body (to_JSON (request.Submissions));
 
     }
     
