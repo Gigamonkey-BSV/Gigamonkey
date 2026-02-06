@@ -3,6 +3,8 @@ add_library (base58_check STATIC)
 add_library (numbers STATIC)
 add_library (gigamonkey_secp256k1 STATIC)
 add_library (Merkle STATIC)
+add_library (keys STATIC)
+add_library (tx STATIC)
 add_library (gigamonkey STATIC)
 add_library (Stratum STATIC)
 
@@ -10,6 +12,8 @@ add_library (Gigamonkey::base58_check ALIAS base58_check)
 add_library (Gigamonkey::numbers ALIAS numbers)
 add_library (Gigamonkey::secp256k1 ALIAS gigamonkey_secp256k1)
 add_library (Gigamonkey::Merkle ALIAS Merkle)
+add_library (Gigamonkey::keys ALIAS keys)
+add_library (Gigamonkey::tx ALIAS tx)
 add_library (Gigamonkey::gigamonkey ALIAS gigamonkey)
 add_library (Gigamonkey::Stratum ALIAS Stratum)
 
@@ -23,6 +27,14 @@ set_target_properties (numbers PROPERTIES
 
 set_target_properties (gigamonkey_secp256k1 PROPERTIES
   OUTPUT_NAME "gigamonkey_secp256k1"
+)
+
+set_target_properties (keys PROPERTIES
+  OUTPUT_NAME "gigamonkey_keys"
+)
+
+set_target_properties (tx PROPERTIES
+  OUTPUT_NAME "gigamonkey_tx"
 )
 
 set_target_properties (Merkle PROPERTIES
@@ -160,16 +172,53 @@ target_compile_features (Merkle PUBLIC cxx_std_23)
 set_target_properties (Merkle PROPERTIES CXX_EXTENSIONS OFF)
 
 target_sources (
-  gigamonkey
+  keys
 
   PRIVATE
-    
+
+  address.cpp
+  wif.cpp
+  script/typed_data_bip_276.cpp
+
+  schema/random.cpp
+  schema/hd.cpp
+  schema/bip_39.cpp
+  schema/electrum_SV.cpp
+)
+
+target_include_directories (
+  keys
+  PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated/>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+target_link_libraries (
+  keys
+
+  PUBLIC
+
+  Gigamonkey::secp256k1
+  Gigamonkey::base58_check
+)
+
+# Set C++ version
+target_compile_features (keys PUBLIC cxx_std_23)
+set_target_properties (keys PROPERTIES CXX_EXTENSIONS OFF)
+
+target_sources (
+  tx
+
+  PRIVATE
+
+  work.cpp
   timestamp.cpp
   incomplete.cpp
   sighash.cpp
   signature.cpp
   script.cpp
-    
+
   script/instruction.cpp
   script/error.cpp
   script/config.cpp
@@ -179,20 +228,41 @@ target_sources (
   script/stack.cpp
   script/interpreter.cpp
   script/machine.cpp
-  script/typed_data_bip_276.cpp
-    
-  address.cpp
-  wif.cpp
+
   timechain.cpp
-  work.cpp
+)
+
+target_include_directories (
+  tx
+  PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated/>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+target_link_libraries (
+  tx
+
+  PUBLIC
+
+  Gigamonkey::secp256k1
+  Gigamonkey::numbers
+  Gigamonkey::base58_check
+  nlohmann_json::nlohmann_json
+)
+
+# Set C++ version
+target_compile_features (tx PUBLIC cxx_std_23)
+set_target_properties (tx PROPERTIES CXX_EXTENSIONS OFF)
+
+target_sources (
+  gigamonkey
+
+  PRIVATE
+
   pay/extended.cpp
   SPV.cpp
   redeem.cpp
-    
-  schema/random.cpp
-  schema/hd.cpp
-  schema/bip_39.cpp
-  schema/electrum_SV.cpp
 
   pay/envelope.cpp
   pay/MAPI.cpp
@@ -219,9 +289,9 @@ target_link_libraries (
 
   PUBLIC
 
+  Gigamonkey::keys
+  Gigamonkey::tx
   Gigamonkey::Merkle
-  Gigamonkey::base58_check
-  Gigamonkey::secp256k1
   Gigamonkey::numbers
   Data::crypto
   Data::net
@@ -287,7 +357,7 @@ install (
 )
 
 install (
-  TARGETS Stratum gigamonkey Merkle numbers gigamonkey_secp256k1 base58_check sv_giga nlohmann_json
+  TARGETS Stratum gigamonkey tx keys Merkle numbers gigamonkey_secp256k1 base58_check sv_giga nlohmann_json
   EXPORT GigamonkeyTargets
   ARCHIVE
 )
