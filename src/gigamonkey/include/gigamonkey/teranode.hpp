@@ -103,7 +103,7 @@ namespace Gigamonkey::teranode {
 
     struct client : HTTP::client {
 
-    using HTTP::client::client;
+        using HTTP::client::client;
 
         // =========================
         // operator() overloads
@@ -113,18 +113,35 @@ namespace Gigamonkey::teranode {
         health_response operator () (const health_request &);
 
         get_tx_response operator () (const get_tx_request &);
+
+        post_txs_response operator () (const post_txs_request &);
+
         txmeta_response operator () (const txmeta_request &);
+
+        header_response operator () (const header_request &);
+        headers_response operator () (const headers_request &);
+        best_header_response operator () (const best_header_request &);
 
         block_response operator () (const block_request &);
         blocks_response operator () (const blocks_request &);
         lastblocks_response operator () (const lastblocks_request &);
 
-        header_response operator () (const header_request &);
-        headers_response operator () (const headers_request &);
-        best_header_response operator () (const best_header_request &);
+        block_forks_response operator () (const block_forks_request &);
+        block_subtrees_response operator () (const block_subtrees_request &);
+
+        header_response operator () (const header_request);
+
+        headers_response operator () (const headers_request);
+
+        headers_to_common_ancestor_response operator () (const headers_to_common_ancestor_request);
+
+        headers_from_common_ancestor_response operator () (const headers_from_common_ancestor_request);
+
         block_locator_response operator () (const block_locator_request &);
 
         utxo_response operator () (const utxo_request &);
+
+        utxos_response operator () (const utxos_request &);
 
         subtree_response operator () (const subtree_request &);
         subtree_data_response operator () (const subtree_data_request &);
@@ -140,76 +157,55 @@ namespace Gigamonkey::teranode {
         // =========================
 
         // --- liveness ---
-        JSON alive () const;
-        JSON health () const;
+        JSON alive ();
+        JSON health ();
 
         // --- transactions ---
-        maybe<Bitcoin::transaction>
-        transaction(const digest256& txid) const;
+        maybe<Bitcoin::transaction> transaction (const digest256 &txid);
 
-        JSON
-        transaction_metadata(const digest256& txid) const;
+        JSON transaction_metadata (const digest256 &txid);
 
         // --- blocks ---
-        maybe<Bitcoin::block>
-        block(const digest256& hash) const;
+        maybe<Bitcoin::block> block (const digest256 &hash);
 
-        std::vector<Bitcoin::block>
-        blocks(const std::vector<digest256>& hashes) const;
+        cross<Bitcoin::block> blocks (const cross<digest256> &hashes);
 
-        std::vector<Bitcoin::block>
-        blocks_from(const digest256& start, std::size_t limit) const;
+        cross<Bitcoin::block> blocks_from (const digest256 &start, std::size_t limit);
 
-        std::vector<Bitcoin::block>
-        last_blocks(std::size_t count) const;
-
+        cross<Bitcoin::block> last_blocks (std::size_t count);
+/*
         // --- headers ---
-        maybe<Bitcoin::block_header>
-        header(const digest256& hash) const;
+        maybe<Bitcoin::block_header> header (const digest256 &hash);
 
-        std::vector<Bitcoin::block_header>
-        headers(const digest256& start, std::size_t limit) const;
+        cross<Bitcoin::block_header> headers (const digest256 &start, std::size_t limit);
 
-        Bitcoin::block_header
-        best_header() const;
+        Bitcoin::block_header best_header ();
 
-        std::vector<digest256>
-        block_locator() const;
+        cross<digest256> block_locator ();
 
         // --- UTXOs ---
-        maybe<Bitcoin::outpoint>
-        utxo(const Bitcoin::outpoint& out) const;
+        maybe<Bitcoin::outpoint> utxo (const Bitcoin::outpoint &out);
 
-        std::vector<Bitcoin::outpoint>
-        utxos_for_transaction(const digest256& txid) const;
+        cross<Bitcoin::outpoint> utxos_for_transaction (const digest256 &txid);
 
         // --- subtrees ---
-        JSON
-        subtree(const digest256& hash) const;
+        JSON subtree (const digest256 &hash);
 
-        bytes
-        subtree_data(const digest256& hash) const;
+        bytes subtree_data (const digest256 &hash);
 
-        std::vector<Bitcoin::transaction>
-        subtree_transactions(const digest256& hash) const;
+        cross<Bitcoin::transaction> subtree_transactions (const digest256 &hash);
 
         // --- merkle ---
-        maybe<Merkle::proof>
-        merkle_proof(const digest256& txid,
-                    const digest256& block_hash) const;
+        maybe<Merkle::proof> merkle_proof (const digest256 &txid, const digest256 &block_hash);
 
         // --- analytics / stats ---
-        JSON
-        block_stats(const digest256& block_hash) const;
+        JSON block_stats (const digest256 &block_hash);
 
-        JSON
-        block_graph_data() const;
+        JSON block_graph_data ();
 
         // --- search ---
-        JSON
-        search(const std::string& query) const;
+        JSON search (const std::string &query);*/
     };
-
 
     // teranode offers three formats for responses.
     // we will use raw bytes.
@@ -226,62 +222,104 @@ namespace Gigamonkey::teranode {
     struct response : HTTP::response {
         using HTTP::response::response;
 
-        bool is_error () const;
-        std::string error_message () const;
+        response (HTTP::status, const std::string &error_msg);
+
+        bool is_error () const {
+            return this->Status != HTTP::status {200};
+        }
+
+        maybe<std::string> error_message () const {
+            if (this->Status == HTTP::status {200}) return {};
+            try {
+                auto j = JSON::parse (string (this->Body));
+                if (j.size () != 1) return {};
+                return std::string (j["error"]);
+            } catch (JSON::exception &) {
+                return {};
+            }
+        }
+
+        bool valid () const {
+            return !is_error () && bool (error_message ());
+        }
+
+        const bytes &body () const {
+            if (this->is_error ()) {
+                maybe<std::string> msg = this->error_message ();
+                if (!msg) throw exception {} << "could not read teranode response " << *this;
+                // TODO provide more information;
+                else throw exception {} << *msg;
+            }
+            return this->Body;
+        }
+
     };
 
-    // --- Get single header ---
-
-    struct get_header_request : HTTP::request {
-
-        explicit get_header_request (const digest256& hash);
-
-        get_header_request &format (format);
-
-    };
-
-    struct get_header_response : response {
+    struct alive_response : response {
 
         using response::response;
 
-        Bitcoin::block_header operator()() const;
+        JSON operator () () const {
+            return JSON::parse (string (this->body ()));
+        }
     };
 
-    // --- Get header chain ---
-
-    struct get_headers_request : HTTP::request {
-
-        get_headers_request(const digest256& start, std::size_t limit);
-
-        get_headers_request& format(format);
-
-    };
-
-    struct get_headers_response : response {
+    struct health_response : response {
 
         using response::response;
 
-        std::vector<Bitcoin::block_header> operator () () const;
+        JSON operator () () const {
+            return JSON::parse (string (this->body ()));
+        }
     };
 
-    // --- Best header ---
+    struct get_tx_request {
 
-    struct best_header_request : HTTP::request {
+        digest256 TxID;
+        format_type Format = format_type::bytes;
 
-        best_header_request();
+        explicit get_tx_request (const digest256 &txid): TxID {txid} {}
 
-        best_header_request& format (format);
+        operator HTTP::request () const {
+            if (Format != format_type::bytes)
+                throw data::method::unimplemented {"get_tx_request -> HTTP::request"};
 
-        format_type Format = format::raw;
+            return HTTP::request {
+                HTTP::method::get,
+                string::write ("/api/v1/tx/", write_reverse_hex (TxID))
+            };
+        }
     };
 
-    struct best_header_response : response {
+    struct get_tx_response : response {
 
         using response::response;
 
-        maybe<Bitcoin::block_header> operator () () const;
+        operator maybe<Bitcoin::transaction> () const {
+            if (this->Status == HTTP::status {404}) return {};
+            return Bitcoin::transaction {this->body ()};
+        }
     };
 
+    struct post_txs_request {
+
+        stack<Bitcoin::transaction> Transactions;
+
+        explicit post_txs_request (stack<Bitcoin::transaction> txs);
+
+        operator HTTP::request () const;/* {
+            return HTTP::request::make {}.method (
+                HTTP::method::post
+            ).target ("/api/v1/txs").body ( what goes here? );
+        }*/
+    };
+
+    struct post_txs_response : response {
+
+        using response::response;
+
+        operator cross<Bitcoin::transaction> () const;
+    };
 
 }
 

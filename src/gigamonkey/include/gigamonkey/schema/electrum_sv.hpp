@@ -22,7 +22,7 @@ namespace Gigamonkey::HD::Electrum_SV {
     UTF8 generate (entropy, BIP_39::language lang = BIP_39::language::english);
     bool valid (UTF8 words, BIP_39::language lang = BIP_39::language::english);
 
-    UTF8 generate (entropy, BIP_39::language lang) {
+    UTF8 inline generate (entropy, BIP_39::language lang) {
         throw data::method::unimplemented {"Electrum_SV::generate"};
     }
 
