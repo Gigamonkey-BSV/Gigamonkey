@@ -29,9 +29,9 @@ namespace Gigamonkey {
         if (Version <= 0xEFBE0000 || size (Transactions) == 0 || !data::valid (Transactions) || !data::valid (BUMPs))
             return false;
 
-        set<Bitcoin::TXID> previously_read;
+        set<Bitcoin::TxID> previously_read;
         for (const auto &tx : Transactions) {
-            Bitcoin::TXID txid = tx.id ();
+            Bitcoin::TxID txid = tx.id ();
             // all txs in list must be unique.
             if (previously_read.contains (txid)) return false;
 
@@ -68,14 +68,14 @@ namespace Gigamonkey {
 
         struct SPV_proof_writer {
             BEEF Beef;
-            set<Bitcoin::TXID> TXIDs;
+            set<Bitcoin::TxID> TxIDs;
             map<digest256, uint32> RootToIndex {};
             cross<Merkle::BUMP> Bumps {};
             SPV_proof_writer (const proof &p);
 
-            void read_node (const TXID &id, const node &tx, SPV_proof_writer &spv) {
-                if (TXIDs.contains (id)) return;
-                TXIDs = TXIDs.insert (id);
+            void read_node (const TxID &id, const node &tx, SPV_proof_writer &spv) {
+                if (TxIDs.contains (id)) return;
+                TxIDs = TxIDs.insert (id);
 
                 if (tx.Proof.is<conf> ()) {
                     const auto &c = tx.Proof.get<conf> ();
@@ -107,12 +107,12 @@ namespace Gigamonkey {
             for (auto b = Bumps.rbegin (); b != Bumps.rend (); b++) Beef.BUMPs >>= *b;
         }
 
-        entry<Bitcoin::TXID, SPV::proof::accepted> read_SPV_proof_leaf (
+        entry<Bitcoin::TxID, SPV::proof::accepted> read_SPV_proof_leaf (
             const Bitcoin::transaction &tx,
             std::pair<uint64, Merkle::map> merkle,
             SPV::database &db) {
 
-            entry<Bitcoin::TXID, SPV::proof::accepted> result {tx.id (), SPV::proof::accepted {}};
+            entry<Bitcoin::TxID, SPV::proof::accepted> result {tx.id (), SPV::proof::accepted {}};
 
             // check if the block header referenced by the proof exists.
             N height {merkle.first};
@@ -129,11 +129,11 @@ namespace Gigamonkey {
             // all merkle maps by block height
             cross<std::pair<uint64, Merkle::map>> Merks;
             // list of node txids in order.
-            list<Bitcoin::TXID> NodeTXIDs;
+            list<Bitcoin::TxID> NodeTxIDs;
             // all nodes to be found in this proof.
             spvmap Nodes;
             // the root nodes.
-            set<Bitcoin::TXID> Roots;
+            set<Bitcoin::TxID> Roots;
             proof Proof;
 
             SPV_proof_reader (const BEEF &beef, SPV::database &db) {
@@ -147,7 +147,7 @@ namespace Gigamonkey {
 
                 for (const auto &tx : beef.Transactions) {
 
-                    entry<TXID, accepted> node = tx.Merkle_proof_included () ?
+                    entry<TxID, accepted> node = tx.Merkle_proof_included () ?
                         read_SPV_proof_leaf (tx, Merks[*tx.BUMPIndex], db) :
                         read_SPV_proof_node (tx);
 
@@ -161,7 +161,7 @@ namespace Gigamonkey {
                 proof p;
 
                 // go through remaining roots and make them the payment.
-                for (const auto &txid : NodeTXIDs) {
+                for (const auto &txid : NodeTxIDs) {
                     // skip all non-root nodes.
                     if (!Roots.contains (txid)) continue;
 
@@ -187,9 +187,9 @@ namespace Gigamonkey {
 
             }
 
-            entry<TXID, accepted> read_SPV_proof_node (const transaction &tx) {
+            entry<TxID, accepted> read_SPV_proof_node (const transaction &tx) {
 
-                entry<TXID, accepted> result {tx.id (), accepted {}};
+                entry<TxID, accepted> result {tx.id (), accepted {}};
 
                 spvmap prev;
 
@@ -206,7 +206,7 @@ namespace Gigamonkey {
                 }
 
                 result.Value = std::make_shared<node> (tx, prev);
-                NodeTXIDs <<= result.Key;
+                NodeTxIDs <<= result.Key;
                 Roots = Roots.insert (result.Key);
 
                 return result;

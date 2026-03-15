@@ -88,7 +88,7 @@ namespace Gigamonkey::extended {
 
         explicit operator Bitcoin::transaction () const;
 
-        Bitcoin::TXID id () const;
+        Bitcoin::TxID id () const;
 
         // the extended tx has a serialized form for broadcasting.
         uint64 serialized_size () const;
@@ -173,7 +173,7 @@ namespace Gigamonkey::extended {
         }, Inputs), Outputs, LockTime};
     }
 
-    Bitcoin::TXID inline transaction::id () const {
+    Bitcoin::TxID inline transaction::id () const {
         return Bitcoin::transaction (*this).id ();
     }
 

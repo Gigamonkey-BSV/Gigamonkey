@@ -64,7 +64,7 @@ namespace Gigamonkey::SPV {
             do {
                 for (const auto &[key, _] : o->second->Paths) {
                     // all txs in paths go into pending.
-                    ByTXID.erase (key);
+                    ByTxID.erase (key);
                     Pending = Pending.insert (key);
                 }
 
@@ -97,11 +97,11 @@ namespace Gigamonkey::SPV {
         return new_entry->Header;
     }
 
-    database::tx database::memory::transaction (const Bitcoin::TXID &t) {
+    database::tx database::memory::transaction (const Bitcoin::TxID &t) {
         auto tx = Transactions.find (t);
         ptr<const Bitcoin::transaction> tt {tx == Transactions.end () ? ptr<const Bitcoin::transaction> {} : tx->second};
-        auto h = ByTXID.find (t);
-        return h == ByTXID.end () ? database::tx {tt} :
+        auto h = ByTxID.find (t);
+        return h == ByTxID.end () ? database::tx {tt} :
             database::tx {tt, confirmation {
                 Merkle::path (Merkle::dual {h->second->Paths, h->second->Header->Value.MerkleRoot}[t].Branch),
                 h->second->Header->Key,
@@ -111,7 +111,7 @@ namespace Gigamonkey::SPV {
     namespace {
 
         bool check_sub_proof (
-            set<Bitcoin::TXID> &checked,
+            set<Bitcoin::TxID> &checked,
             const Bitcoin::transaction &tx,
             proof::map map,
             database &d,
@@ -128,7 +128,7 @@ namespace Gigamonkey::SPV {
             }
 
             // keep track of transactions we have checked already.
-            set<Bitcoin::TXID> checked;
+            set<Bitcoin::TxID> checked;
 
             // we check each transaction in the payment, which involves
             // checking antecedents and their antecedents and so on.
@@ -139,7 +139,7 @@ namespace Gigamonkey::SPV {
         }
 
         bool check_sub_proof (
-            set<Bitcoin::TXID> &checked,
+            set<Bitcoin::TxID> &checked,
             const Bitcoin::transaction &tx,
             proof::map map,
             database &d,
@@ -209,7 +209,7 @@ namespace Gigamonkey::SPV {
 
     namespace {
 
-        proof::accepted generate_proof_node (database &d, const Bitcoin::TXID &x) {
+        proof::accepted generate_proof_node (database &d, const Bitcoin::TxID &x) {
 
             database::tx n = d.transaction (x);
             // if we don't know about this tx then we can't construct a proof.
@@ -239,7 +239,7 @@ namespace Gigamonkey::SPV {
 
         for (const Bitcoin::transaction &b : payment) {
 
-            Bitcoin::TXID x = b.id ();
+            Bitcoin::TxID x = b.id ();
 
             // the transaction should not have a proof already because
             // this is supposed to be a payment that is unconfirmed.
@@ -276,7 +276,7 @@ namespace Gigamonkey::SPV {
         Transactions[txid] = ptr<Bitcoin::transaction> {new Bitcoin::transaction {t}};
         // Do we have a merkle proof for this tx? If not put it in pending.
 
-        if (auto e = ByTXID.find (txid); e == ByTXID.end ())
+        if (auto e = ByTxID.find (txid); e == ByTxID.end ())
             Pending = Pending.insert (txid);
     }
 
@@ -290,7 +290,7 @@ namespace Gigamonkey::SPV {
         h->second->Paths = d.Paths;
 
         for (const auto &[txid, _]: p.Paths) {
-            ByTXID[txid] = h->second;
+            ByTxID[txid] = h->second;
 
             // do we have a tx for this proof? If we do, remove from pending.
             if (auto e = Transactions.find (txid); e != Transactions.end ())
@@ -320,7 +320,7 @@ namespace Gigamonkey::SPV {
         return true;
     }
 
-    void database::memory::remove (const Bitcoin::TXID &txid) {
+    void database::memory::remove (const Bitcoin::TxID &txid) {
         if (!Pending.contains (txid)) return;
         Pending = Pending.remove (txid);
         Transactions.erase (txid);
@@ -351,7 +351,7 @@ namespace Gigamonkey::SPV {
         remove_latest (*this);
     }
 
-    std::partial_ordering SPV::proof::ordering (const data::entry<Bitcoin::TXID, proof::tree> &a, const data::entry<Bitcoin::TXID, proof::tree> &b) {
+    std::partial_ordering SPV::proof::ordering (const data::entry<Bitcoin::TxID, proof::tree> &a, const data::entry<Bitcoin::TxID, proof::tree> &b) {
         if (a.Key == b.Key) return std::partial_ordering::equivalent;
 
         if (a.Value.is<confirmation> ()) {
@@ -368,7 +368,7 @@ namespace Gigamonkey::SPV {
         return std::partial_ordering::unordered;
     }
 
-    bool proof::map::contains_branch (const Bitcoin::TXID &txid) {
+    bool proof::map::contains_branch (const Bitcoin::TxID &txid) {
         for (const auto &[k, v] : *this)
             if (k == txid ||
                 v->Proof.is<map> () &&

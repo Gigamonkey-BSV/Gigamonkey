@@ -269,7 +269,7 @@ namespace Gigamonkey::Merkle {
         }
     }
 
-    bool BUMP::validate (const Bitcoin::TXID &expected_root) const {
+    bool BUMP::validate (const Bitcoin::TxID &expected_root) const {
         try {
             return expected_root == root ();
         } catch (const validation_error &) {

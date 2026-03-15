@@ -41,7 +41,7 @@ namespace Gigamonkey::SPV {
     struct proof {
 
         static bool valid (const Bitcoin::transaction &tx, const Merkle::path &p, const Bitcoin::header &h);
-        static bool valid (const Bitcoin::TXID &id, const Merkle::path &p, const digest256 &root);
+        static bool valid (const Bitcoin::TxID &id, const Merkle::path &p, const digest256 &root);
 
         struct node;
 
@@ -55,9 +55,9 @@ namespace Gigamonkey::SPV {
             bool operator == (const accepted &tx) const;
         };
 
-        struct map : data::base_map<Bitcoin::TXID, accepted, map> {
-            using base_map<Bitcoin::TXID, accepted, map>::base_map;
-            bool contains_branch (const Bitcoin::TXID &);
+        struct map : data::base_map<Bitcoin::TxID, accepted, map> {
+            using base_map<Bitcoin::TxID, accepted, map>::base_map;
+            bool contains_branch (const Bitcoin::TxID &);
             bool operator == (const map &m) const;
         };
 
@@ -68,7 +68,7 @@ namespace Gigamonkey::SPV {
         };
 
         // establish partial ordering of transactions.
-        static std::partial_ordering ordering (const entry<Bitcoin::TXID, tree> &a, const entry<Bitcoin::TXID, tree> &b);
+        static std::partial_ordering ordering (const entry<Bitcoin::TxID, tree> &a, const entry<Bitcoin::TxID, tree> &b);
 
         struct node {
             Bitcoin::transaction Transaction;
@@ -142,10 +142,10 @@ namespace Gigamonkey::SPV {
         };
 
         // do we have a tx or merkle proof for a given tx?
-        virtual tx transaction (const Bitcoin::TXID &) = 0;
+        virtual tx transaction (const Bitcoin::TxID &) = 0;
 
         // get txids for transactions without Merkle proofs.
-        virtual set<Bitcoin::TXID> unconfirmed () = 0;
+        virtual set<Bitcoin::TxID> unconfirmed () = 0;
 
         // an in-memory implementation of the database.
         struct memory;
@@ -161,7 +161,7 @@ namespace Gigamonkey::SPV {
         virtual void insert (const Bitcoin::transaction &) = 0;
 
         // Txs cannot be removed unless they are in pending.
-        virtual void remove (const Bitcoin::TXID &) = 0;
+        virtual void remove (const Bitcoin::TxID &) = 0;
         
         // providing a merkle proof removes a tx from pending.
         // the bool is for checking the proofs.
@@ -209,9 +209,9 @@ namespace Gigamonkey::SPV {
         std::map<data::N, ptr<entry>> ByHeight;
         std::map<digest256, ptr<entry>> ByHash;
         std::map<digest256, ptr<entry>> ByRoot;
-        std::map<Bitcoin::TXID, ptr<entry>> ByTXID;
-        std::map<Bitcoin::TXID, ptr<const Bitcoin::transaction>> Transactions;
-        set<Bitcoin::TXID> Pending;
+        std::map<Bitcoin::TxID, ptr<entry>> ByTxID;
+        std::map<Bitcoin::TxID, ptr<const Bitcoin::transaction>> Transactions;
+        set<Bitcoin::TxID> Pending;
         
         memory (const Bitcoin::header &h) {
             insert (0, h);
@@ -227,7 +227,7 @@ namespace Gigamonkey::SPV {
         block_header header (const data::N &n) final override;
         block_header header (const digest256 &n) override;
 
-        tx transaction (const Bitcoin::TXID &t) final override;
+        tx transaction (const Bitcoin::TxID &t) final override;
         Merkle::dual dual_tree (const digest256 &d) const;
 
         block_header insert (const data::N &height, const Bitcoin::header &h) final override;
@@ -237,10 +237,10 @@ namespace Gigamonkey::SPV {
         bool insert (const Bitcoin::transaction &, const Merkle::path &) final override;
 
         // all unconfirmed txs in the database.
-        set<Bitcoin::TXID> unconfirmed () final override;
+        set<Bitcoin::TxID> unconfirmed () final override;
 
         // only txs in unconfirmed can be removed.
-        void remove (const Bitcoin::TXID &) final override;
+        void remove (const Bitcoin::TxID &) final override;
 
         // remove a header and all headers after it.
         void remove_header (const data::N &) final override;
@@ -283,11 +283,11 @@ namespace Gigamonkey::SPV {
         return h.valid () && valid (tx.id (), p, h.MerkleRoot);
     }
 
-    bool inline proof::valid (const Bitcoin::TXID &id, const Merkle::path &p, const digest256 &root) {
+    bool inline proof::valid (const Bitcoin::TxID &id, const Merkle::path &p, const digest256 &root) {
         return p.derive_root (id) == root;
     }
 
-    set<Bitcoin::TXID> inline database::memory::unconfirmed () {
+    set<Bitcoin::TxID> inline database::memory::unconfirmed () {
         return Pending;
     }
 
@@ -322,7 +322,7 @@ namespace Gigamonkey::SPV {
     }
 
     bool inline proof::map::operator == (const map &m) const {
-        return static_cast<data::map<Bitcoin::TXID, accepted>> (*this) == static_cast<data::map<Bitcoin::TXID, accepted>> (m);
+        return static_cast<data::map<Bitcoin::TxID, accepted>> (*this) == static_cast<data::map<Bitcoin::TxID, accepted>> (m);
     }
 
     bool inline proof::operator == (const proof &p) const {

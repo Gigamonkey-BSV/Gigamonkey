@@ -18,7 +18,7 @@ namespace Gigamonkey {
 
 namespace Gigamonkey::Bitcoin {
 
-    using TXID = digest256;
+    using TxID = digest256;
     
     struct outpoint;
     
@@ -137,17 +137,17 @@ namespace Gigamonkey::Bitcoin {
         using slice = Gigamonkey::slice<const byte, 36>;
         
         static bool valid (slice);
-        static Bitcoin::TXID digest (slice);
+        static Bitcoin::TxID digest (slice);
         static Bitcoin::index index (slice);
         
         // the hash of a previous transaction. 
-        TXID Digest;
+        TxID Digest;
         
         // Index of the previous output in the tx. 
         Bitcoin::index Index;
         
         static outpoint coinbase () {
-            static outpoint Coinbase {TXID {}, 0xffffffff};
+            static outpoint Coinbase {TxID {}, 0xffffffff};
             return Coinbase;
         }
 
@@ -162,7 +162,7 @@ namespace Gigamonkey::Bitcoin {
         }
 
         outpoint () : Digest {0}, Index {0} {}
-        outpoint (const TXID &id, const Bitcoin::index &i) : Digest {id}, Index {i} {}
+        outpoint (const TxID &id, const Bitcoin::index &i) : Digest {id}, Index {i} {}
         outpoint (slice x): Digest {digest (x)}, Index {index (x)} {}
 
     };
@@ -228,7 +228,7 @@ namespace Gigamonkey::Bitcoin {
         static slice<const byte> input (slice<const byte>, index);
         static int32_little lock_time (slice<const byte>);
         
-        static TXID id (slice<const byte>);
+        static TxID id (slice<const byte>);
         
         static constexpr int32 LatestVersion = 2;
         
@@ -252,7 +252,7 @@ namespace Gigamonkey::Bitcoin {
         bytes write () const;
         explicit operator bytes () const;
         
-        const TXID &id () const;
+        const TxID &id () const;
         
         uint64 serialized_size () const;
         
@@ -267,11 +267,11 @@ namespace Gigamonkey::Bitcoin {
         static constexpr p2p::command Command {"tx"};
 
     private:
-        mutable ptr<TXID> Hash;
+        mutable ptr<TxID> Hash;
         friend struct Gigamonkey::chain_loader;
     };
     
-    TXID inline id (const transaction &t) {
+    TxID inline id (const transaction &t) {
         return Hash256 (bytes (t));
     }
     
@@ -288,7 +288,7 @@ namespace Gigamonkey::Bitcoin {
         static std::vector<slice<const byte>> transactions (slice<const byte>);
         
         static digest256 inline merkle_root (slice<const byte> b) {
-            list<TXID> ids {};
+            list<TxID> ids {};
             for (slice<const byte> x : transactions (b)) ids = ids << Hash256 (x);
             return Merkle::root (ids);
         }
@@ -323,8 +323,8 @@ namespace Gigamonkey {
             if (h.Hash != nullptr) h.Hash = std::make_shared<digest256> (x);
         }
 
-        void set_hash (Bitcoin::transaction &tx, const Bitcoin::TXID &x) {
-            if (tx.Hash != nullptr) tx.Hash = std::make_shared<Bitcoin::TXID> (x);
+        void set_hash (Bitcoin::transaction &tx, const Bitcoin::TxID &x) {
+            if (tx.Hash != nullptr) tx.Hash = std::make_shared<Bitcoin::TxID> (x);
         }
     };
 }
@@ -447,8 +447,8 @@ namespace Gigamonkey::Bitcoin {
         return *Hash;
     }
         
-    const TXID inline &transaction::id () const {
-        if (Hash == nullptr) Hash = std::make_shared<TXID> (Bitcoin::id (*this));
+    const TxID inline &transaction::id () const {
+        if (Hash == nullptr) Hash = std::make_shared<TxID> (Bitcoin::id (*this));
         return *Hash;
     }
     
@@ -460,7 +460,7 @@ namespace Gigamonkey::Bitcoin {
         return a.Timestamp <=> b.Timestamp;
     }
     
-    TXID inline transaction::id (slice<const byte> b) {
+    TxID inline transaction::id (slice<const byte> b) {
         return Hash256 (b);
     }
     

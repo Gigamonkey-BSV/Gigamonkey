@@ -26,7 +26,7 @@ namespace Gigamonkey::MAPI {
         co_return res;
     }
     
-    HTTP::request client::transaction_status_HTTP_request (const Bitcoin::TXID &request) const {
+    HTTP::request client::transaction_status_HTTP_request (const Bitcoin::TxID &request) const {
         if (!request.valid ()) throw std::invalid_argument {"invalid txid"};
         std::stringstream ss;
         ss << "/mapi/tx/" << request;
@@ -135,8 +135,8 @@ namespace Gigamonkey::MAPI {
                 x.ConflictedWith = cw;
             }
 
-            x.TXID = read_reverse_hex<32> (std::string (j["txid"]));
-            if (!x.TXID.valid ()) return {};
+            x.TxID = read_reverse_hex<32> (std::string (j["txid"]));
+            if (!x.TxID.valid ()) return {};
 
             x.ResultDescription = j["resultDescription"];
 
@@ -179,7 +179,7 @@ namespace Gigamonkey::MAPI {
             if (!tst.valid ()) return {};
 
             JSON j {
-                {"txid", write_reverse_hex (tst.TXID)},
+                {"txid", write_reverse_hex (tst.TxID)},
                 {"returnResult", to_JSON (tst.ReturnResult)},
                 {"resultDescription", tst.ResultDescription}};
 
@@ -225,7 +225,7 @@ namespace Gigamonkey::MAPI {
     
     conflicted_with::operator JSON () const {
         return JSON {
-            {"txid", to_JSON (TXID)},
+            {"txid", to_JSON (TxID)},
             {"size", Size}, 
             {"hex", encoding::hex::write (Transaction)}
         };
@@ -241,7 +241,7 @@ namespace Gigamonkey::MAPI {
         auto tx = encoding::hex::read (std::string (j["hex"]));
         if (!bool (tx)) return;
         
-        TXID = read_reverse_hex<32> (std::string (j["txid"]));
+        TxID = read_reverse_hex<32> (std::string (j["txid"]));
         Size = uint64 (j["size"]);
         Transaction = *tx;
         
@@ -384,7 +384,7 @@ namespace Gigamonkey::MAPI {
     
     status::operator JSON () const {
         JSON j {
-            {"txid", to_JSON (TXID) },
+            {"txid", to_JSON (TxID) },
             {"returnResult", to_JSON (ReturnResult) },
             {"resultDescription", ResultDescription }
         };

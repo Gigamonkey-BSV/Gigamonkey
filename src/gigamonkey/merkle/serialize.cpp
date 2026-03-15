@@ -40,7 +40,7 @@ namespace Gigamonkey {
     }
     
     bool proofs_serialization_standard::valid () const {
-        if ((bool (Transaction) && bool (TXID)) || (!bool (Transaction) && !bool (TXID))) return false;
+        if ((bool (Transaction) && bool (TxID)) || (!bool (Transaction) && !bool (TxID))) return false;
         if (bool (BlockHash)) return !bool (BlockHeader) && !bool (MerkleRoot);
         if (bool (BlockHeader)) return !bool (BlockHash) && !bool (MerkleRoot);
         if (bool (MerkleRoot)) return !bool (BlockHeader) && !bool (BlockHash);
@@ -87,8 +87,8 @@ namespace Gigamonkey {
         j["index"] = Path.Index;
         j["nodes"] = write_path (branch ());
         
-        if (bool (TXID)) {
-            j["txOrId"] = write_digest (*TXID);
+        if (bool (TxID)) {
+            j["txOrId"] = write_digest (*TxID);
         } else {
             j["txOrId"] = encoding::hex::write (*Transaction);
         }
@@ -122,7 +122,7 @@ namespace Gigamonkey {
         proofs_serialization_standard x;
         if (!proofs_serialization_standard::valid (j)) return {};
         
-        if (string (j["txOrId"]).size () == 64) x.TXID = read_digest (j["txOrId"]);
+        if (string (j["txOrId"]).size () == 64) x.TxID = read_digest (j["txOrId"]);
         // we know this is ok because we checked valid earlier.
         else x.Transaction = *encoding::hex::read (string (j["txOrId"]));
         
@@ -191,9 +191,9 @@ namespace Gigamonkey {
                 bytes tx;
                 read_transaction (r, tx);
             } else {
-                Bitcoin::TXID t;
+                Bitcoin::TxID t;
                 r >> t;
-                x.TXID = t;
+                x.TxID = t;
             }
 
             switch (target_type (flags)) {
@@ -243,7 +243,7 @@ namespace Gigamonkey {
         return w;
     }
     
-    writer inline &write_txid (writer &w, const Bitcoin::TXID &t) {
+    writer inline &write_txid (writer &w, const Bitcoin::TxID &t) {
         return w << t;
     }
     
@@ -274,7 +274,7 @@ namespace Gigamonkey {
         w << flags () << Bitcoin::var_int {index ()};
         
         if (tx_included) write_transaction (w, *Transaction);
-        else write_txid (w, *TXID);
+        else write_txid (w, *TxID);
         
         if (tt == target_type_block_hash) write_txid (w, *BlockHash);
         else if (tt == target_type_Merkle_root) write_txid (w, *MerkleRoot);
@@ -324,7 +324,7 @@ namespace Gigamonkey {
     bool proofs_serialization_standard::validate (SPV::database &d) const {
         if (!valid ()) return false;
 
-        Bitcoin::TXID txid = bool (Transaction) ? Bitcoin::transaction::id (*Transaction) : *TXID;
+        Bitcoin::TxID txid = bool (Transaction) ? Bitcoin::transaction::id (*Transaction) : *TxID;
 
         digest256 root = Path.derive_root (txid);
 
