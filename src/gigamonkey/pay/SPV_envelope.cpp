@@ -10,7 +10,7 @@ namespace Gigamonkey {
         enum class no_excluded_middle : byte {no = false, yes = true, unknown = 2};
 
         bool validate_node (
-            const TXID &txid,
+            const TxID &txid,
             const SPV_envelope::node &n,
             no_excluded_middle &MAPI_responses_included,
             SPV::database *h) {
@@ -38,8 +38,8 @@ namespace Gigamonkey {
         }
 
         bool validate (const SPV_envelope &n, SPV::database *h) {
-            // if TXID is included, must match tx.
-            if (bool (n.TXID) && transaction::id (n.RawTx) != *n.TXID) return false;
+            // if TxID is included, must match tx.
+            if (bool (n.TxID) && transaction::id (n.RawTx) != *n.TxID) return false;
 
             // check signatures on MAPI responses.
             if (!data::valid (n.MAPIResponses)) return false;
@@ -52,7 +52,7 @@ namespace Gigamonkey {
             return true;
         }
 
-        SPV_envelope::node to_SPV_envelope (const Bitcoin::TXID &txid, const SPV::proof::node &u) {
+        SPV_envelope::node to_SPV_envelope (const Bitcoin::TxID &txid, const SPV::proof::node &u) {
 
             if (u.Proof.is<SPV::confirmation> ()) {
                 const auto &conf = u.Proof.get<SPV::confirmation> ();
@@ -60,7 +60,7 @@ namespace Gigamonkey {
                     proofs_serialization_standard {Merkle::branch {txid, conf.Path}, conf.Header}};
             }
 
-            map<Bitcoin::TXID, ptr<SPV_envelope::node>> inputs;
+            map<Bitcoin::TxID, ptr<SPV_envelope::node>> inputs;
             for (const auto &e : u.Proof.get<SPV::proof::map> ())
                 inputs = inputs.insert (e.Key, std::make_shared<SPV_envelope::node> (to_SPV_envelope (e.Key, *e.Value)));
 
@@ -87,13 +87,13 @@ namespace Gigamonkey {
     }
 
     namespace {
-        JSON inline write_txid (const Bitcoin::TXID &id) {
+        JSON inline write_txid (const Bitcoin::TxID &id) {
             return write_reverse_hex (id);
         }
 
-        maybe<Bitcoin::TXID> read_txid (const JSON &j) {
+        maybe<Bitcoin::TxID> read_txid (const JSON &j) {
             if (!j.is_string ()) return {};
-            Bitcoin::TXID id = read_reverse_hex<32> (std::string (j));
+            Bitcoin::TxID id = read_reverse_hex<32> (std::string (j));
             if (!id.valid ()) return {};
             return id;
         }
@@ -159,7 +159,7 @@ namespace Gigamonkey {
             const auto &inputs = j["inputs"];
             if (!inputs.is_object ()) return nullptr;
 
-            map<Bitcoin::TXID, ptr<SPV_envelope::node>> Inputs;
+            map<Bitcoin::TxID, ptr<SPV_envelope::node>> Inputs;
             for (const auto &[key, value] : inputs.items ()) {
                 SPV_envelope::node *nn = read_JSON (value);
                 if (nn == nullptr) return nullptr;
@@ -175,7 +175,7 @@ namespace Gigamonkey {
     SPV_envelope::operator JSON () const {
 
         JSON::object_t node {};
-        if (TXID) node["txid"] = write_txid (*TXID);
+        if (TxID) node["txid"] = write_txid (*TxID);
         node["rawTx"] = encoding::hex::write (RawTx);
 
         if (size (MAPIResponses) > 0) {
@@ -206,7 +206,7 @@ namespace Gigamonkey {
         auto mapiResponses = read_mapi_responses (j);
         if (!bool (mapiResponses)) return;
 
-        map<Bitcoin::TXID, node> ins;
+        map<Bitcoin::TxID, node> ins;
         for (const auto &[key, value] : inputs.items ()) {
             SPV_envelope::node *nn = read_JSON (value);
             if (nn == nullptr) return;
@@ -219,7 +219,7 @@ namespace Gigamonkey {
         if (j.contains ("txid")) {
             auto id = read_txid (j["txid"]);
             if (!bool (id)) return;
-            TXID = *id;
+            TxID = *id;
         }
 
         RawTx = *raw_bytes;
@@ -229,8 +229,8 @@ namespace Gigamonkey {
     }
 
     namespace {
-        SPV::proof::map read_SPV_proof (map<TXID, SPV_envelope::node> inputs, SPV::database &db);
-        SPV::proof::map read_SPV_proof (map<TXID, ptr<SPV_envelope::node>> inputs, SPV::database &db);
+        SPV::proof::map read_SPV_proof (map<TxID, SPV_envelope::node> inputs, SPV::database &db);
+        SPV::proof::map read_SPV_proof (map<TxID, ptr<SPV_envelope::node>> inputs, SPV::database &db);
     }
 
     SPV::proof SPV_envelope::read_SPV_proof (SPV::database &db) const {
@@ -258,13 +258,13 @@ namespace Gigamonkey {
                 new SPV::proof::node {Bitcoin::transaction {input.RawTx}, read_SPV_proof (input.Inputs, db)})};
         }
 
-        SPV::proof::map read_SPV_proof (map<TXID, ptr<SPV_envelope::node>> inputs, SPV::database &db) {
+        SPV::proof::map read_SPV_proof (map<TxID, ptr<SPV_envelope::node>> inputs, SPV::database &db) {
             SPV::proof::map result;
             for (const auto &e : inputs) result = result.insert (e.Key, read_SPV_node (*e.Value, db));
             return result;
         }
 
-        SPV::proof::map read_SPV_proof (map<TXID, SPV_envelope::node> inputs, SPV::database &db) {
+        SPV::proof::map read_SPV_proof (map<TxID, SPV_envelope::node> inputs, SPV::database &db) {
             SPV::proof::map result;
             for (const auto &e : inputs) result = result.insert (e.Key, read_SPV_node (e.Value, db));
             return result;

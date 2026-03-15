@@ -14,7 +14,7 @@ namespace Gigamonkey {
 
     struct SPV_envelope {
 
-        maybe<Bitcoin::TXID> TXID;
+        maybe<Bitcoin::TxID> TxID;
         bytes RawTx;
 
         // optional for root node; other unconfirmed nodes must
@@ -31,13 +31,13 @@ namespace Gigamonkey {
             // If proof is not includedd, then there must be input
             // nodes for each transaction input.
             maybe<proofs_serialization_standard> Proof;
-            map<Bitcoin::TXID, ptr<node>> Inputs;
+            map<Bitcoin::TxID, ptr<node>> Inputs;
 
             node (const bytes &raw, const proofs_serialization_standard &proof, list<MAPI::transaction_status_response> = {});
-            node (const bytes &raw, map<Bitcoin::TXID, ptr<node>>, list<MAPI::transaction_status_response> = {});
+            node (const bytes &raw, map<Bitcoin::TxID, ptr<node>>, list<MAPI::transaction_status_response> = {});
         };
 
-        map<Bitcoin::TXID, node> Inputs;
+        map<Bitcoin::TxID, node> Inputs;
 
         explicit SPV_envelope (const SPV::proof &);
         explicit SPV_envelope (const JSON &);
@@ -60,7 +60,7 @@ namespace Gigamonkey {
     inline SPV_envelope::node::node (const bytes &raw, const proofs_serialization_standard &proof, list<MAPI::transaction_status_response> r):
         RawTx {raw}, MAPIResponses {r}, Proof {proof}, Inputs {} {}
 
-    inline SPV_envelope::node::node (const bytes &raw, map<Bitcoin::TXID, ptr<node>> inputs, list<MAPI::transaction_status_response> r):
+    inline SPV_envelope::node::node (const bytes &raw, map<Bitcoin::TxID, ptr<node>> inputs, list<MAPI::transaction_status_response> r):
         RawTx {raw}, MAPIResponses {r}, Proof {}, Inputs {inputs} {}
 
 }

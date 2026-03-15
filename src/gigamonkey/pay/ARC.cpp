@@ -13,7 +13,7 @@ namespace Gigamonkey::ARC {
         co_return co_await this->operator () (this->REST (HTTP::method::get, "/v1/health"));
     }
 
-    awaitable<status_response> client::status (const Bitcoin::TXID &txid) {
+    awaitable<status_response> client::status (const Bitcoin::TxID &txid) {
         co_return co_await this->operator () (this->REST (HTTP::method::get, std::string {"/v1/tx/"} + write_reverse_hex (txid)));
     }
 

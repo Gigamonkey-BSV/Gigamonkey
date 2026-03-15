@@ -46,7 +46,7 @@ namespace Gigamonkey::Bitcoin {
 
         incomplete::transaction incomplete_tx {
             transaction::LatestVersion,
-            list<incomplete::input> {incomplete::input {outpoint {Bitcoin::TXID {307}, 7}}},
+            list<incomplete::input> {incomplete::input {outpoint {Bitcoin::TxID {307}, 7}}},
             list<output> {}, 0};
 
         redemption_document doc {incomplete_tx, 0, redeemed_value};

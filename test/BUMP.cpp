@@ -10,16 +10,16 @@ namespace Gigamonkey::Merkle {
     std::string binary_BUMP_HEX =
         "fe8a6a0c00" // blockHeight (813706), VarInt
         "0c" // treeHeight (12), byte
-        // Level 0, client TXIDs and sibling TXIDs (TXIDs required only to compute internal tree hash).
+        // Level 0, client TxIDs and sibling TxIDs (TxIDs required only to compute internal tree hash).
         "04" // nLeaves, VarInt
         "fde80b" // offset, VarInt
         "00" // flags
         "11774f01d26412f0d16ea3f0447be0b5ebec67b0782e321a7a01cbdf7f734e30" // hash
         "fde90b" // offset VarInt
-        "02" // flags = CLIENT_TXID
+        "02" // flags = CLIENT_TxID
         "004e53753e3fe4667073063a17987292cfdea278824e9888e52180581d7188d8" // hash
         "fdea0b" // offset VarInt
-        "02" // flags = CLIENT_TXID
+        "02" // flags = CLIENT_TxID
         "5e441996fc53f0191d649e68a200e752fb5f39e0d5617083408fa179ddc5c998" // hash
         "fdeb0b" // offset VarInt
         "01" // flags = DUPLICATE_WORKING_HASH

@@ -39,7 +39,7 @@ namespace Gigamonkey::ARC {
         // there are five calls in ARC
         awaitable<policy_response> policy ();
         awaitable<health_response> health ();
-        awaitable<status_response> status (const Bitcoin::TXID &);
+        awaitable<status_response> status (const Bitcoin::TxID &);
         awaitable<submit_response> submit (const submit_request &);
         awaitable<submit_txs_response> submit_txs (const submit_txs_request &);
     };
@@ -47,7 +47,7 @@ namespace Gigamonkey::ARC {
     // failed queries may contain errors.
     struct error : data::net::error {
         using ::data::net::error::error;
-        maybe<Bitcoin::TXID> txid () const;
+        maybe<Bitcoin::TxID> txid () const;
         maybe<string> extra_info () const;
     };
 
@@ -154,7 +154,7 @@ namespace Gigamonkey::ARC {
     };
 
     struct status : success {
-        Bitcoin::TXID block_hash () const;
+        Bitcoin::TxID block_hash () const;
         N block_height () const;
         string txid () const;
         string Merkle_path () const;
@@ -166,7 +166,7 @@ namespace Gigamonkey::ARC {
         using success::success;
 
         static bool valid (const JSON &);
-        static Bitcoin::TXID block_hash (const JSON &);
+        static Bitcoin::TxID block_hash (const JSON &);
         static N block_height (const JSON &);
         static string txid (const JSON &);
         static string Merkle_path (const JSON &);
@@ -395,7 +395,7 @@ namespace Gigamonkey::ARC {
         return valid (*this);
     }
 
-    Bitcoin::TXID inline status::block_hash () const {
+    Bitcoin::TxID inline status::block_hash () const {
         return block_hash (*this);
     }
 

@@ -19,11 +19,14 @@ namespace Gigamonkey::HD::BIP_39 {
         english,
         japanese
     };
+
+    using mnemonic = UTF8;
+
+    mnemonic generate (entropy, language lang = language::english);
     
-    seed read (UTF8 words, const UTF8 &passphrase = "", language lang = language::english);
+    seed read (mnemonic words, const UTF8 &passphrase = "", language lang = language::english);
     
-    data::UTF8 generate (entropy, language lang = language::english);
-    bool valid (UTF8 words, language lang = language::english);
+    bool valid (mnemonic words, language lang = language::english);
     
     const cross<UTF8> &english_words ();
     const cross<UTF8> &japanese_words ();

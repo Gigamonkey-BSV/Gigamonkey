@@ -47,14 +47,14 @@ namespace Gigamonkey::MAPI {
         // there are five calls in MAPI
         awaitable<get_policy_quote_response> get_policy_quote ();
         awaitable<get_fee_quote_response> get_fee_quote ();
-        awaitable<transaction_status_response> get_transaction_status (const Bitcoin::TXID &);
+        awaitable<transaction_status_response> get_transaction_status (const Bitcoin::TxID &);
         awaitable<submit_transaction_response> submit_transaction (const submit_transaction_request &);
         awaitable<submit_transactions_response> submit_transactions (const submit_transactions_request &);
 
     private:
         HTTP::request get_policy_quote_HTTP_request () const;
         HTTP::request get_fee_quote_HTTP_request () const;
-        HTTP::request transaction_status_HTTP_request (const Bitcoin::TXID &) const;
+        HTTP::request transaction_status_HTTP_request (const Bitcoin::TxID &) const;
         HTTP::request submit_transaction_HTTP_request (const submit_transaction_request &) const;
         HTTP::request submit_transactions_HTTP_request (const submit_transactions_request &) const;
         awaitable<JSON> call (const HTTP::request &r);
@@ -138,7 +138,7 @@ namespace Gigamonkey::MAPI {
     // to indicate a double spend.
     struct conflicted_with {
 
-        Bitcoin::TXID TXID;
+        Bitcoin::TxID TxID;
         uint64 Size;
         bytes Transaction;
 
@@ -147,13 +147,13 @@ namespace Gigamonkey::MAPI {
         conflicted_with (const JSON &);
         operator JSON () const;
 
-        conflicted_with () : TXID {}, Size {}, Transaction {} {}
+        conflicted_with () : TxID {}, Size {}, Transaction {} {}
 
     };
 
     struct status {
 
-        digest256 TXID;
+        digest256 TxID;
         return_result ReturnResult;
         string ResultDescription;
         list<conflicted_with> ConflictedWith;
@@ -361,7 +361,7 @@ namespace Gigamonkey::MAPI {
         co_return co_await call (get_fee_quote_HTTP_request ());
     }
     
-    awaitable<transaction_status_response> inline client::get_transaction_status (const Bitcoin::TXID &txid) {
+    awaitable<transaction_status_response> inline client::get_transaction_status (const Bitcoin::TxID &txid) {
         co_return co_await call (transaction_status_HTTP_request (txid));
     }
     
@@ -391,11 +391,11 @@ namespace Gigamonkey::MAPI {
     }
             
     bool inline conflicted_with::valid () const {
-        return TXID.valid () && Size == Transaction.size ();
+        return TxID.valid () && Size == Transaction.size ();
     }
     
     bool inline status::valid () const {
-        return TXID.valid ();
+        return TxID.valid ();
     }
     
     bool inline get_fee_quote::valid () const {
@@ -452,7 +452,7 @@ namespace Gigamonkey::MAPI {
         return_result returnResult,
         const string &resultDescription,
         list<conflicted_with> conflicted) :
-        TXID {txid}, ReturnResult {returnResult},
+        TxID {txid}, ReturnResult {returnResult},
         ResultDescription {resultDescription}, ConflictedWith {conflicted} {}
         
     bool inline transaction_status::valid () const {
