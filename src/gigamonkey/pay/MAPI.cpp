@@ -36,14 +36,14 @@ namespace Gigamonkey::MAPI {
     namespace {
 
         data::ASCII to_url_params (const submit_transaction_parameters &ts) {
-            list<data::entry<UTF8, UTF8>> params;
+            dispatch<UTF8, UTF8> params;
 
-            if (ts.CallbackURL) params = params << data::entry<UTF8, UTF8> {"callbackUrl", *ts.CallbackURL};
-            if (ts.CallbackToken) params = params << data::entry<UTF8, UTF8> {"callbackToken", *ts.CallbackToken};
-            if (ts.MerkleProof) params = params << data::entry<UTF8, UTF8> {"merkleProof", std::to_string (*ts.MerkleProof)};
-            if (ts.MerkleFormat) params = params << data::entry<UTF8, UTF8> {"merkleFormat", *ts.MerkleFormat};
-            if (ts.DSCheck) params = params << data::entry<UTF8, UTF8> {"dsCheck", std::to_string (*ts.DSCheck)};
-            if (ts.CallbackEncryption) params = params << data::entry<UTF8, UTF8> {"callbackEncryption", *ts.CallbackEncryption};
+            if (ts.CallbackURL) params = params << data::entry<const UTF8, UTF8> {"callbackUrl", *ts.CallbackURL};
+            if (ts.CallbackToken) params = params << data::entry<const UTF8, UTF8> {"callbackToken", *ts.CallbackToken};
+            if (ts.MerkleProof) params = params << data::entry<const UTF8, UTF8> {"merkleProof", std::to_string (*ts.MerkleProof)};
+            if (ts.MerkleFormat) params = params << data::entry<const UTF8, UTF8> {"merkleFormat", *ts.MerkleFormat};
+            if (ts.DSCheck) params = params << data::entry<const UTF8, UTF8> {"dsCheck", std::to_string (*ts.DSCheck)};
+            if (ts.CallbackEncryption) params = params << data::entry<const UTF8, UTF8> {"callbackEncryption", *ts.CallbackEncryption};
 
             return HTTP::REST::encode_form_data (params);
         }
