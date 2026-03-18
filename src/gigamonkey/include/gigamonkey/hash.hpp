@@ -53,6 +53,9 @@ namespace Gigamonkey {
     digest256 SHA2_256 (byte_slice);
     digest256 SHA2_256 (string_view);
 
+    digest512 SHA2_512 (byte_slice);
+    digest512 SHA2_512 (string_view);
+
     digest160 RIPEMD_160 (byte_slice);
     digest160 RIPEMD_160 (string_view);
 
@@ -127,6 +130,7 @@ namespace Gigamonkey {
 
     using SHA1_writer = hash_writer<crypto::hash::SHA1>;
     using SHA2_256_writer = hash_writer<crypto::hash::SHA2<32>>;
+    using SHA2_512_writer = hash_writer<crypto::hash::SHA2<64>>;
     using RIPEMD_160_writer = hash_writer<crypto::hash::RIPEMD<20>>;
 }
 
@@ -167,6 +171,12 @@ namespace Gigamonkey {
         return d;
     }
 
+    digest512 inline SHA2_512 (byte_slice b) {
+        digest512 d;
+        SHA2_512_writer {d}.write (b.data (), b.size ());
+        return d;
+    }
+
     digest160 inline SHA1 (byte_slice b) {
         digest160 d;
         SHA1_writer {d}.write (b.data (), b.size ());
@@ -182,6 +192,12 @@ namespace Gigamonkey {
     digest256 inline SHA2_256 (string_view b) {
         digest256 d;
         SHA2_256_writer {d}.write ((const byte*) (b.data ()), b.size ());
+        return d;
+    }
+
+    digest512 inline SHA2_512 (string_view b) {
+        digest512 d;
+        SHA2_512_writer {d}.write ((const byte*) (b.data ()), b.size ());
         return d;
     }
 

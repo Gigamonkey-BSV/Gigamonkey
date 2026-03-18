@@ -91,13 +91,12 @@ namespace Gigamonkey::Bitcoin {
             
             document (incomplete::transaction &tx, index i, satoshi r, program script_code) :
                 Transaction {tx}, InputIndex {i}, RedeemedValue {r}, ScriptCode {script_code} {}
-            
         };
         
         bytes write (const document &, sighash::directive);
         
         writer &write (writer &w, const document &doc, sighash::directive d);
-        
+
         bytes inline write (const document &doc, sighash::directive d) {
             return data::write<bytes> ([&] (auto &&w) {
                 write (w, doc, d);
