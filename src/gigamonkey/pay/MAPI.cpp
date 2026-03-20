@@ -35,17 +35,15 @@ namespace Gigamonkey::MAPI {
 
     namespace {
 
-        using entry = data::entry<const UTF8, UTF8>;
-
         data::ASCII to_url_params (const submit_transaction_parameters &ts) {
             dispatch<UTF8, UTF8> params;
 
-            if (ts.CallbackURL) params <<= entry {"callbackUrl", *ts.CallbackURL};
-            if (ts.CallbackToken) params <<= entry {"callbackToken", *ts.CallbackToken};
-            if (ts.MerkleProof) params <<= entry {"merkleProof", std::to_string (*ts.MerkleProof)};
-            if (ts.MerkleFormat) params <<= entry {"merkleFormat", *ts.MerkleFormat};
-            if (ts.DSCheck) params <<= entry {"dsCheck", std::to_string (*ts.DSCheck)};
-            if (ts.CallbackEncryption) params <<= entry {"callbackEncryption", *ts.CallbackEncryption};
+            if (ts.CallbackURL) params <<= {"callbackUrl", *ts.CallbackURL};
+            if (ts.CallbackToken) params <<= {"callbackToken", *ts.CallbackToken};
+            if (ts.MerkleProof) params <<= {"merkleProof", std::to_string (*ts.MerkleProof)};
+            if (ts.MerkleFormat) params <<= {"merkleFormat", *ts.MerkleFormat};
+            if (ts.DSCheck) params <<= {"dsCheck", std::to_string (*ts.DSCheck)};
+            if (ts.CallbackEncryption) params <<= {"callbackEncryption", *ts.CallbackEncryption};
 
             return HTTP::REST::encode_form_data (params);
         }
