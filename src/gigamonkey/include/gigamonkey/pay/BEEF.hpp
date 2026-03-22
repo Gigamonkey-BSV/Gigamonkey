@@ -24,8 +24,8 @@ namespace Gigamonkey {
 
         explicit BEEF (const SPV::proof &);
 
-        // It's valid if it follows the right format. Use
-        // validate to check all the merkle proofs.
+        // valid means that the format is correct.
+        // Use validate to check all the merkle proofs.
         bool valid () const;
 
         // if this BEEF is valid, then this list should
@@ -73,6 +73,9 @@ namespace Gigamonkey {
             }
         };
 
+        // the transactions in chronological order.
+        // Thus, no tx should redeem an output from
+        // a later tx in the sequence.
         stack<transaction> Transactions {};
 
         bool operator == (const BEEF &beef) const {
