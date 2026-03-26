@@ -917,6 +917,111 @@ namespace Gigamonkey::Bitcoin {
             OP_ENDIF
         }, bytes {}, flag::VERIFY_MINIMALIF), "non-minimal NOTIF condition");
     }
+
+    TEST (Script, If) {
+
+        success (evaluate (bytes {
+            OP_1, OP_IF,
+            OP_1,
+            OP_ELSE,
+            OP_0,
+            OP_ENDIF
+        }, bytes {}, flag {}), "OP_IF: true branch");
+
+        failure (evaluate (bytes {
+            OP_0, OP_IF,
+            OP_1,
+            OP_ELSE,
+            OP_0,
+            OP_ENDIF
+        }, bytes {}, flag {}), "OP_IF: false branch");
+
+        failure (evaluate (bytes {
+            OP_1, OP_NOTIF,
+            OP_1,
+            OP_ELSE,
+            OP_0,
+            OP_ENDIF
+        }, bytes {}, flag {}), "OP_NOTIF: true branch");
+
+        success (evaluate (bytes {
+            OP_0, OP_NOTIF,
+            OP_1,
+            OP_ELSE,
+            OP_0,
+            OP_ENDIF
+        }, bytes {}, flag {}), "OP_NOTIF: false branch");
+
+        success (evaluate (bytes {
+            OP_1,
+            OP_0, OP_IF,
+            OP_0,
+            OP_ENDIF
+        }, bytes {}, flag {}), "OP_IF: not executed");
+
+        success (evaluate (bytes {
+            OP_1,
+            OP_1, OP_NOTIF,
+            OP_0,
+            OP_ENDIF
+        }, bytes {}, flag {}), "OP_NOTIF: not executed");
+
+        // missing OP_ENDIF
+        error (evaluate (bytes {
+            OP_1, OP_IF,
+            OP_1
+        }, bytes {}, script_config {}), "missing OP_ENDIF");
+
+        error (evaluate (bytes {
+            OP_0, OP_NOTIF,
+            OP_1
+        }, bytes {}, script_config {}), "missing OP_ENDIF");
+
+        // extra OP_ENDIF
+        error (evaluate (bytes {
+            OP_ENDIF
+        }, bytes {}, script_config {}), "unexpected OP_ENDIF");
+
+        // OP_ELSE without OP_IF
+        error (evaluate (bytes {
+            OP_ELSE
+        }, bytes {}, script_config {}), "OP_ELSE without OP_IF");
+
+        // Unmatched inside non-executed branch
+        error (evaluate (bytes {
+            OP_0, OP_IF,
+            OP_IF,   // never executed, but still must match
+            OP_ENDIF
+        }, bytes {}, script_config {}), "unmatched OP_IF in dead branch");
+
+        // Unmatched inside non-executed branch
+        error (evaluate (bytes {
+            OP_1, OP_NOTIF,
+            OP_IF,   // never executed, but still must match
+            OP_ENDIF
+        }, bytes {}, script_config {}), "unmatched OP_IF in dead branch");
+
+        // else twice in the same if
+        error (evaluate (bytes {
+            OP_0, OP_NOTIF,
+            OP_1,
+            OP_ELSE,
+            OP_1,
+            OP_ELSE,
+            OP_1,
+            OP_ENDIF
+        }, bytes {}, script_config {}), "multiple OP_ELSE");
+
+        // test that invalid op codes cannot appear in unevaluated branches.
+        error (evaluate (bytes {
+            OP_1, OP_IF,
+            OP_1,
+            OP_ELSE,
+            FIRST_UNDEFINED_OP_VALUE,
+            OP_ENDIF
+        }, bytes {}, flag {}), "invalid op codes cannot appear in unevaluated branches");
+
+    }
 /*
     // TODO
     TEST (ScriptTest, TestChecksig) {
