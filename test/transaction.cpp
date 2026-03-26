@@ -297,4 +297,5 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_EQ (bytes (tx1), tx1_bytes);
         EXPECT_EQ (bytes (tx2), tx2_bytes);
     }
+
 }

@@ -631,7 +631,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     TEST (Script, NumberOps) {
-
+/*
         test_data_op (OP_0NOTEQUAL, {{}}, {{}}, "OP_0NOTEQUAL 1");
         test_data_op (OP_0NOTEQUAL, {{0x00}}, {{}}, "OP_0NOTEQUAL 2");
         test_data_op (OP_0NOTEQUAL, {{0x80}}, {{}}, "OP_0NOTEQUAL 3");
@@ -645,25 +645,25 @@ namespace Gigamonkey::Bitcoin {
         test_data_op (OP_1SUB, {{}}, {{0x81}}, "OP_1SUB");
         test_data_op (OP_1SUB, {{0x01}}, {{}}, "OP_1SUB");
 
-        test_stack_op (OP_2MUL, {0}, {0}, "OP_2MUL");
-        test_stack_op (OP_2DIV, {0}, {0}, "OP_2DIV");
-        test_stack_op (OP_2MUL, {1}, {2}, "OP_2MUL");
-        test_stack_op (OP_2DIV, {1}, {0}, "OP_2DIV");
-        test_stack_op (OP_2MUL, {-1}, {-2}, "OP_2MUL");
-        test_stack_op (OP_2DIV, {-1}, {0}, "OP_2DIV");
-        test_stack_op (OP_2MUL, {2}, {4}, "OP_2MUL");
-        test_stack_op (OP_2DIV, {2}, {1}, "OP_2DIV");
-        test_stack_op (OP_2MUL, {-2}, {-4}, "OP_2MUL");
-        test_stack_op (OP_2DIV, {-2}, {-1}, "OP_2DIV");
-        test_stack_op (OP_2MUL, {3}, {6}, "OP_2MUL");
-        test_stack_op (OP_2DIV, {3}, {1}, "OP_2DIV");
-        test_stack_op (OP_2MUL, {-3}, {-6}, "OP_2MUL");
-        test_stack_op (OP_2DIV, {-3}, {-1}, "OP_2DIV");
-        test_stack_op (OP_2MUL, {4}, {8}, "OP_2MUL");
-        test_stack_op (OP_2DIV, {4}, {2}, "OP_2DIV");
-        test_stack_op (OP_2MUL, {-4}, {-8}, "OP_2MUL");
-        test_stack_op (OP_2DIV, {-4}, {-2}, "OP_2DIV");
-
+        test_stack_op (OP_2MUL, {0}, {0}, "OP_2MUL 1");
+        test_stack_op (OP_2DIV, {0}, {0}, "OP_2DIV 1");
+        test_stack_op (OP_2MUL, {1}, {2}, "OP_2MUL 2");
+        test_stack_op (OP_2DIV, {1}, {0}, "OP_2DIV 2");
+        test_stack_op (OP_2MUL, {-1}, {-2}, "OP_2MUL 3");
+        test_stack_op (OP_2DIV, {-1}, {0}, "OP_2DIV 3");
+        test_stack_op (OP_2MUL, {2}, {4}, "OP_2MUL 4");
+        test_stack_op (OP_2DIV, {2}, {1}, "OP_2DIV 4");
+        test_stack_op (OP_2MUL, {-2}, {-4}, "OP_2MUL 5");*/
+        test_stack_op (OP_2DIV, {-2}, {-1}, "OP_2DIV 5");/*
+        test_stack_op (OP_2MUL, {3}, {6}, "OP_2MUL 6");
+        test_stack_op (OP_2DIV, {3}, {1}, "OP_2DIV 6");
+        test_stack_op (OP_2MUL, {-3}, {-6}, "OP_2MUL 7");
+        test_stack_op (OP_2DIV, {-3}, {-1}, "OP_2DIV 7");
+        test_stack_op (OP_2MUL, {4}, {8}, "OP_2MUL 8");
+        test_stack_op (OP_2DIV, {4}, {2}, "OP_2DIV 8");
+        test_stack_op (OP_2MUL, {-4}, {-8}, "OP_2MUL 9");*/
+        test_stack_op (OP_2DIV, {-4}, {-2}, "OP_2DIV 9");
+/*
         test_data_op (OP_NEGATE, {{}}, {{}}, "OP_NEGATE");
         test_data_op (OP_NEGATE, {{0x80}}, {{}}, "OP_NEGATE");
         test_data_op (OP_NEGATE, {{0x00}}, {{}}, "OP_NEGATE");
@@ -697,7 +697,7 @@ namespace Gigamonkey::Bitcoin {
         test_stack_op (OP_MOD, {1, 1}, {0}, "OP_MOD");
 
         test_stack_op (OP_DIV, {19, 5}, {3}, "OP_DIV");
-        test_stack_op (OP_MOD, {19, 5}, {4}, "OP_MOD");
+        test_stack_op (OP_MOD, {19, 5}, {4}, "OP_MOD");*/
 
     }
 

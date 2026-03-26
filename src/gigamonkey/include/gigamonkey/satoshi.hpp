@@ -13,7 +13,6 @@ namespace Gigamonkey::Bitcoin {
     // for accounting purposes. 
     struct satoshi : int64_little {
         using int64_little::int64_little;
-        constexpr explicit satoshi (uint64_little x);
         constexpr satoshi (): int64_little {0} {}
         
         constexpr bool valid () const {
@@ -24,10 +23,6 @@ namespace Gigamonkey::Bitcoin {
         constexpr satoshi operator - (satoshi x) const;
         constexpr satoshi operator - () const;
     };
-    
-    constexpr inline satoshi::satoshi (uint64_little x) {
-        std::copy (x.begin (), x.end (), int64_little::begin ());
-    }
         
     constexpr satoshi inline satoshi::operator + (satoshi x) const {
         return static_cast<int64_little>(*this) + static_cast<int64_little> (x);

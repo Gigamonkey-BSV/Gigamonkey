@@ -702,5 +702,71 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_EQ (integer {-10} % integer {-3}, integer {-1});
     }
 
+    // TODO here we assume that shift is equivalent to repeated 2DIV and 2MUL
+    void test_bit_shift_left (const std::string& x_str, uint32_t u) {
+        integer x {x_str};
+
+        integer expected = int (sign (x)) * (abs (x) << u);
+
+        auto result = bit_shift_left (x, u);
+        EXPECT_EQ (result, expected);
+        EXPECT_EQ ((x << u), expected);
+    }
+
+    void test_bit_shift_right (const std::string &x_str, uint32_t u) {
+        integer x {x_str};
+
+        integer expected = int (sign (x)) * (abs (x) >> u);
+
+        auto result = right_bit_shift (x, u);
+        EXPECT_EQ (result, expected) << "expected " << x << " >> " << u << " -> " << expected << " but got " << result;
+        EXPECT_EQ ((x >> u), expected);
+    }
+
+    TEST (Number, BitShift) {
+
+        test_bit_shift_left ("0", 1);
+        test_bit_shift_left ("1", 1);
+        test_bit_shift_left ("2", 2);
+
+        test_bit_shift_right ("1", 1);
+        test_bit_shift_right ("2", 1);
+        test_bit_shift_right ("4", 2);
+
+        test_bit_shift_left ("-1", 1);
+        test_bit_shift_left ("-3", 1);
+        test_bit_shift_left ("-5", 2);
+
+        test_bit_shift_right ("-2", 1);
+        test_bit_shift_right ("-4", 2);
+
+        test_bit_shift_right ("-1", 1);  // should be 0, not -1        test_bit_shift_right ("-3", 1);  // should be -1, not -2
+        test_bit_shift_right ("-5", 1);  // should be -2, not -3
+        test_bit_shift_right ("-7", 1);  // should be -3, not -4
+        test_bit_shift_right ("-9", 1);  // should be -4, not -5
+
+        test_bit_shift_right ("-15", 2); // should be -3, not -4
+        test_bit_shift_right ("-17", 3); // should be -2, not -3
+
+        test_bit_shift_left ("0", 10);
+        test_bit_shift_right ("0", 10);
+
+        test_bit_shift_right ("1", 100);
+        test_bit_shift_right ("-1", 100);
+
+        test_bit_shift_left ("12345678901234567890", 5);
+        test_bit_shift_right ("12345678901234567890", 5);
+
+        test_bit_shift_left ("-12345678901234567890", 5);
+        test_bit_shift_right ("-12345678901234567890", 5);
+
+        test_bit_shift_left ("999999999999999999", 10);
+        test_bit_shift_left ("1", 128);
+
+        test_bit_shift_left ("1", 256);
+        test_bit_shift_right ("1", 256);
+        test_bit_shift_right ("-1", 256);
+    }
+
 }
 

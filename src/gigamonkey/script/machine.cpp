@@ -69,11 +69,15 @@ namespace Gigamonkey::Bitcoin {
         
         op Op = op (Counter.Next[0]);
 
+        std::cout << "  machine step: " << *this << std::endl;
+        std::cout << "  read op " << Op << std::endl;
+
         // Check opcode limits.
         //
         // Push values are not taken into consideration.
         // Note how OP_RESERVED does not count towards the opcode limit.
-        if ((Op > OP_16) && !increment_operation ()) return Error::OP_COUNT;
+        if ((Op > OP_16) && !increment_operation ())
+            return Error::OP_COUNT;
 
         // if not executed, then the only things we need to look for
         // are if constructions.
@@ -494,7 +498,6 @@ namespace Gigamonkey::Bitcoin {
                         bn <<= 1;
                         break;
                     case OP_2DIV:
-                        if (is_negative (bn)) bn++;
                         bn >>= 1;
                         break;
                     case OP_NEGATE:

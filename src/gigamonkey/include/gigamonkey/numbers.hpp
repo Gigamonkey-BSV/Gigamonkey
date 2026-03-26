@@ -85,10 +85,10 @@ namespace Gigamonkey::Bitcoin {
     integer left_shift (byte_slice, int32 n);
 
     // shift right by n bits, implements OP_RSHIFTNUM
-    integer bit_shift_right (byte_slice, int32 n);
+    integer right_bit_shift (byte_slice, int32 n);
 
     // shift left by n bits, implements OP_LSHIFTNUM
-    integer bit_shift_left (byte_slice, int32 n);
+    integer left_bit_shift (byte_slice, int32 n);
 
     // shift right by n bits
     data::string right_shift (const data::string &, int32 n);
@@ -337,16 +337,6 @@ namespace Gigamonkey::Bitcoin {
 
     bool inline string_equal (byte_slice a, byte_slice b) {
         return a == b;
-    }
-
-    // shift right by n bits, implements OP_RSHIFTNUM
-    integer inline bit_shift_right (byte_slice, int32 n) {
-        throw 0;
-    }
-
-    // shift left by n bits, implements OP_LSHIFTNUM
-    integer inline bit_shift_left (byte_slice, int32 n) {
-        throw 0;
     }
 }
 

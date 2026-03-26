@@ -174,4 +174,27 @@ namespace Gigamonkey::Bitcoin {
         return result;
     }
 
+    // shift right by n bits, implements OP_RSHIFTNUM
+    integer right_bit_shift (byte_slice x, int32 n) {
+        if (n < 0) return left_bit_shift (x, -n);
+        if (n == 0) return integer {x};
+        if (is_zero (x)) return integer {};
+        bool neg = is_negative (x);
+        integer result = neg ? -integer {x} : integer {x};
+        result.words ().bit_shift_right (static_cast<uint32> (n));
+        return neg ? -result : result;
+    }
+
+    // shift left by n bits, implements OP_LSHIFTNUM
+    integer left_bit_shift (byte_slice x, int32 n) {
+        if (n < 0) return right_bit_shift (x, -n);
+        if (n == 0) return integer {x};
+        if (is_zero (x)) return integer {};
+        bool neg = is_negative (x);
+        integer result = neg ? -integer {x} : integer {x};
+        result = extend (result, result.size () + ((n + 7) / 8));
+        result.words ().bit_shift_left (static_cast<uint32> (n));
+        return neg ? -result : result;
+    }
+
 }
