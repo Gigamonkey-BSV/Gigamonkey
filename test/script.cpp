@@ -891,6 +891,32 @@ namespace Gigamonkey::Bitcoin {
         test_stack_op (OP_MOD, {19, 5}, {4}, "OP_MOD");
 
     }
+
+    TEST (Script, MinimalIf) {
+        success (evaluate (bytes {
+            OP_2, OP_IF,
+            OP_1,
+            OP_ENDIF
+        }, bytes {}, flag {}), "non-minimal IF allowed");
+
+        error (evaluate (bytes {
+            OP_2, OP_IF,
+            OP_1,
+            OP_ENDIF
+        }, bytes {}, flag::VERIFY_MINIMALIF), "non-minimal IF condition");
+
+        success (evaluate (bytes {
+            OP_PUSHSIZE1, 0x00, OP_NOTIF,
+            OP_1,
+            OP_ENDIF
+        }, bytes {}, flag {}), "non-minimal NOTIF allowed");
+
+        error (evaluate (bytes {
+            OP_PUSHSIZE1, 0x00, OP_NOTIF,
+            OP_1,
+            OP_ENDIF
+        }, bytes {}, flag::VERIFY_MINIMALIF), "non-minimal NOTIF condition");
+    }
 /*
     // TODO
     TEST (ScriptTest, TestChecksig) {
