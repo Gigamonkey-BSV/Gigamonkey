@@ -51,10 +51,6 @@ namespace Gigamonkey::Bitcoin {
         return instruction.drop (5);
     }
 
-    bool inline IsInvalidBranchingOpcode (op opcode) {
-        return opcode == OP_VERNOTIF || opcode == OP_VERIF;
-    }
-
     // just take the first four bites.
     // must know that it's not negative or too big.
     uint32_little inline read_as_uint32_little (const integer &n) {
@@ -64,7 +60,6 @@ namespace Gigamonkey::Bitcoin {
     }
     
     maybe<result> machine::step (const program_counter &Counter) {
-        
         if (Counter.Next == slice<const byte> {}) {
             if (Config.verify_clean_stack () && (Stack->size () != 1)) return SCRIPT_ERR_CLEANSTACK;
             if (Stack->size () == 0) return false;
@@ -202,6 +197,10 @@ namespace Gigamonkey::Bitcoin {
             case OP_NOP10: {
                 if (verify_discourage_upgradable_NOPs (Config.Flags))
                     return SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS;
+            } break;
+
+            case OP_VER: {
+                Stack->push_back (Config.Version);
             } break;
 
             case OP_IF:
@@ -969,7 +968,6 @@ namespace Gigamonkey::Bitcoin {
 
             // trim a number to its minimal representation.
             case OP_BIN2NUM: {
-
                 // (in -- out)
                 if (Stack->size () < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
 
@@ -1052,8 +1050,6 @@ namespace Gigamonkey::Bitcoin {
             } break;
             
             default: {
-                if (IsInvalidBranchingOpcode (Op) && UtxoAfterGenesis && !executed) break;
-
                 return SCRIPT_ERR_BAD_OPCODE;
             }
         }

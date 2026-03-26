@@ -10,7 +10,7 @@
 #include <memory>
 #include <string>
 #include <set>
-#include <gigamonkey/types.hpp>
+#include <gigamonkey/numbers.hpp>
 #include <gigamonkey/script/opcodes.h>
 
 static_assert (sizeof (void*) >= 8, "32 bit systems are not supported");
@@ -101,13 +101,10 @@ namespace Gigamonkey::Bitcoin {
         VERIFY_COMPRESSED_PUBKEYTYPE = (1U << 15),
 
         // Do we accept signature using SIGHASH_FORKID
-        //
         ENABLE_SIGHASH_FORKID = (1U << 16),
 
         // is forkid required?
         REQUIRE_SIGHASH_FORKID = (1U << 17),
-
-        CUSTOMIZE_SCRIPT_LIMITS = (1U << 18),
 
         // OP_RETURN on its own is no longer a valid script.
         SAFE_RETURN_DATA = (1U << 19),
@@ -122,21 +119,8 @@ namespace Gigamonkey::Bitcoin {
 
         ENABLE_CHRONICLE_OPCODES = (1U << 25),
 
-        // Is Genesis enabled - transcations that is being executed is part of block that uses Geneisis rules.
-        // Does nothing because the only thing that matters
-        // GENESIS = (1U << 19),
-
-        // UTXO being used in this script was created *after* Genesis upgrade
-        // has been activated. This activates new rules (such as original meaning of OP_RETURN)
-        // This is per (input!) UTXO flag
-        // if this flag is set, all earlier flags are ignored.
-        //UTXO_AFTER_GENESIS = (1U << 21),
-
-        // if set, all earlier flags are ignored.
-        //UTXO_AFTER_CHRONICLE = (1U << 22),
-
         // Not actual flag. Used for marking largest flag value.
-        FLAG_LAST = (1U << 25)
+        FLAG_LAST = (1U << 26)
 
     };
 
@@ -173,13 +157,43 @@ namespace Gigamonkey::Bitcoin {
     constexpr bool enable_genesis_opcodes (flag);
     constexpr bool enable_chronical_opcodes (flag);
 
+    constexpr flag profile (bool utxo_post_genesis, uint32 tx_version);
+
     constexpr flag pre_genesis_profile ();
     constexpr flag genesis_profile ();
-    constexpr flag chronicle_profile ();
 
-    // if genesis is not enabled, then these values are fixed.
-    // otherwise, they have defaults but can be set by the use
+    /*
+     * script configuration depends on 3 things
+     *   * script version
+     *   * flags
+     *   * script limits
+     *
+     * The script version is a Bitcoin integer that is
+     * pushed to the stack when OP_VER is called.
+     *
+     * flags have to do with updates to the scripting engine
+     * that were added as Bitcoin was corrupted. Thus,
+     * specific configurations of flags have to do with how
+     * the engine was expected to work at different times.
+     *
+     * For flags, we define a profile in terms of two
+     * parameters:
+     *   * utxo before or after genesis
+     *   * version 1 or version 2
+     * The genesis update has to do with many things,
+     * including pay to script hash, big numbers, OP_RETURN
+     * behavior, and script limits. Version 1 versus version
+     * 2 has to do with malleability checks.
+     *
+     * script limits were fixed numbers considered to be
+     * part of the protocol in BTC. In the genesis update
+     * these were changed to adjustable parameters with
+     * maximum values that are much bigger than before.
+     *
+     */
     struct script_config final {
+        integer Version;
+
         flag Flags;
 
         uint64 MaxOpsPerScript;
@@ -188,15 +202,50 @@ namespace Gigamonkey::Bitcoin {
         uint64 MaxScriptNumLength;
         uint64 MaxScriptSize;
 
-        // if the flags state that the utxo is before genesis, then
-        // consensus doesn't matter.
-        script_config (flag flags = genesis_profile (), bool consensus = false);
-        script_config (flag flags,
+        static integer default_version () {
+            return extend (integer (1), 4);
+        }
+
+        script_config (
+            const integer &version = default_version (),
+            bool utxo_post_genesis = true,
+            bool consensus = false);
+
+        script_config (
+            bool utxo_post_genesis,
+            bool consensus = false): script_config {default_version (), utxo_post_genesis, consensus} {}
+
+        script_config (
+            const integer &version,
+            flag flags,
+            bool consensus = false);
+
+        script_config (
+            flag flags,
+            bool consensus = false): script_config {default_version (), flags, consensus} {}
+
+        script_config (
+            const integer &version,
+            flag flags,
             uint64 max_ops_per_script,
             uint64 max_pubkeys_per_multisig,
             uint64 max_stack_memory_usage,
             uint64 max_script_num_length,
             uint64 max_script_size);
+
+        script_config (
+            flag flags,
+            uint64 max_ops_per_script,
+            uint64 max_pubkeys_per_multisig,
+            uint64 max_stack_memory_usage,
+            uint64 max_script_num_length,
+            uint64 max_script_size) : script_config {
+            default_version (), flags,
+            max_ops_per_script,
+            max_pubkeys_per_multisig,
+            max_stack_memory_usage,
+            max_script_num_length,
+            max_script_size} {}
 
         constexpr bool verify_P2SH () const;
         constexpr bool verify_unlock_push_only () const;
@@ -297,10 +346,6 @@ namespace Gigamonkey::Bitcoin {
         return static_cast<uint32> (P & flag::ENABLE_GENESIS_OPCODES);
     }
 
-    constexpr bool inline enable_chronical_opcodes (flag P) {
-        return static_cast<uint32> (P & flag::ENABLE_CHRONICLE_OPCODES);
-    }
-
     constexpr bool custom_script_limits (flag P) {
         return static_cast<uint32> (P & flag::ENABLE_CUSTOM_SCRIPT_LIMITS);
     }
@@ -351,15 +396,18 @@ namespace Gigamonkey::Bitcoin {
             flag::VERIFY_STRICTENC | flag::VERIFY_LOW_S | flag::VERIFY_NULLFAIL |
             flag::VERIFY_DERSIG | flag::VERIFY_MINIMALDATA | flag::VERIFY_NULLDUMMY |
             flag::VERIFY_DISCOURAGE_UPGRADABLE_NOPS | flag::VERIFY_CLEANSTACK |
-            flag::CUSTOMIZE_SCRIPT_LIMITS | flag::SAFE_RETURN_DATA | flag::ENABLE_GENESIS_OPCODES |
+            flag::SAFE_RETURN_DATA | flag::ENABLE_GENESIS_OPCODES |
             flag::ENABLE_GENESIS_STACK_LIMITS | flag::ENABLE_CUSTOM_SCRIPT_LIMITS | flag::VERIFY_SIGPUSHONLY;
     }
 
-    // EXPERIMENTAL: we don't know exactly what happens in the Chronicle update.
-    constexpr flag inline chronicle_profile () {
-        return flag::ENABLE_SIGHASH_FORKID | flag::CUSTOMIZE_SCRIPT_LIMITS |
-            flag::SAFE_RETURN_DATA | flag::ENABLE_GENESIS_OPCODES |
-            flag::ENABLE_GENESIS_STACK_LIMITS | flag::ENABLE_CHRONICLE_OPCODES;
+    constexpr flag inline disabled_in_chronicle () {
+        return flag::VERIFY_LOW_S | flag::VERIFY_NULLFAIL | flag::VERIFY_MINIMALDATA |
+            flag::VERIFY_NULLDUMMY | flag::VERIFY_CLEANSTACK | flag::VERIFY_SIGPUSHONLY;
+    }
+
+    constexpr flag inline profile (bool utxo_post_genesis, uint32 tx_version) {
+        return (utxo_post_genesis ? genesis_profile () : pre_genesis_profile ()) &
+            (tx_version == 2 ? ~disabled_in_chronicle () : tx_version == 1 ? flag {~0u} : flag {0u});
     }
 }
 
