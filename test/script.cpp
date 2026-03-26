@@ -894,6 +894,10 @@ namespace Gigamonkey::Bitcoin {
 
     }
 
+    TEST (Script, OP_VER) {
+        test_data_op (OP_VER, {}, {{0x01, 0x00, 0x00, 0x00}});
+    }
+
     TEST (Script, MinimalIf) {
         success (evaluate (bytes {
             OP_2, OP_IF,

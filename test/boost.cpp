@@ -1,4 +1,4 @@
-#include <gigamonkey/boost/boost.hpp>
+    #include <gigamonkey/boost/boost.hpp>
 #include <gigamonkey/script/interpreter.hpp>
 #include <gigamonkey/address.hpp>
 #include <gigamonkey/wif.hpp>
@@ -416,6 +416,7 @@ namespace Gigamonkey::Boost {
         }, serialized_input_scripts, serialized_output_scripts);
 
         bool check_scripts = dot_cross ([] (slice<const byte> in, slice<const byte> out) {
+            std::cout << "check boost scripts..." << std::endl;
             return Bitcoin::evaluate (in, out);
         }, rest (serialized_input_scripts), rest (serialized_output_scripts));
         

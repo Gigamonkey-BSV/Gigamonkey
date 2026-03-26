@@ -12,7 +12,16 @@
 
 namespace Gigamonkey::Bitcoin {
 
-    script_config::script_config (flag flags, bool consensus): Flags {flags} {
+    script_config::script_config (
+        const integer &version,
+        bool utxo_post_genesis,
+        bool consensus): script_config {version, profile (utxo_post_genesis, static_cast<int32> (version)), consensus} {}
+
+    script_config::script_config (
+        const integer &version,
+        flag flags,
+        bool consensus): Version {version}, Flags {flags} {
+
         if (!custom_script_limits (flags)) {
             MaxOpsPerScript = MAX_OPS_PER_SCRIPT_BEFORE_GENESIS;
             MaxPubKeysPerMultiSig = MAX_PUBKEYS_PER_MULTISIG_BEFORE_GENESIS;
@@ -36,12 +45,14 @@ namespace Gigamonkey::Bitcoin {
         }
     }
 
-    script_config::script_config (flag flags,
+    script_config::script_config (
+        const integer &version,
+        flag flags,
         uint64 maxOpsPerScript,
         uint64 maxPubKeysPerMultiSig,
         uint64 maxStackMemoryUsage,
         uint64 maxScriptNumLength,
-        uint64 maxScriptSize): Flags {flags},
+        uint64 maxScriptSize): Version {version}, Flags {flags},
         MaxOpsPerScript {maxOpsPerScript},
         MaxPubKeysPerMultiSig {maxPubKeysPerMultiSig},
         MaxStackMemoryUsage {maxStackMemoryUsage},
