@@ -1057,12 +1057,68 @@ namespace Gigamonkey::Bitcoin {
 /*
     TEST (Script, LowS) {
         // TODO
-    }
+    }*/
 
     TEST (Script, SignatureCompressedPubkey) {
-        // TODO
-    }
+        secp256k1::secret x {3023332};
 
+        // we have two kinds of pubkeys
+        // the first of these should always be ok,
+        // the second will only work when
+        // VERIFY_COMPRESSED_PUBKEYTYPE is turned off.
+        secp256k1::pubkey pc = x.to_public (true);
+        secp256k1::pubkey pu = x.to_public (false);
+
+        // locking scripts for CHECKSIG and CHECKMULTISIG
+        // using the two public keys.
+        bytes lockc = pay_to_pubkey (Bitcoin::pubkey (pc)).script ();
+        bytes lockcm = multisig (1, {pc}).script ();
+
+        bytes locku = pay_to_pubkey (Bitcoin::pubkey (pu)).script ();
+        bytes lockum = multisig (1, {pu}).script ();
+
+        // generate the unlocking scripts.
+        size_t input_index = 0;
+        satoshi redeemed_value {0xfeee};
+
+        sighash::document dc {test_txi, 0, redeemed_value, decompile (lockc)};
+        sighash::document dcm {test_txi, 0, redeemed_value, decompile (lockcm)};
+
+        sighash::document du {test_txi, 0, redeemed_value, decompile (locku)};
+        sighash::document dum {test_txi, 0, redeemed_value, decompile (lockum)};
+
+        auto sigc = signature::sign (x, sighash::directive (), dc);
+        auto sigcm = signature::sign (x, sighash::directive (), dcm);
+
+        auto sigu = signature::sign (x, sighash::directive (), du);
+        auto sigum = signature::sign (x, sighash::directive (), dum);
+
+        bytes unlockc = pay_to_pubkey::redeem (sigc);
+        bytes unlockcm = multisig::redeem ({sigcm});
+
+        bytes unlocku = pay_to_pubkey::redeem (sigu);
+        bytes unlockum = multisig::redeem ({sigum});
+
+        // the flags we will be checking for this test
+        script_config compressed_required {flag::VERIFY_COMPRESSED_PUBKEYTYPE};
+        script_config compressed_not_required {flag {}};
+
+        redemption_document rd {test_txi, 0, redeemed_value};
+
+        success (evaluate (unlockc, lockc, rd, compressed_required), "CHECKSIG compressed and required");
+        success (evaluate (unlockc, lockc, rd, compressed_not_required), "CHECKSIG compressed and not required");
+
+        success (evaluate (unlockcm, lockcm, rd, compressed_required), "CHECKMULTISIG compressed and required");
+        success (evaluate (unlockcm, lockcm, rd, compressed_not_required), "CHECKMULTISIG compressed and not required");
+
+        error (evaluate (unlocku, locku, rd, compressed_required), "CHECKSIG uncompressed and prohibited");
+        success (evaluate (unlocku, locku, rd, compressed_not_required), "CHECKSIG uncompressed and not prohibited");
+
+        error (evaluate (unlockum, lockum, rd, compressed_required), "CHECKMULTISIG uncompressed and prohibited");
+        success (evaluate (unlockum, lockum, rd, compressed_not_required), "CHECKMULTISIG uncompressed and not prohibited");
+
+    }
+/*
     TEST (Script, SignatureNULLFAIL) {
         // TODO
     }
@@ -1173,7 +1229,7 @@ namespace Gigamonkey::Bitcoin {
         
     }
 /*
-    TEST (ScriptTest, TestCodeSeparator) {
+    TEST (Script, TestCodeSeparator) {
 
     }
 

@@ -27,6 +27,8 @@ namespace Gigamonkey {
         bytes script () const {
             return script (Pubkey);
         }
+
+        pay_to_pubkey (const Bitcoin::pubkey &p): Pubkey {p} {}
         
         pay_to_pubkey (slice<const byte> script) : Pubkey {} {
             using namespace Bitcoin;
