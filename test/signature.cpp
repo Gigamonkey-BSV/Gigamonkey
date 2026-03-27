@@ -74,14 +74,17 @@ namespace Gigamonkey::Bitcoin {
         return (d & sighash::chronicle) || !(d & sighash::fork_id);
     }
     
+    // test that the chronicle signature is the same as the original algorithm.
     // 0x20 is always available.
     // if flag FORKID is not set, then 0x20 does nothing.
     // if flag FORKID is set, then use of 0x40 is also available.
     // if REQUIRE_FORKID is set, then the only way to get the
     // original signature algorithm is to use 0x20.
     TEST (Signature, Sighash) {
+
         index input_index = 0;
         satoshi redeemed_value {0xfeee};
+
         auto scriptx = decompile (pay_to_address::script (digest160 {uint160 {"0xdddddddddd000000000000000000006767676791"}}));
 
         incomplete::transaction txi {
@@ -163,14 +166,81 @@ namespace Gigamonkey::Bitcoin {
         }
         
     }
+
+    struct DER_test_case {
+        std::string signature;
+        std::string R;
+        std::string S;
+    };
+
+    TEST (Signature, DER) {
+        for (const auto &test_case : cross<DER_test_case> {
+            {
+                .signature = "30080202010002020100",
+                .R = "256",
+                .S = "256"
+            },
+            {
+                .signature = "30080202010102020101",
+                .R = "257",
+                .S = "257"
+            },
+            {
+                .signature = "3008020201ff02020100",
+                .R = "511",
+                .S = "256"
+            },
+            {
+                .signature = "300802020100020201ff",
+                .R = "256",
+                .S = "511"
+            },
+            {
+                .signature = "3008020201fe020201fd",
+                .R = "510",
+                .S = "509"
+            },
+            {
+                .signature = "3009020300800002020100",
+                .R = "32768",
+                .S = "256"
+            },
+            {
+                .signature = "3009020201000203008000",
+                .R = "256",
+                .S = "32768"
+            },
+            {
+                .signature = "300a02030080010203008002",
+                .R = "32769",
+                .S = "32770"
+            }
+        }) {
+
+            secp256k1::signature sig {*encoding::hex::read (test_case.signature)};
+
+            secp256k1::complex z = secp256k1::complex (sig);
+
+            EXPECT_EQ (N (z.R.Value), N (test_case.R));
+            EXPECT_EQ (N (z.S.Value), N (test_case.S));
+
+            secp256k1::signature written {z};
+
+            EXPECT_EQ (sig, written) << "expected " << sig << " == " << written;
+
+        }
+    }
     
     TEST (Signature, FindAndDelete) {
         
-        auto p1 = secp256k1::point (uint256 {123}, uint256 {456});
-        auto p2 = secp256k1::point (uint256 {789}, uint256 {101});
+        auto p1 = secp256k1::complex (secp256k1::scalar {123}, secp256k1::scalar {456});
+        auto p2 = secp256k1::complex (secp256k1::scalar {789}, secp256k1::scalar {101});
         
         auto sig1 = signature (p1, directive (sighash::all));
         auto sig2 = signature (p2, directive (sighash::all));
+
+        std::cout << "sig1 is " << sig1 << std::endl;
+        std::cout << "sig2 is " << sig2 << std::endl;
         
         auto push_sig1 = instruction::push (sig1);
         auto push_sig2 = instruction::push (sig2);
