@@ -4,8 +4,11 @@
 
 #include <gigamonkey/hash.hpp>
 #include <gigamonkey/script/pattern/pay_to_address.hpp>
+#include <gigamonkey/script/pattern/pay_to_pubkey.hpp>
+#include <gigamonkey/script/pattern/multisig.hpp>
 #include <gigamonkey/script/interpreter.hpp>
 #include <gigamonkey/address.hpp>
+#include <gigamonkey/wif.hpp>
 #include <data/encoding/hex.hpp>
 #include "gtest/gtest.h"
 #include <iostream>
@@ -226,7 +229,6 @@ namespace Gigamonkey::Bitcoin {
         error (evaluate (bytes {OP_IF}, bytes {}, flag {}), "OP_IF");
         error (evaluate (bytes {OP_NOTIF}, bytes {}, flag {}), "OP_NOTIF");
         error (evaluate (bytes {OP_VERIF}, bytes {}, flag {}), "OP_VERIF");
-        error (evaluate (bytes {OP_VER}, bytes {}, flag {}), "OP_VER");
         error (evaluate (bytes {OP_VERNOTIF}, bytes {}, flag {}), "OP_VERNOTIF");
         error (evaluate (bytes {OP_ELSE}, bytes {}, flag {}), "OP_ELSE");
         error (evaluate (bytes {OP_ENDIF}, bytes {}, flag {}), "OP_ENDIF");
@@ -1022,46 +1024,80 @@ namespace Gigamonkey::Bitcoin {
         }, bytes {}, flag {}), "invalid op codes cannot appear in unevaluated branches");
 
     }
-/*
-    // TODO
-    TEST (ScriptTest, TestChecksig) {
 
-    }
+    // We use this tx for the signature tests.
+    incomplete::transaction test_txi {
+        {incomplete::input {
+            outpoint {digest256 {uint256 {"0xaa00000000000000000000000000000000000000000000555555550707070707"}}, 0xcdcdcdcd},
+            0xfedcba09}}, {
+            output {1, pay_to_address::script (digest160 {uint160 {"0xbb00000000000000000000000000006565656575"}})}},
+        5};
 
-    TEST (ScriptTest, TestSignatureNULLFAIL) {
-        // TODO
-    }
-
-    TEST (ScriptTest, TestSignatureCompressedPubkey) {
-        // TODO
-    }
-
-    TEST (ScriptTest, TestCodeSeparator) {
-
-    }*/
-    
-    bytes multisig_script (
+    data::array<bytes, 2> multisig_script (
         const redemption_document &doc,
         list<secp256k1::secret> s,
         list<secp256k1::pubkey> p,
-        const instruction &null_push) {
-        program mp;
-        mp <<= push_data (s.size ());
-        for (const secp256k1::pubkey &pk : p) mp <<= push_data (pk);
-        mp <<= push_data (p.size ());
-        mp <<= OP_CHECKMULTISIGVERIFY;
-        
-        sighash::document sd = add_script_code (doc, compile (mp));
-        
-        program ms;
-        ms <<= null_push;
-        for (const secp256k1::secret &sk : s) ms <<= push_data (signature::sign (sk, sighash::all, sd));
-        ms <<= OP_CODESEPARATOR;
-        return compile (ms + mp);
+        const instruction &null_push = OP_0) {
+
+        script mp = multisig (s.size (), p).script ();
+
+        sighash::document sd = add_script_code (doc, mp);
+
+        list<signature> sigs;
+
+        for (const secp256k1::secret &sk : s) sigs <<= signature::sign (sk, sighash::all, sd);
+        script ms = multisig::redeem (sigs, null_push);
+
+        return {ms, mp};
     }
-    
-    bytes multisig_script (const redemption_document &doc, list<secp256k1::secret> s, list<secp256k1::pubkey> p) {
-        return multisig_script (doc, s, p, OP_0);
+/*
+    TEST (Script, LowS) {
+        // TODO
+    }
+
+    TEST (Script, SignatureCompressedPubkey) {
+        // TODO
+    }
+
+    TEST (Script, SignatureNULLFAIL) {
+        // TODO
+    }
+
+    // TODO
+    TEST (Script, TestChecksig) {
+
+    }*/
+
+    TEST (Script, MultisigNULLDUMMY) {
+
+        secp256k1::secret x {3023332};
+        secp256k1::pubkey p = x.to_public ();
+
+        bytes lock = multisig (1, {p}).script ();
+
+        size_t input_index = 0;
+        satoshi redeemed_value {0xfeee};
+
+        sighash::document doc {test_txi, 0, redeemed_value, decompile (lock)};
+
+        auto sig = signature::sign (x, sighash::directive (), doc);
+
+        bytes unlock = multisig::redeem ({sig});
+        // it doesn't matter what we put here as long as it's not OP_0
+        bytes unlockx = multisig::redeem ({sig}, OP_1);
+
+        // now we run the scripts
+
+        script_config null_dummy_required {flag::VERIFY_NULLDUMMY};
+        script_config null_dummy_not_required {flag {}};
+
+        redemption_document rd {test_txi, 0, redeemed_value};
+
+        success (evaluate (unlock, lock, rd, null_dummy_required), "CHECKSIG null dummy provided and required");
+        success (evaluate (unlock, lock, rd, null_dummy_not_required), "CHECKSIG null dummy provided and not required");
+
+        error (evaluate (unlockx, lock, rd, null_dummy_required), "CHECKSIG null dummy not provided and required");
+        success (evaluate (unlockx, lock, rd, null_dummy_not_required), "CHECKSIG null dummy not provided and not required");
     }
     
     TEST (Script, Multisig) {
@@ -1088,15 +1124,17 @@ namespace Gigamonkey::Bitcoin {
             int Number;
             bool Expected;
             redemption_document Doc;
-            bytes Test;
+            data::array<bytes, 2> Test;
             
             result run () {
-                return evaluate ({}, Test, Doc, flag {});
+                return evaluate (Test[0], Test[1], Doc, flag {});
             }
             
             void test () {
                 result r = run ();
-                EXPECT_EQ (bool (r), Expected) << Number << ": script " << decompile (Test) << " expect " << Expected << "; results in " << r;
+                EXPECT_EQ (bool (r), Expected) << Number << ": script " <<
+                    decompile (Test[0]) << decompile (Test[1]) <<
+                    " expect " << Expected << "; results in " << r;
             }
             
             multisig_test (int num, bool ex, const redemption_document &doc, list<secp256k1::secret> s, list<secp256k1::pubkey> p) :
@@ -1131,30 +1169,19 @@ namespace Gigamonkey::Bitcoin {
         
     }
 /*
-    TEST (Script, Verify) {
+    TEST (ScriptTest, TestCodeSeparator) {
 
-        test_data_op (OP_NUMEQUALVERIFY);
-        test_data_op (OP_CHECKSIGVERIFY);
-        test_data_op (OP_CHECKMULTISIGVERIFY);
-
-    }
-
-    TEST (Script, OP_VER) {
-        OP_VER
     }
 
     TEST (Script, Return) {
         OP_RETURN
     }
 
-    TEST (Script, ControlOps) {
+    TEST (Script, Verify) {
 
-        OP_IF
-        OP_NOTIF
-        OP_VERIF
-        OP_VERNOTIF
-        OP_ELSE
-        OP_ENDIF
+        test_data_op (OP_NUMEQUALVERIFY);
+        test_data_op (OP_CHECKSIGVERIFY);
+        test_data_op (OP_CHECKMULTISIGVERIFY);
 
     }*/
     
