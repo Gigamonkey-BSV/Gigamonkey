@@ -19,12 +19,12 @@ namespace Gigamonkey::Bitcoin {
         static slice<const byte> raw (slice<const byte> x);
         
         secp256k1::signature raw () const;
-        secp256k1::point point () const;
+        secp256k1::complex complex () const;
         Bitcoin::sighash::directive directive () const;
         
         signature ();
         explicit signature (const slice<const byte> data);
-        signature (const secp256k1::point raw, sighash::directive d);
+        signature (const secp256k1::complex raw, sighash::directive d);
         
         signature (const secp256k1::signature raw, sighash::directive d);
         
@@ -56,8 +56,8 @@ namespace Gigamonkey::Bitcoin {
         return secp256k1::signature {raw (*this)};
     }
 
-    secp256k1::point inline signature::point () const {
-        return secp256k1::point (raw ());
+    secp256k1::complex inline signature::complex () const {
+        return secp256k1::complex (raw ());
     }
 
     Bitcoin::sighash::directive inline signature::directive () const {
@@ -67,10 +67,11 @@ namespace Gigamonkey::Bitcoin {
     inline signature::signature () : bytes {} {}
     inline signature::signature (slice<const byte> data) : bytes {data} {}
 
-    inline signature::signature (const secp256k1::point raw, sighash::directive d) :
-        bytes (secp256k1::signature::serialized_size (raw) + 1) {
+    inline signature::signature (const secp256k1::complex raw, sighash::directive d) {
+        secp256k1::signature sig {raw};
+        this->resize (sig.size () + 1);
         it_wtr w (bytes::begin (), bytes::end ());
-        w << raw << d;
+        w << sig << d;
     }
 
     inline signature::signature (const secp256k1::signature raw, sighash::directive d) : bytes (raw.size () + 1) {

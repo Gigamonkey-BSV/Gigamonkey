@@ -1124,10 +1124,82 @@ namespace Gigamonkey::Bitcoin {
 
         return {ms, mp};
     }
-/*
+
     TEST (Script, LowS) {
-        // TODO
-    }*/
+
+        secp256k1::secret x {3023332};
+        secp256k1::pubkey p = x.to_public ();
+
+        bytes lock = pay_to_pubkey (Bitcoin::pubkey (p)).script ();
+        bytes lockm = multisig (1, {Bitcoin::pubkey (p)}).script ();
+
+        size_t input_index = 0;
+        satoshi redeemed_value {0xfeee};
+
+        sighash::document doc {test_txi, 0, redeemed_value, decompile (lock)};
+        sighash::document docm {test_txi, 0, redeemed_value, decompile (lockm)};
+
+        redemption_document rd {test_txi, 0, redeemed_value};
+
+        // normally we would expect these to be normalized by
+        // default but that is not what we want to test, so
+        // we have an extra step that ensures to normalize them.
+        auto sigx = signature::sign (x, sighash::directive (), doc);
+        auto sigxm = signature::sign (x, sighash::directive (), docm);
+
+        // low S versions of the signatures.
+        auto sig_raw = sigx.raw ().normalize ();
+        auto sigm_raw = sigxm.raw ().normalize ();
+
+        auto sig = signature {sig_raw, sighash::directive ()};
+        auto sigm = signature {sigm_raw, sighash::directive ()};
+
+        EXPECT_TRUE (secp256k1::signature::normalized (sig_raw));
+        EXPECT_TRUE (secp256k1::signature::normalized (sigm_raw));
+
+        auto z = secp256k1::complex (sig_raw);
+        auto zm = secp256k1::complex (sigm_raw);
+
+        auto sz = -z;
+        auto szm = -zm;
+
+        // from both signatures we now extract S and invert it.
+        auto sigi_raw = secp256k1::signature (sz);
+        auto sigmi_raw = secp256k1::signature (szm);
+
+        EXPECT_FALSE (secp256k1::signature::normalized (sigi_raw));
+        EXPECT_FALSE (secp256k1::signature::normalized (sigmi_raw));
+
+        EXPECT_EQ (sig_raw, sigi_raw.normalize ());
+        EXPECT_EQ (sigm_raw, sigmi_raw.normalize ());
+
+        auto sigi = signature {sigi_raw, sighash::directive ()};
+        auto sigmi = signature {sigmi_raw, sighash::directive ()};
+
+        bytes unlock = pay_to_pubkey::redeem (sig);
+        bytes unlockm = multisig::redeem ({sigm});
+
+        bytes unlocki = pay_to_pubkey::redeem (sigi);
+        bytes unlockmi = multisig::redeem ({sigmi});
+
+        // now we run the scripts
+
+        script_config low_S_only {flag::VERIFY_LOW_S};
+        script_config either_way {flag {}};
+
+        success (evaluate (unlock, lock, rd, low_S_only), "CHECKSIG Low S provided and required");
+        success (evaluate (unlock, lock, rd, either_way), "CHECKSIG Low S provided and not required");
+
+        success (evaluate (unlockm, lockm, rd, low_S_only), "CHECKMULTISIG Low S provided and required");
+        success (evaluate (unlockm, lockm, rd, either_way), "CHECKMULTISIG Low S provided and not required");
+
+        //error (evaluate (unlocki, lock, rd, low_S_only), "CHECKSIG High S provided and prohibited");
+        success (evaluate (unlocki, lock, rd, either_way), "CHECKSIG High S provided and not prohibited");
+
+        //error (evaluate (unlockmi, lockm, rd, low_S_only), "CHECKMULTISIG High S provided and prohibited");
+        success (evaluate (unlockmi, lockm, rd, either_way), "CHECKMULTISIG High S provided and not prohibited");
+
+    }
 
     TEST (Script, SignatureCompressedPubkey) {
         secp256k1::secret x {3023332};
@@ -1228,11 +1300,6 @@ namespace Gigamonkey::Bitcoin {
         error (evaluate (unlockm_not_null, lockm, rd, null_fail), "CHECKMULTISIG not null invalid sig and prohibited");
         success (evaluate (unlockm_not_null, lockm, rd, not_null_fail), "CHECKMULTISIG not null invalid sig and not prohibited");
     }
-/*
-    // TODO
-    TEST (Script, TestChecksig) {
-
-    }*/
 
     struct sighash_test {
         sighash::directive Directive;

@@ -10,19 +10,76 @@
 
 namespace Gigamonkey::secp256k1 {
 
-    reader &operator >> (reader &r, point &p) {
-        byte size;
+    using integer = data::Z_bytes_BC_big;
+
+    signature::operator complex () const {
+        it_rdr r {this->begin (), this->end ()};
+
         byte v;
         r >> v;
-        if (v != 0x30) throw std::logic_error {"invalid signature format"};
-        r >> size;
-        if (size < 4) throw std::logic_error {"invalid signature format"};
-        bytes rest (size);
-        r >> rest;
-        it_rdr rr {rest.data (), rest.data () + size};
-        rr >> p.R;
-        rr >> p.S;
-        return r;
+        if (v != byte (0x30)) throw exception {} << "invalid signature format: expected 0x30";
+
+        byte total_size;
+        r >> total_size;
+        if (total_size < 4) throw exception {} << "invalid signature format: total remaining size too low";
+
+        byte vr;
+        r >> vr;
+        if (vr != byte (0x02)) throw exception {} << "invalid signature format: expected 0x02 to precede R";
+
+        byte nr;
+        r >> nr;
+
+        integer R;
+        R.resize (size_t {nr});
+        r >> R;
+        if (!data::arithmetic::is_minimal<data::endian::big, data::arithmetic::negativity::BC, byte> (R))
+            throw exception {} << "invalid signature format: R is not minimally encoded";
+
+        byte vs;
+        r >> vs;
+        if (vs != byte (0x02)) throw exception {} << "invalid signature format: expected 0x02 to precede S";
+
+        byte ns;
+        r >> ns;
+
+        integer S;
+        S.resize (size_t {ns});
+        r >> S;
+        if (!data::arithmetic::is_minimal<data::endian::big, data::arithmetic::negativity::BC, byte> (S))
+            throw exception {} << "invalid signature format";
+
+        if (size_t {total_size} != size_t {nr} + size_t {ns} + size_t {4})
+            throw exception {} << "invalid signature format";
+
+        return complex {scalar {data::uint256 {R}}, scalar {data::uint256 {S}}};
+    }
+
+    signature::signature (const complex &z): bytes () {
+
+        integer R {z.R.Value};
+        integer S {z.S.Value};
+
+        this->resize (R.size () + S.size () + 6);
+
+        it_wtr w {this->begin (), this->end ()};
+
+        w << byte (0x30);
+
+        w << byte (this->size () - 2);
+
+        w << byte (0x02);
+
+        w << byte (R.size ());
+
+        w << R;
+
+        w << byte (0x02);
+
+        w << byte (S.size ());
+
+        w << S;
+
     }
     
     bool signature::valid (slice<const byte> x) {
@@ -204,12 +261,6 @@ namespace Gigamonkey::secp256k1 {
 
     } Verification {SECP256K1_CONTEXT_VERIFY}, Signing {SECP256K1_CONTEXT_SIGN};
     
-    bool signature::normalized (const slice<const byte> vchSig) {
-        secp256k1_ecdsa_signature sig;
-        if (!ecdsa_signature_parse_der_lax (Verification (), &sig, &vchSig[0], vchSig.size ())) return false;
-        return (!secp256k1_ecdsa_signature_normalize (Verification (), nullptr, &sig));
-    }
-    
     bool secret::valid (slice<const byte> sk) {
         return secp256k1_ec_seckey_verify (Verification (), sk.data ()) == 1;
     }
@@ -262,7 +313,7 @@ namespace Gigamonkey::secp256k1 {
     
     coordinate pubkey::x () const {
         coordinate v {0};
-        if (valid ()) std::copy (this->begin () + 1, this->begin () + 33, v.begin ());
+        if (valid ()) std::copy (this->begin () + 1, this->begin () + 33, v.Value.begin ());
         return v;
     }
         
@@ -271,7 +322,7 @@ namespace Gigamonkey::secp256k1 {
 
         if (valid ()) {
             slice<const byte> decompressed = type () == uncompressed ? static_cast<bytes> (*this) : decompress (*this);
-            std::copy (decompressed.begin () + 33, decompressed.end (), v.begin ());
+            std::copy (decompressed.begin () + 33, decompressed.end (), v.Value.begin ());
         };
 
         return v;
@@ -282,7 +333,7 @@ namespace Gigamonkey::secp256k1 {
         auto context = Signing ();
         if (secp256k1_ecdsa_sign (context, &x, d.data (), sk.data (),
             secp256k1_nonce_function_rfc6979, nullptr) != 1) return {};
-        
+
         signature sig {};
         sig.resize (signature::MaxSize);
         size_t size = sig.size ();
@@ -299,7 +350,7 @@ namespace Gigamonkey::secp256k1 {
         secp256k1_ecdsa_signature_normalize (context, &normal, &s);
         return secp256k1_ecdsa_verify (context, &normal, hash.data (), &point) == 1;
     }
-    
+
     bool pubkey::verify (slice<const byte> pk, const digest &d, slice<const byte> s) {
         secp256k1_pubkey pubkey;
         const auto context = Verification ();
@@ -324,13 +375,13 @@ namespace Gigamonkey::secp256k1 {
     
     uint256 secret::plus (const uint256 &sk_a, const uint256 &sk_b) {
         const auto context = Verification ();
-        coordinate out {sk_a};
+        uint256 out {sk_a};
         return secp256k1_ec_seckey_tweak_add (context, out.data (), sk_b.data ()) == 1;
     }
     
     uint256 secret::times (const uint256 &sk_a, const uint256 &sk_b) {
         const auto context = Verification ();
-        coordinate out {sk_a};
+        uint256 out {sk_a};
         return secp256k1_ec_seckey_tweak_mul (context, out.data (), sk_b.data ()) == 1;
     }
     
@@ -357,11 +408,36 @@ namespace Gigamonkey::secp256k1 {
     
     bytes pubkey::times (const slice<const byte> pk, slice<const byte> sk) {
         const auto context = Verification ();
-        bytes out{pk};
+        bytes out {pk};
         secp256k1_pubkey pubkey;
         return parse (context, pubkey, pk) &&
             secp256k1_ec_pubkey_tweak_mul (context, &pubkey, sk.data ()) == 1 &&
             serialize (context, out, pubkey) ? out : bytes {};
+    }
+
+    bool signature::normalized (const slice<const byte> vchSig) {
+        secp256k1_ecdsa_signature sig;
+        if (!ecdsa_signature_parse_der_lax (Verification (), &sig, &vchSig[0], vchSig.size ())) return false;
+        return (!secp256k1_ecdsa_signature_normalize (Verification (), nullptr, &sig));
+    }
+
+    // low S
+    signature signature::normalize () const {
+        secp256k1_ecdsa_signature input;
+
+        auto context = Verification ();
+        if (!ecdsa_signature_parse_der_lax (context, &input, &(*this)[0], this->size ()))
+            throw exception {"invalid signature"};
+
+        secp256k1_ecdsa_signature x;
+        secp256k1_ecdsa_signature_normalize (context, &x, &input);
+
+        signature result {};
+        result.resize (signature::MaxSize);
+        size_t size = result.size ();
+        secp256k1_ecdsa_signature_serialize_der (context, result.data (), &size, &x);
+        result.resize (size);
+        return result;
     }
     
 }

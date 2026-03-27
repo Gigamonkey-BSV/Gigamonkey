@@ -43,6 +43,7 @@ namespace Gigamonkey {
     // Fixed-size unsigned, little endian
     template <size_t size> using uint = data::uint_little<size>;
     template <size_t size> using uint_little = data::uint_little<size>;
+    template <size_t size> using uint_big = data::uint_big<size>;
     using uint160 = uint<20>;
     using uint256 = uint<32>;
     using uint512 = uint<64>;

@@ -7,9 +7,6 @@ namespace Gigamonkey::Bitcoin {
     
     digest256 signature::hash (const sighash::document &doc, sighash::directive d) {
         if (!doc.valid () || (sighash::base (d) == sighash::single && doc.InputIndex >= doc.Transaction.Outputs.size ())) return {};
-        /*data::lazy_bytes_writer w;
-        sighash::write (w, doc, d);
-        return Hash256 (w.complete ());*/
         digest256 dig; {
             Hash256_writer w {dig};
             sighash::write (w, doc, d);
