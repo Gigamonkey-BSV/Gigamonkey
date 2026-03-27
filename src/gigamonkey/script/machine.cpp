@@ -752,6 +752,9 @@ namespace Gigamonkey::Bitcoin {
                 } else r = result {true};
                 
                 if (r.Error) return r.Error;
+
+                if (!r.Success && verify_null_fail (Config.Flags) && sig.size () > 0)
+                    return SCRIPT_ERR_SIG_NULLFAIL;
                 
                 Stack->pop_back ();
                 Stack->pop_back ();

@@ -1100,8 +1100,8 @@ namespace Gigamonkey::Bitcoin {
         bytes unlockum = multisig::redeem ({sigum});
 
         // the flags we will be checking for this test
-        script_config compressed_required {flag::VERIFY_COMPRESSED_PUBKEYTYPE};
-        script_config compressed_not_required {flag {}};
+        script_config compressed_required {flag::VERIFY_COMPRESSED_PUBKEYTYPE | flag::VERIFY_STRICTENC};
+        script_config compressed_not_required {flag::VERIFY_STRICTENC};
 
         redemption_document rd {test_txi, 0, redeemed_value};
 
@@ -1118,11 +1118,47 @@ namespace Gigamonkey::Bitcoin {
         success (evaluate (unlockum, lockum, rd, compressed_not_required), "CHECKMULTISIG uncompressed and not prohibited");
 
     }
-/*
-    TEST (Script, SignatureNULLFAIL) {
-        // TODO
-    }
 
+    TEST (Script, SignatureNULLFAIL) {
+        secp256k1::secret x {3023332};
+        secp256k1::pubkey p = x.to_public ();
+
+        // the locking script to succeed on a failed signature verification.
+        bytes lock = compile (program {push_data (p), Bitcoin::OP_CHECKSIG, Bitcoin::OP_NOT});
+
+        // locking script for multisig
+        bytes lockm = compile (program {} << OP_1 << push_data (p) << OP_1 << OP_CHECKMULTISIG << OP_NOT);
+
+        bytes unlock_null = compile (program {OP_0});
+        bytes unlock_not_null = compile (program {OP_1});
+
+        // two versions of multisig unlocking script.
+        bytes unlockm_null = compile (program {OP_0, OP_0});
+        bytes unlockm_not_null = compile (program {OP_0, OP_1});
+
+        // not null scripts should work only when the flag is turned on, null scripts work in either case.
+        script_config null_fail {flag::VERIFY_NULLFAIL | flag::VERIFY_STRICTENC};
+        script_config not_null_fail {flag::VERIFY_STRICTENC};
+
+        // generate the unlocking scripts.
+        size_t input_index = 0;
+        satoshi redeemed_value {0xfeee};
+
+        redemption_document rd {test_txi, 0, redeemed_value};
+
+        success (evaluate (unlock_null, lock, rd, null_fail), "CHECKSIG null invalid sig and required");
+        success (evaluate (unlock_null, lock, rd, not_null_fail), "CHECKSIG null invalid sig and not required");
+
+        success (evaluate (unlockm_null, lockm, rd, null_fail), "CHECKMULTISIG null invalid sig and required");
+        success (evaluate (unlockm_null, lockm, rd, not_null_fail), "CHECKMULTISIG null invalid sig and not required");
+
+        error (evaluate (unlock_not_null, lock, rd, null_fail), "CHECKSIG not null invalid sig and prohibited");
+        success (evaluate (unlock_not_null, lock, rd, not_null_fail), "CHECKSIG not null invalid sig and not prohibited");
+
+        error (evaluate (unlockm_not_null, lockm, rd, null_fail), "CHECKMULTISIG not null invalid sig and prohibited");
+        success (evaluate (unlockm_not_null, lockm, rd, not_null_fail), "CHECKMULTISIG not null invalid sig and not prohibited");
+    }
+/*
     // TODO
     TEST (Script, TestChecksig) {
 
@@ -1158,6 +1194,7 @@ namespace Gigamonkey::Bitcoin {
 
         error (evaluate (unlockx, lock, rd, null_dummy_required), "CHECKSIG null dummy not provided and required");
         success (evaluate (unlockx, lock, rd, null_dummy_not_required), "CHECKSIG null dummy not provided and not required");
+
     }
     
     TEST (Script, Multisig) {

@@ -18,12 +18,13 @@ namespace Gigamonkey::Bitcoin {
         if (verify_signature_strict (P))
             if (!secp256k1::pubkey::valid (pub)) return SCRIPT_ERR_PUBKEYTYPE;
 
+        // if we pass an empty signature to the secp256k1 library, the program exits.
+        if (sig.size () < 2) return false;
+
         auto d = signature::directive (sig);
         auto raw = signature::raw (sig);
 
         if (!sighash::valid (d)) return SCRIPT_ERR_SIG_HASHTYPE;
-
-        //std::cout << "Signature; fork id enabled ? " << std::boolalpha << fork_ID_enabled (P) << "; required ? " <<  std::endl;
 
         if (!fork_ID_enabled (P))
             if (sighash::has_fork_id (d)) return SCRIPT_ERR_ILLEGAL_FORKID;
