@@ -42,17 +42,14 @@ namespace Gigamonkey::Bitcoin {
     std::pair<byte_slice, byte_slice> split (byte_slice, size_t);
     std::pair<string_view, string_view> split (string_view, size_t);
 
-    // implements OP_0NOTEQUAL
-    // also how we cast a number to bool.
-    bool nonzero (byte_slice b);
-
-    bool is_zero (byte_slice);
-    bool is_negative (byte_slice);
-    bool is_positive (byte_slice);
-
     template <size_t size> size_t serialized_size (const uint_little<size> &u);
 
     size_t serialized_size (const integer &i);
+
+    std::weak_ordering string_compare (byte_slice, byte_slice);
+
+    // implements OP_EQUAL
+    bool string_equal (byte_slice, byte_slice);
 
     // implements OP_INVERT
     integer bit_not (byte_slice);
@@ -90,7 +87,15 @@ namespace Gigamonkey::Bitcoin {
     // implements OP_BOOLOR
     bool bool_or (byte_slice, byte_slice);
 
-    std::weak_ordering compare (byte_slice, byte_slice);
+    // implements OP_0NOTEQUAL
+    // also how we cast a number to bool.
+    bool nonzero (byte_slice b);
+
+    bool is_zero (byte_slice);
+    bool is_negative (byte_slice);
+    bool is_positive (byte_slice);
+
+    std::weak_ordering num_compare (byte_slice, byte_slice);
 
     // implements OP_NUMEQUAL
     bool num_equal (byte_slice, byte_slice);
@@ -267,33 +272,37 @@ namespace Gigamonkey::Bitcoin {
         return data::math::bit_div_2_negative_mod (integer {x});
     }
 
-    std::weak_ordering inline compare (byte_slice a, byte_slice b) {
+    std::weak_ordering inline num_compare (byte_slice a, byte_slice b) {
         return data::arithmetic::BC::compare<data::endian::little, byte> (a, b);
     }
 
     // implements OP_NUMEQUAL
     bool inline num_equal (byte_slice a, byte_slice b) {
-        return compare (a, b) == 0;
+        return num_compare (a, b) == 0;
     }
 
     bool inline less (byte_slice a, byte_slice b) {
-        return compare (a, b) < 0;
+        return num_compare (a, b) < 0;
     }
 
     bool inline greater (byte_slice a, byte_slice b) {
-        return compare (a, b) > 0;
+        return num_compare (a, b) > 0;
     }
 
     bool inline less_equal (byte_slice a, byte_slice b) {
-        return compare (a, b) <= 0;
+        return num_compare (a, b) <= 0;
     }
 
     bool inline greater_equal (byte_slice a, byte_slice b) {
-        return compare (a, b) >= 0;
+        return num_compare (a, b) >= 0;
     }
 
     bool inline within (byte_slice b, byte_slice min, byte_slice max) {
         return greater_equal (b, min) && less (b, max);
+    }
+
+    bool inline string_equal (byte_slice a, byte_slice b) {
+        return a == b;
     }
 }
 

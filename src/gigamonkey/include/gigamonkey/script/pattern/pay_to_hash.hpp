@@ -31,7 +31,7 @@ namespace Gigamonkey {
         pay_to_hash (slice<const byte> script) : Hash {} {
             bytes hash {20};
             if (!pattern (hash).match (script)) return;
-            std::copy(hash.begin (), hash.end (), Hash.Value.begin ());
+            std::copy (hash.begin (), hash.end (), Hash.Value.begin ());
         }
         
         static bytes redeem (const slice<const byte> s) {

@@ -30,9 +30,10 @@ namespace Gigamonkey::Bitcoin {
             // the output with the same index number as the input in which this sig
             single = 3, 
 
-            // added in Bitcoin Cash, used to implement replace protection. The signature algorithm 
-            // is different when enabled. Will be depricated eventually. 
+            // if enabled, we use the original signature hash algorithm.
+            chronicle = 0x20,
 
+            // added in Bitcoin Cash, used to implement replay protection.
             fork_id = 0x40,
 
             // If enabled, inputs are not signed, meaning anybody can add new inputs to this tx.
@@ -50,9 +51,13 @@ namespace Gigamonkey::Bitcoin {
         bool inline has_fork_id (directive d) {
             return (d & fork_id) != 0;
         }
+
+        bool inline has_chronicle (directive d) {
+            return (d & chronicle) != 0;
+        }
         
         bool inline valid (directive d) {
-            return !(d & 0x3c);
+            return !(d & 0x1c);
         }
         
         // the information that contains the information that gets hashed to produce the signature, 
@@ -61,8 +66,15 @@ namespace Gigamonkey::Bitcoin {
         
     };
     
-    sighash::directive inline directive (sighash::type t, bool anyone_can_pay = false, bool fork_id = true) {
-        return sighash::directive (t + sighash::fork_id * fork_id + sighash::anyone_can_pay * anyone_can_pay);
+    sighash::directive inline directive (
+        sighash::type t,
+        bool anyone_can_pay = false,
+        bool fork_id = true,
+        bool chronicle = true) {
+        return sighash::directive (t +
+            sighash::fork_id * fork_id +
+            sighash::anyone_can_pay * anyone_can_pay +
+            sighash::chronicle * chronicle);
     }
     
     namespace sighash {
@@ -142,7 +154,9 @@ namespace Gigamonkey::Bitcoin {
         }
         
         writer inline &write_Bitcoin_Cash (writer &w, const document &doc, sighash::directive d) {
-            return sighash::has_fork_id (d) ? Amaury::write (w, doc, d) : write_original (w, doc, d & ~sighash::fork_id);
+            return sighash::has_chronicle (d) || !sighash::has_fork_id (d) ?
+                write_original (w, doc, d & ~(sighash::fork_id | sighash::chronicle)) :
+                Amaury::write (w, doc, d & ~sighash::chronicle);
         }
         
         namespace Amaury {
