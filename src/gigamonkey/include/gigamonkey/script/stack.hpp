@@ -65,8 +65,8 @@ namespace Gigamonkey::Bitcoin {
         // position should be negative number (distance from the top)
         virtual void insert (int position, slice<const byte>) = 0;
 
-        void to_alt ();
-        void from_alt ();
+        ScriptError to_alt ();
+        ScriptError from_alt ();
 
         void swap (size_t index1, size_t index2);
 
@@ -152,8 +152,6 @@ namespace Gigamonkey::Bitcoin {
     };
 
     // stack operations
-    ScriptError to_alt (two_stack &stack);
-    ScriptError from_alt (two_stack &stack);
     ScriptError swap (two_stack &stack);
     ScriptError swap_two (two_stack &stack);
     template <bool genesis> ScriptError duplicate (limited_two_stack<genesis> &stack);
@@ -228,19 +226,6 @@ namespace Gigamonkey::Bitcoin {
         cross<bool> Else;
     };
 
-    // control operations
-    template <bool genesis> ScriptError script_if (state<genesis> &);
-    template <bool genesis> ScriptError script_not_if (state<genesis> &);
-    template <bool genesis> ScriptError script_else (state<genesis> &);
-    template <bool genesis> ScriptError script_end_if (state<genesis> &);
-    template <bool genesis> ScriptError script_verify (limited_two_stack<genesis> &);
-    ScriptError script_return (limited_two_stack<true> &);
-    ScriptError script_return (limited_two_stack<false> &);
-
-    // depricated
-    ScriptError check_locktime_verify (limited_two_stack<false> &, bool require_minimal);
-    ScriptError check_sequence_verify (limited_two_stack<false> &, bool require_minimal);
-
     size_t inline two_stack::size () const {
         return Stack.size ();
     }
@@ -270,18 +255,22 @@ namespace Gigamonkey::Bitcoin {
         return Stack.at (i);
     }
 
-    void inline two_stack::from_alt () {
+    ScriptError inline two_stack::from_alt () {
+        if (alt_size () < 1) return SCRIPT_ERR_INVALID_ALTSTACK_OPERATION;
         // Moving element to other stack does not change the total size of stack.
         // Just use internal functions to move the element.
         Stack.push_back (std::move (AltStack.at (AltStack.size () - 1)));
         AltStack.pop_back ();
+        return {};
     }
 
-    void inline two_stack::to_alt () {
+    ScriptError inline two_stack::to_alt () {
+        if (size () < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
         // Moving element to other stack does not change the total size of stack.
         // Just use internal functions to move the element.
         AltStack.push_back (std::move (Stack.at (Stack.size () - 1)));
         Stack.pop_back ();
+        return {};
     }
 
     typename std::vector<integer>::const_iterator inline two_stack::begin () const {

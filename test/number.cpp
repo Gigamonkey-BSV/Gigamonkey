@@ -9,35 +9,35 @@ namespace Gigamonkey::Bitcoin {
     
     TEST (Number, Push) {
         
-        EXPECT_EQ (compile (push_data (0)), bytes {OP_0});
-        EXPECT_EQ (compile (push_data (integer (0))), bytes {OP_0});
-        EXPECT_EQ (compile (push_data (1)), bytes {OP_1});
-        EXPECT_EQ (compile (push_data (integer (1))), bytes {OP_1});
-        EXPECT_EQ (compile (push_data (-1)), bytes {OP_1NEGATE});
-        EXPECT_EQ (compile (push_data (integer (-1))), bytes {OP_1NEGATE});
-        EXPECT_EQ (compile (push_data (16)), bytes {OP_16});
-        EXPECT_EQ (compile (push_data (integer (16))), bytes {OP_16});
+        EXPECT_EQ (compile ({push_data (0)}), bytes {OP_0});
+        EXPECT_EQ (compile ({push_data (integer (0))}), bytes {OP_0});
+        EXPECT_EQ (compile ({push_data (1)}), bytes {OP_1});
+        EXPECT_EQ (compile ({push_data (integer (1))}), bytes {OP_1});
+        EXPECT_EQ (compile ({push_data (-1)}), bytes {OP_1NEGATE});
+        EXPECT_EQ (compile ({push_data (integer (-1))}), bytes {OP_1NEGATE});
+        EXPECT_EQ (compile ({push_data (16)}), bytes {OP_16});
+        EXPECT_EQ (compile ({push_data (integer (16))}), bytes {OP_16});
 
         auto test_program_1 = bytes {OP_PUSHSIZE1, 0x82};
         auto test_program_2 = bytes {OP_PUSHSIZE1, 0x11};
-        EXPECT_EQ (compile (push_data (-2)), test_program_1);
-        EXPECT_EQ (compile (push_data (integer (-2))), test_program_1);
-        EXPECT_EQ (compile (push_data (17)), test_program_2);
-        EXPECT_EQ (compile (push_data (integer (17))), test_program_2);
+        EXPECT_EQ (compile ({push_data (-2)}), test_program_1);
+        EXPECT_EQ (compile ({push_data (integer (-2))}), test_program_1);
+        EXPECT_EQ (compile ({push_data (17)}), test_program_2);
+        EXPECT_EQ (compile ({push_data (integer (17))}), test_program_2);
         
         auto test_program_3 = bytes {OP_PUSHSIZE1, 0xff};
         auto test_program_4 = bytes {OP_PUSHSIZE1, 0x7f};
-        EXPECT_EQ (compile (push_data (-127)), test_program_3);
-        EXPECT_EQ (compile (push_data (integer (-127))), test_program_3);
-        EXPECT_EQ (compile (push_data (127)), test_program_4);
-        EXPECT_EQ (compile (push_data (integer (127))), test_program_4);
+        EXPECT_EQ (compile ({push_data (-127)}), test_program_3);
+        EXPECT_EQ (compile ({push_data (integer (-127))}), test_program_3);
+        EXPECT_EQ (compile ({push_data (127)}), test_program_4);
+        EXPECT_EQ (compile ({push_data (integer (127))}), test_program_4);
         
         auto test_program_5 = bytes {OP_PUSHSIZE2, 0xff, 0x80};
         auto test_program_6 = bytes {OP_PUSHSIZE2, 0xff, 0x00};
-        EXPECT_EQ (compile (push_data (-255)), test_program_5);
-        EXPECT_EQ (compile (push_data (integer (-255))), test_program_5);
-        EXPECT_EQ (compile (push_data (255)), test_program_6);
-        EXPECT_EQ (compile (push_data (integer (255))), test_program_6);
+        EXPECT_EQ (compile ({push_data (-255)}), test_program_5);
+        EXPECT_EQ (compile ({push_data (integer (-255))}), test_program_5);
+        EXPECT_EQ (compile ({push_data (255)}), test_program_6);
+        EXPECT_EQ (compile ({push_data (integer (255))}), test_program_6);
         
     }
 

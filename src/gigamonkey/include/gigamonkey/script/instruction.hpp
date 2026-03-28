@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Bitcoin Core developers
 // Copyright (c) 2018 The Bitcoin SV developers
-// Copyright (c) 2019-2021 Daniel Krawisz
+// Copyright (c) 2019-2026 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #ifndef GIGAMONKEY_SCRIPT_INSTRUCTION
@@ -88,67 +88,6 @@ namespace Gigamonkey::Bitcoin {
     private:
         instruction (op p, const integer &d);
     };
-
-    using program = list<instruction>;
-
-    bool is_push (program);
-
-    // check flags that can be checked without running the program.
-    ScriptError pre_verify (program, flag flags);
-
-    // delete the script up to and including the last instance of OP_CODESEPARATOR.
-    // if no OP_CODESEPARATOR is found, nothing is removed.
-    // this function is needed for correctly checking and generating signatures.
-    program remove_after_last_code_separator (slice<const byte>);
-
-    // used in the original sighash algorithm to remove instances of the same
-    // signature that might have been used previously in the script.
-    program find_and_delete (program script_code, const instruction &sig);
-
-    // make the full program from the two scripts.
-    program full (const program unlock, const program lock, bool support_p2sh);
-
-    // pay to script hash only applies to scripts that were created before genesis.
-    bool is_P2SH (const program p);
-
-    bool inline valid (program p) {
-        return pre_verify (p, genesis_profile ()) == SCRIPT_ERR_OK;
-    };
-
-    bytes compile (program p);
-
-    bytes compile (instruction i);
-
-    program decompile (slice<const byte>);
-
-    // thrown if you try to decompile an invalid program.
-    struct invalid_program : exception {
-        ScriptError Error;
-        invalid_program (ScriptError err): Error {err} {
-            *this << "program is invalid: " << err;
-        }
-    };
-
-    size_t serialized_size (program p);
-
-    bool inline is_P2SH (slice<const byte> script) {
-        return script.size () == 23 && script[0] == OP_HASH160 &&
-            script[1] == 0x14 && script[22] == OP_EQUAL;
-    }
-
-    bool inline is_P2SH (const program p) {
-        return is_P2SH (compile (p));
-    }
-
-    size_t inline serialized_size (program p) {
-        if (empty (p)) return 0;
-        return serialized_size (first (p)) + serialized_size (rest (p));
-    }
-
-    bool inline is_push (program p) {
-        if (empty (p)) return true;
-        return is_push (first (p).Op) && is_push (rest (p));
-    }
     
     size_t inline serialized_size (const instruction &o) {
         return o.serialized_size ();
@@ -200,11 +139,6 @@ namespace Gigamonkey::Bitcoin {
     template <data::endian::order Order, class T, std::size_t n_bits, boost::endian::align Align>
     instruction inline push_data (const boost::endian::endian_arithmetic<Order, T, n_bits, Align> &x) {
         return push_data (slice<const byte> (x));
-    }
-
-    bool inline is_minimal_script (slice<const byte> b) {
-        for (const instruction &i : decompile (b)) if (!is_minimal_instruction (i)) return false;
-        return true;
     }
 }
 

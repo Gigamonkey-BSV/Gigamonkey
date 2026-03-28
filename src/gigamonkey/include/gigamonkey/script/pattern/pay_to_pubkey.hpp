@@ -15,7 +15,7 @@ namespace Gigamonkey {
         
         static bytes script (Bitcoin::pubkey p) {
             using namespace Bitcoin;
-            return compile (program {push_data (p), Bitcoin::OP_CHECKSIG});
+            return compile (segment {push_data (p), Bitcoin::OP_CHECKSIG});
         }
         
         Bitcoin::pubkey Pubkey;
@@ -39,7 +39,7 @@ namespace Gigamonkey {
         
         static bytes redeem (const Bitcoin::signature &s) {
             using namespace Bitcoin;
-            return compile (push_data (s));
+            return compile ({push_data (s)});
         }
 
         constexpr static uint64 redeem_expected_size () {

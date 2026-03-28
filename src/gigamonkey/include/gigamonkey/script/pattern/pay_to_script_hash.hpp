@@ -17,7 +17,7 @@ namespace Gigamonkey {
         
         static bytes script (const digest160 &a) {
             using namespace Bitcoin;
-            return compile (program {OP_HASH160, slice<const byte> (a), OP_EQUAL});
+            return compile (segment {OP_HASH160, slice<const byte> (a), OP_EQUAL});
         }
         
         digest160 Hash;
@@ -39,7 +39,7 @@ namespace Gigamonkey {
         
         static bytes redeem (slice<const byte> s) {
             using namespace Bitcoin;
-            return compile (program {} << push_data (s));
+            return compile (segment {} << push_data (s));
         }
     };
 } 

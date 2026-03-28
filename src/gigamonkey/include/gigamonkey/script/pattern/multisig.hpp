@@ -12,7 +12,7 @@ namespace Gigamonkey {
 
         static bytes script (size_t min, const list<Bitcoin::pubkey> p) {
             using namespace Bitcoin;
-            program mp {};
+            segment mp {};
             mp <<= push_data (min);
             for (const secp256k1::pubkey &pk : p) mp <<= push_data (pk);
             mp <<= push_data (p.size ());
@@ -37,7 +37,7 @@ namespace Gigamonkey {
         // size of s must be equal to Signatures.
         static bytes redeem (const list<Bitcoin::signature> s, const Bitcoin::instruction &null_push = Bitcoin::OP_0) {
             using namespace Bitcoin;
-            program ms;
+            segment ms;
             ms <<= null_push;
             for (const Bitcoin::signature &sk : s) ms <<= push_data (sk);
             return compile (ms);

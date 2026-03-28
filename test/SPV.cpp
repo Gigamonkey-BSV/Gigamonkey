@@ -205,7 +205,7 @@ namespace Gigamonkey {
         uint32_little i;
         r >> i;
 
-        bytes Script = compile (program {OP_1});
+        bytes Script = compile (segment {OP_1});
 
         return input {outpoint {d, i}, Script};
     }

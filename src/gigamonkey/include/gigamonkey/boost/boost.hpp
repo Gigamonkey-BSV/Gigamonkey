@@ -200,7 +200,7 @@ namespace Gigamonkey {
             
             bool valid () const;
             
-            Bitcoin::program program () const;
+            operator Bitcoin::segment () const;
             
             Bitcoin::script write () const;
             
@@ -602,8 +602,9 @@ namespace Gigamonkey {
                 (ExtraNonce2.size () == 8 || (bool (GeneralPurposeBits) && ExtraNonce2.size () <= 32));
         }
         
+        // TODO what is this??
         Bitcoin::script inline input_script::write () const {
-            return Bitcoin::compile (program ());
+            return Bitcoin::compile (Bitcoin::segment (*this));
         }
         
         size_t inline input_script::serialized_size () const {
