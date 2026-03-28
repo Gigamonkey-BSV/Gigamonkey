@@ -65,7 +65,16 @@ namespace Gigamonkey::Bitcoin {
     sighash::document change_value (const sighash::document &doc) {
         return {doc.Transaction, doc.InputIndex, doc.RedeemedValue + satoshi {1}, doc.ScriptCode};
     }
+
+    sighash::directive add_chronicle (sighash::directive d) {
+        return d | sighash::chronicle;
+    }
+
+    bool is_original_sighash_algorithm (sighash::directive d) {
+        return (d & sighash::chronicle) || !(d & sighash::fork_id);
+    }
     
+    // TODO test that the chronicle signature is the same as the original algorithm.
     TEST (Signature, Sighash) {
         index input_index = 0;
         satoshi redeemed_value {0xfeee};
@@ -91,12 +100,12 @@ namespace Gigamonkey::Bitcoin {
         sighash::document doc_added_input {txi_added_input, input_index, redeemed_value, scriptx};
         
         for (sighash::directive directive : list<sighash::directive> {
-            directive (sighash::all, false, false),
-            directive (sighash::all, true, true),
-            directive (sighash::none, true, false),
-            directive (sighash::none, true, true),
-            directive (sighash::single, false, false),
-            directive (sighash::single, false, true)}) {
+            directive (sighash::all, false, false, false),
+            directive (sighash::all, true, true, false),
+            directive (sighash::none, true, false, false),
+            directive (sighash::none, true, true, false),
+            directive (sighash::single, false, false, false),
+            directive (sighash::single, false, true, false)}) {
             
             auto written = sighash::write (doc, directive);
             
@@ -126,17 +135,26 @@ namespace Gigamonkey::Bitcoin {
                 EXPECT_EQ (written, added_input);
             else EXPECT_NE (written, added_input) << "expect \n\t" << written << " to not equal \n\t" << added_input;
             
-            EXPECT_EQ (written, sighash::write (doc, directive));
             EXPECT_EQ (mutate_same_output, sighash::write (doc_mutate_same_output, directive));
             EXPECT_EQ (mutate_different_output, sighash::write (doc_mutate_different_output, directive));
             EXPECT_EQ (changed_value, sighash::write (doc_changed_value, directive));
             EXPECT_EQ (added_input, sighash::write (doc_added_input, directive));
 
-            EXPECT_EQ (Hash256 (written), signature::hash (doc, directive));
+            auto hashed = signature::hash (doc, directive);
+
+            EXPECT_EQ (Hash256 (written), hashed);
             EXPECT_EQ (Hash256 (mutate_same_output), signature::hash (doc_mutate_same_output, directive));
             EXPECT_EQ (Hash256 (mutate_different_output), signature::hash (doc_mutate_different_output, directive));
             EXPECT_EQ (Hash256 (changed_value), signature::hash(doc_changed_value, directive));
             EXPECT_EQ (Hash256 (added_input), signature::hash (doc_added_input, directive));
+
+            sighash::directive chronicle_added = add_chronicle (directive);
+
+            if (is_original_sighash_algorithm (directive)) {
+                EXPECT_EQ (signature::hash (doc, chronicle_added), hashed);
+            } else {
+                EXPECT_NE (signature::hash (doc, chronicle_added), hashed);
+            }
             
         }
         
@@ -164,16 +182,6 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_TRUE (find_and_delete (t1_3, push_sig1) == t1);
         EXPECT_TRUE (find_and_delete (t1_4, push_sig1) == t1);
         
-    }
-
-    TEST (Signature, Flags) {
-        // compressed pubkey
-        // strict encoding
-        // invalid sighash
-        // fork id
-        // DER
-        // low S
-        // null fail
     }
 
 }

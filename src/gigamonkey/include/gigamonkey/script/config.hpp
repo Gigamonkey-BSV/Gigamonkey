@@ -185,18 +185,52 @@ namespace Gigamonkey::Bitcoin {
      *   * flags
      *   * script limits
      *
-     * The script version is a Bitcoin integer that is
-     * pushed to the stack when OP_VER is called.
+     * The script version is a Bitcoin integer that is pushed to the
+     * stack when OP_VER is called.
      *
-     * flags have to do with updates to the scripting engine
-     * that were added as Bitcoin was corrupted. Thus,
-     * specific configurations of flags have to do with how
-     * the engine was expected to work at different times.
+     * flags have to do with updates to the scripting engine that were
+     * added as Bitcoin was corrupted. Thus, specific configurations of
+     * flags have to do with how the engine was expected to work at
+     * different times.
      *
-     * script limits were fixed numbers considered to be
-     * part of the protocol in BTC. In the genesis update
-     * these were changed to adjustable parameters with
-     * maximum values that are much bigger than before.
+     * For flags, we define a profile in terms of two parameters:
+     *   * utxo before or after genesis
+     *   * version 1 or version 2
+     * The genesis update has to do with many things, including pay to
+     * script hash, big numbers, OP_RETURN behavior, and script limits.
+     * Version 1 versus version 2 has to do with malleability checks.
+     *
+     * Script limits were fixed numbers considered to be part of the
+     * protocol in BTC. In the genesis update these were changed to
+     * adjustable parameters with maximum values that are much bigger
+     * than before.
+     *
+     * The script_config can be initialized with parameters for
+     * version, flags, and script_limits. There are also simplified
+     * parameters which load standard profiles.
+     *
+     * Default configuration; version = 1 and use consensus parameters.
+     *   script_config {}
+     *
+     * Infer flags from version. Assume after genesis
+     * and use consensus parameters.
+     *   script_config {version number};
+     *
+     * Assume version 1, use consensus parameters
+     *   script_config {bool after_genesis};
+     *
+     * Use consensus parameters.
+     *   script_config {version number, bool utxo_after_genesis};
+     *
+     * Use specific flags and use consensus parameters
+     *   script_config {version number, flags};
+     *
+     * Use version 1
+     *   script_config {bool after_genesis, bool consensus};
+     *   script_config {flags bool consensus};
+     *
+     *   script_config {version number, bool after_genesis, bool consesus};
+     *   script_config {version number, bool after_genesis, bool consesus};
      *
      * script_config can be constructed with these three
      * parameters with defauts that provide the values
@@ -232,6 +266,11 @@ namespace Gigamonkey::Bitcoin {
             bool consensus = false);
 
         script_config (
+            int version,
+            epoch update = epoch::genesis,
+            bool consensus = false): script_config {extend (integer (version), 4), update, consensus} {}
+
+        script_config (
             epoch update,
             bool consensus = false): script_config {default_version (), update, consensus} {}
 
@@ -239,6 +278,11 @@ namespace Gigamonkey::Bitcoin {
             const integer &version,
             flag flags,
             bool consensus = false);
+
+        script_config (
+            int version,
+            flag flags,
+            bool consensus = false) : script_config {extend (integer (version), 4), flags, consensus} {}
 
         script_config (
             flag flags,
@@ -252,6 +296,21 @@ namespace Gigamonkey::Bitcoin {
             uint64 max_stack_memory_usage,
             uint64 max_script_num_length,
             uint64 max_script_size);
+
+        script_config (
+            int version,
+            flag flags,
+            uint64 max_ops_per_script,
+            uint64 max_pubkeys_per_multisig,
+            uint64 max_stack_memory_usage,
+            uint64 max_script_num_length,
+            uint64 max_script_size): script_config {
+            extend (integer (version), 4), flags,
+            max_ops_per_script,
+            max_pubkeys_per_multisig,
+            max_stack_memory_usage,
+            max_script_num_length,
+            max_script_size} {}
 
         script_config (
             flag flags,
@@ -275,6 +334,15 @@ namespace Gigamonkey::Bitcoin {
         constexpr bool check_sequence () const;
 
         bool disabled (op) const;
+
+        bool operator == (const script_config &x) const {
+            return Bitcoin::string_equal (Version, x.Version) && Flags == x.Flags &&
+                MaxOpsPerScript == x.MaxOpsPerScript &&
+                MaxPubKeysPerMultiSig == x.MaxPubKeysPerMultiSig &&
+                MaxStackMemoryUsage == x.MaxStackMemoryUsage &&
+                MaxScriptNumLength == x.MaxScriptNumLength &&
+                MaxScriptSize == x.MaxScriptSize;
+        }
 
     };
 
@@ -407,7 +475,9 @@ namespace Gigamonkey::Bitcoin {
     }
 
     constexpr flag inline pre_genesis_profile () {
-        return mandatory_pre_genesis () | optional_pre_genesis () | flag::REQUIRE_SIGHASH_FORKID;
+        return mandatory_pre_genesis () | optional_pre_genesis () |
+            flag::REQUIRE_SIGHASH_FORKID | flag::VERIFY_MINIMALIF |
+            flag::VERIFY_SIGPUSHONLY | flag::VERIFY_COMPRESSED_PUBKEYTYPE;
     }
 
     // genesis turns off P2SH, OP_CHECKSEQUENCEVERIFY, and OP_CHECKLOCKTIMEVERIFY and turns on
@@ -417,12 +487,14 @@ namespace Gigamonkey::Bitcoin {
             flag::VERIFY_DERSIG | flag::VERIFY_MINIMALDATA | flag::VERIFY_NULLDUMMY |
             flag::VERIFY_DISCOURAGE_UPGRADABLE_NOPS | flag::VERIFY_CLEANSTACK |
             flag::SAFE_RETURN_DATA | flag::ENABLE_GENESIS_OPCODES |
-            flag::ENABLE_GENESIS_STACK_LIMITS | flag::ENABLE_CUSTOM_SCRIPT_LIMITS | flag::VERIFY_SIGPUSHONLY;
+            flag::ENABLE_GENESIS_STACK_LIMITS | flag::ENABLE_CUSTOM_SCRIPT_LIMITS |
+            flag::VERIFY_SIGPUSHONLY | flag::VERIFY_MINIMALIF | flag::VERIFY_COMPRESSED_PUBKEYTYPE;
     }
 
     constexpr flag inline disabled_in_chronicle () {
         return flag::VERIFY_LOW_S | flag::VERIFY_NULLFAIL | flag::VERIFY_MINIMALDATA |
-            flag::VERIFY_NULLDUMMY | flag::VERIFY_CLEANSTACK | flag::VERIFY_SIGPUSHONLY;
+            flag::VERIFY_NULLDUMMY | flag::VERIFY_CLEANSTACK | flag::VERIFY_SIGPUSHONLY |
+            flag::VERIFY_MINIMALIF | flag::VERIFY_COMPRESSED_PUBKEYTYPE;
     }
 
     constexpr flag inline profile (epoch update, int32 tx_version = 1) {

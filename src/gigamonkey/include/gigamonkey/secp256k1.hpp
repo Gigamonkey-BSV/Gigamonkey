@@ -204,7 +204,7 @@ namespace Gigamonkey::secp256k1 {
         return p.valid ();
     }
     
-    bool inline verify (const pubkey &p, const digest& d, const signature& s) {
+    bool inline verify (const pubkey &p, const digest &d, const signature &s) {
         return p.verify (d, s);
     }
     

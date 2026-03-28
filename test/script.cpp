@@ -60,6 +60,73 @@ namespace Gigamonkey::Bitcoin {
         test_program (bytes {OP_FALSE, OP_RETURN, OP_PUSHSIZE1}, false);
     }
 
+    TEST (Script, Profile) {
+        script_config default_profile {};
+        script_config v1_after_genesis {1, epoch::genesis};
+        script_config v2_after_genesis {2, epoch::genesis};
+        script_config v1_before_genesis {1, epoch::exodus};
+        script_config v2_before_genesis {2, epoch::exodus};
+
+        EXPECT_EQ (default_profile, v1_after_genesis);
+
+        // malleability checks should be turned on in version 1, off in version 2.
+        EXPECT_TRUE (verify_signature_low_S (v1_before_genesis.Flags));
+        EXPECT_TRUE (verify_null_dummy (v1_before_genesis.Flags));
+        EXPECT_TRUE (verify_unlock_push_only (v1_before_genesis.Flags));
+        EXPECT_TRUE (verify_minimal_push (v1_before_genesis.Flags));
+        EXPECT_TRUE (verify_clean_stack (v1_before_genesis.Flags));
+        EXPECT_TRUE (verify_minimal_if (v1_before_genesis.Flags));
+        EXPECT_TRUE (verify_null_fail (v1_before_genesis.Flags));
+        EXPECT_TRUE (verify_compressed_pubkey (v1_before_genesis.Flags));
+
+        EXPECT_FALSE (verify_signature_low_S (v2_before_genesis.Flags));
+        EXPECT_FALSE (verify_null_dummy (v2_before_genesis.Flags));
+        EXPECT_FALSE (verify_unlock_push_only (v2_before_genesis.Flags));
+        EXPECT_FALSE (verify_minimal_push (v2_before_genesis.Flags));
+        EXPECT_FALSE (verify_clean_stack (v2_before_genesis.Flags));
+        EXPECT_FALSE (verify_minimal_if (v2_before_genesis.Flags));
+        EXPECT_FALSE (verify_null_fail (v2_before_genesis.Flags));
+        EXPECT_FALSE (verify_compressed_pubkey (v2_before_genesis.Flags));
+
+        EXPECT_TRUE (verify_signature_low_S (v1_after_genesis.Flags));
+        EXPECT_TRUE (verify_null_dummy (v1_after_genesis.Flags));
+        EXPECT_TRUE (verify_unlock_push_only (v1_after_genesis.Flags));
+        EXPECT_TRUE (verify_minimal_push (v1_after_genesis.Flags));
+        EXPECT_TRUE (verify_clean_stack (v1_after_genesis.Flags));
+        EXPECT_TRUE (verify_minimal_if (v1_after_genesis.Flags));
+        EXPECT_TRUE (verify_null_fail (v1_after_genesis.Flags));
+        EXPECT_TRUE (verify_compressed_pubkey (v1_after_genesis.Flags));
+
+        EXPECT_FALSE (verify_signature_low_S (v2_after_genesis.Flags));
+        EXPECT_FALSE (verify_null_dummy (v2_after_genesis.Flags));
+        EXPECT_FALSE (verify_unlock_push_only (v2_after_genesis.Flags));
+        EXPECT_FALSE (verify_minimal_push (v2_after_genesis.Flags));
+        EXPECT_FALSE (verify_clean_stack (v2_after_genesis.Flags));
+        EXPECT_FALSE (verify_minimal_if (v2_after_genesis.Flags));
+        EXPECT_FALSE (verify_null_fail (v2_after_genesis.Flags));
+        EXPECT_FALSE (verify_compressed_pubkey (v2_after_genesis.Flags));
+
+        // before genesis p2sh should be enabled.
+        EXPECT_TRUE (v1_before_genesis.verify_P2SH ());
+        EXPECT_TRUE (v2_before_genesis.verify_P2SH ());
+
+        EXPECT_FALSE (v1_after_genesis.verify_P2SH ());
+        EXPECT_FALSE (v2_after_genesis.verify_P2SH ());
+
+        EXPECT_FALSE (custom_script_limits (v1_before_genesis.Flags));
+        EXPECT_FALSE (custom_script_limits (v2_before_genesis.Flags));
+
+        EXPECT_TRUE (custom_script_limits (v1_after_genesis.Flags));
+        EXPECT_TRUE (custom_script_limits (v2_after_genesis.Flags));
+
+        EXPECT_FALSE (safe_return_data (v1_before_genesis.Flags));
+        EXPECT_FALSE (safe_return_data (v2_before_genesis.Flags));
+
+        EXPECT_TRUE (safe_return_data (v1_after_genesis.Flags));
+        EXPECT_TRUE (safe_return_data (v2_after_genesis.Flags));
+
+    }
+
     void success (result r, string explanation = "") {
         EXPECT_TRUE (r.valid () && bool (r)) << r << "; " << explanation;
     }
@@ -1163,6 +1230,71 @@ namespace Gigamonkey::Bitcoin {
     TEST (Script, TestChecksig) {
 
     }*/
+
+    struct sighash_test {
+        sighash::directive Directive;
+
+        bool ValidForkIDDisabled;
+        bool ValidForkIDRequired;
+    };
+
+    TEST (Script, Sighash) {
+
+        secp256k1::secret x {3023332};
+        secp256k1::pubkey p = x.to_public ();
+
+        bytes lock = pay_to_pubkey (Bitcoin::pubkey {p}).script ();
+        bytes lockm = multisig (1, {p}).script ();
+
+        size_t input_index = 0;
+        satoshi redeemed_value {0xfeee};
+
+        sighash::document doc {test_txi, 0, redeemed_value, decompile (lock)};
+        sighash::document docm {test_txi, 0, redeemed_value, decompile (lockm)};
+
+        redemption_document rd {test_txi, 0, redeemed_value};
+
+        script_config no_fork_id {flag {}};
+        script_config fork_id_enabled {flag::ENABLE_SIGHASH_FORKID};
+        script_config fork_id_required {flag::ENABLE_SIGHASH_FORKID | flag::REQUIRE_SIGHASH_FORKID};
+
+        for (const auto &test: list<sighash_test> {
+            {directive (sighash::all, false, false, false), true,  false},
+            {directive (sighash::all, false, true,  false), false, true},
+            {directive (sighash::all, false, false, true),  true,  false},
+            {directive (sighash::all, false, true,  true),  false, true}}) {
+
+            bytes unlock = pay_to_pubkey::redeem (signature::sign (x, test.Directive, doc));
+            bytes unlockm = multisig::redeem ({signature::sign (x, test.Directive, docm)});
+
+            auto r = evaluate (unlock, lock, rd, no_fork_id);
+            auto rm = evaluate (unlockm, lockm, rd, no_fork_id);
+
+            if (test.ValidForkIDDisabled) {
+                success (r, "test CHECKSIG; forkid disabled -- success expected");
+                success (rm, "test CHECKMULTISIG; forkid disabled -- success expected");
+            } else {
+                error (r, "test CHECKSIG; forkid disabled -- error expected");
+                error (rm, "test CHECKMULTISIG; forkid disabled -- error expected");
+            }
+
+            success (evaluate (unlock, lock, rd, fork_id_enabled), "test CHECKSIG; forkid enabled -- success expected");
+            success (evaluate (unlockm, lockm, rd, fork_id_enabled), "test CHECKMULTISIG; forkid enabled -- success expected");
+
+            r = evaluate (unlock, lock, rd, fork_id_required);
+            rm = evaluate (unlockm, lockm, rd, fork_id_required);
+
+            if (test.ValidForkIDRequired) {
+                success (r, "test CHECKSIG; forkid required -- success expected");
+                success (rm, "test CHECKMULTISIG; forkid required -- success expected");
+            } else {
+                error (r, "test CHECKSIG; forkid required -- error expected");
+                error (rm, "test CHECKMULTISIG; forkid required -- error expected");
+            }
+
+        }
+
+    }
 
     TEST (Script, MultisigNULLDUMMY) {
 

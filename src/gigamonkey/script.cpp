@@ -12,6 +12,8 @@
 namespace Gigamonkey::Bitcoin {
     result verify_signature (slice<const byte> sig, slice<const byte> pub, const sighash::document &doc, flag P) {
 
+        if (!secp256k1::pubkey::valid (pub)) return SCRIPT_ERR_PUBKEYTYPE;
+
         if (verify_compressed_pubkey (P))
             if (!secp256k1::pubkey::compressed (pub)) return SCRIPT_ERR_NONCOMPRESSED_PUBKEY;
 
