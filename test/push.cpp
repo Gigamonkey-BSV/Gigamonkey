@@ -13,7 +13,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
         bool valid () const {
             maybe<bytes> b = encoding::hex::read (Bytes);
             if (!bool (b)) return false;
-            program p = decompile (*b);
+            segment p = decompile (*b);
             if (p.size () != 1) return false;
             instruction i = p.first ();
             if (!i.valid ()) return false;
@@ -43,7 +43,7 @@ namespace Gigamonkey::Bitcoin::interpreter {
                 "00000000000000000000000000000000000000000000000000000000"}}) {
             maybe<bytes> b = encoding::hex::read (x.Bytes);
             ASSERT_TRUE (bool (b));
-            program p = decompile (*b);
+            segment p = decompile (*b);
             ASSERT_TRUE (p.size () == 1) << "decompiled " << x.Bytes << " as " << p << "; size is " << p.size ();
             instruction i = p.first ();
             ASSERT_TRUE (i.verify ({}) == SCRIPT_ERR_OK) << x.Bytes << " failed to verify";
@@ -60,29 +60,29 @@ namespace Gigamonkey::Bitcoin::interpreter {
         
         test_size (instruction {OP_0}.serialized_size (), 1, "0:A");
         test_size (instruction {bytes {}}.serialized_size (), 1, "0:B");
-        test_size (compile (instruction {OP_0}).size (), 1, "0:C");
+        test_size (compile ({instruction {OP_0}}).size (), 1, "0:C");
         test_size (instruction {bytes {0x00}}.serialized_size (), 2, "0:B");
         
         test_size (instruction {OP_1NEGATE}.serialized_size (), 1, "-1:A");
         test_size (instruction {bytes {0x81}}.serialized_size (), 1, "-1:B");
-        test_size (compile (instruction {OP_1NEGATE}).size (), 1, "-1:C");
+        test_size (compile ({instruction {OP_1NEGATE}}).size (), 1, "-1:C");
         
         test_size (instruction {OP_1}.serialized_size (), 1, "1:A");
         test_size (instruction {bytes {0x01}}.serialized_size (), 1, "1:B");
-        test_size (compile (instruction {OP_1}).size (), 1, "1:C");
+        test_size (compile ({instruction {OP_1}}).size (), 1, "1:C");
         
         test_size (instruction {OP_16}.serialized_size (), 1, "16:A");
         test_size (instruction {bytes {0x10}}.serialized_size (), 1, "16:B");
-        test_size (compile (instruction {OP_16}).size (), 1, "16:C");
+        test_size (compile ({instruction {OP_16}}).size (), 1, "16:C");
         
         test_size (instruction {bytes {0x11}}.serialized_size (), 2, "17:A");
-        test_size (compile (instruction {bytes {0x11}}).size (), 2, "17:B");
+        test_size (compile ({instruction {bytes {0x11}}}).size (), 2, "17:B");
         
         test_size (instruction {bytes {0x82}}.serialized_size (), 2, "-2:A");
-        test_size (compile (instruction {bytes {0x82}}).size (), 2, "-2:B");
+        test_size (compile ({instruction {bytes {0x82}}}).size (), 2, "-2:B");
         
         test_size (instruction {bytes {0x11, 0x00}}.serialized_size (), 3, "17,0:A");
-        test_size (compile (instruction {bytes {0x11, 0x00}}).size (), 3, "17,0:B");
+        test_size (compile ({instruction {bytes {0x11, 0x00}}}).size (), 3, "17,0:B");
         
     }
 

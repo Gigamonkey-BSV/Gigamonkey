@@ -58,7 +58,7 @@ namespace Gigamonkey::Bitcoin {
                 return *this;
             }
             
-            script_writer &operator << (program p) {
+            script_writer &operator << (segment p) {
                 return p.size () == 0 ? *this : (*this << first (p) << rest (p));
             }
             
@@ -193,7 +193,7 @@ namespace Gigamonkey::Bitcoin {
     
     string ASM (slice<const byte> b) {
         std::stringstream ss;
-        program p = decompile (b);
+        segment p = decompile (b);
 
         if (p.size () != 0) {
             auto i = p.begin ();
@@ -299,7 +299,7 @@ namespace Gigamonkey::Bitcoin {
         return write_op_code (o, i.Op) << "{" << encoding::hex::write (i.Data) << "}";
     }
     
-    bytes compile (program p) {
+    bytes compile (segment p) {
         bytes compiled (serialized_size (p));
         it_wtr b {compiled.begin (), compiled.end ()};
         script_writer {b} << p;
@@ -313,9 +313,9 @@ namespace Gigamonkey::Bitcoin {
         return compiled;
     }
     
-    program decompile (slice<const byte> b) {
+    segment decompile (slice<const byte> b) {
         
-        program p {};
+        list<instruction> p {};
         script_reader r {it_rdr {b.data (), b.data () + b.size ()}};
         
         stack<op> Control;
@@ -345,9 +345,9 @@ namespace Gigamonkey::Bitcoin {
         
         return p;
     }
-    
+
     // TODO need to take into account OP_VER etc
-    ScriptError valid_program (program p, stack<op> x, flag flags) {
+    ScriptError valid_program (segment p, flag flags, stack<op> x = {}) {
         
         if (empty (p)) {
             if (empty (x)) return SCRIPT_ERR_OK;
@@ -386,38 +386,42 @@ namespace Gigamonkey::Bitcoin {
             if (prev != OP_IF && prev != OP_NOTIF) return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
         } else if (o == OP_ELSE || o == OP_IF || o == OP_NOTIF) x = x >> o;
         
-        return valid_program (rest (p), x, flags);
+        return valid_program (rest (p), flags, x);
     }
 
-    ScriptError pre_verify (program p, flag flags) {
-        if (empty (p)) return SCRIPT_ERR_OK;
+    ScriptError pre_verify (program x, flag flags) {
+        // an empty program isn't really ok, so why does this line say it is?
+        if (empty (x)) return SCRIPT_ERR_OK;
 
         // first we check for OP_RETURN data.
-        if (safe_return_data (flags)) {
-            if (p.size () == 2 && first (p).Op == OP_FALSE && data::valid (first (p)) && first (rest (p)).Op == OP_RETURN)
-                return SCRIPT_ERR_OK;
-        } else if (p.size () == 1 && first (p).Op == OP_RETURN) return SCRIPT_ERR_OK;
+        if (x.size () == 1) {
+            auto p = first (x);
+            if (safe_return_data (flags)) {
+                if (p.size () == 2 && first (p).Op == OP_FALSE && data::valid (first (p)) && first (rest (p)).Op == OP_RETURN)
+                    return SCRIPT_ERR_OK;
+            } else if (p.size () == 1 && first (p).Op == OP_RETURN) return SCRIPT_ERR_OK;
+        }
 
-        return valid_program (p, {}, flags);
+        return valid_program (flatten (x), flags);
     }
 
     // note: pay to script hash only applies to scripts that were created before genesis.
-    program full (const program unlock, const program lock, bool support_p2sh) {
+    program full (const segment unlock, const segment lock, bool support_p2sh) {
         if (!support_p2sh || !is_P2SH (lock) || empty (unlock))
             // TODO the code separator should only go here if
             // there is no code separator in the unlocking script.
-            return (unlock << OP_CODESEPARATOR) + lock;
+            return {unlock << instruction {OP_CODESEPARATOR}, lock};
 
         auto reversed = reverse (unlock);
         const instruction &push_redeem = first (reversed);
 
         // For P2SH scripts. This is a depricated special case that is supported for backwards compatability.
-        return (reverse (rest (reversed)) << OP_CODESEPARATOR) +
-            (decompile (push_redeem.push_data ()) << OP_VERIFY << push_redeem) + lock;
+        return {reverse (rest (reversed)) << OP_CODESEPARATOR,
+            decompile (push_redeem.push_data ()) << OP_VERIFY << push_redeem, lock};
     }
 
-    program find_and_delete (program p, const instruction &sig) {
-        program q;
+    segment find_and_delete (segment p, const instruction &sig) {
+        list<instruction> q;
         for (const instruction &i : p) if (i != sig) q <<= i;
         return q;
     }

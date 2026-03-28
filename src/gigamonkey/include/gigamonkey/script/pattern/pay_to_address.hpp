@@ -16,7 +16,7 @@ namespace Gigamonkey {
         
         static bytes script (const digest160 &a) {
             using namespace Bitcoin;
-            return compile (program {OP_DUP, OP_HASH160, slice<const byte> (a), OP_EQUALVERIFY, OP_CHECKSIG});
+            return compile (segment {OP_DUP, OP_HASH160, slice<const byte> (a), OP_EQUALVERIFY, OP_CHECKSIG});
         }
         
         digest160 Address;
@@ -38,7 +38,7 @@ namespace Gigamonkey {
         
         static bytes redeem (const Bitcoin::signature &s, const Bitcoin::pubkey &p) {
             using namespace Bitcoin;
-            return compile (program {} << push_data (s) << push_data (p));
+            return compile (segment {} << push_data (s) << push_data (p));
         }
 
         static uint64 redeem_expected_size (bool compressed_pubkey = true) {

@@ -21,7 +21,7 @@ namespace Gigamonkey::Bitcoin {
 
     void test_program (const bytes &b, bool expected, string explanation = "") {
         if (expected) {
-            program p;
+            segment p;
             EXPECT_NO_THROW (p = decompile (b)) << explanation;
             EXPECT_EQ (compile (p), b);
         } else {
@@ -491,13 +491,16 @@ namespace Gigamonkey::Bitcoin {
 
     TEST (Script, AltStack) {
         // OP_TOALTSTACK
-        failure (evaluate (bytes {OP_1}, bytes {OP_TOALTSTACK}, flag {}), "alt stack 1");
+        error (evaluate (bytes {}, bytes {OP_TOALTSTACK}, flag {}), "alt stack 0");
+        error (evaluate (bytes {}, bytes {OP_FROMALTSTACK}, flag {}), "alt stack 1");
+        // OP_TOALTSTACK
+        failure (evaluate (bytes {OP_1}, bytes {OP_TOALTSTACK}, flag {}), "alt stack 2");
         // OP_FROMALTSTACK
-        success (evaluate (bytes {OP_1}, bytes {OP_TOALTSTACK, OP_FROMALTSTACK}, flag {}), "alt stack 2");
+        success (evaluate (bytes {OP_1}, bytes {OP_TOALTSTACK, OP_FROMALTSTACK}, flag {}), "alt stack 3");
     }
 
     template <typename X>
-    program stack_equal (list<X> stack) {
+    segment stack_equal (list<X> stack) {
         list<instruction> test_program;
         for (const X &b : reverse (stack)) {
             test_program <<= push_data (b);
@@ -512,7 +515,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     template <typename X>
-    program stack_initialize (list<X> stack) {
+    segment stack_initialize (list<X> stack) {
         list<instruction> test_program;
         for (const X &b : stack) test_program <<= push_data (b);
         return test_program;
@@ -586,8 +589,8 @@ namespace Gigamonkey::Bitcoin {
     }
 
     void test_hash_op (op Op, slice<const byte> input, slice<const byte> result, bool expected = true) {
-        if (expected) success (evaluate (compile (push_data (input)), compile (program {Op, push_data (result), OP_EQUAL}), {}));
-        else failure (evaluate (compile (push_data (input)), compile (program {Op, push_data (result), OP_EQUAL}), {}));
+        if (expected) success (evaluate (compile ({push_data (input)}), compile (segment {Op, push_data (result), OP_EQUAL}), {}));
+        else failure (evaluate (compile ({push_data (input)}), compile (segment {Op, push_data (result), OP_EQUAL}), {}));
     }
 
     TEST (Script, HashOps) {
@@ -1191,17 +1194,17 @@ namespace Gigamonkey::Bitcoin {
         secp256k1::pubkey p = x.to_public ();
 
         // the locking script to succeed on a failed signature verification.
-        bytes lock = compile (program {push_data (p), Bitcoin::OP_CHECKSIG, Bitcoin::OP_NOT});
+        bytes lock = compile (segment {push_data (p), Bitcoin::OP_CHECKSIG, Bitcoin::OP_NOT});
 
         // locking script for multisig
-        bytes lockm = compile (program {} << OP_1 << push_data (p) << OP_1 << OP_CHECKMULTISIG << OP_NOT);
+        bytes lockm = compile (segment {} << OP_1 << push_data (p) << OP_1 << OP_CHECKMULTISIG << OP_NOT);
 
-        bytes unlock_null = compile (program {OP_0});
-        bytes unlock_not_null = compile (program {OP_1});
+        bytes unlock_null = compile (segment {OP_0});
+        bytes unlock_not_null = compile (segment {OP_1});
 
         // two versions of multisig unlocking script.
-        bytes unlockm_null = compile (program {OP_0, OP_0});
-        bytes unlockm_not_null = compile (program {OP_0, OP_1});
+        bytes unlockm_null = compile (segment {OP_0, OP_0});
+        bytes unlockm_not_null = compile (segment {OP_0, OP_1});
 
         // not null scripts should work only when the flag is turned on, null scripts work in either case.
         script_config null_fail {flag::VERIFY_NULLFAIL | flag::VERIFY_STRICTENC};

@@ -54,7 +54,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     bool input::valid () const {
-        return decompile (Script) != program {};
+        return decompile (Script) != segment {};
     }
     
     bool output::valid () const {

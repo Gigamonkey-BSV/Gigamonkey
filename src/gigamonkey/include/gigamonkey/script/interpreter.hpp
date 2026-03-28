@@ -5,6 +5,7 @@
 #define GIGAMONKEY_SCRIPT_INTERPRETER
 
 #include <gigamonkey/script/machine.hpp>
+#include <gigamonkey/script/program.hpp>
 
 namespace Gigamonkey::Bitcoin {
 
@@ -12,7 +13,8 @@ namespace Gigamonkey::Bitcoin {
     struct interpreter {
 
         machine Machine;
-        bytes Script;
+        execution_image Program;
+        cross<size_t> Stages;
         program_counter Counter;
 
         // If the redemption document is not provided, all signature operations will succeed.
@@ -23,7 +25,7 @@ namespace Gigamonkey::Bitcoin {
         void step ();
         result run ();
 
-        program unread () const;
+        segment unread () const;
 
     };
 
@@ -39,8 +41,8 @@ namespace Gigamonkey::Bitcoin {
         return interpreter (unlock, lock, conf).run ();
     }
 
-    program inline interpreter::unread () const {
-        return decompile (byte_slice {Counter.Script}.drop (Counter.Counter));
+    segment inline interpreter::unread () const {
+        return decompile (byte_slice {Program.Script}.drop (Counter.Index));
     }
 
 }

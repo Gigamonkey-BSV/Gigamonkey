@@ -47,7 +47,7 @@ namespace Gigamonkey::Bitcoin {
         return false;
     }
 
-    program remove_after_last_code_separator (slice<const byte> b) {
+    segment remove_after_last_code_separator (slice<const byte> b) {
         program_counter counter {b};
         while (counter.Next.size () > 0) counter = counter.next ();
         return counter.to_last_code_separator ();

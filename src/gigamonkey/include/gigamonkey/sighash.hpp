@@ -6,7 +6,7 @@
 
 #include <gigamonkey/hash.hpp>
 #include <gigamonkey/incomplete.hpp>
-#include <gigamonkey/script/instruction.hpp>
+#include <gigamonkey/script/program.hpp>
 #include <data/tools/lazy_writer.hpp>
 
 namespace Gigamonkey::Bitcoin {
@@ -95,13 +95,13 @@ namespace Gigamonkey::Bitcoin {
             // the script code contains the previous output script with the 
             // latest instance of OP_CODESEPARATOR before the signature operation 
             // being evaluated and everything earlier removed.
-            program ScriptCode;
+            segment ScriptCode;
             
             bool valid () const {
                 return RedeemedValue >= 0 && InputIndex < Transaction.Inputs.size ();
             }
             
-            document (incomplete::transaction &tx, index i, satoshi r, program script_code) :
+            document (incomplete::transaction &tx, index i, satoshi r, segment script_code) :
                 Transaction {tx}, InputIndex {i}, RedeemedValue {r}, ScriptCode {script_code} {}
         };
         

@@ -74,7 +74,11 @@ namespace Gigamonkey::Bitcoin {
         return (d & sighash::chronicle) || !(d & sighash::fork_id);
     }
     
-    // TODO test that the chronicle signature is the same as the original algorithm.
+    // 0x20 is always available.
+    // if flag FORKID is not set, then 0x20 does nothing.
+    // if flag FORKID is set, then use of 0x40 is also available.
+    // if REQUIRE_FORKID is set, then the only way to get the
+    // original signature algorithm is to use 0x20.
     TEST (Signature, Sighash) {
         index input_index = 0;
         satoshi redeemed_value {0xfeee};
@@ -171,11 +175,11 @@ namespace Gigamonkey::Bitcoin {
         auto push_sig1 = instruction::push (sig1);
         auto push_sig2 = instruction::push (sig2);
         
-        auto t1_1 = program {OP_DUP, push_sig1, OP_ROLL};
-        auto t1_2 = program {push_sig1, OP_DUP, OP_ROLL};
-        auto t1_3 = program {OP_DUP, OP_ROLL, push_sig1};
-        auto t1_4 = program {push_sig1, OP_DUP, OP_ROLL, push_sig1};
-        auto t1 = program {OP_DUP, OP_ROLL};
+        auto t1_1 = segment {OP_DUP, push_sig1, OP_ROLL};
+        auto t1_2 = segment {push_sig1, OP_DUP, OP_ROLL};
+        auto t1_3 = segment {OP_DUP, OP_ROLL, push_sig1};
+        auto t1_4 = segment {push_sig1, OP_DUP, OP_ROLL, push_sig1};
+        auto t1 = segment {OP_DUP, OP_ROLL};
         
         EXPECT_TRUE (find_and_delete (t1_1, push_sig1) == t1);
         EXPECT_TRUE (find_and_delete (t1_2, push_sig1) == t1);

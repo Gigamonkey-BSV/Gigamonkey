@@ -32,7 +32,7 @@ namespace Gigamonkey {
         explicit pattern (Bitcoin::instruction);
         
         // A pattern which matches a given program. 
-        explicit pattern (Bitcoin::program);
+        explicit pattern (Bitcoin::segment);
         
         // A pattern which matches an empty string.
         pattern () : Pattern {nullptr} {}
@@ -77,7 +77,7 @@ namespace Gigamonkey {
     // A pattern that represents any string that is part of a program. 
     struct pattern::string final : pattern {
         bytes Program;
-        string (Bitcoin::program p) : Program {compile (p)} {}
+        string (Bitcoin::segment p) : Program {compile (p)} {}
         string (const bytes &p) : Program {p} {}
         
         virtual slice<const byte> scan (slice<const byte> p) const final override;
@@ -173,7 +173,7 @@ namespace Gigamonkey {
     
     inline pattern::pattern (Bitcoin::instruction i) : Pattern {ptr<pattern> (std::make_shared<atom> (i))} {}
     
-    inline pattern::pattern (Bitcoin::program p) : Pattern {ptr<pattern> (std::make_shared<string> (p))} {}
+    inline pattern::pattern (Bitcoin::segment p) : Pattern {ptr<pattern> (std::make_shared<string> (p))} {}
     
     struct pattern::sequence : public pattern {
         list<ptr<pattern>> Patterns;
@@ -187,7 +187,7 @@ namespace Gigamonkey {
         
         static ptr<pattern> construct (Bitcoin::op p);
         static ptr<pattern> construct (Bitcoin::instruction p);
-        static ptr<pattern> construct (Bitcoin::program p);
+        static ptr<pattern> construct (Bitcoin::segment p);
         static ptr<pattern> construct (push p);
         static ptr<pattern> construct (push_size p);
         static ptr<pattern> construct (alternatives p);
@@ -228,36 +228,36 @@ namespace Gigamonkey {
     }
     
     template <typename X, typename... P>
-    pattern::pattern(X x, P... p) : Pattern(std::make_shared<sequence>(x, p...)) {}
+    pattern::pattern (X x, P... p) : Pattern(std::make_shared<sequence>(x, p...)) {}
     
-    inline repeated::repeated(Bitcoin::op x, uint32 first, repeated_directive d) 
+    inline repeated::repeated (Bitcoin::op x, uint32 first, repeated_directive d)
         : pattern {x}, First {first}, Second {-1}, Directive {d} {}
-    inline repeated::repeated(Bitcoin::instruction x, uint32 first, repeated_directive d) 
+    inline repeated::repeated (Bitcoin::instruction x, uint32 first, repeated_directive d)
         : pattern {x}, First {first}, Second {-1}, Directive {d} {}
-    inline repeated::repeated(push x, uint32 first, repeated_directive d) 
+    inline repeated::repeated (push x, uint32 first, repeated_directive d)
         : pattern {x}, First {first}, Second {-1}, Directive {d} {}
-    inline repeated::repeated(optional x, uint32 first, repeated_directive d) 
+    inline repeated::repeated (optional x, uint32 first, repeated_directive d)
         : pattern {x}, First {first}, Second {-1}, Directive {d} {}
-    inline repeated::repeated(pattern x, uint32 first, repeated_directive d) 
+    inline repeated::repeated (pattern x, uint32 first, repeated_directive d)
         : pattern {x}, First {first}, Second {-1}, Directive {d} {}
-    inline repeated::repeated(repeated x, uint32 first, repeated_directive d) 
+    inline repeated::repeated (repeated x, uint32 first, repeated_directive d)
         : pattern {x}, First {first}, Second {-1}, Directive {d} {}
-    inline repeated::repeated(alternatives x, uint32 first, repeated_directive d) 
+    inline repeated::repeated (alternatives x, uint32 first, repeated_directive d)
         : pattern {x}, First {first}, Second {-1}, Directive {d} {}
     
-    inline repeated::repeated(Bitcoin::op x, uint32 first, uint32 second) 
+    inline repeated::repeated (Bitcoin::op x, uint32 first, uint32 second)
         : pattern {x}, First {first}, Second {static_cast<int> (second)}, Directive {exactly} {}
-    inline repeated::repeated(Bitcoin::instruction x, uint32 first, uint32 second)
+    inline repeated::repeated (Bitcoin::instruction x, uint32 first, uint32 second)
         : pattern {x}, First {first}, Second {static_cast<int> (second)}, Directive {exactly} {}
-    inline repeated::repeated(push x, uint32 first, uint32 second)
+    inline repeated::repeated (push x, uint32 first, uint32 second)
         : pattern {x}, First {first}, Second {static_cast<int> (second)}, Directive {exactly} {}
-    inline repeated::repeated(optional x, uint32 first, uint32 second)
+    inline repeated::repeated (optional x, uint32 first, uint32 second)
         : pattern {x}, First {first}, Second {static_cast<int> (second)}, Directive {exactly} {}
-    inline repeated::repeated(pattern x, uint32 first, uint32 second)
+    inline repeated::repeated (pattern x, uint32 first, uint32 second)
         : pattern {x}, First {first}, Second {static_cast<int> (second)}, Directive {exactly} {}
-    inline repeated::repeated(repeated x, uint32 first, uint32 second)
+    inline repeated::repeated (repeated x, uint32 first, uint32 second)
         : pattern {x}, First {first}, Second {static_cast<int> (second)}, Directive {exactly} {}
-    inline repeated::repeated(alternatives x, uint32 first, uint32 second)
+    inline repeated::repeated (alternatives x, uint32 first, uint32 second)
         : pattern {x}, First {first}, Second {static_cast<int> (second)}, Directive {exactly} {}
     
     inline ptr<pattern> pattern::sequence::construct (Bitcoin::op p) {
@@ -268,7 +268,7 @@ namespace Gigamonkey {
         return std::make_shared<atom> (p);
     }
     
-    inline ptr<pattern> pattern::sequence::construct (Bitcoin::program p) {
+    inline ptr<pattern> pattern::sequence::construct (Bitcoin::segment p) {
         return std::make_shared<string> (p);
     }
     

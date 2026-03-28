@@ -11,9 +11,12 @@ namespace Gigamonkey::Bitcoin {
         program p;
 
         try {
-            program unlock = decompile (ux);
-            program lock = decompile (lx);
+            segment unlock = decompile (ux);
+            segment lock = decompile (lx);
 
+            // the full program is the two scripts merged
+            // together, unless this is P2SH, which is
+            // a special case no longer supported.
             p = full (unlock, lock, conf.verify_P2SH ());
 
             if (conf.verify_unlock_push_only () && !is_push (unlock)) I.Machine.Result = SCRIPT_ERR_SIG_PUSHONLY;
@@ -28,8 +31,8 @@ namespace Gigamonkey::Bitcoin {
 
         if (I.Machine.Result.Error != SCRIPT_ERR_OK) I.Machine.Halt = true;
 
-        I.Script = compile (p);
-        I.Counter = program_counter {I.Script};
+        I.Program = compile (p);
+        I.Counter = program_counter {I.Program.Script};
     }
 
     interpreter::interpreter (const script &unlock, const script &lock, const redemption_document &doc, const script_config &conf) :

@@ -24,12 +24,12 @@ namespace Gigamonkey::Bitcoin {
         return IsValidMaxOpsPerScript (++OpCount, Config);
     }
     
-    program inline cleanup_script_code (program script_code, slice<const byte> sig) {
+    segment inline cleanup_script_code (segment script_code, slice<const byte> sig) {
         return sighash::has_fork_id (signature::directive (sig)) ? script_code :
             find_and_delete (script_code, instruction::push (sig));
     }
     
-    sighash::document inline *add_script_code (redemption_document &doc, program script_code) {
+    sighash::document inline *add_script_code (redemption_document &doc, segment script_code) {
         return new sighash::document {doc.Transaction, doc.InputIndex, doc.RedeemedValue, script_code};
     }
 
@@ -60,6 +60,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     maybe<result> machine::step (const program_counter &Counter) {
+
         if (Counter.Next == slice<const byte> {}) {
             if (Config.verify_clean_stack () && (Stack->size () != 1)) return SCRIPT_ERR_CLEANSTACK;
             if (Stack->size () == 0) return false;
@@ -191,8 +192,6 @@ namespace Gigamonkey::Bitcoin {
             } break;
             
             case OP_NOP1:
-            case OP_NOP7:
-            case OP_NOP8:
             case OP_NOP9:
             case OP_NOP10: {
                 if (verify_discourage_upgradable_NOPs (Config.Flags))
@@ -283,15 +282,9 @@ namespace Gigamonkey::Bitcoin {
             //
             // Stack ops
             //
-            case OP_TOALTSTACK: {
-                if (Stack->size () < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
-                Stack->to_alt ();
-            } break;
+            case OP_TOALTSTACK: { if (auto err = Stack->to_alt ()) return err; } break;
 
-            case OP_FROMALTSTACK: {
-                if (Stack->alt_size () < 1) return SCRIPT_ERR_INVALID_ALTSTACK_OPERATION;
-                Stack->from_alt ();
-            } break;
+            case OP_FROMALTSTACK: { if (auto err = Stack->from_alt ()) return err; } break;
 
             case OP_2DROP: {
                 // (x1 x2 -- )
@@ -834,7 +827,7 @@ namespace Gigamonkey::Bitcoin {
                 
                 sighash::document *doc = nullptr;
                 if (bool (Document)) {
-                    program script_code = Counter.to_last_code_separator ();
+                    segment script_code = Counter.to_last_code_separator ();
                     
                     // Remove signature for pre-fork scripts
                     for (auto it = Stack->begin () + 1; it != Stack->begin () + 1 + nSigsCount; it++)
