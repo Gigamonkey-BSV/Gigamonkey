@@ -166,7 +166,15 @@ namespace Gigamonkey::Bitcoin {
     constexpr bool enable_genesis_opcodes (flag);
     constexpr bool enable_chronical_opcodes (flag);
 
-    constexpr flag profile (bool utxo_post_genesis, uint32 tx_version);
+    enum class epoch {
+        core,
+        cash,
+        exodus,
+        genesis,
+        chronicle
+    };
+
+    constexpr flag profile (epoch, uint32 tx_version);
 
     constexpr flag pre_genesis_profile ();
     constexpr flag genesis_profile ();
@@ -185,19 +193,22 @@ namespace Gigamonkey::Bitcoin {
      * specific configurations of flags have to do with how
      * the engine was expected to work at different times.
      *
-     * For flags, we define a profile in terms of two
-     * parameters:
-     *   * utxo before or after genesis
-     *   * version 1 or version 2
-     * The genesis update has to do with many things,
-     * including pay to script hash, big numbers, OP_RETURN
-     * behavior, and script limits. Version 1 versus version
-     * 2 has to do with malleability checks.
-     *
      * script limits were fixed numbers considered to be
      * part of the protocol in BTC. In the genesis update
      * these were changed to adjustable parameters with
      * maximum values that are much bigger than before.
+     *
+     * script_config can be constructed with these three
+     * parameters with defauts that provide the values
+     * corresponding to the latest versions. We also provide
+     * the options to construct script_config in terms
+     * of a more limited set of parameters that load various
+     * historical versions of the interpreter.
+     *
+     * For flags, we define a profile in terms of two
+     * parameters:
+     *   * tx version 1 or version 2
+     *   * epoch
      *
      */
     struct script_config final {
@@ -217,12 +228,12 @@ namespace Gigamonkey::Bitcoin {
 
         script_config (
             const integer &version = default_version (),
-            bool utxo_post_genesis = true,
+            epoch update = epoch::genesis,
             bool consensus = false);
 
         script_config (
-            bool utxo_post_genesis,
-            bool consensus = false): script_config {default_version (), utxo_post_genesis, consensus} {}
+            epoch update,
+            bool consensus = false): script_config {default_version (), update, consensus} {}
 
         script_config (
             const integer &version,
@@ -414,8 +425,10 @@ namespace Gigamonkey::Bitcoin {
             flag::VERIFY_NULLDUMMY | flag::VERIFY_CLEANSTACK | flag::VERIFY_SIGPUSHONLY;
     }
 
-    constexpr flag inline profile (bool utxo_post_genesis, uint32 tx_version) {
-        return (utxo_post_genesis ? genesis_profile () : pre_genesis_profile ()) &
+    constexpr flag inline profile (epoch update, int32 tx_version = 1) {
+        return (update == epoch::exodus ? pre_genesis_profile () :
+            update == epoch::genesis ? genesis_profile () :
+            update == epoch::chronicle ? (genesis_profile () | flag::ENABLE_CHRONICLE_OPCODES) : flag {}) &
             (tx_version == 2 ? ~disabled_in_chronicle () : tx_version == 1 ? flag {~0u} : flag {0u});
     }
 }

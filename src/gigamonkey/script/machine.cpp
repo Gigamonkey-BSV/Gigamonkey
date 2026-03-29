@@ -212,6 +212,7 @@ namespace Gigamonkey::Bitcoin {
                     if (Stack->size () < 1) return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
 
                     auto &vch = Stack->top ();
+
                     if (verify_minimal_if (Config.Flags))
                         if (vch.size () > 1 || vch.size () == 1 && vch[0] != 1)
                             return SCRIPT_ERR_MINIMALIF;
@@ -219,6 +220,26 @@ namespace Gigamonkey::Bitcoin {
                     fValue = nonzero (vch);
                     if (Op == OP_NOTIF)
                         fValue = !fValue;
+
+                    Stack->pop_back ();
+                }
+
+                Exec.push_back (fValue);
+                Else.push_back (false);
+            } break;
+
+            case OP_VERIF:
+            case OP_VERNOTIF: {
+                // <expression> if [statements] [else [statements]]
+                // endif
+                bool fValue = false;
+                if (executed) {
+                    if (Stack->size () < 1) return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
+
+                    const auto &bn = read_integer (Stack->top (), RequireMinimal, Config.MaxScriptNumLength);
+
+                    fValue = greater_equal (bn, Config.Version);
+                    if (Op == OP_VERNOTIF) fValue = !fValue;
 
                     Stack->pop_back ();
                 }
@@ -625,7 +646,7 @@ namespace Gigamonkey::Bitcoin {
                 if (Stack->size () < 2) SCRIPT_ERR_INVALID_STACK_OPERATION;
 
                 const auto& bn1 = read_integer (Stack->top (-2), RequireMinimal, Config.MaxScriptNumLength);
-                const auto& bn2 = read_integer (Stack->top (), RequireMinimal, Config.MaxScriptNumLength);
+                const auto& bn2 = read_integer (Stack->top (-1), RequireMinimal, Config.MaxScriptNumLength);
 
                 integer bn {};
                 switch (Op) {
