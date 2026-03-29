@@ -2,6 +2,25 @@
 
 namespace Gigamonkey::Bitcoin {
 
+    data::math::sign sign (byte_slice b) {
+        // an empty number is zero.
+        if (b.size () == 0) return data::math::zero;
+
+        // get last digit
+        byte last = b[b.size () - 1];
+        // get sign bit
+        data::math::sign sign_bit = last & 0x80 ? data::math::negative : data::math::positive;
+
+        // if the last digit other than the sign bit is non zero, return sign bit
+        if (last & ~0x80) return sign_bit;
+
+        // if any other digit is non zero, return sign bit;
+        for (int i = b.size () - 2; i > 0; i--) if (b[i] != 0) return sign_bit;
+
+        // otherwise, the number is zero.
+        return data::math::zero;
+    }
+
     // implements OP_AND
     integer bit_and (byte_slice a, byte_slice b) {
         if (a.size () < b.size ()) return bit_and (b, a);

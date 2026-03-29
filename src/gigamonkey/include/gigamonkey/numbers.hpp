@@ -42,6 +42,21 @@ namespace Gigamonkey::Bitcoin {
     std::pair<byte_slice, byte_slice> split (byte_slice, size_t);
     std::pair<string_view, string_view> split (string_view, size_t);
 
+    // implements OP_SUBSTR
+    // take the n rightmost bytes from the given string.
+    byte_slice substr (byte_slice, size_t n);
+    string_view substr (string_view, size_t n);
+
+    // implements OP_0NOTEQUAL
+    // also how we cast a number to bool.
+    bool nonzero (byte_slice b);
+
+    bool is_zero (byte_slice);
+    bool is_positive_zero (byte_slice);
+    bool is_negative_zero (byte_slice);
+    bool is_negative (byte_slice);
+    bool is_positive (byte_slice);
+
     template <size_t size> size_t serialized_size (const uint_little<size> &u);
 
     size_t serialized_size (const integer &i);
@@ -68,6 +83,12 @@ namespace Gigamonkey::Bitcoin {
 
     // shift left by n bits, implements OP_LSHIFT
     integer left_shift (byte_slice, int32 n);
+
+    // shift right by n bits, implements OP_RSHIFTNUM
+    integer bit_shift_right (byte_slice, int32 n);
+
+    // shift left by n bits, implements OP_LSHIFTNUM
+    integer bit_shift_left (byte_slice, int32 n);
 
     // shift right by n bits
     data::string right_shift (const data::string &, int32 n);
@@ -118,6 +139,8 @@ namespace Gigamonkey::Bitcoin {
     // implements OP_2DIV
     integer div_2 (byte_slice);
 
+    data::math::sign sign (byte_slice);
+
     integer negate (byte_slice);
     integer abs (byte_slice);
     integer plus (byte_slice, byte_slice);
@@ -136,6 +159,17 @@ namespace Gigamonkey::Bitcoin {
         if (b.size () == 0) return true;
         for (int i = 0; i < b.size () - 1; i++) if (b[i] != 0) return false;
         return b[b.size () - 1] == 0x00 || b[b.size () - 1] == 0x80;
+    }
+
+    bool inline is_negative_zero (byte_slice b) {
+        if (b.size () == 0) return false;
+        for (int i = 0; i < b.size () - 1; i++) if (b[i] != 0) return false;
+        return b[b.size () - 1] == 0x80;
+    }
+
+    bool inline is_positive_zero (byte_slice b) {
+        for (int i = 0; i < b.size (); i++) if (b[i] != 0) return false;
+        return true;
     }
 
     bool inline is_negative (byte_slice b) {
@@ -303,6 +337,16 @@ namespace Gigamonkey::Bitcoin {
 
     bool inline string_equal (byte_slice a, byte_slice b) {
         return a == b;
+    }
+
+    // shift right by n bits, implements OP_RSHIFTNUM
+    integer inline bit_shift_right (byte_slice, int32 n) {
+        throw 0;
+    }
+
+    // shift left by n bits, implements OP_LSHIFTNUM
+    integer inline bit_shift_left (byte_slice, int32 n) {
+        throw 0;
     }
 }
 
