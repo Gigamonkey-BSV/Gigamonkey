@@ -406,7 +406,81 @@ namespace Gigamonkey::Bitcoin {
     }
 
     TEST (Number, IncrementAndDecrement) {
-        // TODO
+
+        EXPECT_EQ ((increment (integer ("0"))), integer ("1"));
+        EXPECT_EQ ((increment (integer ("1"))), integer ("2"));
+        EXPECT_EQ ((increment (integer ("-1"))), integer ("0"));
+
+        EXPECT_EQ ((decrement (integer ("0"))), integer ("-1"));
+        EXPECT_EQ ((decrement (integer ("1"))), integer ("0"));
+        EXPECT_EQ ((decrement (integer ("-1"))), integer ("-2"));
+
+        EXPECT_EQ ((increment (integer ("-2"))), integer ("-1"));
+        EXPECT_EQ ((increment (integer ("-1"))), integer ("0"));
+        EXPECT_EQ ((increment (integer ("0"))), integer ("1"));
+
+        EXPECT_EQ ((decrement (integer ("2"))), integer ("1"));
+        EXPECT_EQ ((decrement (integer ("1"))), integer ("0"));
+        EXPECT_EQ ((decrement (integer ("0"))), integer ("-1"));
+
+        // increment past int32 max
+        EXPECT_EQ ((increment (integer("2147483647"))), integer("2147483648"));
+
+        // decrement at int32 max
+        EXPECT_EQ ((decrement (integer("2147483647"))), integer("2147483646"));
+
+        // decrement past int32 min
+        EXPECT_EQ ((decrement (integer("-2147483648"))), integer ("-2147483649"));
+
+        // increment at int32 min
+        EXPECT_EQ ((increment (integer("-2147483648"))), integer ("-2147483647"));
+
+        // increment past uint32 max
+        EXPECT_EQ ((increment (integer("4294967295"))), integer ("4294967296"));
+
+        // decrement at uint32 max
+        EXPECT_EQ ((decrement (integer("4294967295"))), integer ("4294967294"));
+
+        // around zero boundary
+        EXPECT_EQ ((decrement (integer("0"))), integer ("-1"));
+        EXPECT_EQ ((increment (integer("0"))), integer ("1"));
+
+        // increment past int64 max
+        EXPECT_EQ ((increment (integer("9223372036854775807"))), integer ("9223372036854775808"));
+
+        // decrement at int64 max
+        EXPECT_EQ ((decrement (integer("9223372036854775807"))), integer ("9223372036854775806"));
+
+        // decrement past int64 min
+        EXPECT_EQ ((decrement (integer("-9223372036854775808"))), integer ("-9223372036854775809"));
+
+        // increment at int64 min
+        EXPECT_EQ ((increment (integer("-9223372036854775808"))), integer ("-9223372036854775807"));
+
+        // increment past uint64 max
+        EXPECT_EQ ((increment (integer("18446744073709551615"))), integer ("18446744073709551616"));
+
+        // decrement at uint64 max
+        EXPECT_EQ ((decrement (integer ("18446744073709551615"))), integer ("18446744073709551614"));
+
+        // large positive
+        EXPECT_EQ ((increment (integer ("999999999999999999999999999999"))),
+                  integer("1000000000000000000000000000000"));
+
+        // large negative
+        EXPECT_EQ ((decrement (integer ("-999999999999999999999999999999"))),
+                  integer("-1000000000000000000000000000000"));
+
+        // carry across many digits
+        EXPECT_EQ ((increment (integer ("999999999999999999"))),
+                  integer("1000000000000000000"));
+
+        // borrow across many digits
+        EXPECT_EQ ((decrement (integer ("1000000000000000000"))),
+                  integer("999999999999999999"));
+
+        EXPECT_EQ ((increment (integer ("-1"))), integer ("0"));
+        EXPECT_EQ ((decrement (integer ("1"))), integer ("0"));
     }
 
     TEST (Number, Plus) {
