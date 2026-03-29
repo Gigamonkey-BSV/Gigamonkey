@@ -14,8 +14,8 @@ namespace Gigamonkey::Bitcoin {
 
     script_config::script_config (
         const integer &version,
-        bool utxo_post_genesis,
-        bool consensus): script_config {version, profile (utxo_post_genesis, static_cast<int32> (version)), consensus} {}
+        epoch update,
+        bool consensus): script_config {version, profile (update, static_cast<int32> (version)), consensus} {}
 
     script_config::script_config (
         const integer &version,

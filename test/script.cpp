@@ -894,10 +894,6 @@ namespace Gigamonkey::Bitcoin {
 
     }
 
-    TEST (Script, OP_VER) {
-        test_data_op (OP_VER, {}, {{0x01, 0x00, 0x00, 0x00}});
-    }
-
     TEST (Script, MinimalIf) {
         success (evaluate (bytes {
             OP_2, OP_IF,
@@ -1027,6 +1023,10 @@ namespace Gigamonkey::Bitcoin {
             OP_ENDIF
         }, bytes {}, flag {}), "invalid op codes cannot appear in unevaluated branches");
 
+    }
+
+    TEST (Script, OP_VER) {
+        test_data_op (OP_VER, {}, {{0x01, 0x00, 0x00, 0x00}});
     }
 
     // We use this tx for the signature tests.
