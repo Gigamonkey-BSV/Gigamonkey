@@ -20,6 +20,8 @@ namespace Gigamonkey::Bitcoin {
     
     namespace {
     
+        // TODO we do not use conf here just yet but some op codes
+        // are invalid under some parameters and others aren't.
         ScriptError verify_instruction (const instruction &i) {
             if (i.Op == OP_INVALIDOPCODE ||
                 i.Op == OP_RESERVED ||
@@ -133,11 +135,10 @@ namespace Gigamonkey::Bitcoin {
     
     }
 
-    ScriptError instruction::verify (flag flags) const {
+    ScriptError instruction::verify (const script_config &conf) const {
         auto script_error = verify_instruction (*this);
         if (script_error != SCRIPT_ERR_OK) return script_error;
-        
-        if (verify_minimal_push (flags) && !is_minimal_push (Op, Data)) return SCRIPT_ERR_MINIMALDATA;
+        if (verify_minimal_push (conf.Flags) && !is_minimal_push (Op, Data)) return SCRIPT_ERR_MINIMALDATA;
         
         return SCRIPT_ERR_OK;
     }
@@ -317,29 +318,11 @@ namespace Gigamonkey::Bitcoin {
         
         list<instruction> p {};
         script_reader r {it_rdr {b.data (), b.data () + b.size ()}};
-        
-        stack<op> Control;
-        
+
         while (!r.empty ()) {
             instruction i {};
             r = r >> i;
-            
-            if (auto err = i.verify (flag {}); err != SCRIPT_ERR_OK) throw invalid_program {err};
-            
-            if (i.Op == OP_ENDIF) {
-                if (Control.empty ()) throw invalid_program {SCRIPT_ERR_UNBALANCED_CONDITIONAL};
-                op prev = first (Control);
-                Control = rest (Control);
 
-                if (prev == OP_ELSE) {
-                    if (Control.empty ()) throw invalid_program {SCRIPT_ERR_UNBALANCED_CONDITIONAL};
-                    prev = first (Control);
-                    Control = rest (Control);
-                }
-
-                if (prev != OP_IF && prev != OP_NOTIF) invalid_program {SCRIPT_ERR_UNBALANCED_CONDITIONAL};
-            } else if (i.Op == OP_ELSE || i.Op == OP_IF || i.Op == OP_NOTIF) Control = Control >> i.Op;
-            
             p = p << i;
         }
         
@@ -347,7 +330,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     // TODO need to take into account OP_VER etc
-    ScriptError valid_program (segment p, flag flags, stack<op> x = {}) {
+    ScriptError valid_program (segment p, const script_config &conf, stack<op> x = {}) {
         
         if (empty (p)) {
             if (empty (x)) return SCRIPT_ERR_OK;
@@ -356,10 +339,10 @@ namespace Gigamonkey::Bitcoin {
         
         const instruction &i = first (p);
         
-        auto script_error = i.verify (flags);
+        auto script_error = i.verify (conf);
         if (script_error != SCRIPT_ERR_OK) return script_error;
         
-        if ((verify_minimal_push (flags)) && !is_minimal_instruction (i)) return SCRIPT_ERR_MINIMALDATA;
+        if ((verify_minimal_push (conf.Flags)) && !is_minimal_instruction (i)) return SCRIPT_ERR_MINIMALDATA;
         
         op o = i.Op;
         
@@ -367,7 +350,7 @@ namespace Gigamonkey::Bitcoin {
         // normal script. It must be in a script consisting only of
         // itself.
         if (o == OP_RETURN) {
-            if (!safe_return_data (flags)) return SCRIPT_ERR_OP_RETURN;
+            if (!safe_return_data (conf.Flags)) return SCRIPT_ERR_OP_RETURN;
             if (empty (x) && p.size () == 1) return SCRIPT_ERR_OK;
             if (i.Data.size () != 0) return SCRIPT_ERR_OP_RETURN;
         }
@@ -386,23 +369,24 @@ namespace Gigamonkey::Bitcoin {
             if (prev != OP_IF && prev != OP_NOTIF) return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
         } else if (o == OP_ELSE || o == OP_IF || o == OP_NOTIF) x = x >> o;
         
-        return valid_program (rest (p), flags, x);
+        return valid_program (rest (p), conf, x);
     }
 
-    ScriptError pre_verify (program x, flag flags) {
+    // TODO pre_verify is not actually needed.
+    ScriptError pre_verify (program x, const script_config &conf) {
         // an empty program isn't really ok, so why does this line say it is?
         if (empty (x)) return SCRIPT_ERR_OK;
 
         // first we check for OP_RETURN data.
         if (x.size () == 1) {
             auto p = first (x);
-            if (safe_return_data (flags)) {
+            if (safe_return_data (conf.Flags)) {
                 if (p.size () == 2 && first (p).Op == OP_FALSE && data::valid (first (p)) && first (rest (p)).Op == OP_RETURN)
                     return SCRIPT_ERR_OK;
             } else if (p.size () == 1 && first (p).Op == OP_RETURN) return SCRIPT_ERR_OK;
         }
 
-        return valid_program (flatten (x), flags);
+        return valid_program (flatten (x), conf);
     }
 
     // note: pay to script hash only applies to scripts that were created before genesis.

@@ -7,23 +7,50 @@
 
 namespace Gigamonkey::Bitcoin {
 
-    void setup_interpreter (interpreter &I, const script &ux, const script &lx, const script_config &conf) {
-        program p;
+    std::expected<program, ScriptError> read_program (const program scripts, const script_config &conf) {
+        if (size (scripts) == 0) return scripts;
 
-        try {
-            segment unlock = decompile (ux);
-            segment lock = decompile (lx);
+        segment unlock = first (scripts);
+        if (conf.verify_unlock_push_only () && !is_push (unlock)) return std::unexpected (SCRIPT_ERR_SIG_PUSHONLY);
+
+        if (size (scripts) == 1) return scripts;
+
+        program p;
+        if (size (scripts) == 2) {
+            segment lock = scripts[1];
+
+            if (conf.verify_P2SH () && is_P2SH (lock)) {
+                if (empty (unlock)) return std::unexpected (SCRIPT_ERR_INVALID_STACK_OPERATION);
+                else if (!is_push (unlock)) return std::unexpected (SCRIPT_ERR_SIG_PUSHONLY);
+            }
 
             // the full program is the two scripts merged
             // together, unless this is P2SH, which is
             // a special case no longer supported.
             p = full (unlock, lock, conf.verify_P2SH ());
+        } else p = scripts;
 
-            if (conf.verify_unlock_push_only () && !is_push (unlock)) I.Machine.Result = SCRIPT_ERR_SIG_PUSHONLY;
-            else if (conf.verify_P2SH () && is_P2SH (lock)) {
-                if (empty (unlock)) I.Machine.Result =  SCRIPT_ERR_INVALID_STACK_OPERATION;
-                else if (!is_push (unlock)) I.Machine.Result = SCRIPT_ERR_SIG_PUSHONLY;
-            } else I.Machine.Result = pre_verify (p, conf.Flags);
+        ScriptError v = pre_verify (p, conf.Flags);
+
+        if (v) return std::unexpected (v);
+        return p;
+
+    }
+
+    void setup_interpreter (interpreter &I, const list<script> scripts, const script_config &conf) {
+
+        // this try block should not be necessary. We should
+        // remove all error throwing that could occurr within
+        // this block.
+        try {
+            auto e = read_program (lift ([&conf] (const auto &script) {
+                segment x = decompile (script);
+                for (const instruction &i : x) if (auto err = i.verify (conf); err != SCRIPT_ERR_OK) throw invalid_program {err};
+                return x;
+            }, scripts), conf);
+
+            if (e) I.Program = compile (*e);
+            else I.Machine.Result.Error = e.error ();
 
         } catch (const invalid_program &x) {
             I.Machine.Result.Error = x.Error;
@@ -31,18 +58,17 @@ namespace Gigamonkey::Bitcoin {
 
         if (I.Machine.Result.Error != SCRIPT_ERR_OK) I.Machine.Halt = true;
 
-        I.Program = compile (p);
         I.Counter = program_counter {I.Program.Script};
     }
 
-    interpreter::interpreter (const script &unlock, const script &lock, const redemption_document &doc, const script_config &conf) :
+    interpreter::interpreter (const list<script> scripts, const redemption_document &doc, const script_config &conf) :
         Machine {{doc}, conf} {
-        setup_interpreter (*this, unlock, lock, conf);
+        setup_interpreter (*this, scripts, conf);
     }
 
-    interpreter::interpreter (const script &unlock, const script &lock, const script_config &conf) :
+    interpreter::interpreter (const list<script> scripts, const script_config &conf) :
         Machine {{}, conf} {
-        setup_interpreter (*this, unlock, lock, conf);
+        setup_interpreter (*this, scripts, conf);
     }
 
     list<bool> make_list (const std::vector<bool> &v) {

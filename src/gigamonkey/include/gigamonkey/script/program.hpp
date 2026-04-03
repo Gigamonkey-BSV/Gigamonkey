@@ -15,6 +15,7 @@ namespace Gigamonkey::Bitcoin {
 
     using segment = list<instruction>;
 
+    // decompile throws if a push operation would include bytes past the end of the script.
     segment decompile (slice<const byte>);
 
     bool is_push (segment);
@@ -33,7 +34,7 @@ namespace Gigamonkey::Bitcoin {
     using program = list<segment>;
 
     // check flags that can be checked without running the program.
-    ScriptError pre_verify (program, flag flags);
+    ScriptError pre_verify (program, const script_config &flags);
 
     // make the full program from the two scripts.
     program full (const segment unlock, const segment lock, bool support_p2sh);
