@@ -29,20 +29,13 @@ namespace Gigamonkey::Bitcoin {
         }
     }
 
-    TEST (Script, Program) {
+    TEST (Script, Decompile) {
         // empty program
         test_program (bytes {}, true);
 
         // list of ops
         test_program (bytes {OP_FALSE, OP_1NEGATE, OP_1, OP_NOP, OP_TOALTSTACK, OP_DROP,
             OP_EQUALVERIFY, OP_1ADD, OP_CHECKMULTISIGVERIFY, OP_NOP10}, true);
-
-        // invalid op codes
-        test_program (bytes {OP_RESERVED}, false, "OP_RESERVED is an invalid op code");
-        test_program (bytes {OP_RESERVED1}, false, "OP_RESERVED1 is an invalid op code");
-        test_program (bytes {OP_RESERVED2}, false, "OP_RESERVED2 is an invalid op code");
-        test_program (bytes {FIRST_UNDEFINED_OP_VALUE}, false, "FIRST_UNDEFINED_OP_VALUE is an invalid op code");
-        test_program (bytes {OP_INVALIDOPCODE}, false, "OP_INVALIDOPCODE is an invalid op code");
 
         // invalid push
         test_program (bytes {OP_PUSHSIZE1}, false);
@@ -139,6 +132,18 @@ namespace Gigamonkey::Bitcoin {
     void error (result r, string explanation = "") {
         EXPECT_FALSE (bool (r)) << explanation;
         EXPECT_FALSE (r.valid ()) << explanation << "; " << r;
+    }
+
+    // TODO different op codes should be invalid under different script profiles
+    TEST (Script, InvalidOpcode) {
+
+         // invalid op codes                                                                        *
+         error (evaluate (bytes {OP_RESERVED}, bytes {}), "OP_RESERVED is an invalid op code");
+         error (evaluate (bytes {OP_RESERVED1}, bytes {}), "OP_RESERVED1 is an invalid op code");
+         error (evaluate (bytes {OP_RESERVED2}, bytes {}), "OP_RESERVED2 is an invalid op code");
+         error (evaluate (bytes {FIRST_UNDEFINED_OP_VALUE}, bytes {}), "FIRST_UNDEFINED_OP_VALUE is an invalid op code");
+         error (evaluate (bytes {OP_INVALIDOPCODE}, bytes {}), "OP_INVALIDOPCODE is an invalid op code");
+
     }
 
     // There's an option having to do with malleability which says that the
@@ -1098,6 +1103,8 @@ namespace Gigamonkey::Bitcoin {
     TEST (Script, OP_VER) {
         test_data_op (OP_VER, {}, {{0x01, 0x00, 0x00, 0x00}});
     }
+
+    TEST (Script, OP_RETURN) {}
 
     // We use this tx for the signature tests.
     incomplete::transaction test_txi {

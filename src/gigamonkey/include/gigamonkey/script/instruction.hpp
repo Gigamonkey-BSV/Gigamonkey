@@ -62,7 +62,7 @@ namespace Gigamonkey::Bitcoin {
         
         integer push_data () const;
         
-        ScriptError verify (flag flags) const;
+        ScriptError verify (const script_config &conf) const;
         
         bool valid () const {
             return verify (genesis_profile ()) == SCRIPT_ERR_OK;

@@ -18,9 +18,9 @@ namespace Gigamonkey::Bitcoin {
         program_counter Counter;
 
         // If the redemption document is not provided, all signature operations will succeed.
-        interpreter (const script &unlock, const script &lock, const redemption_document &doc, const script_config & = {});
+        interpreter (const list<script> scripts, const redemption_document &doc, const script_config & = {});
 
-        interpreter (const script &unlock, const script &lock, const script_config & = {});
+        interpreter (const list<script> scripts, const script_config & = {});
 
         void step ();
         result run ();
@@ -33,12 +33,22 @@ namespace Gigamonkey::Bitcoin {
 
     // evaluate with real signatures.
     result inline evaluate (const script &unlock, const script &lock, const redemption_document &doc, const script_config &conf) {
-        return interpreter (unlock, lock, doc, conf).run ();
+        return interpreter (list<script> {unlock, lock}, doc, conf).run ();
     }
 
     // if the redemption document is not provided, all signature operations will succeed automatically.
     result inline evaluate (const script &unlock, const script &lock, const script_config &conf) {
-        return interpreter (unlock, lock, conf).run ();
+        return interpreter (list<script> {unlock, lock}, conf).run ();
+    }
+
+    // evaluate with real signatures.
+    result inline evaluate (const list<script> scripts, const redemption_document &doc, const script_config &conf) {
+        return interpreter (scripts, doc, conf).run ();
+    }
+
+    // if the redemption document is not provided, all signature operations will succeed automatically.
+    result inline evaluate (const list<script> scripts, const script_config &conf) {
+        return interpreter (scripts, conf).run ();
     }
 
     segment inline interpreter::unread () const {
