@@ -82,7 +82,7 @@ namespace Gigamonkey::Bitcoin {
 
         // Some opcodes are disabled.
         if (Config.disabled (Op) && executed) return SCRIPT_ERR_DISABLED_OPCODE;
-        
+
         if (executed && 0 <= Op && Op <= OP_PUSHDATA4) Stack->push_back (get_push_data (Counter.Next));
         else switch (Op) {
             //
@@ -238,6 +238,7 @@ namespace Gigamonkey::Bitcoin {
                     const auto &bn = read_integer (Stack->top (), RequireMinimal, Config.MaxScriptNumLength);
 
                     fValue = greater_equal (bn, Config.Version);
+
                     if (Op == OP_VERNOTIF) fValue = !fValue;
 
                     Stack->pop_back ();

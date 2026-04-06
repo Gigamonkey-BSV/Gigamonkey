@@ -304,7 +304,10 @@ namespace Gigamonkey::Bitcoin {
     }
 
     void inline limited_two_stack<false>::push_back (slice<const byte> element) {
-        if (element.size () > MaxScriptElementSize) throw_push_size_exception ();
+        if (element.size () > MaxScriptElementSize) {
+            std::cout << " throw because we have an element of size " << element.size () << " with max element size " << MaxScriptElementSize << std::endl;
+            throw_push_size_exception ();
+        }
         if (this->combined_size () == MaxStackElements) throw_stack_overflow_exception ();
         Stack.emplace_back (element);
     }

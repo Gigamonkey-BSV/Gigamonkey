@@ -329,7 +329,6 @@ namespace Gigamonkey::Bitcoin {
         return p;
     }
 
-    // TODO need to take into account OP_VER etc
     ScriptError valid_program (segment p, const script_config &conf, stack<op> x = {}) {
         
         if (empty (p)) {
@@ -366,8 +365,9 @@ namespace Gigamonkey::Bitcoin {
                 x = rest (x);
             }
 
-            if (prev != OP_IF && prev != OP_NOTIF) return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
-        } else if (o == OP_ELSE || o == OP_IF || o == OP_NOTIF) x = x >> o;
+            if (prev != OP_IF && prev != OP_NOTIF && prev != OP_VERIF && prev != OP_VERNOTIF)
+                return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
+        } else if (o == OP_ELSE || o == OP_IF || o == OP_NOTIF || o == OP_VERIF || o == OP_VERNOTIF) x = x >> o;
         
         return valid_program (rest (p), conf, x);
     }
