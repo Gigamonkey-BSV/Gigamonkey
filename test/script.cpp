@@ -469,10 +469,6 @@ namespace Gigamonkey::Bitcoin {
         success (evaluate (bytes {OP_1, OP_NOP}, bytes {}, flag {}), "OP_NOP 2");
         failure (evaluate (bytes {OP_0, OP_NOP}, bytes {}, flag {}), "OP_NOP 3");
 
-        // OP_VERIFY
-        error (evaluate (bytes {OP_FALSE}, bytes {OP_VERIFY}, flag {}), "OP_VERIFY 1");
-        failure (evaluate (bytes {OP_TRUE}, bytes {OP_VERIFY}, flag {}), "OP_VERIFY 2");
-
         // OP_DEPTH
         failure (evaluate (bytes {}, bytes {OP_DEPTH}, flag {}), "OP DEPTH 1");
         success (evaluate (bytes {OP_FALSE}, bytes {OP_DEPTH}, flag {}), "OP DEPTH 2");
@@ -491,6 +487,17 @@ namespace Gigamonkey::Bitcoin {
         success (evaluate (bytes {OP_1, OP_SIZE}, bytes {OP_1, OP_EQUAL}, flag {}));
         success (evaluate (bytes {OP_16, OP_SIZE}, bytes {OP_1, OP_EQUAL}, flag {}));
         success (evaluate (bytes {OP_PUSHSIZE3, 0x11, 0x12, 0x13, OP_SIZE}, bytes {OP_3, OP_EQUAL}, flag {}));
+
+    }
+
+    TEST (Script, Verify) {
+
+        error (evaluate (bytes {OP_FALSE}, bytes {OP_VERIFY}, {}), "OP_VERIFY 1");
+        error (evaluate (bytes {OP_TRUE}, bytes {OP_VERIFY}, {}), "OP_VERIFY 2");
+
+        failure (evaluate (bytes {OP_FALSE, OP_TRUE}, bytes {OP_VERIFY}, {}), "OP_VERIFY 3");
+
+        success (evaluate (bytes {OP_TRUE, OP_TRUE}, bytes {OP_VERIFY}, {}), "OP_VERIFY 4");
 
     }
 
@@ -641,6 +648,21 @@ namespace Gigamonkey::Bitcoin {
 
         test_data_op (OP_BOOLAND, {{0x01}, {0x01}}, {{0x01}});
         test_data_op (OP_BOOLOR, {{0x01}, {0x01}}, {{0x01}});
+
+    }
+
+    TEST (Script, EqualVerify) {
+
+        test_data_op (OP_EQUALVERIFY, {{0x01}, {0x01}}, {});
+        test_data_op_error (OP_EQUALVERIFY, {{0x01}, {0x01, 0x00}}, {});
+        test_data_op_error (OP_EQUALVERIFY, {{0x81}, {0x01}});
+
+        error (evaluate (bytes {OP_0, OP_1}, bytes {OP_EQUALVERIFY}, {}), "OP_EQUALVERIFY 1");
+        error (evaluate (bytes {OP_1, OP_1}, bytes {OP_EQUALVERIFY}, {}), "OP_EQUALVERIFY 2");
+
+        failure (evaluate (bytes {OP_FALSE, OP_1, OP_1}, bytes {OP_EQUALVERIFY}, {}), "OP_EQUALVERIFY 3");
+
+        success (evaluate (bytes {OP_TRUE, OP_1, OP_1}, bytes {OP_EQUALVERIFY}, {}), "OP_EQUALVERIFY 4");
 
     }
 
@@ -896,6 +918,13 @@ namespace Gigamonkey::Bitcoin {
         test_data_op (OP_NUMEQUALVERIFY, {{0x01}, {0x01, 0x00}}, {});
         test_data_op_error (OP_NUMEQUALVERIFY, {{0x81}, {0x01}});
 
+        error (evaluate (bytes {OP_0, OP_1}, bytes {OP_NUMEQUALVERIFY}, {}), "OP_NUMEQUALVERIFY 1");
+        error (evaluate (bytes {OP_1, OP_1}, bytes {OP_NUMEQUALVERIFY}, {}), "OP_NUMEQUALVERIFY 2");
+
+        failure (evaluate (bytes {OP_FALSE, OP_1, OP_1}, bytes {OP_NUMEQUALVERIFY}, {}), "OP_NUMEQUALVERIFY 3");
+
+        success (evaluate (bytes {OP_TRUE, OP_1, OP_1}, bytes {OP_NUMEQUALVERIFY}, {}), "OP_NUMEQUALVERIFY 4");
+
     }
 
     TEST (Script, NumberOps) {
@@ -969,6 +998,16 @@ namespace Gigamonkey::Bitcoin {
 
     }
 
+    TEST (Script, OP_VER) {
+        test_data_op (OP_VER, {}, {{0x01, 0x00, 0x00, 0x00}});
+
+        success (evaluate (list<bytes> {bytes {OP_VER, OP_PUSHSIZE4, 0x02, 0x00, 0x00, 0x00, OP_EQUAL}},
+            script_config {2, epoch::chronicle}), "OP_VER 1");
+
+        success (evaluate ({bytes {OP_VER, OP_PUSHSIZE4, 0x03, 0x00, 0x00, 0x00, OP_EQUAL}},
+            script_config {3, epoch::chronicle}), "OP_VER 2");
+    }
+
     TEST (Script, MinimalIf) {
         success (evaluate (bytes {
             OP_2, OP_IF,
@@ -1005,8 +1044,24 @@ namespace Gigamonkey::Bitcoin {
             OP_ENDIF
         }, bytes {}, flag {}), "OP_IF: true branch");
 
+        success (evaluate (bytes {
+            OP_10, OP_VERIF,
+            OP_1,
+            OP_ELSE,
+            OP_0,
+            OP_ENDIF
+        }, bytes {}, flag {}), "OP_VERIF: true branch");
+
         failure (evaluate (bytes {
             OP_0, OP_IF,
+            OP_1,
+            OP_ELSE,
+            OP_0,
+            OP_ENDIF
+        }, bytes {}, flag {}), "OP_IF: false branch");
+
+        failure (evaluate (bytes {
+            OP_0, OP_VERIF,
             OP_1,
             OP_ELSE,
             OP_0,
@@ -1021,8 +1076,24 @@ namespace Gigamonkey::Bitcoin {
             OP_ENDIF
         }, bytes {}, flag {}), "OP_NOTIF: true branch");
 
+        failure (evaluate (bytes {
+            OP_10, OP_VERNOTIF,
+            OP_1,
+            OP_ELSE,
+            OP_0,
+            OP_ENDIF
+        }, bytes {}, flag {}), "OP_NOTIF: true branch");
+
         success (evaluate (bytes {
             OP_0, OP_NOTIF,
+            OP_1,
+            OP_ELSE,
+            OP_0,
+            OP_ENDIF
+        }, bytes {}, flag {}), "OP_NOTIF: false branch");
+
+        success (evaluate (bytes {
+            OP_0, OP_VERNOTIF,
             OP_1,
             OP_ELSE,
             OP_0,
@@ -1099,12 +1170,6 @@ namespace Gigamonkey::Bitcoin {
         }, bytes {}, flag {}), "invalid op codes cannot appear in unevaluated branches");
 
     }
-
-    TEST (Script, OP_VER) {
-        test_data_op (OP_VER, {}, {{0x01, 0x00, 0x00, 0x00}});
-    }
-
-    TEST (Script, OP_RETURN) {}
 
     // We use this tx for the signature tests.
     incomplete::transaction test_txi {
@@ -1266,6 +1331,10 @@ namespace Gigamonkey::Bitcoin {
         error (evaluate (unlockum, lockum, rd, compressed_required), "CHECKMULTISIG uncompressed and prohibited");
         success (evaluate (unlockum, lockum, rd, compressed_not_required), "CHECKMULTISIG uncompressed and not prohibited");
 
+    }
+
+    TEST (Script, SignaturePrefix) {
+        // TODO
     }
 
     TEST (Script, SignatureNULLFAIL) {
@@ -1468,27 +1537,20 @@ namespace Gigamonkey::Bitcoin {
         multisig_test {190, true,  doc, {k1, k2, k3}, {p1, p2, p3}}.test ();
         multisig_test {200, false, doc, {k3, k2, k1}, {p1, p2, p3}}.test ();
         multisig_test {210, false, doc, {k2, k3, k1}, {p1, p2, p3}}.test ();
-
-        // TODO test that not adding the prefix fails
-        // TODO test that adding a different prefix fails for the right flags. 
-        // TODO test that signatures that fail should be null for certain flags. 
         
+    }
+
+    TEST (Script, ChecksigVerify) {
+
+    }
+
+    TEST (Script, MultisigVerify) {
+
     }
 /*
     TEST (Script, TestCodeSeparator) {
 
     }
-
-    TEST (Script, Return) {
-        OP_RETURN
-    }
-
-    TEST (Script, Verify) {
-
-        test_data_op (OP_NUMEQUALVERIFY);
-        test_data_op (OP_CHECKSIGVERIFY);
-        test_data_op (OP_CHECKMULTISIGVERIFY);
-
-    }*/
+*/
     
 }
