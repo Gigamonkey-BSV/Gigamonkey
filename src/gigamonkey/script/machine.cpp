@@ -552,12 +552,7 @@ namespace Gigamonkey::Bitcoin {
                 auto &vch2 = Stack->top ();
 
                 bool fEqual = (vch1 == vch2);
-                // OP_NOTEQUAL is disabled because it would be too
-                // easy to say something like n != 1 and have some
-                // wiseguy pass in 1 with extra zero bytes after it
-                // (numerically, 0x01 == 0x0001 == 0x000001)
-                // if (opcode == OP_NOTEQUAL)
-                //    fEqual = !fEqual;
+
                 Stack->pop_back ();
                 Stack->pop_back ();
                 Stack->push_back (integer (fEqual));
@@ -754,7 +749,8 @@ namespace Gigamonkey::Bitcoin {
             
             case OP_CHECKSIG: 
             case OP_CHECKSIGVERIFY: {
-                if (Stack->size () < 2) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+                if (Stack->size () < 2)
+                    return SCRIPT_ERR_INVALID_STACK_OPERATION;
                 
                 const bytes &sig = Stack->top (-2);
                 const bytes &pub = Stack->top ();
@@ -778,7 +774,7 @@ namespace Gigamonkey::Bitcoin {
                 if (Op == OP_CHECKSIGVERIFY) {
                     if (r.Success) {
                         Stack->pop_back ();
-                        return true;
+                        return {};
                     } else return SCRIPT_ERR_CHECKSIGVERIFY;
                 }
                 
@@ -902,7 +898,7 @@ namespace Gigamonkey::Bitcoin {
                 if (Op == OP_CHECKMULTISIGVERIFY) {
                     if (fSuccess) {
                         Stack->pop_back ();
-                        return true;
+                        return {};
                     } else return SCRIPT_ERR_CHECKMULTISIGVERIFY;
                 }
                 

@@ -238,6 +238,8 @@ namespace Gigamonkey::Bitcoin {
             default : return o << x;
             case OP_CHECKSIG: return o << "checksig";
             case OP_CHECKSIGVERIFY: return o << "checksig_verify";
+            case OP_CHECKMULTISIG: return o << "checkmultisig";
+            case OP_CHECKMULTISIGVERIFY: return o << "checkmultisig_verify";
             case OP_EQUALVERIFY: return o << "equal_verify";
             
             case OP_HASH256: return o << "hash256";

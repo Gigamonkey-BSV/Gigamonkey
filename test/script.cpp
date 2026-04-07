@@ -492,12 +492,13 @@ namespace Gigamonkey::Bitcoin {
 
     TEST (Script, Verify) {
 
-        error (evaluate (bytes {OP_FALSE}, bytes {OP_VERIFY}, {}), "OP_VERIFY 1");
-        error (evaluate (bytes {OP_TRUE}, bytes {OP_VERIFY}, {}), "OP_VERIFY 2");
+        error (evaluate (bytes {OP_FALSE}, bytes {OP_VERIFY}, flag {}), "OP_VERIFY 1");
 
-        failure (evaluate (bytes {OP_FALSE, OP_TRUE}, bytes {OP_VERIFY}, {}), "OP_VERIFY 3");
+        failure (evaluate (bytes {OP_TRUE}, bytes {OP_VERIFY}, flag {}), "OP_VERIFY 2");
 
-        success (evaluate (bytes {OP_TRUE, OP_TRUE}, bytes {OP_VERIFY}, {}), "OP_VERIFY 4");
+        failure (evaluate (bytes {OP_FALSE, OP_TRUE}, bytes {OP_VERIFY}, flag {}), "OP_VERIFY 3");
+
+        success (evaluate (bytes {OP_TRUE, OP_TRUE}, bytes {OP_VERIFY}, flag {}), "OP_VERIFY 4");
 
     }
 
@@ -657,12 +658,17 @@ namespace Gigamonkey::Bitcoin {
         test_data_op_error (OP_EQUALVERIFY, {{0x01}, {0x01, 0x00}}, {});
         test_data_op_error (OP_EQUALVERIFY, {{0x81}, {0x01}});
 
-        error (evaluate (bytes {OP_0, OP_1}, bytes {OP_EQUALVERIFY}, {}), "OP_EQUALVERIFY 1");
-        error (evaluate (bytes {OP_1, OP_1}, bytes {OP_EQUALVERIFY}, {}), "OP_EQUALVERIFY 2");
+        auto eval_err_1 = evaluate (bytes {OP_0, OP_1}, bytes {OP_EQUALVERIFY}, flag {});
 
-        failure (evaluate (bytes {OP_FALSE, OP_1, OP_1}, bytes {OP_EQUALVERIFY}, {}), "OP_EQUALVERIFY 3");
+        error (eval_err_1, "OP_EQUALVERIFY 1");
 
-        success (evaluate (bytes {OP_TRUE, OP_1, OP_1}, bytes {OP_EQUALVERIFY}, {}), "OP_EQUALVERIFY 4");
+        auto eval_err_2 = evaluate (bytes {OP_1, OP_1}, bytes {OP_EQUALVERIFY}, flag {});
+
+        failure (eval_err_2, "OP_EQUALVERIFY 2");
+
+        failure (evaluate (bytes {OP_FALSE, OP_1, OP_1}, bytes {OP_EQUALVERIFY}, flag {}), "OP_EQUALVERIFY 3");
+
+        success (evaluate (bytes {OP_TRUE, OP_1, OP_1}, bytes {OP_EQUALVERIFY}, flag {}), "OP_EQUALVERIFY 4");
 
     }
 
@@ -918,12 +924,12 @@ namespace Gigamonkey::Bitcoin {
         test_data_op (OP_NUMEQUALVERIFY, {{0x01}, {0x01, 0x00}}, {});
         test_data_op_error (OP_NUMEQUALVERIFY, {{0x81}, {0x01}});
 
-        error (evaluate (bytes {OP_0, OP_1}, bytes {OP_NUMEQUALVERIFY}, {}), "OP_NUMEQUALVERIFY 1");
-        error (evaluate (bytes {OP_1, OP_1}, bytes {OP_NUMEQUALVERIFY}, {}), "OP_NUMEQUALVERIFY 2");
+        error (evaluate (bytes {OP_0, OP_1}, bytes {OP_NUMEQUALVERIFY}, flag {}), "OP_NUMEQUALVERIFY 1");
+        failure (evaluate (bytes {OP_1, OP_1}, bytes {OP_NUMEQUALVERIFY}, flag {}), "OP_NUMEQUALVERIFY 2");
 
-        failure (evaluate (bytes {OP_FALSE, OP_1, OP_1}, bytes {OP_NUMEQUALVERIFY}, {}), "OP_NUMEQUALVERIFY 3");
+        failure (evaluate (bytes {OP_FALSE, OP_1, OP_1}, bytes {OP_NUMEQUALVERIFY}, flag {}), "OP_NUMEQUALVERIFY 3");
 
-        success (evaluate (bytes {OP_TRUE, OP_1, OP_1}, bytes {OP_NUMEQUALVERIFY}, {}), "OP_NUMEQUALVERIFY 4");
+        success (evaluate (bytes {OP_TRUE, OP_1, OP_1}, bytes {OP_NUMEQUALVERIFY}, flag {}), "OP_NUMEQUALVERIFY 4");
 
     }
 
@@ -1333,10 +1339,6 @@ namespace Gigamonkey::Bitcoin {
 
     }
 
-    TEST (Script, SignaturePrefix) {
-        // TODO
-    }
-
     TEST (Script, SignatureNULLFAIL) {
         secp256k1::secret x {3023332};
         secp256k1::pubkey p = x.to_public ();
@@ -1540,13 +1542,74 @@ namespace Gigamonkey::Bitcoin {
         
     }
 
+    bytes transform_sig_verify (byte_slice b) {
+        if (b.size () == 0) throw 0;
+
+        byte verify;
+
+        if (b[b.size () - 1] == OP_CHECKSIG) verify = OP_CHECKSIGVERIFY;
+        if (b[b.size () - 1] == OP_CHECKMULTISIG) verify = OP_CHECKMULTISIGVERIFY;
+
+        return data::write<bytes> (b.range (0, b.size () - 1), verify);
+    }
+
+    bytes transform_sig_verify (byte_slice b, byte result) {
+        return data::write<bytes> (transform_sig_verify (b), result);
+    }
+
     TEST (Script, ChecksigVerify) {
 
+        secp256k1::secret x {3023332};
+        secp256k1::pubkey p = x.to_public ();
+
+        size_t input_index = 0;
+        satoshi redeemed_value {0xfeee};
+
+        redemption_document rd {test_txi, 0, redeemed_value};
+
+        auto get_unlock_p2pk = [] (const Bitcoin::signature &x) {
+            return pay_to_pubkey::redeem (x);
+        };
+
+        auto get_unlock_multisig = [] (const Bitcoin::signature &x) {
+            return multisig::redeem ({x});
+        };
+
+        struct test_case {
+            bytes Script;
+            std::function<bytes (const Bitcoin::signature &)> Redeem;
+        };
+
+        for (const test_case &test : list<test_case> {
+            {pay_to_pubkey (Bitcoin::pubkey (p)).script (), get_unlock_p2pk},
+            {multisig (1, {Bitcoin::pubkey (p)}).script (), get_unlock_multisig}}) {
+
+            bytes lock_error = transform_sig_verify (test.Script);
+
+            bytes unlock_error = test.Redeem (signature::sign (x, sighash::directive (),
+                sighash::document {test_txi, 0, redeemed_value, decompile (lock_error)}));
+
+            bytes lock_false = transform_sig_verify (test.Script, OP_FALSE);
+
+            bytes unlock_false = test.Redeem (signature::sign (x, sighash::directive (),
+                sighash::document {test_txi, 0, redeemed_value, decompile (lock_false)}));
+
+            bytes lock_true = transform_sig_verify (test.Script, OP_TRUE);
+
+            bytes unlock_true = test.Redeem (signature::sign (x, sighash::directive (),
+                sighash::document {test_txi, 0, redeemed_value, decompile (lock_true)}));
+
+            auto result_1 = evaluate (unlock_error, lock_error, flag {});
+
+            failure (result_1, "OP_CHECKSIGVERIFY 1");
+
+            failure (evaluate (unlock_false, lock_false, flag {}), "OP_CHECKSIGVERIFY 2");
+
+            success (evaluate (unlock_true, lock_true, flag {}), "OP_CHECKSIGVERIFY 3");
+        }
+
     }
 
-    TEST (Script, MultisigVerify) {
-
-    }
 /*
     TEST (Script, TestCodeSeparator) {
 
