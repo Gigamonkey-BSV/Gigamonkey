@@ -46,12 +46,6 @@ namespace Gigamonkey::Bitcoin {
 
         return false;
     }
-
-    segment remove_after_last_code_separator (slice<const byte> b) {
-        program_counter counter {b};
-        while (counter.Next.size () > 0) counter = counter.next ();
-        return counter.to_last_code_separator ();
-    }
     
     bool redemption_document::check_locktime (const uint32_little &nLockTime) const {
         // There are two kinds of nLockTime: lock-by-blockheight and

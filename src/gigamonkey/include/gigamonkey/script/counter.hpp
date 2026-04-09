@@ -22,10 +22,6 @@ namespace Gigamonkey::Bitcoin {
         program_counter (slice<const byte> s);
         program_counter next () const;
 
-        // the script code is the part of the script that gets signed.
-        // normally this will be the locking script.
-        segment to_last_code_separator () const;
-
         // pre-increment;
         program_counter &operator ++ () {
             return *this = next ();
@@ -51,10 +47,6 @@ namespace Gigamonkey::Bitcoin {
         return program_counter {read_instruction (
             Script.drop (static_cast<int32> (next_counter))), Script, next_counter,
             Next.size () > 0 && Next[0] == OP_CODESEPARATOR ? next_counter : LastCodeSeparator};
-    }
-
-    segment inline program_counter::to_last_code_separator () const {
-        return decompile (slice<const byte> {Script.data () + LastCodeSeparator, Script.size () - LastCodeSeparator});
     }
 
     inline program_counter::program_counter (slice<const byte> n, slice<const byte> s, size_t c, size_t l) :

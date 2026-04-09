@@ -35,28 +35,4 @@ namespace Gigamonkey {
         return pay_to_pubkey::redeem (x.sign (doc, first (sigs).Directive));
     }
 
-    extended::transaction redeemable_transaction::redeem (const Gigamonkey::redeem &r) const {
-        Bitcoin::incomplete::transaction incomplete (*this);
-
-        uint32 index = 0;
-        list<Bitcoin::sighash::document> docs;
-        for (const input &in : this->Inputs)
-            docs <<= Bitcoin::sighash::document {
-                incomplete, index++, in.Prevout.Value,
-                Bitcoin::remove_after_last_code_separator (in.script_so_far ())};
-
-        auto inputs = this->Inputs;
-        auto sigs = Signatures;
-        list<bytes> input_scripts {};
-
-        while (size (docs) > 0) {
-            auto &in = first (inputs);
-            input_scripts <<= r (in.Prevout, first (docs), first (sigs), in.InputScriptSoFar);
-            inputs = rest (inputs);
-            docs = rest (docs);
-            sigs = rest (sigs);
-        }
-
-        return this->complete (input_scripts);
-    }
 }

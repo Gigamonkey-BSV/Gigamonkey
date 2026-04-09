@@ -58,6 +58,13 @@ namespace Gigamonkey::Bitcoin {
         std::copy (n.begin (), n.begin () + (n.size () >= 4 ? 4 : n.size ()), ul.begin ());
         return ul;
     }
+
+
+    // the script code is the part of the script that gets signed.
+    // normally this will be the locking script.
+    segment from_last_code_separator (byte_slice Script, size_t LastCodeSeparator) {
+        return decompile (slice<const byte> {Script.data () + LastCodeSeparator, Script.size () - LastCodeSeparator});
+    }
     
     maybe<result> machine::step (const program_counter &Counter) {
 
@@ -761,7 +768,8 @@ namespace Gigamonkey::Bitcoin {
                 
                 result r;
                 if (bool (Document)) {
-                    auto doc = add_script_code (*Document, cleanup_script_code (Counter.to_last_code_separator (), sig));
+                    auto doc = add_script_code (*Document, cleanup_script_code (
+                        from_last_code_separator (Counter.Script, Counter.LastCodeSeparator), sig));
                     r = result {verify_signature (sig, pub, *doc, Config.Flags)};
                     delete doc;
                 } else r = result {true};
@@ -828,7 +836,7 @@ namespace Gigamonkey::Bitcoin {
                 
                 sighash::document *doc = nullptr;
                 if (bool (Document)) {
-                    segment script_code = Counter.to_last_code_separator ();
+                    segment script_code = from_last_code_separator (Counter.Script, Counter.LastCodeSeparator);
                     
                     // Remove signature for pre-fork scripts
                     for (auto it = Stack->begin () + 1; it != Stack->begin () + 1 + nSigsCount; it++)
