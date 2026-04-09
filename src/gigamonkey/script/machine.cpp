@@ -14,7 +14,7 @@ namespace Gigamonkey::Bitcoin {
         Halt {false}, Result {false}, Config {conf},
         UtxoAfterGenesis {bool (static_cast<uint32> (Config.Flags & flag::ENABLE_GENESIS_OPCODES))},
         RequireMinimal {Config.verify_minimal_push ()},
-        Document {doc}, Stack {stack}, Exec {}, Else {}, OpCount {0} {}
+        Document {doc}, Stack {stack}, Exec {}, Else {}, OpCount {0}, LastCodeSeparator {0} {}
 
     bool inline IsValidMaxOpsPerScript (uint64_t nOpCount, const script_config &config) {
         return (nOpCount <= config.MaxOpsPerScript);
@@ -756,7 +756,9 @@ namespace Gigamonkey::Bitcoin {
             } break;
             
             // we take care of this elsewhere. 
-            case OP_CODESEPARATOR: break;
+            case OP_CODESEPARATOR: {
+                if (executed) LastCodeSeparator = Counter.Index + 1;
+            } break;
             
             case OP_CHECKSIG: 
             case OP_CHECKSIGVERIFY: {
@@ -769,7 +771,7 @@ namespace Gigamonkey::Bitcoin {
                 result r;
                 if (bool (Document)) {
                     auto doc = add_script_code (*Document, cleanup_script_code (
-                        from_last_code_separator (Counter.Script, Counter.LastCodeSeparator), sig));
+                        from_last_code_separator (Counter.Script, LastCodeSeparator), sig));
 
                     r = result {verify_signature (sig, pub, *doc, Config.Flags)};
                     delete doc;
@@ -837,7 +839,7 @@ namespace Gigamonkey::Bitcoin {
                 
                 sighash::document *doc = nullptr;
                 if (bool (Document)) {
-                    segment script_code = from_last_code_separator (Counter.Script, Counter.LastCodeSeparator);
+                    segment script_code = from_last_code_separator (Counter.Script, LastCodeSeparator);
                     
                     // Remove signature for pre-fork scripts
                     for (auto it = Stack->begin () + 1; it != Stack->begin () + 1 + nSigsCount; it++)

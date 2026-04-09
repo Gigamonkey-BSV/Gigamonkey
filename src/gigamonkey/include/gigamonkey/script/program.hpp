@@ -22,11 +22,6 @@ namespace Gigamonkey::Bitcoin {
 
     bytes compile (segment);
 
-    // delete the script up to and including the last instance of OP_CODESEPARATOR.
-    // if no OP_CODESEPARATOR is found, nothing is removed.
-    // this function is needed for correctly checking and generating signatures.
-    segment remove_after_last_code_separator (slice<const byte>);
-
     // used in the original sighash algorithm to remove instances of the same
     // signature that might have been used previously in the script.
     segment find_and_delete (segment script_code, const instruction &sig);
