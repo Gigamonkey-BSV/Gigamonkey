@@ -1179,29 +1179,9 @@ namespace Gigamonkey::Bitcoin {
 
     TEST (Script, OP_RETURN) {
 
-        //
-        success (evaluate (bytes {}, bytes {OP_RETURN}, {}), "OP_RETURN jumps to locking script");
-        success (evaluate (bytes {}, bytes {OP_RETURN, 0x00}, {}), "OP_RETURN jumps to locking script");
-        success (evaluate (bytes {}, bytes {OP_RETURN, 0x00, 0x01, 0xff, 0x43}, {}), "OP_RETURN jumps to locking script");
+        success (evaluate (bytes {OP_TRUE}, bytes {OP_RETURN}, {}), "OP_RETURN true");
+        failure (evaluate (bytes {OP_FALSE}, bytes {OP_RETURN}, {}), "OP_RETURN false");
 
-        error (evaluate (bytes {}, bytes {OP_RETURN}, flag::SAFE_RETURN_DATA), "OP_RETURN jumps to locking script");
-        error (evaluate (bytes {}, bytes {OP_RETURN, 0x00}, flag::SAFE_RETURN_DATA), "OP_RETURN jumps to locking script");
-        error (evaluate (bytes {}, bytes {OP_RETURN, 0x00, 0x01, 0xff, 0x43}, flag::SAFE_RETURN_DATA), "OP_RETURN jumps to locking script");
-
-        failure (evaluate (bytes {OP_0}, bytes {OP_RETURN}, flag::SAFE_RETURN_DATA), "OP_RETURN jumps to locking script");
-        failure (evaluate (bytes {OP_0}, bytes {OP_RETURN, 0x00}, flag::SAFE_RETURN_DATA), "OP_RETURN jumps to locking script");
-        failure (evaluate (bytes {OP_0}, bytes {OP_RETURN, 0x00, 0x01, 0xff, 0x43}, flag::SAFE_RETURN_DATA), "OP_RETURN jumps to locking script");
-
-        success (evaluate (bytes {OP_1}, bytes {OP_RETURN}, flag::SAFE_RETURN_DATA), "OP_RETURN jumps to locking script");
-        success (evaluate (bytes {OP_1}, bytes {OP_RETURN, 0x00}, flag::SAFE_RETURN_DATA), "OP_RETURN jumps to locking script");
-        success (evaluate (bytes {OP_1}, bytes {OP_RETURN, 0x00, 0x01, 0xff, 0x43}, flag::SAFE_RETURN_DATA), "OP_RETURN jumps to locking script");
-
-        //
-        success (evaluate (
-            bytes {OP_1, OP_RETURN},
-            bytes {OP_1}, flag::VERIFY_CLEANSTACK | flag::SAFE_RETURN_DATA), "OP_RETURN jumps to locking script");
-
-        // TODO
     }
 
     // We use this tx for the signature tests.

@@ -275,8 +275,12 @@ namespace Gigamonkey::Bitcoin {
             
             case OP_RETURN: {
                 if (UtxoAfterGenesis) {
-                    if (Exec.empty ()) return true;
-                    // Pre-Genesis OP_RETURN marks script as invalid
+                    if (Stack->size () < 1)
+                        return SCRIPT_ERR_INVALID_STACK_OPERATION;
+
+                    if (Gigamonkey::Bitcoin::is_zero (Stack->top ())) return false;
+
+                    return true;
                 } else return SCRIPT_ERR_OP_RETURN;
             } break;
                     
