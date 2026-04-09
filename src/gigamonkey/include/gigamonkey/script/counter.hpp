@@ -14,7 +14,6 @@ namespace Gigamonkey::Bitcoin {
         slice<const byte> Next;
         slice<const byte> Script;
         size_t Index;
-        size_t LastCodeSeparator;
         
         static slice<const byte> read_instruction (slice<const byte> subscript);
         
@@ -35,22 +34,21 @@ namespace Gigamonkey::Bitcoin {
         }
         
     private:
-        program_counter (slice<const byte> n, slice<const byte> s, size_t c, size_t l);
+        program_counter (slice<const byte> n, slice<const byte> s, size_t c);
     };
     
 
     inline program_counter::program_counter (slice<const byte> s):
-        Next {read_instruction (s)}, Script {s}, Index {0}, LastCodeSeparator {0} {}
+        Next {read_instruction (s)}, Script {s}, Index {0} {}
 
     program_counter inline program_counter::next () const {
         size_t next_counter = Index + Next.size ();
         return program_counter {read_instruction (
-            Script.drop (static_cast<int32> (next_counter))), Script, next_counter,
-            Next.size () > 0 && Next[0] == OP_CODESEPARATOR ? next_counter : LastCodeSeparator};
+            Script.drop (static_cast<int32> (next_counter))), Script, next_counter};
     }
 
-    inline program_counter::program_counter (slice<const byte> n, slice<const byte> s, size_t c, size_t l) :
-        Next {n}, Script {s}, Index {c}, LastCodeSeparator {l} {}
+    inline program_counter::program_counter (slice<const byte> n, slice<const byte> s, size_t c) :
+        Next {n}, Script {s}, Index {c} {}
 }
 
 #endif

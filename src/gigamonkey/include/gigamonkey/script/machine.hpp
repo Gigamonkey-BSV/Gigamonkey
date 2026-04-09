@@ -31,6 +31,8 @@ namespace Gigamonkey::Bitcoin {
 
         long OpCount;
 
+        size_t LastCodeSeparator;
+
         bool increment_operation ();
         uint64 max_pubkeys_per_multisig () const;
 
