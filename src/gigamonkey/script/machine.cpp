@@ -770,6 +770,7 @@ namespace Gigamonkey::Bitcoin {
                 if (bool (Document)) {
                     auto doc = add_script_code (*Document, cleanup_script_code (
                         from_last_code_separator (Counter.Script, Counter.LastCodeSeparator), sig));
+
                     r = result {verify_signature (sig, pub, *doc, Config.Flags)};
                     delete doc;
                 } else r = result {true};
