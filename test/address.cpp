@@ -88,44 +88,48 @@ namespace Gigamonkey::Bitcoin {
             EXPECT_EQ (pubkey_compressed, pubkey_uncompressed.compress ());
             EXPECT_EQ (pubkey_uncompressed, pubkey_compressed.decompress ());
 
+            // TODO test chronicle update
             flag flag_original = flag::VERIFY_NONE;
             flag flag_fork_id = flag::ENABLE_SIGHASH_FORKID;
 
-            // note: we need to use the right flags to support the original signature algorithm.
             auto evaluate_p2pk_compressed_fork_id = evaluate (redeem_p2pk_compressed_fork_id,
                 script_p2pk_compressed, doc, flag_fork_id);
+
+            EXPECT_TRUE (evaluate_p2pk_compressed_fork_id) << evaluate_p2pk_compressed_fork_id;
 
             auto evaluate_p2pk_uncompressed_fork_id = evaluate (redeem_p2pk_uncompressed_fork_id,
                 script_p2pk_uncompressed, doc, flag_fork_id);
 
+            EXPECT_TRUE (evaluate_p2pk_uncompressed_fork_id) << evaluate_p2pk_uncompressed_fork_id;
+
             auto evaluate_p2pkh_compressed_fork_id = evaluate (redeem_p2pkh_compressed_fork_id,
                 script_p2pkh_compressed, doc, flag_fork_id);
+
+            EXPECT_TRUE (evaluate_p2pkh_compressed_fork_id) << evaluate_p2pkh_compressed_fork_id;
 
             auto evaluate_p2pkh_uncompressed_fork_id = evaluate (redeem_p2pkh_uncompressed_fork_id,
                 script_p2pkh_uncompressed, doc, flag_fork_id);
 
+            EXPECT_TRUE (evaluate_p2pkh_uncompressed_fork_id) << evaluate_p2pkh_uncompressed_fork_id;
+
             auto evaluate_p2pk_compressed_original = evaluate (redeem_p2pk_compressed_original,
                 script_p2pk_compressed, doc, flag_original);
+
+            EXPECT_TRUE (evaluate_p2pk_compressed_original) << evaluate_p2pk_compressed_original;
 
             auto evaluate_p2pk_uncompressed_original = evaluate (redeem_p2pk_uncompressed_original,
                 script_p2pk_uncompressed, doc, flag_original);
 
+            EXPECT_TRUE (evaluate_p2pk_uncompressed_original) << evaluate_p2pk_uncompressed_original;
+
             auto evaluate_p2pkh_compressed_original = evaluate (redeem_p2pkh_compressed_original,
                 script_p2pkh_compressed, doc, flag_original);
+
+            EXPECT_TRUE (evaluate_p2pkh_compressed_original) << evaluate_p2pkh_compressed_original;
 
             auto evaluate_p2pkh_uncompressed_original = evaluate (redeem_p2pkh_uncompressed_original,
                 script_p2pkh_uncompressed, doc, flag_original);
 
-            EXPECT_TRUE (evaluate_p2pk_compressed_fork_id) << evaluate_p2pk_compressed_fork_id;
-            EXPECT_TRUE (evaluate_p2pk_uncompressed_fork_id) << evaluate_p2pk_uncompressed_fork_id;
-
-            EXPECT_TRUE (evaluate_p2pkh_compressed_fork_id) << evaluate_p2pkh_compressed_fork_id;
-            EXPECT_TRUE (evaluate_p2pkh_uncompressed_fork_id) << evaluate_p2pkh_uncompressed_fork_id;
-
-            EXPECT_TRUE (evaluate_p2pk_compressed_original) << evaluate_p2pk_compressed_original;
-            EXPECT_TRUE (evaluate_p2pk_uncompressed_original) << evaluate_p2pk_uncompressed_original;
-
-            EXPECT_TRUE (evaluate_p2pkh_compressed_original) << evaluate_p2pkh_compressed_original;
             EXPECT_TRUE (evaluate_p2pkh_uncompressed_original) << evaluate_p2pkh_uncompressed_original;
 
             // these next four fail because the signature is incorrect
