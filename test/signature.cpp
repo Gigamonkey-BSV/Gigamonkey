@@ -4,6 +4,8 @@
 
 #include <gigamonkey/signature.hpp>
 #include <gigamonkey/script/pattern/pay_to_address.hpp>
+#include <gigamonkey/script/pattern/pay_to_pubkey.hpp>
+#include <gigamonkey/script/pattern/multisig.hpp>
 #include <gigamonkey/wif.hpp>
 #include <gigamonkey/script/machine.hpp>
 #include "gtest/gtest.h"
@@ -238,9 +240,6 @@ namespace Gigamonkey::Bitcoin {
         
         auto sig1 = signature (p1, directive (sighash::all));
         auto sig2 = signature (p2, directive (sighash::all));
-
-        std::cout << "sig1 is " << sig1 << std::endl;
-        std::cout << "sig2 is " << sig2 << std::endl;
         
         auto push_sig1 = instruction::push (sig1);
         auto push_sig2 = instruction::push (sig2);
@@ -258,6 +257,454 @@ namespace Gigamonkey::Bitcoin {
         
     }
 
-}
+    sighash::document inline add_script_code (const redemption_document &doc, bytes script_code) {
+        return sighash::document {doc.Transaction, doc.InputIndex, doc.RedeemedValue, decompile (script_code)};
+    }
 
+    // We use this tx for the signature tests.
+    incomplete::transaction test_txi {
+        {incomplete::input {
+            outpoint {digest256 {uint256 {"0xaa00000000000000000000000000000000000000000000555555550707070707"}}, 0xcdcdcdcd},
+            0xfedcba09}}, {
+            output {1, pay_to_address::script (digest160 {uint160 {"0xbb00000000000000000000000000006565656575"}})}},
+        5};
+
+    data::array<bytes, 2> multisig_script (
+        const redemption_document &doc,
+        list<secp256k1::secret> s,
+        list<secp256k1::pubkey> p,
+        const instruction &null_push = OP_0) {
+
+        script mp = multisig (s.size (), p).script ();
+
+        sighash::document sd = add_script_code (doc, mp);
+
+        list<signature> sigs;
+
+        for (const secp256k1::secret &sk : s) sigs <<= sign (sk, sighash::all, sd);
+        script ms = multisig::redeem (sigs, null_push);
+
+        return {ms, mp};
+    }
+
+    TEST (Signature, LowS) {
+
+        secp256k1::secret x {3023332};
+        secp256k1::pubkey p = x.to_public ();
+
+        bytes lock = pay_to_pubkey (Bitcoin::pubkey (p)).script ();
+        bytes lockm = multisig (1, {Bitcoin::pubkey (p)}).script ();
+
+        size_t input_index = 0;
+        satoshi redeemed_value {0xfeee};
+
+        sighash::document doc {test_txi, 0, redeemed_value, decompile (lock)};
+        sighash::document docm {test_txi, 0, redeemed_value, decompile (lockm)};
+
+        redemption_document rd {test_txi, 0, redeemed_value};
+
+        // normally we would expect these to be normalized by
+        // default but that is not what we want to test, so
+        // we have an extra step that ensures to normalize them.
+        auto sigx = sign (x, sighash::directive (), doc);
+        auto sigxm = sign (x, sighash::directive (), docm);
+
+        // low S versions of the signatures.
+        auto sig_raw = sigx.raw ().normalize ();
+        auto sigm_raw = sigxm.raw ().normalize ();
+
+        auto sig = signature {sig_raw, sighash::directive ()};
+        auto sigm = signature {sigm_raw, sighash::directive ()};
+
+        EXPECT_TRUE (secp256k1::signature::normalized (sig_raw));
+        EXPECT_TRUE (secp256k1::signature::normalized (sigm_raw));
+
+        auto z = secp256k1::complex (sig_raw);
+        auto zm = secp256k1::complex (sigm_raw);
+
+        auto sz = -z;
+        auto szm = -zm;
+
+        // from both signatures we now extract S and invert it.
+        auto sigi_raw = secp256k1::signature (sz);
+        auto sigmi_raw = secp256k1::signature (szm);
+
+        EXPECT_FALSE (secp256k1::signature::normalized (sigi_raw));
+        EXPECT_FALSE (secp256k1::signature::normalized (sigmi_raw));
+
+        EXPECT_EQ (sig_raw, sigi_raw.normalize ());
+        EXPECT_EQ (sigm_raw, sigmi_raw.normalize ());
+
+        auto sigi = signature {sigi_raw, sighash::directive ()};
+        auto sigmi = signature {sigmi_raw, sighash::directive ()};
+
+        bytes unlock = pay_to_pubkey::redeem (sig);
+        bytes unlockm = multisig::redeem ({sigm});
+
+        bytes unlocki = pay_to_pubkey::redeem (sigi);
+        bytes unlockmi = multisig::redeem ({sigmi});
+
+        // now we run the scripts
+
+        script_config low_S_only {flag::VERIFY_LOW_S};
+        script_config either_way {flag {}};
+
+        // TODO don't just test scripts, test verify_signature
+
+        EXPECT_EQ (Error::OK, (evaluate (unlock, lock, rd, low_S_only))) << "CHECKSIG Low S provided and required";
+        EXPECT_EQ (Error::OK, (evaluate (unlock, lock, rd, either_way))) << "CHECKSIG Low S provided and not required";
+
+        EXPECT_EQ (Error::OK, (evaluate (unlockm, lockm, rd, low_S_only))) << "CHECKMULTISIG Low S provided and required";
+        EXPECT_EQ (Error::OK, (evaluate (unlockm, lockm, rd, either_way))) << "CHECKMULTISIG Low S provided and not required";
+
+        EXPECT_EQ (Error::SIG_HIGH_S, (evaluate (unlocki, lock, rd, low_S_only))) << "CHECKSIG High S provided and prohibited";
+        EXPECT_EQ (Error::OK, (evaluate (unlocki, lock, rd, either_way))) << "CHECKSIG High S provided and not prohibited";
+
+        EXPECT_EQ (Error::SIG_HIGH_S, (evaluate (unlockmi, lockm, rd, low_S_only))) << "CHECKMULTISIG High S provided and prohibited";
+        EXPECT_EQ (Error::OK, (evaluate (unlockmi, lockm, rd, either_way))) << "CHECKMULTISIG High S provided and not prohibited";
+
+    }
+
+    TEST (Signature, CompressedPubkey) {
+        secp256k1::secret x {3023332};
+
+        // we have two kinds of pubkeys
+        // the first of these should always be ok,
+        // the second will only work when
+        // VERIFY_COMPRESSED_PUBKEYTYPE is turned off.
+        secp256k1::pubkey pc = x.to_public (true);
+        secp256k1::pubkey pu = x.to_public (false);
+
+        // locking scripts for CHECKSIG and CHECKMULTISIG
+        // using the two public keys.
+        bytes lockc = pay_to_pubkey (Bitcoin::pubkey (pc)).script ();
+        bytes lockcm = multisig (1, {pc}).script ();
+
+        bytes locku = pay_to_pubkey (Bitcoin::pubkey (pu)).script ();
+        bytes lockum = multisig (1, {pu}).script ();
+
+        // generate the unlocking scripts.
+        size_t input_index = 0;
+        satoshi redeemed_value {0xfeee};
+
+        sighash::document dc {test_txi, 0, redeemed_value, decompile (lockc)};
+        sighash::document dcm {test_txi, 0, redeemed_value, decompile (lockcm)};
+
+        sighash::document du {test_txi, 0, redeemed_value, decompile (locku)};
+        sighash::document dum {test_txi, 0, redeemed_value, decompile (lockum)};
+
+        auto sigc = sign (x, sighash::directive (), dc);
+        auto sigcm = sign (x, sighash::directive (), dcm);
+
+        auto sigu = sign (x, sighash::directive (), du);
+        auto sigum = sign (x, sighash::directive (), dum);
+
+        bytes unlockc = pay_to_pubkey::redeem (sigc);
+        bytes unlockcm = multisig::redeem ({sigcm});
+
+        bytes unlocku = pay_to_pubkey::redeem (sigu);
+        bytes unlockum = multisig::redeem ({sigum});
+
+        // the flags we will be checking for this test
+        script_config compressed_required {flag::VERIFY_COMPRESSED_PUBKEYTYPE | flag::VERIFY_STRICTENC};
+        script_config compressed_not_required {flag::VERIFY_STRICTENC};
+
+        redemption_document rd {test_txi, 0, redeemed_value};
+
+        EXPECT_EQ (Error::OK, (evaluate (unlockc, lockc, rd, compressed_required))) << "CHECKSIG compressed and required";
+        EXPECT_EQ (Error::OK, (evaluate (unlockc, lockc, rd, compressed_not_required))) << "CHECKSIG compressed and not required";
+
+        EXPECT_EQ (Error::OK, (evaluate (unlockcm, lockcm, rd, compressed_required))) << "CHECKMULTISIG compressed and required";
+        EXPECT_EQ (Error::OK, (evaluate (unlockcm, lockcm, rd, compressed_not_required))) << "CHECKMULTISIG compressed and not required";
+
+        EXPECT_EQ (Error::NONCOMPRESSED_PUBKEY, (evaluate (unlocku, locku, rd, compressed_required))) << "CHECKSIG uncompressed and prohibited";
+        EXPECT_EQ (Error::OK, (evaluate (unlocku, locku, rd, compressed_not_required))) << "CHECKSIG uncompressed and not prohibited";
+
+        EXPECT_EQ (Error::NONCOMPRESSED_PUBKEY,
+            (evaluate (unlockum, lockum, rd, compressed_required)))
+                << "CHECKMULTISIG uncompressed and prohibited";
+
+        EXPECT_EQ (Error::OK, (evaluate (unlockum, lockum, rd, compressed_not_required))) << "CHECKMULTISIG uncompressed and not prohibited";
+
+    }
+
+    TEST (Signature, NULLFAIL) {
+        secp256k1::secret x {3023332};
+        secp256k1::pubkey p = x.to_public ();
+
+        // the locking script to succeed on a failed signature verification.
+        bytes lock = compile (segment {push_data (p), Bitcoin::OP_CHECKSIG, Bitcoin::OP_NOT});
+
+        // locking script for multisig
+        bytes lockm = compile (segment {} << OP_1 << push_data (p) << OP_1 << OP_CHECKMULTISIG << OP_NOT);
+
+        bytes unlock_null = compile (segment {OP_0});
+        bytes unlock_not_null = compile (segment {OP_1});
+
+        // two versions of multisig unlocking script.
+        bytes unlockm_null = compile (segment {OP_0, OP_0});
+        bytes unlockm_not_null = compile (segment {OP_0, OP_1});
+
+        // not null scripts should work only when the flag is turned on, null scripts work in either case.
+        script_config null_fail {flag::VERIFY_NULLFAIL | flag::VERIFY_STRICTENC};
+        script_config not_null_fail {flag::VERIFY_STRICTENC};
+
+        // generate the unlocking scripts.
+        size_t input_index = 0;
+        satoshi redeemed_value {0xfeee};
+
+        redemption_document rd {test_txi, 0, redeemed_value};
+        std::cout << "evaluate failing case with script " << decompile (unlock_null) << decompile (lock) << std::endl;
+        EXPECT_EQ (Error::OK, (evaluate (unlock_null, lock, rd, null_fail))) << "CHECKSIG null invalid sig and required";
+
+        EXPECT_EQ (Error::OK, (evaluate (unlock_null, lock, rd, not_null_fail))) << "CHECKSIG null invalid sig and not required";
+
+        EXPECT_EQ (Error::OK, (evaluate (unlockm_null, lockm, rd, null_fail))) << "CHECKMULTISIG null invalid sig and required";
+        EXPECT_EQ (Error::OK, (evaluate (unlockm_null, lockm, rd, not_null_fail))) << "CHECKMULTISIG null invalid sig and not required";
+
+        EXPECT_EQ (Error::SIG_NULLFAIL,
+            (evaluate (unlock_not_null, lock, rd, null_fail)))
+                << "CHECKSIG not null invalid sig and prohibited";
+
+        EXPECT_EQ (Error::OK, (evaluate (unlock_not_null, lock, rd, not_null_fail))) << "CHECKSIG not null invalid sig and not prohibited";
+
+        EXPECT_EQ (Error::SIG_NULLFAIL,
+            (evaluate (unlockm_not_null, lockm, rd, null_fail)))
+                << "CHECKMULTISIG not null invalid sig and prohibited";
+
+        EXPECT_EQ (Error::OK, (evaluate (unlockm_not_null, lockm, rd, not_null_fail))) << "CHECKMULTISIG not null invalid sig and not prohibited";
+    }
+
+    struct sighash_test {
+        sighash::directive Directive;
+
+        bool ValidForkIDDisabled;
+        bool ValidForkIDRequired;
+    };
+
+    TEST (Signature, Checksig) {
+
+        secp256k1::secret x {3023332};
+        secp256k1::pubkey p = x.to_public ();
+
+        bytes lock = pay_to_pubkey (Bitcoin::pubkey {p}).script ();
+        bytes lockm = multisig (1, {p}).script ();
+
+        size_t input_index = 0;
+        satoshi redeemed_value {0xfeee};
+
+        sighash::document doc {test_txi, 0, redeemed_value, decompile (lock)};
+        sighash::document docm {test_txi, 0, redeemed_value, decompile (lockm)};
+
+        redemption_document rd {test_txi, 0, redeemed_value};
+
+        script_config no_fork_id {flag {}};
+        script_config fork_id_enabled {flag::ENABLE_SIGHASH_FORKID};
+        script_config fork_id_required {flag::ENABLE_SIGHASH_FORKID | flag::REQUIRE_SIGHASH_FORKID};
+
+        for (const auto &test: list<sighash_test> {
+            {directive (sighash::all, false, false, false), true,  false},
+            {directive (sighash::all, false, true,  false), false, true},
+            {directive (sighash::all, false, false, true),  true,  false},
+            {directive (sighash::all, false, true,  true),  false, true}}) {
+
+            bytes unlock = pay_to_pubkey::redeem (sign (x, test.Directive, doc));
+            bytes unlockm = multisig::redeem ({sign (x, test.Directive, docm)});
+
+            auto r = evaluate (unlock, lock, rd, no_fork_id);
+            auto rm = evaluate (unlockm, lockm, rd, no_fork_id);
+
+            if (test.ValidForkIDDisabled) {
+                EXPECT_EQ (Error::OK, r) << "test CHECKSIG; forkid disabled -- success expected";
+                EXPECT_EQ (Error::OK, rm) << "test CHECKMULTISIG; forkid disabled -- success expected";
+            } else {
+                EXPECT_EQ (Error::ILLEGAL_FORKID, r) << "test CHECKSIG; forkid disabled -- error expected";
+                EXPECT_EQ (Error::ILLEGAL_FORKID, rm) << "test CHECKMULTISIG; forkid disabled -- error expected";
+            }
+
+            EXPECT_EQ (Error::OK, (evaluate (unlock, lock, rd, fork_id_enabled))) << "test CHECKSIG; forkid enabled -- success expected";
+            EXPECT_EQ (Error::OK, (evaluate (unlockm, lockm, rd, fork_id_enabled))) << "test CHECKMULTISIG; forkid enabled -- success expected";
+
+            r = evaluate (unlock, lock, rd, fork_id_required);
+            rm = evaluate (unlockm, lockm, rd, fork_id_required);
+
+            if (test.ValidForkIDRequired) {
+                EXPECT_EQ (Error::OK, r) << "test CHECKSIG; forkid required -- success expected";
+                EXPECT_EQ (Error::OK, rm) << "test CHECKMULTISIG; forkid required -- success expected";
+            } else {
+                EXPECT_EQ (Error::MUST_USE_FORKID, r) << "test CHECKSIG; forkid required -- error expected";
+                EXPECT_EQ (Error::MUST_USE_FORKID, rm) << "test CHECKMULTISIG; forkid required -- error expected";
+            }
+
+        }
+
+    }
+
+    TEST (Signature, MultisigNULLDUMMY) {
+
+        secp256k1::secret x {3023332};
+        secp256k1::pubkey p = x.to_public ();
+
+        bytes lock = multisig (1, {p}).script ();
+
+        size_t input_index = 0;
+        satoshi redeemed_value {0xfeee};
+
+        sighash::document doc {test_txi, 0, redeemed_value, decompile (lock)};
+
+        auto sig = sign (x, sighash::directive (), doc);
+
+        bytes unlock = multisig::redeem ({sig});
+        // it doesn't matter what we put here as long as it's not OP_0
+        bytes unlockx = multisig::redeem ({sig}, OP_1);
+
+        // now we run the scripts
+
+        script_config null_dummy_required {flag::VERIFY_NULLDUMMY};
+        script_config null_dummy_not_required {flag {}};
+
+        redemption_document rd {test_txi, 0, redeemed_value};
+
+        EXPECT_EQ (Error::OK, (evaluate (unlock, lock, rd, null_dummy_required))) << "CHECKSIG null dummy provided and required";
+        EXPECT_EQ (Error::OK, (evaluate (unlock, lock, rd, null_dummy_not_required))) << "CHECKSIG null dummy provided and not required";
+
+        EXPECT_EQ (Error::SIG_NULLDUMMY, (evaluate (unlockx, lock, rd, null_dummy_required))) << "CHECKSIG null dummy not provided and required";
+        EXPECT_EQ (Error::OK, (evaluate (unlockx, lock, rd, null_dummy_not_required))) << "CHECKSIG null dummy not provided and not required";
+
+    }
+
+    TEST (Signature, Multisig) {
+        incomplete::transaction tx {
+            {incomplete::input {
+                outpoint {
+                    digest256 {uint256 {"0xaa00000000000000000000000000000000000000000000555555550707070707"}}, 0xcdcdcdcd},
+                    0xfedcba09}}, {
+                output {1, pay_to_address::script (digest160 {uint160 {"0xbb00000000000000000000000000006565656575"}})},
+                output {2, pay_to_address::script (digest160 {uint160 {"0xcc00000000000000000000000000002929292985"}})}},
+            5};
+
+        redemption_document doc {tx, 0, satoshi {0xfeee}};
+
+        auto k1 = secp256k1::secret (uint256 {123456});
+        auto k2 = secp256k1::secret (uint256 {789012});
+        auto k3 = secp256k1::secret (uint256 {345678});
+
+        auto p1 = k1.to_public ();
+        auto p2 = k2.to_public ();
+        auto p3 = k3.to_public ();
+
+        struct multisig_test {
+            int Number;
+            bool Expected;
+            redemption_document Doc;
+            data::array<bytes, 2> Test;
+
+            Error run () {
+                return evaluate (Test[0], Test[1], Doc, flag {});
+            }
+
+            void test () {
+                Error r = run ();
+                EXPECT_NE (bool (r), Expected) << Number << ": script " <<
+                    decompile (Test[0]) << decompile (Test[1]) <<
+                    " expect " << Expected << "; results in " << r;
+            }
+
+            multisig_test (int num, bool ex, const redemption_document &doc, list<secp256k1::secret> s, list<secp256k1::pubkey> p) :
+                Number {num}, Expected {ex}, Doc {doc}, Test {multisig_script (doc, s, p)} {}
+        };
+
+        multisig_test {10,  true,  doc, {},           {}          }.test ();
+        multisig_test {20,  false, doc, {k1},         {}          }.test ();
+        multisig_test {30,  true,  doc, {},           {p1}        }.test ();
+        multisig_test {40,  true,  doc, {k1},         {p1}        }.test ();
+        multisig_test {50,  false, doc, {k2},         {p1}        }.test ();
+        multisig_test {60,  true,  doc, {},           {p1, p2}    }.test ();
+        multisig_test {70,  true,  doc, {k1},         {p1, p2}    }.test ();
+        multisig_test {80,  false, doc, {k3},         {p1, p2}    }.test ();
+        multisig_test {90,  true,  doc, {k1, k2},     {p1, p2}    }.test ();
+        multisig_test {100, false, doc, {k2, k1},     {p1, p2}    }.test ();
+        multisig_test {110, false, doc, {k1, k3},     {p1, p2}    }.test ();
+        multisig_test {120, false, doc, {k2, k3},     {p1, p2}    }.test ();
+        multisig_test {130, true,  doc, {},           {p1, p2, p3}}.test ();
+        multisig_test {140, true,  doc, {k1},         {p1, p2, p3}}.test ();
+        multisig_test {150, true,  doc, {k2},         {p1, p2, p3}}.test ();
+        multisig_test {160, true,  doc, {k3},         {p1, p2, p3}}.test ();
+        multisig_test {170, true,  doc, {k1, k3},     {p1, p2, p3}}.test ();
+        multisig_test {180, false, doc, {k3, k1},     {p1, p2, p3}}.test ();
+        multisig_test {190, true,  doc, {k1, k2, k3}, {p1, p2, p3}}.test ();
+        multisig_test {200, false, doc, {k3, k2, k1}, {p1, p2, p3}}.test ();
+        multisig_test {210, false, doc, {k2, k3, k1}, {p1, p2, p3}}.test ();
+
+    }
+
+    bytes transform_sig_verify (byte_slice b) {
+        if (b.size () == 0) throw 0;
+
+        byte verify;
+
+        if (b[b.size () - 1] == OP_CHECKSIG) verify = OP_CHECKSIGVERIFY;
+        if (b[b.size () - 1] == OP_CHECKMULTISIG) verify = OP_CHECKMULTISIGVERIFY;
+
+        return data::write<bytes> (b.range (0, b.size () - 1), verify);
+    }
+
+    bytes transform_sig_verify (byte_slice b, byte result) {
+        return data::write<bytes> (transform_sig_verify (b), result);
+    }
+
+    TEST (Signature, ChecksigVerify) {
+
+        secp256k1::secret x {3023332};
+        secp256k1::pubkey p = x.to_public ();
+
+        size_t input_index = 0;
+        satoshi redeemed_value {0xfeee};
+
+        redemption_document rd {test_txi, 0, redeemed_value};
+
+        auto get_unlock_p2pk = [] (const signature &x) {
+            return pay_to_pubkey::redeem (x);
+        };
+
+        auto get_unlock_multisig = [] (const signature &x) {
+            return multisig::redeem ({x});
+        };
+
+        struct test_case {
+            bytes Script;
+            std::function<bytes (const signature &)> Redeem;
+        };
+
+        for (const test_case &test : list<test_case> {
+            {pay_to_pubkey (Bitcoin::pubkey (p)).script (), get_unlock_p2pk},
+            {multisig (1, {Bitcoin::pubkey (p)}).script (), get_unlock_multisig}}) {
+
+            bytes lock_error = transform_sig_verify (test.Script);
+
+            bytes unlock_error = test.Redeem (sign (x, sighash::directive (),
+                sighash::document {test_txi, 0, redeemed_value, decompile (lock_error)}));
+
+            bytes lock_false = transform_sig_verify (test.Script, OP_FALSE);
+
+            bytes unlock_false = test.Redeem (sign (x, sighash::directive (),
+                sighash::document {test_txi, 0, redeemed_value, decompile (lock_false)}));
+
+            bytes lock_true = transform_sig_verify (test.Script, OP_TRUE);
+
+            bytes unlock_true = test.Redeem (sign (x, sighash::directive (),
+                sighash::document {test_txi, 0, redeemed_value, decompile (lock_true)}));
+
+            auto result_1 = evaluate (unlock_error, lock_error, flag {});
+
+            EXPECT_EQ (Error::INVALID_STACK_OPERATION, result_1) << "OP_CHECKSIGVERIFY 1";
+
+            EXPECT_EQ (Error::FAIL, (evaluate (unlock_false, lock_false, flag {}))) << "OP_CHECKSIGVERIFY 2";
+
+            EXPECT_EQ (Error::OK, (evaluate (unlock_true, lock_true, flag {}))) << "OP_CHECKSIGVERIFY 3";
+        }
+
+    }
+
+}
 

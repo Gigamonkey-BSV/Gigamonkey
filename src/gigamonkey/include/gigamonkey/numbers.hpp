@@ -195,8 +195,8 @@ namespace Gigamonkey::Bitcoin {
     }
 
     const integer inline &read_integer (const bytes &span, bool RequireMinimal, const size_t nMaxNumSize) {
-        if (span.size () > nMaxNumSize) throw script_exception {SCRIPT_ERR_SCRIPTNUM_OVERFLOW};
-        if (RequireMinimal && !is_minimal_number (span)) throw script_exception {SCRIPT_ERR_SCRIPTNUM_MINENCODE};
+        if (span.size () > nMaxNumSize) throw invalid_program {Error::SCRIPTNUM_OVERFLOW};
+        if (RequireMinimal && !is_minimal_number (span)) throw invalid_program {Error::SCRIPTNUM_MINENCODE};
         return static_cast<const integer &> (span);
     }
 

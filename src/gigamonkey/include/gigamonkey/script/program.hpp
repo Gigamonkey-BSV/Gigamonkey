@@ -29,7 +29,7 @@ namespace Gigamonkey::Bitcoin {
     using program = list<segment>;
 
     // check flags that can be checked without running the program.
-    ScriptError pre_verify (program, const script_config &flags);
+    Error pre_verify (program, const script_config &flags);
 
     // make the full program from the two scripts.
     program full (const segment unlock, const segment lock, bool support_p2sh);
@@ -38,7 +38,7 @@ namespace Gigamonkey::Bitcoin {
     bool is_P2SH (const segment p);
 
     bool inline valid (program p) {
-        return pre_verify (p, genesis_profile ()) == SCRIPT_ERR_OK;
+        return pre_verify (p, genesis_profile ()) == Error::OK;
     };
 
     struct execution_image {
@@ -48,14 +48,6 @@ namespace Gigamonkey::Bitcoin {
 
     execution_image compile (program p);
     program decompile (const execution_image &p);
-
-    // thrown if you try to decompile an invalid program.
-    struct invalid_program : exception {
-        ScriptError Error;
-        invalid_program (ScriptError err): Error {err} {
-            *this << "program is invalid: " << err;
-        }
-    };
 
     size_t serialized_size (segment p);
 

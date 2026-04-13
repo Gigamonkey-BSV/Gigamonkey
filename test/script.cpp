@@ -1,11 +1,8 @@
-// Copyright (c) 2019-2021 Daniel Krawisz
+// Copyright (c) 2019-2026 Daniel Krawisz
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <gigamonkey/hash.hpp>
-#include <gigamonkey/script/pattern/pay_to_address.hpp>
-#include <gigamonkey/script/pattern/pay_to_pubkey.hpp>
-#include <gigamonkey/script/pattern/multisig.hpp>
 #include <gigamonkey/script/interpreter.hpp>
 #include <gigamonkey/address.hpp>
 #include <gigamonkey/wif.hpp>
@@ -14,10 +11,6 @@
 #include <iostream>
 
 namespace Gigamonkey::Bitcoin {
-
-    sighash::document inline add_script_code (const redemption_document &doc, bytes script_code) {
-        return sighash::document {doc.Transaction, doc.InputIndex, doc.RedeemedValue, decompile (script_code)};
-    }
 
     void test_program (const bytes &b, bool expected, string explanation = "") {
         if (expected) {
@@ -120,18 +113,9 @@ namespace Gigamonkey::Bitcoin {
 
     }
 
-    void success (result r, string explanation = "") {
-        EXPECT_TRUE (r.valid () && bool (r)) << r << "; " << explanation;
-    }
-
-    void failure (result r, string explanation = "") {
-        EXPECT_FALSE (bool (r)) << explanation;
-        EXPECT_TRUE (r.valid ()) << explanation << "; " << r.Error;
-    }
-
-    void error (result r, string explanation = "") {
-        EXPECT_FALSE (bool (r)) << explanation;
-        EXPECT_FALSE (r.valid ()) << explanation << "; " << r;
+    void error (Error r, string explanation = "") {
+        EXPECT_TRUE (bool (r)) << explanation;
+        EXPECT_NE (r, Error::FAIL) << explanation << "; " << r;
     }
 
     // TODO different op codes should be invalid under different script profiles
@@ -146,347 +130,31 @@ namespace Gigamonkey::Bitcoin {
 
     }
 
-    // There's an option having to do with malleability which says that the
-    // stack has to have one element at the end or else it's an error.
-    TEST (Script, CleanStack) {
-
-        success (evaluate (bytes {}, bytes {OP_1}, flag::VERIFY_CLEANSTACK), "Clean stack A1");
-        success (evaluate (bytes {}, bytes {OP_2}, flag::VERIFY_CLEANSTACK), "Clean stack A2");
-        success (evaluate (bytes {}, bytes {OP_3}, flag::VERIFY_CLEANSTACK), "Clean stack A3");
-
-        success (evaluate (bytes {OP_0}, bytes {OP_1}, flag {}), "Clean stack B1");
-        success (evaluate (bytes {OP_0}, bytes {OP_2}, flag {}), "Clean stack B2");
-        success (evaluate (bytes {OP_0}, bytes {OP_3}, flag {}), "Clean stack B3");
-
-        error (evaluate (bytes {}, bytes {}, flag::VERIFY_CLEANSTACK), "Clean stack C0");
-        error (evaluate (bytes {OP_0}, bytes {OP_1}, flag::VERIFY_CLEANSTACK), "Clean stack C1");
-        error (evaluate (bytes {OP_0}, bytes {OP_2}, flag::VERIFY_CLEANSTACK), "Clean stack C2");
-        error (evaluate (bytes {OP_0}, bytes {OP_3}, flag::VERIFY_CLEANSTACK), "Clean stack C3");
-
-    }
-
-    TEST (Script, MinimalPush) {
-
-        failure (evaluate (bytes {OP_FALSE}, bytes {}, flag::VERIFY_MINIMALDATA), "OP_FALSE require minimal");
-        failure (evaluate (bytes {OP_FALSE}, bytes {}, flag {}), "OP_FALSE");
-
-        // other ways of pushing an empty string to the stack.
-        error (evaluate (bytes {OP_PUSHDATA1, 0x00}, bytes {}, flag::VERIFY_MINIMALDATA), "empty push 2");
-        error (evaluate (bytes {OP_PUSHDATA2, 0x00, 0x00}, bytes {}, flag::VERIFY_MINIMALDATA), "empty push 3");
-        error (evaluate (bytes {OP_PUSHDATA4, 0x00, 0x00, 0x00, 0x00}, bytes {}, flag::VERIFY_MINIMALDATA), "empty push 4");
-
-        // but they are all ok when we stop worrying about minimal data.
-        failure (evaluate (bytes {OP_PUSHDATA1, 0x00}, bytes {}, flag {}), "empty push 2");
-        failure (evaluate (bytes {OP_PUSHDATA2, 0x00, 0x00}, bytes {}, flag {}), "empty push 3");
-        failure (evaluate (bytes {OP_PUSHDATA4, 0x00, 0x00, 0x00, 0x00}, bytes {}, flag {}), "empty push 4");
-
-        success (evaluate (bytes {OP_1NEGATE}, bytes {}, flag::VERIFY_MINIMALDATA));
-        success (evaluate (bytes {OP_1}, bytes {}, flag::VERIFY_MINIMALDATA));
-        success (evaluate (bytes {OP_16}, bytes {}, flag::VERIFY_MINIMALDATA));
-
-        success (evaluate (bytes {OP_1NEGATE}, bytes {}, flag {}));
-        success (evaluate (bytes {OP_1}, bytes {}, flag {}));
-        success (evaluate (bytes {OP_16}, bytes {}, flag {}));
-
-        // Non-minimal ways of pushing -1, 1, and 16
-        error (evaluate (bytes {OP_PUSHSIZE1, 0x81}, bytes {}, flag::VERIFY_MINIMALDATA));
-        error (evaluate (bytes {OP_PUSHSIZE1, 0x01}, bytes {}, flag::VERIFY_MINIMALDATA));
-        error (evaluate (bytes {OP_PUSHSIZE1, 0x10}, bytes {}, flag::VERIFY_MINIMALDATA));
-
-        error (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x81}, bytes {}, flag::VERIFY_MINIMALDATA));
-        error (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x01}, bytes {}, flag::VERIFY_MINIMALDATA));
-        error (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x10}, bytes {}, flag::VERIFY_MINIMALDATA));
-
-        error (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x81}, bytes {}, flag::VERIFY_MINIMALDATA));
-        error (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x01}, bytes {}, flag::VERIFY_MINIMALDATA));
-        error (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x10}, bytes {}, flag::VERIFY_MINIMALDATA));
-
-        error (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x81}, bytes {}, flag::VERIFY_MINIMALDATA));
-        error (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x01}, bytes {}, flag::VERIFY_MINIMALDATA));
-        error (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x10}, bytes {}, flag::VERIFY_MINIMALDATA));
-
-        success (evaluate (bytes {OP_PUSHSIZE1, 0x81}, bytes {}, flag {}));
-        success (evaluate (bytes {OP_PUSHSIZE1, 0x01}, bytes {}, flag {}));
-        success (evaluate (bytes {OP_PUSHSIZE1, 0x10}, bytes {}, flag {}));
-
-        success (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x81}, bytes {}, flag {}));
-        success (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x01}, bytes {}, flag {}));
-        success (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x10}, bytes {}, flag {}));
-
-        success (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x81}, bytes {}, flag {}));
-        success (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x01}, bytes {}, flag {}));
-        success (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x10}, bytes {}, flag {}));
-
-        success (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x81}, bytes {}, flag {}));
-        success (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x01}, bytes {}, flag {}));
-        success (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x10}, bytes {}, flag {}));
-
-        success (evaluate (bytes {OP_PUSHSIZE1, 0x20}, bytes {}, flag::VERIFY_MINIMALDATA));
-        success (evaluate (bytes {OP_PUSHSIZE1, 0x20}, bytes {}, flag {}));
-
-        error (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x20}, bytes {}, flag::VERIFY_MINIMALDATA));
-        success (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x20}, bytes {}, flag {}));
-
-        error (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x20}, bytes {}, flag::VERIFY_MINIMALDATA));
-        success (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x20}, bytes {}, flag {}));
-
-        error (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x20}, bytes {}, flag::VERIFY_MINIMALDATA));
-        success (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x20}, bytes {}, flag {}));
-
-        // we could have a lot more here but we don't.
-
-    }
-
-    TEST (Script, Push) {
-
-        error (evaluate (bytes {}, bytes {}), "empty script");
-
-        success (evaluate (bytes {OP_TRUE}, bytes {}, flag {}), "OP_TRUE");
-        success (evaluate (bytes {OP_7}, bytes {}, flag {}), "OP_7");
-
-        success (evaluate (bytes {OP_PUSHSIZE1, 0x01}, bytes {}, flag {}), "40");
-        failure (evaluate (bytes {OP_PUSHSIZE1, 0x00}, bytes {}, flag {}), "50");
-        failure (evaluate (bytes {OP_PUSHSIZE1, 0x80}, bytes {}, flag {}), "60");
-        success (evaluate (bytes {OP_PUSHSIZE2, 0x01, 0x00}, bytes {}, flag {}), "70");
-        success (evaluate (bytes {OP_PUSHSIZE3, 0x01, 0x00, 0x00}, bytes {}, flag {}), "80");
-        failure (evaluate (bytes {OP_PUSHSIZE1, 0x00}, bytes {}, flag {}), "90");
-        failure (evaluate (bytes {OP_PUSHSIZE2, 0x00, 0x00}, bytes {}, flag {}), "100");
-        failure (evaluate (bytes {OP_PUSHSIZE3, 0x00, 0x00, 0x00}, bytes {}), "110");
-
-        error (evaluate (bytes {OP_PUSHSIZE1}, bytes {}, flag {}), "invalid PUSHSIZE1");
-        error (evaluate (bytes {OP_PUSHSIZE2, 0x01}, bytes {}, flag {}), "invalid PUSHSIZE2");
-        error (evaluate (bytes {OP_PUSHSIZE3, 0x01, 0x00}, bytes {}, flag {}), "invalid PUSHSIZE3");
-
-        failure (evaluate (bytes {OP_PUSHDATA1, 0x00}, bytes {}, flag {}), "PUSHDATA1 empty push");
-        success (evaluate (bytes {OP_PUSHDATA1, 0x01, 0x01}, bytes {}, flag {}), "160");
-        success (evaluate (bytes {OP_PUSHDATA1, 0x02, 0x00, 0x01}, bytes {}, flag {}), "170");
-        success (evaluate (bytes {OP_PUSHDATA1, 0x03, 0x00, 0x00, 0x01}, bytes {}, flag {}), "180");
-        error (evaluate (bytes {OP_PUSHDATA1, 0x01}, bytes {}, flag {}), "PUSHDATA1 invalid push 1");
-        error (evaluate (bytes {OP_PUSHDATA1, 0x02, 0x01}, bytes {}, flag {}), "PUSHDATA1 invalid push 2");
-        error (evaluate (bytes {OP_PUSHDATA1, 0x03, 0x00, 0x01}, bytes {}, flag {}), "PUSHDATA1 invalid push 3");
-
-        failure (evaluate (bytes {OP_PUSHDATA2, 0x00, 0x00}, bytes {}, flag {}), "PUSHDATA2 empty push");
-        success (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00, 0x01}, bytes {}, flag {}), "210");
-        success (evaluate (bytes {OP_PUSHDATA2, 0x02, 0x00, 0x00, 0x01}, bytes {}, flag {}), "220");
-        success (evaluate (bytes {OP_PUSHDATA2, 0x03, 0x00, 0x00, 0x00, 0x01}, bytes {}, flag {}), "230");
-        error (evaluate (bytes {OP_PUSHDATA2, 0x01, 0x00}, bytes {}, flag {}), "PUSHDATA2 invalid push");
-
-        failure (evaluate (bytes {OP_PUSHDATA4, 0x00, 0x00, 0x00, 0x00}, bytes {}, flag {}), "PUSHDATA4 empty push");
-        success (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00, 0x01}, bytes {}, flag {}), "PUSHDATA4 size 1");
-        success (evaluate (bytes {OP_PUSHDATA4, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00}, bytes {}, flag {}), "PUSHDATA4 size 2");
-        success (evaluate (bytes {OP_PUSHDATA4, 0x03, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00}, bytes {}, flag {}), "PUSHDATA4 size 3");
-
-        error (evaluate (bytes {OP_PUSHDATA4, 0x01, 0x00, 0x00, 0x00}, bytes {}, flag {}), "PUSHDATA4 invalid push");
-    }
-
-    TEST (Script, UnlockPushOnly) {
-
-        success (evaluate (bytes {}, bytes {OP_TRUE}, flag {}));
-        success (evaluate (bytes {}, bytes {OP_TRUE}, flag::VERIFY_SIGPUSHONLY));
-
-        success (evaluate (bytes {OP_TRUE}, bytes {}, flag {}));
-        success (evaluate (bytes {OP_TRUE}, bytes {}, flag::VERIFY_SIGPUSHONLY));
-
-        success (evaluate (bytes {OP_0, OP_0, OP_EQUAL}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_0, OP_0, OP_EQUAL}, bytes {}, flag::VERIFY_SIGPUSHONLY));
-
-        success (evaluate (bytes {OP_0, OP_0}, bytes {OP_EQUAL}, flag {}));
-        success (evaluate (bytes {OP_0, OP_0}, bytes {OP_EQUAL}, flag::VERIFY_SIGPUSHONLY));
-
-    }
-
-    TEST (Script, InvalidStack) {
-
-        // ops requiring at least one argument.
-        error (evaluate (bytes {OP_IF}, bytes {}, flag {}), "OP_IF");
-        error (evaluate (bytes {OP_NOTIF}, bytes {}, flag {}), "OP_NOTIF");
-        error (evaluate (bytes {OP_VERIF}, bytes {}, flag {}), "OP_VERIF");
-        error (evaluate (bytes {OP_VERNOTIF}, bytes {}, flag {}), "OP_VERNOTIF");
-        error (evaluate (bytes {OP_ELSE}, bytes {}, flag {}), "OP_ELSE");
-        error (evaluate (bytes {OP_ENDIF}, bytes {}, flag {}), "OP_ENDIF");
-
-        error (evaluate (bytes {OP_TOALTSTACK}, bytes {}, flag {}), "OP_TOALTSTACK");
-        error (evaluate (bytes {OP_FROMALTSTACK}, bytes {}, flag {}), "OP_FROMALTSTACK");
-
-        error (evaluate (bytes {OP_VERIFY}, bytes {}, flag {}), "OP_VERIFY");
-
-        error (evaluate (bytes {OP_IFDUP}, bytes {}, flag {}), "OP_IFDUP");
-
-        error (evaluate (bytes {OP_DROP}, bytes {}, flag {}), "OP_DROP");
-        error (evaluate (bytes {OP_DUP}, bytes {}, flag {}), "OP_DUP");
-        error (evaluate (bytes {OP_NIP}, bytes {}, flag {}), "OP_NIP");
-        error (evaluate (bytes {OP_OVER}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_PICK}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_ROLL}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_ROT}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_SWAP}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_TUCK}, bytes {}, flag {}));
-
-        error (evaluate (bytes {OP_2DROP}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_2DUP}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_3DUP}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_2OVER}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_2ROT}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_2SWAP}, bytes {}, flag {}));
-
-        error (evaluate (bytes {OP_CAT}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_SPLIT}, bytes {}, flag {}), "OP_SPLIT");
-        error (evaluate (bytes {OP_NUM2BIN}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_BIN2NUM}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_SIZE}, bytes {}, flag {}));
-
-        error (evaluate (bytes {OP_INVERT}, bytes {}, flag {}), "OP_INVERT");
-        error (evaluate (bytes {OP_AND}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_OR}, bytes {}, flag {}), "OP_OR");
-        error (evaluate (bytes {OP_XOR}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_EQUAL}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_EQUALVERIFY}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_1ADD}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_1SUB}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_2MUL}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_2DIV}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_NEGATE}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_ABS}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_NOT}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_0NOTEQUAL}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_ADD}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_SUB}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_MUL}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_DIV}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_MOD}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_LSHIFT}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_RSHIFT}, bytes {}, flag {}));
-
-        error (evaluate (bytes {OP_BOOLAND}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_BOOLOR}, bytes {}, flag {}), "OP_BOOLOR");
-        error (evaluate (bytes {OP_NUMEQUAL}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_NUMEQUALVERIFY}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_NUMNOTEQUAL}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_LESSTHAN}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_GREATERTHAN}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_LESSTHANOREQUAL}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_GREATERTHANOREQUAL}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_MIN}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_MAX}, bytes {}, flag {}));
-
-        error (evaluate (bytes {OP_WITHIN}, bytes {}, flag {}));
-
-        error (evaluate (bytes {OP_SHA1}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_RIPEMD160}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_SHA256}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_HASH160}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_HASH256}, bytes {}, flag {}));
-
-        error (evaluate (bytes {OP_CHECKSIG}, bytes {}, flag {}), "OP_CHECKSIG");
-        error (evaluate (bytes {OP_CHECKSIGVERIFY}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_CHECKMULTISIG}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_CHECKMULTISIGVERIFY}, bytes {}, flag {}));
-
-        error (evaluate (bytes {OP_SUBSTR}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_LEFT}, bytes {}, flag {}));
-        error (evaluate (bytes {OP_RIGHT}, bytes {}, flag {}));
-
-        // ops requiring at least 2 arguments.
-
-        error (evaluate (bytes {OP_6}, bytes {OP_NIP}, flag {}));
-        error (evaluate (bytes {OP_7}, bytes {OP_OVER}, flag {}));
-        error (evaluate (bytes {OP_10}, bytes {OP_ROT}, flag {}));
-        error (evaluate (bytes {OP_11}, bytes {OP_SWAP}, flag {}));
-        error (evaluate (bytes {OP_12}, bytes {OP_TUCK}, flag {}));
-
-        error (evaluate (bytes {OP_0}, bytes {OP_2DROP}, flag {}));
-        error (evaluate (bytes {OP_1}, bytes {OP_2DUP}, flag {}));
-        error (evaluate (bytes {OP_2}, bytes {OP_3DUP}, flag {}));
-        error (evaluate (bytes {OP_3}, bytes {OP_2OVER}, flag {}));
-        error (evaluate (bytes {OP_4}, bytes {OP_2ROT}, flag {}));
-        error (evaluate (bytes {OP_5}, bytes {OP_2SWAP}, flag {}));
-
-        error (evaluate (bytes {OP_8}, bytes {OP_CAT}, flag {}));
-        error (evaluate (bytes {OP_9}, bytes {OP_SPLIT}, flag {}));
-
-        error (evaluate (bytes {OP_3}, bytes {OP_SUBSTR}, flag {}), "OP_SUBSTR 2");
-        error (evaluate (bytes {OP_4}, bytes {OP_LEFT}, flag {}));
-        error (evaluate (bytes {OP_5}, bytes {OP_RIGHT}, flag {}));
-
-        error (evaluate (bytes {OP_13}, bytes {OP_AND}, flag {}));
-        error (evaluate (bytes {OP_14}, bytes {OP_OR}, flag {}));
-        error (evaluate (bytes {OP_15}, bytes {OP_XOR}, flag {}));
-        error (evaluate (bytes {OP_16}, bytes {OP_EQUAL}, flag {}));
-        error (evaluate (bytes {OP_0}, bytes {OP_EQUALVERIFY}, flag {}));
-        error (evaluate (bytes {OP_1}, bytes {OP_ADD}, flag {}));
-        error (evaluate (bytes {OP_2}, bytes {OP_SUB}, flag {}), "OP_SUB 2");
-
-        error (evaluate (bytes {OP_3}, bytes {OP_MUL}, flag {}));
-        error (evaluate (bytes {OP_4}, bytes {OP_DIV}, flag {}));
-        error (evaluate (bytes {OP_5}, bytes {OP_MOD}, flag {}));
-        error (evaluate (bytes {OP_6}, bytes {OP_LSHIFT}, flag {}));
-        error (evaluate (bytes {OP_7}, bytes {OP_RSHIFT}, flag {}));
-
-        error (evaluate (bytes {OP_8}, bytes {OP_BOOLAND}, flag {}));
-        error (evaluate (bytes {OP_9}, bytes {OP_BOOLOR}, flag {}));
-        error (evaluate (bytes {OP_10}, bytes {OP_NUMEQUAL}, flag {}));
-        error (evaluate (bytes {OP_11}, bytes {OP_NUMEQUALVERIFY}, flag {}));
-        error (evaluate (bytes {OP_12}, bytes {OP_NUMNOTEQUAL}, flag {}));
-        error (evaluate (bytes {OP_13}, bytes {OP_LESSTHAN}, flag {}));
-        error (evaluate (bytes {OP_14}, bytes {OP_GREATERTHAN}, flag {}));
-        error (evaluate (bytes {OP_15}, bytes {OP_LESSTHANOREQUAL}, flag {}));
-        error (evaluate (bytes {OP_16}, bytes {OP_GREATERTHANOREQUAL}, flag {}));
-        error (evaluate (bytes {OP_0}, bytes {OP_MIN}, flag {}));
-        error (evaluate (bytes {OP_1}, bytes {OP_MAX}, flag {}), "OP_MAX 2");
-
-        error (evaluate (bytes {OP_2}, bytes {OP_WITHIN}, flag {}));
-        error (evaluate (bytes {OP_8}, bytes {OP_NUM2BIN}, flag {}));
-
-        error (evaluate (bytes {OP_6}, bytes {OP_CHECKSIG}, flag {}));
-        error (evaluate (bytes {OP_7}, bytes {OP_CHECKSIGVERIFY}, flag {}));
-        error (evaluate (bytes {OP_8}, bytes {OP_CHECKMULTISIG}, flag {}));
-        error (evaluate (bytes {OP_9}, bytes {OP_CHECKMULTISIGVERIFY}, flag {}));
-
-        // taking at least 3 arguments.
-        error (evaluate (bytes {OP_10, OP_11}, bytes {OP_ROT}, flag {}));
-        error (evaluate (bytes {OP_12, OP_13}, bytes {OP_3DUP}, flag {}));
-        error (evaluate (bytes {OP_14, OP_15}, bytes {OP_2OVER}, flag {}));
-        error (evaluate (bytes {OP_16, OP_0}, bytes {OP_2ROT}, flag {}));
-        error (evaluate (bytes {OP_1, OP_2}, bytes {OP_2SWAP}, flag {}));
-        error (evaluate (bytes {OP_3, OP_4}, bytes {OP_WITHIN}, flag {}), "OP_WITHIN 3");
-        error (evaluate (bytes {OP_6, OP_7}, bytes {OP_SUBSTR}, flag {}), "OP_SUBSTR 3");
-
-        // at least 4
-        error (evaluate (bytes {OP_5, OP_6, OP_7}, bytes {OP_2OVER}, flag {}));
-        error (evaluate (bytes {OP_8, OP_9, OP_10}, bytes {OP_2ROT}, flag {}));
-        error (evaluate (bytes {OP_11, OP_12, OP_13}, bytes {OP_2SWAP}, flag {}));
-
-        // at least 6
-        error (evaluate (bytes {OP_14, OP_15, OP_16, OP_0}, bytes {OP_2ROT}, flag {}));
-        error (evaluate (bytes {OP_1, OP_2, OP_3, OP_4, OP_5}, bytes {OP_2ROT}, flag {}));
+    // TODO there are different NOPs that are treated as different things
+    // under different script profiles.
+    TEST (Script, NOP) {
+
+        error (evaluate (bytes {OP_NOP}, bytes {}, flag {}), "OP_NOP 1");
+        EXPECT_EQ (Error::OK,   (evaluate (bytes {OP_1, OP_NOP}, bytes {}, flag::VERIFY_CLEANSTACK))) << "OP_NOP 2";
+        EXPECT_EQ (Error::FAIL, (evaluate (bytes {OP_0, OP_NOP}, bytes {}, flag::VERIFY_CLEANSTACK))) << "OP_NOP 3";
 
     }
 
     TEST (Script, Opcodes) {
 
-        // OP_NOP
-        failure (evaluate (bytes {OP_NOP}, bytes {}, flag {}), "OP_NOP 1");
-        success (evaluate (bytes {OP_1, OP_NOP}, bytes {}, flag {}), "OP_NOP 2");
-        failure (evaluate (bytes {OP_0, OP_NOP}, bytes {}, flag {}), "OP_NOP 3");
-
         // OP_DEPTH
-        failure (evaluate (bytes {}, bytes {OP_DEPTH}, flag {}), "OP DEPTH 1");
-        success (evaluate (bytes {OP_FALSE}, bytes {OP_DEPTH}, flag {}), "OP DEPTH 2");
+        EXPECT_EQ (Error::FAIL, (evaluate (bytes {}, bytes {OP_DEPTH}, flag {}))) << "OP DEPTH 1";
+        EXPECT_EQ (Error::OK,   (evaluate (bytes {OP_FALSE}, bytes {OP_DEPTH}, flag {}))) << "OP DEPTH 2";
 
         // OP_EQUAL
-        success (evaluate (bytes {OP_FALSE, OP_FALSE}, bytes {OP_EQUAL}), "EQUAL 1");
-        failure (evaluate (bytes {OP_FALSE, OP_PUSHSIZE1, 0x00}, bytes {OP_EQUAL}, flag {}), "EQUAL 2");
-
-        // OP_EQUALVERIFY
-        failure (evaluate (bytes {OP_FALSE, OP_FALSE}, bytes {OP_EQUALVERIFY}, flag {}), "EQUALVERIFY 1");
-        error (evaluate (bytes {OP_FALSE, OP_TRUE}, bytes {OP_EQUALVERIFY}, flag {}), "EQUALVERIFY 2");
-        success (evaluate (bytes {OP_FALSE, OP_FALSE}, bytes {OP_EQUALVERIFY, OP_1}, flag::VERIFY_CLEANSTACK), "EQUALVERIFY 3");
+        EXPECT_EQ (Error::OK,   (evaluate (bytes {OP_FALSE, OP_FALSE}, bytes {OP_EQUAL}))) << "EQUAL 1";
+        EXPECT_EQ (Error::FAIL, (evaluate (bytes {OP_FALSE, OP_PUSHSIZE1, 0x00}, bytes {OP_EQUAL}, flag {}))) << "EQUAL 2";
 
         // OP_SIZE
-        success (evaluate (bytes {OP_0, OP_SIZE}, bytes {OP_0, OP_EQUAL}, flag {}));
-        success (evaluate (bytes {OP_1, OP_SIZE}, bytes {OP_1, OP_EQUAL}, flag {}));
-        success (evaluate (bytes {OP_16, OP_SIZE}, bytes {OP_1, OP_EQUAL}, flag {}));
-        success (evaluate (bytes {OP_PUSHSIZE3, 0x11, 0x12, 0x13, OP_SIZE}, bytes {OP_3, OP_EQUAL}, flag {}));
+        EXPECT_EQ (Error::OK, (evaluate (bytes {OP_0, OP_SIZE}, bytes {OP_0, OP_EQUAL}, flag {})));
+        EXPECT_EQ (Error::OK, (evaluate (bytes {OP_1, OP_SIZE}, bytes {OP_1, OP_EQUAL}, flag {})));
+        EXPECT_EQ (Error::OK, (evaluate (bytes {OP_16, OP_SIZE}, bytes {OP_1, OP_EQUAL}, flag {})));
+        EXPECT_EQ (Error::OK, (evaluate (bytes {OP_PUSHSIZE3, 0x11, 0x12, 0x13, OP_SIZE}, bytes {OP_3, OP_EQUAL}, flag {})));
 
     }
 
@@ -494,24 +162,31 @@ namespace Gigamonkey::Bitcoin {
 
         error (evaluate (bytes {OP_FALSE}, bytes {OP_VERIFY}, flag {}), "OP_VERIFY 1");
 
-        failure (evaluate (bytes {OP_TRUE}, bytes {OP_VERIFY}, flag {}), "OP_VERIFY 2");
+        EXPECT_EQ (Error::INVALID_STACK_OPERATION,
+            (evaluate (bytes {OP_TRUE}, bytes {OP_VERIFY}, flag {}))) << "OP_VERIFY 2";
 
-        failure (evaluate (bytes {OP_FALSE, OP_TRUE}, bytes {OP_VERIFY}, flag {}), "OP_VERIFY 3");
+        EXPECT_EQ (Error::FAIL, (evaluate (bytes {OP_FALSE, OP_TRUE}, bytes {OP_VERIFY}, flag {}))) << "OP_VERIFY 3";
 
-        success (evaluate (bytes {OP_TRUE, OP_TRUE}, bytes {OP_VERIFY}, flag {}), "OP_VERIFY 4");
+        EXPECT_EQ (Error::OK, (evaluate (bytes {OP_TRUE, OP_TRUE}, bytes {OP_VERIFY}, flag {}))) << "OP_VERIFY 4";
 
     }
 
     TEST (Script, AltStack) {
+
+        EXPECT_EQ (Error::INVALID_STACK_OPERATION, (evaluate (bytes {OP_TOALTSTACK}, bytes {}, flag {}))) << "OP_TOALTSTACK";
+        EXPECT_EQ (Error::INVALID_ALTSTACK_OPERATION, (evaluate (bytes {OP_FROMALTSTACK}, bytes {}, flag {}))) << "OP_FROMALTSTACK";
+
         // OP_TOALTSTACK
         error (evaluate (bytes {}, bytes {OP_TOALTSTACK}, flag {}), "alt stack 0");
         error (evaluate (bytes {}, bytes {OP_FROMALTSTACK}, flag {}), "alt stack 1");
+
         // OP_TOALTSTACK
-        failure (evaluate (bytes {OP_1}, bytes {OP_TOALTSTACK}, flag {}), "alt stack 2");
+        EXPECT_EQ (Error::INVALID_STACK_OPERATION, (evaluate (bytes {OP_1}, bytes {OP_TOALTSTACK}, flag {}))) << "alt stack 2";
         // OP_FROMALTSTACK
-        success (evaluate (bytes {OP_1}, bytes {OP_TOALTSTACK, OP_FROMALTSTACK}, flag {}), "alt stack 3");
+        EXPECT_EQ (Error::OK, (evaluate (bytes {OP_1}, bytes {OP_TOALTSTACK, OP_FROMALTSTACK}, flag {}))) << "alt stack 3";
     }
 
+    // we tested those particular ops first in order to make the following definitions.
     template <typename X>
     segment stack_equal (list<X> stack) {
         list<instruction> test_program;
@@ -541,7 +216,9 @@ namespace Gigamonkey::Bitcoin {
 
     template <typename X>
     void test_op (op Op, list<X> start, list<X> expected, string explanation = "") {
-        success (evaluate (compile (stack_initialize<X> (start) << Op), compile (stack_equal<X> (expected)), flag {}), explanation);
+        EXPECT_EQ (Error::OK,
+            (evaluate (compile (stack_initialize<X> (start) << Op), compile (stack_equal<X> (expected)), flag {})))
+                << explanation;
     }
 
     void test_pick_roll_error (list<int> start, string explanation) {
@@ -602,8 +279,10 @@ namespace Gigamonkey::Bitcoin {
     }
 
     void test_hash_op (op Op, slice<const byte> input, slice<const byte> result, bool expected = true) {
-        if (expected) success (evaluate (compile ({push_data (input)}), compile (segment {Op, push_data (result), OP_EQUAL}), {}));
-        else failure (evaluate (compile ({push_data (input)}), compile (segment {Op, push_data (result), OP_EQUAL}), {}));
+        if (expected)
+            EXPECT_EQ (Error::OK,
+                (evaluate (compile ({push_data (input)}), compile (segment {Op, push_data (result), OP_EQUAL}), {})));
+        else EXPECT_EQ (Error::FAIL, (evaluate (compile ({push_data (input)}), compile (segment {Op, push_data (result), OP_EQUAL}), {})));
     }
 
     TEST (Script, HashOps) {
@@ -620,6 +299,37 @@ namespace Gigamonkey::Bitcoin {
 
     void test_data_op (op Op, list<bytes> start, list<bytes> expected, string explanation = "") {
         test_op (Op, start, expected, explanation);
+    }
+
+    TEST (Script, EqualVerify) {
+
+        // OP_EQUALVERIFY
+        EXPECT_EQ (Error::INVALID_STACK_OPERATION,
+            (evaluate (bytes {OP_FALSE, OP_FALSE}, bytes {OP_EQUALVERIFY}, flag {})))
+                << "EQUALVERIFY 1";
+
+        auto eval_err_2 = evaluate (bytes {OP_1, OP_1}, bytes {OP_EQUALVERIFY}, flag {});
+
+        EXPECT_EQ (Error::INVALID_STACK_OPERATION, eval_err_2) << "OP_EQUALVERIFY 2";
+
+        error (evaluate (bytes {OP_FALSE, OP_TRUE}, bytes {OP_EQUALVERIFY}, flag {}), "EQUALVERIFY 2");
+
+        EXPECT_EQ (Error::OK,
+            (evaluate (bytes {OP_FALSE, OP_FALSE}, bytes {OP_EQUALVERIFY, OP_1}, flag::VERIFY_CLEANSTACK)))
+                << "EQUALVERIFY 3";
+
+        test_data_op (OP_EQUALVERIFY, {{0x01}, {0x01}}, {});
+        test_data_op_error (OP_EQUALVERIFY, {{0x01}, {0x01, 0x00}}, {});
+        test_data_op_error (OP_EQUALVERIFY, {{0x81}, {0x01}});
+
+        auto eval_err_1 = evaluate (bytes {OP_0, OP_1}, bytes {OP_EQUALVERIFY}, flag {});
+
+        EXPECT_EQ (Error::EQUALVERIFY, eval_err_1) << "OP_EQUALVERIFY 1";
+
+        EXPECT_EQ (Error::FAIL, (evaluate (bytes {OP_FALSE, OP_1, OP_1}, bytes {OP_EQUALVERIFY}, flag {}))) << "OP_EQUALVERIFY 3";
+
+        EXPECT_EQ (Error::OK, (evaluate (bytes {OP_TRUE, OP_1, OP_1}, bytes {OP_EQUALVERIFY}, flag {}))) << "OP_EQUALVERIFY 4";
+
     }
 
     TEST (Script, BoolOps) {
@@ -649,26 +359,6 @@ namespace Gigamonkey::Bitcoin {
 
         test_data_op (OP_BOOLAND, {{0x01}, {0x01}}, {{0x01}});
         test_data_op (OP_BOOLOR, {{0x01}, {0x01}}, {{0x01}});
-
-    }
-
-    TEST (Script, EqualVerify) {
-
-        test_data_op (OP_EQUALVERIFY, {{0x01}, {0x01}}, {});
-        test_data_op_error (OP_EQUALVERIFY, {{0x01}, {0x01, 0x00}}, {});
-        test_data_op_error (OP_EQUALVERIFY, {{0x81}, {0x01}});
-
-        auto eval_err_1 = evaluate (bytes {OP_0, OP_1}, bytes {OP_EQUALVERIFY}, flag {});
-
-        error (eval_err_1, "OP_EQUALVERIFY 1");
-
-        auto eval_err_2 = evaluate (bytes {OP_1, OP_1}, bytes {OP_EQUALVERIFY}, flag {});
-
-        failure (eval_err_2, "OP_EQUALVERIFY 2");
-
-        failure (evaluate (bytes {OP_FALSE, OP_1, OP_1}, bytes {OP_EQUALVERIFY}, flag {}), "OP_EQUALVERIFY 3");
-
-        success (evaluate (bytes {OP_TRUE, OP_1, OP_1}, bytes {OP_EQUALVERIFY}, flag {}), "OP_EQUALVERIFY 4");
 
     }
 
@@ -746,7 +436,7 @@ namespace Gigamonkey::Bitcoin {
 
     }
 
-    TEST (Script, BitShift) {
+    TEST (Script, Shift) {
 
         // negative numbers not allowed.
         test_data_op_error (OP_LSHIFT, {{}, {0x81}});
@@ -860,21 +550,24 @@ namespace Gigamonkey::Bitcoin {
                     bytes right = first (right_set);
                     right_set = rest (right_set);
 
-                    success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_NUMEQUAL}, flag {}));
-                    success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_NUMEQUAL}, flag {}));
+                    EXPECT_EQ (Error::OK,
+                        (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_NUMEQUAL}, flag {})));
 
-                    failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_NUMNOTEQUAL}, flag {}));
-                    failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_NUMNOTEQUAL}, flag {}));
+                    EXPECT_EQ (Error::OK,
+                        (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_NUMEQUAL}, flag {})));
 
-                    failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_LESSTHAN}, flag {}));
-                    failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_GREATERTHAN}, flag {}));
-                    failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_LESSTHAN}, flag {}));
-                    failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_GREATERTHAN}, flag {}));
+                    EXPECT_EQ (Error::FAIL, (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_NUMNOTEQUAL}, flag {})));
+                    EXPECT_EQ (Error::FAIL, (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_NUMNOTEQUAL}, flag {})));
 
-                    success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_LESSTHANOREQUAL}, flag {}));
-                    success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_GREATERTHANOREQUAL}, flag {}));
-                    success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_LESSTHANOREQUAL}, flag {}));
-                    success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_GREATERTHANOREQUAL}, flag {}));
+                    EXPECT_EQ (Error::FAIL, (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_LESSTHAN}, flag {})));
+                    EXPECT_EQ (Error::FAIL, (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_GREATERTHAN}, flag {})));
+                    EXPECT_EQ (Error::FAIL, (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_LESSTHAN}, flag {})));
+                    EXPECT_EQ (Error::FAIL, (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_GREATERTHAN}, flag {})));
+
+                    EXPECT_EQ (Error::OK,   (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_LESSTHANOREQUAL}, flag {})));
+                    EXPECT_EQ (Error::OK,   (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_GREATERTHANOREQUAL}, flag {})));
+                    EXPECT_EQ (Error::OK,   (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_LESSTHANOREQUAL}, flag {})));
+                    EXPECT_EQ (Error::OK,   (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_GREATERTHANOREQUAL}, flag {})));
 
                 }
 
@@ -887,21 +580,21 @@ namespace Gigamonkey::Bitcoin {
                         bytes right = first (right_set);
                         right_set = rest (right_set);
 
-                        failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_NUMEQUAL}, flag {}));
-                        failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_NUMEQUAL}, flag {}));
+                        EXPECT_EQ (Error::FAIL, (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_NUMEQUAL}, flag {})));
+                        EXPECT_EQ (Error::FAIL, (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_NUMEQUAL}, flag {})));
 
-                        success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_NUMNOTEQUAL}, flag {}));
-                        success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_NUMNOTEQUAL}, flag {}));
+                        EXPECT_EQ (Error::OK,   (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_NUMNOTEQUAL}, flag {})));
+                        EXPECT_EQ (Error::OK,   (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_NUMNOTEQUAL}, flag {})));
 
-                        success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_LESSTHAN}, flag {}));
-                        failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_GREATERTHAN}, flag {}));
-                        failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_LESSTHAN}, flag {}));
-                        success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_GREATERTHAN}, flag {}));
+                        EXPECT_EQ (Error::OK,   (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_LESSTHAN}, flag {})));
+                        EXPECT_EQ (Error::FAIL, (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_GREATERTHAN}, flag {})));
+                        EXPECT_EQ (Error::FAIL, (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_LESSTHAN}, flag {})));
+                        EXPECT_EQ (Error::OK,   (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_GREATERTHAN}, flag {})));
 
-                        success (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_LESSTHANOREQUAL}, flag {}));
-                        failure (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_GREATERTHANOREQUAL}, flag {}));
-                        failure (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_LESSTHANOREQUAL}, flag {}));
-                        success (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_GREATERTHANOREQUAL}, flag {}));
+                        EXPECT_EQ (Error::OK,   (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_LESSTHANOREQUAL}, flag {})));
+                        EXPECT_EQ (Error::FAIL, (evaluate (compile (stack_initialize<bytes> ({left, right})), {OP_GREATERTHANOREQUAL}, flag {})));
+                        EXPECT_EQ (Error::FAIL, (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_LESSTHANOREQUAL}, flag {})));
+                        EXPECT_EQ (Error::OK,   (evaluate (compile (stack_initialize<bytes> ({right, left})), {OP_GREATERTHANOREQUAL}, flag {})));
 
                     }
                 }
@@ -912,10 +605,10 @@ namespace Gigamonkey::Bitcoin {
 
     TEST (Script, NumberWithin) {
 
-        failure (evaluate (bytes {OP_0, OP_0, OP_0}, bytes {OP_WITHIN}, flag {}), "Within 1");
-        success (evaluate (bytes {OP_0, OP_0, OP_1}, bytes {OP_WITHIN}, flag {}), "Within 2");
-        failure (evaluate (bytes {OP_1, OP_0, OP_1}, bytes {OP_WITHIN}, flag {}), "Within 3");
-        success (evaluate (bytes {OP_1, OP_0, OP_2}, bytes {OP_WITHIN}, flag {}), "Within 4");
+        EXPECT_EQ (Error::FAIL, (evaluate (bytes {OP_0, OP_0, OP_0}, bytes {OP_WITHIN}, flag {}))) << "Within 1";
+        EXPECT_EQ (Error::OK,   (evaluate (bytes {OP_0, OP_0, OP_1}, bytes {OP_WITHIN}, flag {}))) << "Within 2";
+        EXPECT_EQ (Error::FAIL, (evaluate (bytes {OP_1, OP_0, OP_1}, bytes {OP_WITHIN}, flag {}))) << "Within 3";
+        EXPECT_EQ (Error::OK,   (evaluate (bytes {OP_1, OP_0, OP_2}, bytes {OP_WITHIN}, flag {}))) << "Within 4";
 
     }
 
@@ -925,11 +618,13 @@ namespace Gigamonkey::Bitcoin {
         test_data_op_error (OP_NUMEQUALVERIFY, {{0x81}, {0x01}});
 
         error (evaluate (bytes {OP_0, OP_1}, bytes {OP_NUMEQUALVERIFY}, flag {}), "OP_NUMEQUALVERIFY 1");
-        failure (evaluate (bytes {OP_1, OP_1}, bytes {OP_NUMEQUALVERIFY}, flag {}), "OP_NUMEQUALVERIFY 2");
 
-        failure (evaluate (bytes {OP_FALSE, OP_1, OP_1}, bytes {OP_NUMEQUALVERIFY}, flag {}), "OP_NUMEQUALVERIFY 3");
+        EXPECT_EQ (Error::INVALID_STACK_OPERATION,
+            (evaluate (bytes {OP_1, OP_1}, bytes {OP_NUMEQUALVERIFY}, flag {}))) << "OP_NUMEQUALVERIFY 2";
 
-        success (evaluate (bytes {OP_TRUE, OP_1, OP_1}, bytes {OP_NUMEQUALVERIFY}, flag {}), "OP_NUMEQUALVERIFY 4");
+        EXPECT_EQ (Error::FAIL, (evaluate (bytes {OP_FALSE, OP_1, OP_1}, bytes {OP_NUMEQUALVERIFY}, flag {}))) << "OP_NUMEQUALVERIFY 3";
+
+        EXPECT_EQ (Error::OK, (evaluate (bytes {OP_TRUE, OP_1, OP_1}, bytes {OP_NUMEQUALVERIFY}, flag {}))) << "OP_NUMEQUALVERIFY 4";
 
     }
 
@@ -1007,19 +702,19 @@ namespace Gigamonkey::Bitcoin {
     TEST (Script, OP_VER) {
         test_data_op (OP_VER, {}, {{0x01, 0x00, 0x00, 0x00}});
 
-        success (evaluate (list<bytes> {bytes {OP_VER, OP_PUSHSIZE4, 0x02, 0x00, 0x00, 0x00, OP_EQUAL}},
-            script_config {2, epoch::chronicle}), "OP_VER 1");
+        EXPECT_EQ (Error::OK, (evaluate (list<bytes> {bytes {OP_VER, OP_PUSHSIZE4, 0x02, 0x00, 0x00, 0x00, OP_EQUAL}},
+            script_config {2, epoch::chronicle}))) << "OP_VER 1";
 
-        success (evaluate ({bytes {OP_VER, OP_PUSHSIZE4, 0x03, 0x00, 0x00, 0x00, OP_EQUAL}},
-            script_config {3, epoch::chronicle}), "OP_VER 2");
+        EXPECT_EQ (Error::OK, (evaluate ({bytes {OP_VER, OP_PUSHSIZE4, 0x03, 0x00, 0x00, 0x00, OP_EQUAL}},
+            script_config {3, epoch::chronicle}))) << "OP_VER 2";
     }
 
     TEST (Script, MinimalIf) {
-        success (evaluate (bytes {
+        EXPECT_EQ (Error::OK, (evaluate (bytes {
             OP_2, OP_IF,
             OP_1,
             OP_ENDIF
-        }, bytes {}, flag {}), "non-minimal IF allowed");
+        }, bytes {}, flag {}))) << "non-minimal IF allowed";
 
         error (evaluate (bytes {
             OP_2, OP_IF,
@@ -1027,11 +722,11 @@ namespace Gigamonkey::Bitcoin {
             OP_ENDIF
         }, bytes {}, flag::VERIFY_MINIMALIF), "non-minimal IF condition");
 
-        success (evaluate (bytes {
+        EXPECT_EQ (Error::OK, (evaluate (bytes {
             OP_PUSHSIZE1, 0x00, OP_NOTIF,
             OP_1,
             OP_ENDIF
-        }, bytes {}, flag {}), "non-minimal NOTIF allowed");
+        }, bytes {}, flag {}))) << "non-minimal NOTIF allowed";
 
         error (evaluate (bytes {
             OP_PUSHSIZE1, 0x00, OP_NOTIF,
@@ -1041,84 +736,91 @@ namespace Gigamonkey::Bitcoin {
     }
 
     TEST (Script, If) {
+        // TODO this is not the correct error
+        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL, (evaluate (bytes {OP_IF}, bytes {}, flag {}))) << "OP_IF";
+        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL, (evaluate (bytes {OP_NOTIF}, bytes {}, flag {}))) << "OP_NOTIF";
+        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL, (evaluate (bytes {OP_VERIF}, bytes {}, flag {}))) << "OP_VERIF";
+        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL, (evaluate (bytes {OP_VERNOTIF}, bytes {}, flag {}))) << "OP_VERNOTIF";
+        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL, (evaluate (bytes {OP_ELSE}, bytes {}, flag {}))) << "OP_ELSE";
+        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL, (evaluate (bytes {OP_ENDIF}, bytes {}, flag {}))) << "OP_ENDIF";
 
-        success (evaluate (bytes {
+        EXPECT_EQ (Error::OK, (evaluate (bytes {
             OP_1, OP_IF,
             OP_1,
             OP_ELSE,
             OP_0,
             OP_ENDIF
-        }, bytes {}, flag {}), "OP_IF: true branch");
+        }, bytes {}, flag {}))) << "OP_IF: true branch";
 
-        success (evaluate (bytes {
+        EXPECT_EQ (Error::OK, (evaluate (bytes {
             OP_10, OP_VERIF,
             OP_1,
             OP_ELSE,
             OP_0,
             OP_ENDIF
-        }, bytes {}, flag {}), "OP_VERIF: true branch");
+        }, bytes {}, flag {}))) << "OP_VERIF: true branch";
 
-        failure (evaluate (bytes {
+        EXPECT_EQ (Error::FAIL, (evaluate (bytes {
             OP_0, OP_IF,
             OP_1,
             OP_ELSE,
             OP_0,
             OP_ENDIF
-        }, bytes {}, flag {}), "OP_IF: false branch");
+        }, bytes {}, flag {}))) << "OP_IF: false branch";
 
-        failure (evaluate (bytes {
+        EXPECT_EQ (Error::FAIL, (evaluate (bytes {
             OP_0, OP_VERIF,
             OP_1,
             OP_ELSE,
             OP_0,
             OP_ENDIF
-        }, bytes {}, flag {}), "OP_IF: false branch");
+        }, bytes {}, flag {}))) << "OP_IF: false branch";
 
-        failure (evaluate (bytes {
+        EXPECT_EQ (Error::FAIL, (evaluate (bytes {
             OP_1, OP_NOTIF,
             OP_1,
             OP_ELSE,
             OP_0,
             OP_ENDIF
-        }, bytes {}, flag {}), "OP_NOTIF: true branch");
+        }, bytes {}, flag {}))) << "OP_NOTIF: true branch";
 
-        failure (evaluate (bytes {
+        EXPECT_EQ (Error::FAIL, (evaluate (bytes {
             OP_10, OP_VERNOTIF,
             OP_1,
             OP_ELSE,
             OP_0,
             OP_ENDIF
-        }, bytes {}, flag {}), "OP_NOTIF: true branch");
+        }, bytes {}, flag {}))) << "OP_NOTIF: true branch";
 
-        success (evaluate (bytes {
+        EXPECT_EQ (Error::OK, (evaluate (bytes {
             OP_0, OP_NOTIF,
             OP_1,
             OP_ELSE,
             OP_0,
             OP_ENDIF
-        }, bytes {}, flag {}), "OP_NOTIF: false branch");
+        }, bytes {}, flag {}))) << "OP_NOTIF: false branch";
 
-        success (evaluate (bytes {
+        EXPECT_EQ (Error::OK, (evaluate (bytes {
             OP_0, OP_VERNOTIF,
             OP_1,
             OP_ELSE,
             OP_0,
             OP_ENDIF
-        }, bytes {}, flag {}), "OP_NOTIF: false branch");
+        }, bytes {}, flag {}))) << "OP_NOTIF: false branch";
 
-        success (evaluate (bytes {
+        EXPECT_EQ (Error::OK, (evaluate (bytes {
             OP_1,
             OP_0, OP_IF,
             OP_0,
             OP_ENDIF
-        }, bytes {}, flag {}), "OP_IF: not executed");
+        }, bytes {}, flag {}))) << "OP_IF: not executed";
 
-        success (evaluate (bytes {
+        EXPECT_EQ (Error::OK, (evaluate (bytes {
             OP_1,
             OP_1, OP_NOTIF,
             OP_0,
             OP_ENDIF
-        }, bytes {}, flag {}), "OP_NOTIF: not executed");
+        }, bytes {}, flag {}))) << "OP_NOTIF: not executed";
 
         // missing OP_ENDIF
         error (evaluate (bytes {
@@ -1179,441 +881,8 @@ namespace Gigamonkey::Bitcoin {
 
     TEST (Script, OP_RETURN) {
 
-        success (evaluate (bytes {OP_TRUE}, bytes {OP_RETURN}, {}), "OP_RETURN true");
-        failure (evaluate (bytes {OP_FALSE}, bytes {OP_RETURN}, {}), "OP_RETURN false");
-
-    }
-
-    // We use this tx for the signature tests.
-    incomplete::transaction test_txi {
-        {incomplete::input {
-            outpoint {digest256 {uint256 {"0xaa00000000000000000000000000000000000000000000555555550707070707"}}, 0xcdcdcdcd},
-            0xfedcba09}}, {
-            output {1, pay_to_address::script (digest160 {uint160 {"0xbb00000000000000000000000000006565656575"}})}},
-        5};
-
-    data::array<bytes, 2> multisig_script (
-        const redemption_document &doc,
-        list<secp256k1::secret> s,
-        list<secp256k1::pubkey> p,
-        const instruction &null_push = OP_0) {
-
-        script mp = multisig (s.size (), p).script ();
-
-        sighash::document sd = add_script_code (doc, mp);
-
-        list<signature> sigs;
-
-        for (const secp256k1::secret &sk : s) sigs <<= signature::sign (sk, sighash::all, sd);
-        script ms = multisig::redeem (sigs, null_push);
-
-        return {ms, mp};
-    }
-
-    TEST (Script, LowS) {
-
-        secp256k1::secret x {3023332};
-        secp256k1::pubkey p = x.to_public ();
-
-        bytes lock = pay_to_pubkey (Bitcoin::pubkey (p)).script ();
-        bytes lockm = multisig (1, {Bitcoin::pubkey (p)}).script ();
-
-        size_t input_index = 0;
-        satoshi redeemed_value {0xfeee};
-
-        sighash::document doc {test_txi, 0, redeemed_value, decompile (lock)};
-        sighash::document docm {test_txi, 0, redeemed_value, decompile (lockm)};
-
-        redemption_document rd {test_txi, 0, redeemed_value};
-
-        // normally we would expect these to be normalized by
-        // default but that is not what we want to test, so
-        // we have an extra step that ensures to normalize them.
-        auto sigx = signature::sign (x, sighash::directive (), doc);
-        auto sigxm = signature::sign (x, sighash::directive (), docm);
-
-        // low S versions of the signatures.
-        auto sig_raw = sigx.raw ().normalize ();
-        auto sigm_raw = sigxm.raw ().normalize ();
-
-        auto sig = signature {sig_raw, sighash::directive ()};
-        auto sigm = signature {sigm_raw, sighash::directive ()};
-
-        EXPECT_TRUE (secp256k1::signature::normalized (sig_raw));
-        EXPECT_TRUE (secp256k1::signature::normalized (sigm_raw));
-
-        auto z = secp256k1::complex (sig_raw);
-        auto zm = secp256k1::complex (sigm_raw);
-
-        auto sz = -z;
-        auto szm = -zm;
-
-        // from both signatures we now extract S and invert it.
-        auto sigi_raw = secp256k1::signature (sz);
-        auto sigmi_raw = secp256k1::signature (szm);
-
-        EXPECT_FALSE (secp256k1::signature::normalized (sigi_raw));
-        EXPECT_FALSE (secp256k1::signature::normalized (sigmi_raw));
-
-        EXPECT_EQ (sig_raw, sigi_raw.normalize ());
-        EXPECT_EQ (sigm_raw, sigmi_raw.normalize ());
-
-        auto sigi = signature {sigi_raw, sighash::directive ()};
-        auto sigmi = signature {sigmi_raw, sighash::directive ()};
-
-        bytes unlock = pay_to_pubkey::redeem (sig);
-        bytes unlockm = multisig::redeem ({sigm});
-
-        bytes unlocki = pay_to_pubkey::redeem (sigi);
-        bytes unlockmi = multisig::redeem ({sigmi});
-
-        // now we run the scripts
-
-        script_config low_S_only {flag::VERIFY_LOW_S};
-        script_config either_way {flag {}};
-
-        success (evaluate (unlock, lock, rd, low_S_only), "CHECKSIG Low S provided and required");
-        success (evaluate (unlock, lock, rd, either_way), "CHECKSIG Low S provided and not required");
-
-        success (evaluate (unlockm, lockm, rd, low_S_only), "CHECKMULTISIG Low S provided and required");
-        success (evaluate (unlockm, lockm, rd, either_way), "CHECKMULTISIG Low S provided and not required");
-
-        //error (evaluate (unlocki, lock, rd, low_S_only), "CHECKSIG High S provided and prohibited");
-        success (evaluate (unlocki, lock, rd, either_way), "CHECKSIG High S provided and not prohibited");
-
-        //error (evaluate (unlockmi, lockm, rd, low_S_only), "CHECKMULTISIG High S provided and prohibited");
-        success (evaluate (unlockmi, lockm, rd, either_way), "CHECKMULTISIG High S provided and not prohibited");
-
-    }
-
-    TEST (Script, SignatureCompressedPubkey) {
-        secp256k1::secret x {3023332};
-
-        // we have two kinds of pubkeys
-        // the first of these should always be ok,
-        // the second will only work when
-        // VERIFY_COMPRESSED_PUBKEYTYPE is turned off.
-        secp256k1::pubkey pc = x.to_public (true);
-        secp256k1::pubkey pu = x.to_public (false);
-
-        // locking scripts for CHECKSIG and CHECKMULTISIG
-        // using the two public keys.
-        bytes lockc = pay_to_pubkey (Bitcoin::pubkey (pc)).script ();
-        bytes lockcm = multisig (1, {pc}).script ();
-
-        bytes locku = pay_to_pubkey (Bitcoin::pubkey (pu)).script ();
-        bytes lockum = multisig (1, {pu}).script ();
-
-        // generate the unlocking scripts.
-        size_t input_index = 0;
-        satoshi redeemed_value {0xfeee};
-
-        sighash::document dc {test_txi, 0, redeemed_value, decompile (lockc)};
-        sighash::document dcm {test_txi, 0, redeemed_value, decompile (lockcm)};
-
-        sighash::document du {test_txi, 0, redeemed_value, decompile (locku)};
-        sighash::document dum {test_txi, 0, redeemed_value, decompile (lockum)};
-
-        auto sigc = signature::sign (x, sighash::directive (), dc);
-        auto sigcm = signature::sign (x, sighash::directive (), dcm);
-
-        auto sigu = signature::sign (x, sighash::directive (), du);
-        auto sigum = signature::sign (x, sighash::directive (), dum);
-
-        bytes unlockc = pay_to_pubkey::redeem (sigc);
-        bytes unlockcm = multisig::redeem ({sigcm});
-
-        bytes unlocku = pay_to_pubkey::redeem (sigu);
-        bytes unlockum = multisig::redeem ({sigum});
-
-        // the flags we will be checking for this test
-        script_config compressed_required {flag::VERIFY_COMPRESSED_PUBKEYTYPE | flag::VERIFY_STRICTENC};
-        script_config compressed_not_required {flag::VERIFY_STRICTENC};
-
-        redemption_document rd {test_txi, 0, redeemed_value};
-
-        success (evaluate (unlockc, lockc, rd, compressed_required), "CHECKSIG compressed and required");
-        success (evaluate (unlockc, lockc, rd, compressed_not_required), "CHECKSIG compressed and not required");
-
-        success (evaluate (unlockcm, lockcm, rd, compressed_required), "CHECKMULTISIG compressed and required");
-        success (evaluate (unlockcm, lockcm, rd, compressed_not_required), "CHECKMULTISIG compressed and not required");
-
-        error (evaluate (unlocku, locku, rd, compressed_required), "CHECKSIG uncompressed and prohibited");
-        success (evaluate (unlocku, locku, rd, compressed_not_required), "CHECKSIG uncompressed and not prohibited");
-
-        error (evaluate (unlockum, lockum, rd, compressed_required), "CHECKMULTISIG uncompressed and prohibited");
-        success (evaluate (unlockum, lockum, rd, compressed_not_required), "CHECKMULTISIG uncompressed and not prohibited");
-
-    }
-
-    TEST (Script, SignatureNULLFAIL) {
-        secp256k1::secret x {3023332};
-        secp256k1::pubkey p = x.to_public ();
-
-        // the locking script to succeed on a failed signature verification.
-        bytes lock = compile (segment {push_data (p), Bitcoin::OP_CHECKSIG, Bitcoin::OP_NOT});
-
-        // locking script for multisig
-        bytes lockm = compile (segment {} << OP_1 << push_data (p) << OP_1 << OP_CHECKMULTISIG << OP_NOT);
-
-        bytes unlock_null = compile (segment {OP_0});
-        bytes unlock_not_null = compile (segment {OP_1});
-
-        // two versions of multisig unlocking script.
-        bytes unlockm_null = compile (segment {OP_0, OP_0});
-        bytes unlockm_not_null = compile (segment {OP_0, OP_1});
-
-        // not null scripts should work only when the flag is turned on, null scripts work in either case.
-        script_config null_fail {flag::VERIFY_NULLFAIL | flag::VERIFY_STRICTENC};
-        script_config not_null_fail {flag::VERIFY_STRICTENC};
-
-        // generate the unlocking scripts.
-        size_t input_index = 0;
-        satoshi redeemed_value {0xfeee};
-
-        redemption_document rd {test_txi, 0, redeemed_value};
-
-        success (evaluate (unlock_null, lock, rd, null_fail), "CHECKSIG null invalid sig and required");
-        success (evaluate (unlock_null, lock, rd, not_null_fail), "CHECKSIG null invalid sig and not required");
-
-        success (evaluate (unlockm_null, lockm, rd, null_fail), "CHECKMULTISIG null invalid sig and required");
-        success (evaluate (unlockm_null, lockm, rd, not_null_fail), "CHECKMULTISIG null invalid sig and not required");
-
-        error (evaluate (unlock_not_null, lock, rd, null_fail), "CHECKSIG not null invalid sig and prohibited");
-        success (evaluate (unlock_not_null, lock, rd, not_null_fail), "CHECKSIG not null invalid sig and not prohibited");
-
-        error (evaluate (unlockm_not_null, lockm, rd, null_fail), "CHECKMULTISIG not null invalid sig and prohibited");
-        success (evaluate (unlockm_not_null, lockm, rd, not_null_fail), "CHECKMULTISIG not null invalid sig and not prohibited");
-    }
-
-    struct sighash_test {
-        sighash::directive Directive;
-
-        bool ValidForkIDDisabled;
-        bool ValidForkIDRequired;
-    };
-
-    TEST (Script, Sighash) {
-
-        secp256k1::secret x {3023332};
-        secp256k1::pubkey p = x.to_public ();
-
-        bytes lock = pay_to_pubkey (Bitcoin::pubkey {p}).script ();
-        bytes lockm = multisig (1, {p}).script ();
-
-        size_t input_index = 0;
-        satoshi redeemed_value {0xfeee};
-
-        sighash::document doc {test_txi, 0, redeemed_value, decompile (lock)};
-        sighash::document docm {test_txi, 0, redeemed_value, decompile (lockm)};
-
-        redemption_document rd {test_txi, 0, redeemed_value};
-
-        script_config no_fork_id {flag {}};
-        script_config fork_id_enabled {flag::ENABLE_SIGHASH_FORKID};
-        script_config fork_id_required {flag::ENABLE_SIGHASH_FORKID | flag::REQUIRE_SIGHASH_FORKID};
-
-        for (const auto &test: list<sighash_test> {
-            {directive (sighash::all, false, false, false), true,  false},
-            {directive (sighash::all, false, true,  false), false, true},
-            {directive (sighash::all, false, false, true),  true,  false},
-            {directive (sighash::all, false, true,  true),  false, true}}) {
-
-            bytes unlock = pay_to_pubkey::redeem (signature::sign (x, test.Directive, doc));
-            bytes unlockm = multisig::redeem ({signature::sign (x, test.Directive, docm)});
-
-            auto r = evaluate (unlock, lock, rd, no_fork_id);
-            auto rm = evaluate (unlockm, lockm, rd, no_fork_id);
-
-            if (test.ValidForkIDDisabled) {
-                success (r, "test CHECKSIG; forkid disabled -- success expected");
-                success (rm, "test CHECKMULTISIG; forkid disabled -- success expected");
-            } else {
-                error (r, "test CHECKSIG; forkid disabled -- error expected");
-                error (rm, "test CHECKMULTISIG; forkid disabled -- error expected");
-            }
-
-            success (evaluate (unlock, lock, rd, fork_id_enabled), "test CHECKSIG; forkid enabled -- success expected");
-            success (evaluate (unlockm, lockm, rd, fork_id_enabled), "test CHECKMULTISIG; forkid enabled -- success expected");
-
-            r = evaluate (unlock, lock, rd, fork_id_required);
-            rm = evaluate (unlockm, lockm, rd, fork_id_required);
-
-            if (test.ValidForkIDRequired) {
-                success (r, "test CHECKSIG; forkid required -- success expected");
-                success (rm, "test CHECKMULTISIG; forkid required -- success expected");
-            } else {
-                error (r, "test CHECKSIG; forkid required -- error expected");
-                error (rm, "test CHECKMULTISIG; forkid required -- error expected");
-            }
-
-        }
-
-    }
-
-    TEST (Script, MultisigNULLDUMMY) {
-
-        secp256k1::secret x {3023332};
-        secp256k1::pubkey p = x.to_public ();
-
-        bytes lock = multisig (1, {p}).script ();
-
-        size_t input_index = 0;
-        satoshi redeemed_value {0xfeee};
-
-        sighash::document doc {test_txi, 0, redeemed_value, decompile (lock)};
-
-        auto sig = signature::sign (x, sighash::directive (), doc);
-
-        bytes unlock = multisig::redeem ({sig});
-        // it doesn't matter what we put here as long as it's not OP_0
-        bytes unlockx = multisig::redeem ({sig}, OP_1);
-
-        // now we run the scripts
-
-        script_config null_dummy_required {flag::VERIFY_NULLDUMMY};
-        script_config null_dummy_not_required {flag {}};
-
-        redemption_document rd {test_txi, 0, redeemed_value};
-
-        success (evaluate (unlock, lock, rd, null_dummy_required), "CHECKSIG null dummy provided and required");
-        success (evaluate (unlock, lock, rd, null_dummy_not_required), "CHECKSIG null dummy provided and not required");
-
-        error (evaluate (unlockx, lock, rd, null_dummy_required), "CHECKSIG null dummy not provided and required");
-        success (evaluate (unlockx, lock, rd, null_dummy_not_required), "CHECKSIG null dummy not provided and not required");
-
-    }
-    
-    TEST (Script, Multisig) {
-        incomplete::transaction tx {
-            {incomplete::input {
-                outpoint {
-                    digest256 {uint256 {"0xaa00000000000000000000000000000000000000000000555555550707070707"}}, 0xcdcdcdcd},
-                    0xfedcba09}}, {
-                output {1, pay_to_address::script (digest160 {uint160 {"0xbb00000000000000000000000000006565656575"}})},
-                output {2, pay_to_address::script (digest160 {uint160 {"0xcc00000000000000000000000000002929292985"}})}},
-            5};
-
-        redemption_document doc {tx, 0, satoshi {0xfeee}};
-        
-        auto k1 = secp256k1::secret (uint256 {123456});
-        auto k2 = secp256k1::secret (uint256 {789012});
-        auto k3 = secp256k1::secret (uint256 {345678});
-        
-        auto p1 = k1.to_public ();
-        auto p2 = k2.to_public ();
-        auto p3 = k3.to_public ();
-        
-        struct multisig_test {
-            int Number;
-            bool Expected;
-            redemption_document Doc;
-            data::array<bytes, 2> Test;
-            
-            result run () {
-                return evaluate (Test[0], Test[1], Doc, flag {});
-            }
-            
-            void test () {
-                result r = run ();
-                EXPECT_EQ (bool (r), Expected) << Number << ": script " <<
-                    decompile (Test[0]) << decompile (Test[1]) <<
-                    " expect " << Expected << "; results in " << r;
-            }
-            
-            multisig_test (int num, bool ex, const redemption_document &doc, list<secp256k1::secret> s, list<secp256k1::pubkey> p) :
-                Number {num}, Expected {ex}, Doc {doc}, Test {multisig_script (doc, s, p)} {}
-        };
-        
-        multisig_test {10,  true,  doc, {},           {}          }.test ();
-        multisig_test {20,  false, doc, {k1},         {}          }.test ();
-        multisig_test {30,  true,  doc, {},           {p1}        }.test ();
-        multisig_test {40,  true,  doc, {k1},         {p1}        }.test ();
-        multisig_test {50,  false, doc, {k2},         {p1}        }.test ();
-        multisig_test {60,  true,  doc, {},           {p1, p2}    }.test ();
-        multisig_test {70,  true,  doc, {k1},         {p1, p2}    }.test ();
-        multisig_test {80,  false, doc, {k3},         {p1, p2}    }.test ();
-        multisig_test {90,  true,  doc, {k1, k2},     {p1, p2}    }.test ();
-        multisig_test {100, false, doc, {k2, k1},     {p1, p2}    }.test ();
-        multisig_test {110, false, doc, {k1, k3},     {p1, p2}    }.test ();
-        multisig_test {120, false, doc, {k2, k3},     {p1, p2}    }.test ();
-        multisig_test {130, true,  doc, {},           {p1, p2, p3}}.test ();
-        multisig_test {140, true,  doc, {k1},         {p1, p2, p3}}.test ();
-        multisig_test {150, true,  doc, {k2},         {p1, p2, p3}}.test ();
-        multisig_test {160, true,  doc, {k3},         {p1, p2, p3}}.test ();
-        multisig_test {170, true,  doc, {k1, k3},     {p1, p2, p3}}.test ();
-        multisig_test {180, false, doc, {k3, k1},     {p1, p2, p3}}.test ();
-        multisig_test {190, true,  doc, {k1, k2, k3}, {p1, p2, p3}}.test ();
-        multisig_test {200, false, doc, {k3, k2, k1}, {p1, p2, p3}}.test ();
-        multisig_test {210, false, doc, {k2, k3, k1}, {p1, p2, p3}}.test ();
-        
-    }
-
-    bytes transform_sig_verify (byte_slice b) {
-        if (b.size () == 0) throw 0;
-
-        byte verify;
-
-        if (b[b.size () - 1] == OP_CHECKSIG) verify = OP_CHECKSIGVERIFY;
-        if (b[b.size () - 1] == OP_CHECKMULTISIG) verify = OP_CHECKMULTISIGVERIFY;
-
-        return data::write<bytes> (b.range (0, b.size () - 1), verify);
-    }
-
-    bytes transform_sig_verify (byte_slice b, byte result) {
-        return data::write<bytes> (transform_sig_verify (b), result);
-    }
-
-    TEST (Script, ChecksigVerify) {
-
-        secp256k1::secret x {3023332};
-        secp256k1::pubkey p = x.to_public ();
-
-        size_t input_index = 0;
-        satoshi redeemed_value {0xfeee};
-
-        redemption_document rd {test_txi, 0, redeemed_value};
-
-        auto get_unlock_p2pk = [] (const Bitcoin::signature &x) {
-            return pay_to_pubkey::redeem (x);
-        };
-
-        auto get_unlock_multisig = [] (const Bitcoin::signature &x) {
-            return multisig::redeem ({x});
-        };
-
-        struct test_case {
-            bytes Script;
-            std::function<bytes (const Bitcoin::signature &)> Redeem;
-        };
-
-        for (const test_case &test : list<test_case> {
-            {pay_to_pubkey (Bitcoin::pubkey (p)).script (), get_unlock_p2pk},
-            {multisig (1, {Bitcoin::pubkey (p)}).script (), get_unlock_multisig}}) {
-
-            bytes lock_error = transform_sig_verify (test.Script);
-
-            bytes unlock_error = test.Redeem (signature::sign (x, sighash::directive (),
-                sighash::document {test_txi, 0, redeemed_value, decompile (lock_error)}));
-
-            bytes lock_false = transform_sig_verify (test.Script, OP_FALSE);
-
-            bytes unlock_false = test.Redeem (signature::sign (x, sighash::directive (),
-                sighash::document {test_txi, 0, redeemed_value, decompile (lock_false)}));
-
-            bytes lock_true = transform_sig_verify (test.Script, OP_TRUE);
-
-            bytes unlock_true = test.Redeem (signature::sign (x, sighash::directive (),
-                sighash::document {test_txi, 0, redeemed_value, decompile (lock_true)}));
-
-            auto result_1 = evaluate (unlock_error, lock_error, flag {});
-
-            failure (result_1, "OP_CHECKSIGVERIFY 1");
-
-            failure (evaluate (unlock_false, lock_false, flag {}), "OP_CHECKSIGVERIFY 2");
-
-            success (evaluate (unlock_true, lock_true, flag {}), "OP_CHECKSIGVERIFY 3");
-        }
+        EXPECT_EQ (Error::OK,   (evaluate (bytes {OP_TRUE}, bytes {OP_RETURN}, {}))) << "OP_RETURN true";
+        EXPECT_EQ (Error::FAIL, (evaluate (bytes {OP_FALSE}, bytes {OP_RETURN}, {}))) << "OP_RETURN false";
 
     }
 

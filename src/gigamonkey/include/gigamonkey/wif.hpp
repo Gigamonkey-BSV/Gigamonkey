@@ -144,7 +144,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     signature inline secret::sign (const sighash::document &document, sighash::directive d) const {
-        return signature::sign (Secret, d, document);
+        return Bitcoin::sign (Secret, d, document);
     }
         
     bytes inline secret::encrypt (const bytes &message) const {

@@ -18,6 +18,7 @@ add_executable (unit_tests
     push.cpp
     number.cpp
     signature.cpp
+    stack.cpp
     script.cpp
     transaction.cpp
     difficulty.cpp

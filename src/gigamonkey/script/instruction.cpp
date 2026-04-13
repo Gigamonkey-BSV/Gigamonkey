@@ -22,25 +22,25 @@ namespace Gigamonkey::Bitcoin {
     
         // TODO we do not use conf here just yet but some op codes
         // are invalid under some parameters and others aren't.
-        ScriptError verify_instruction (const instruction &i) {
+        Error verify_instruction (const instruction &i) {
             if (i.Op == OP_INVALIDOPCODE ||
                 i.Op == OP_RESERVED ||
                 i.Op == OP_RESERVED1 ||
                 i.Op == OP_RESERVED2 ||
-                i.Op >= FIRST_UNDEFINED_OP_VALUE) return SCRIPT_ERR_BAD_OPCODE;
+                i.Op >= FIRST_UNDEFINED_OP_VALUE) return Error::BAD_OPCODE;
             
             size_t size = i.Data.size ();
             if (!is_push_data (i.Op)) {
-                if (size > 0) return SCRIPT_ERR_PUSH_SIZE;
-                return SCRIPT_ERR_OK;
+                if (size > 0) return Error::PUSH_SIZE;
+                return Error::OK;
             }
             
             if ((i.Op <= OP_PUSHSIZE75 && i.Op != size) 
                 || (i.Op == OP_PUSHDATA1 && size > 0xffff) 
                 || (i.Op == OP_PUSHDATA2 && size > 0xffffffff) 
-                || (i.Op == OP_PUSHDATA4 && size > 0xffffffffffffffff)) return SCRIPT_ERR_PUSH_SIZE;
+                || (i.Op == OP_PUSHDATA4 && size > 0xffffffffffffffff)) return Error::PUSH_SIZE;
             
-            return SCRIPT_ERR_OK;
+            return Error::OK;
         }
         
         bool is_minimal_push (const op o, const bytes &data) {
@@ -94,7 +94,7 @@ namespace Gigamonkey::Bitcoin {
             }
             
             if ((r.End - r.Begin) < size)
-                throw invalid_program {SCRIPT_ERR_PUSH_SIZE};
+                throw invalid_program {Error::PUSH_SIZE};
             
             rest.Data = bytes (size);
             r >> rest.Data;
@@ -107,7 +107,7 @@ namespace Gigamonkey::Bitcoin {
 
             script_reader operator >> (instruction &i) {
                 if ((Reader.End - Reader.Begin) == 0)
-                    throw invalid_program {SCRIPT_ERR_UNKNOWN_ERROR};
+                    throw invalid_program {Error::UNKNOWN_ERROR};
                 
                 byte next;
                 Reader >> next;
@@ -135,16 +135,16 @@ namespace Gigamonkey::Bitcoin {
     
     }
 
-    ScriptError instruction::verify (const script_config &conf) const {
+    Error instruction::verify (const script_config &conf) const {
         auto script_error = verify_instruction (*this);
-        if (script_error != SCRIPT_ERR_OK) return script_error;
-        if (verify_minimal_push (conf.Flags) && !is_minimal_push (Op, Data)) return SCRIPT_ERR_MINIMALDATA;
+        if (script_error != Error::OK) return script_error;
+        if (verify_minimal_push (conf.Flags) && !is_minimal_push (Op, Data)) return Error::MINIMALDATA;
         
-        return SCRIPT_ERR_OK;
+        return Error::OK;
     }
 
     bool is_minimal_instruction (const instruction &i) {
-        return verify_instruction (i) == SCRIPT_ERR_OK && is_minimal_push (i.Op, i.Data);
+        return verify_instruction (i) == Error::OK && is_minimal_push (i.Op, i.Data);
     }
     
     instruction instruction::read (slice<const byte> b) {
@@ -331,19 +331,19 @@ namespace Gigamonkey::Bitcoin {
         return p;
     }
 
-    ScriptError valid_program (segment p, const script_config &conf, stack<op> x = {}) {
+    Error valid_program (segment p, const script_config &conf, stack<op> x = {}) {
         
         if (empty (p)) {
-            if (empty (x)) return SCRIPT_ERR_OK;
-            return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
+            if (empty (x)) return Error::OK;
+            return Error::UNBALANCED_CONDITIONAL;
         }
         
         const instruction &i = first (p);
         
         auto script_error = i.verify (conf);
-        if (script_error != SCRIPT_ERR_OK) return script_error;
+        if (script_error != Error::OK) return script_error;
         
-        if ((verify_minimal_push (conf.Flags)) && !is_minimal_instruction (i)) return SCRIPT_ERR_MINIMALDATA;
+        if ((verify_minimal_push (conf.Flags)) && !is_minimal_instruction (i)) return Error::MINIMALDATA;
         
         op o = i.Op;
         
@@ -351,41 +351,41 @@ namespace Gigamonkey::Bitcoin {
         // normal script. It must be in a script consisting only of
         // itself.
         if (o == OP_RETURN) {
-            if (!safe_return_data (conf.Flags)) return SCRIPT_ERR_OP_RETURN;
-            if (empty (x) && p.size () == 1) return SCRIPT_ERR_OK;
-            if (i.Data.size () != 0) return SCRIPT_ERR_OP_RETURN;
+            if (!safe_return_data (conf.Flags)) return Error::OP_RETURN;
+            if (empty (x) && p.size () == 1) return Error::OK;
+            if (i.Data.size () != 0) return Error::OP_RETURN;
         }
         
         if (o == OP_ENDIF) {
-            if (x.empty ()) return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
+            if (x.empty ()) return Error::UNBALANCED_CONDITIONAL;
             op prev = first (x);
             x = rest (x);
 
             if (prev == OP_ELSE) {
-                if (x.empty ()) return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
+                if (x.empty ()) return Error::UNBALANCED_CONDITIONAL;
                 prev = first (x);
                 x = rest (x);
             }
 
             if (prev != OP_IF && prev != OP_NOTIF && prev != OP_VERIF && prev != OP_VERNOTIF)
-                return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
+                return Error::UNBALANCED_CONDITIONAL;
         } else if (o == OP_ELSE || o == OP_IF || o == OP_NOTIF || o == OP_VERIF || o == OP_VERNOTIF) x = x >> o;
         
         return valid_program (rest (p), conf, x);
     }
 
     // TODO pre_verify is not actually needed.
-    ScriptError pre_verify (program x, const script_config &conf) {
+    Error pre_verify (program x, const script_config &conf) {
         // an empty program isn't really ok, so why does this line say it is?
-        if (empty (x)) return SCRIPT_ERR_OK;
+        if (empty (x)) return Error::OK;
 
         // first we check for OP_RETURN data.
         if (x.size () == 1) {
             auto p = first (x);
             if (safe_return_data (conf.Flags)) {
                 if (p.size () == 2 && first (p).Op == OP_FALSE && data::valid (first (p)) && first (rest (p)).Op == OP_RETURN)
-                    return SCRIPT_ERR_OK;
-            } else if (p.size () == 1 && first (p).Op == OP_RETURN) return SCRIPT_ERR_OK;
+                    return Error::OK;
+            } else if (p.size () == 1 && first (p).Op == OP_RETURN) return Error::OK;
         }
 
         return valid_program (flatten (x), conf);

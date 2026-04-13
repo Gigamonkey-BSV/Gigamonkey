@@ -14,13 +14,7 @@ namespace Gigamonkey::Bitcoin {
     // a Bitcoin script interpreter that can be advanced step-by-step.
     struct machine {
 
-        bool Halt;
-        result Result;
-
         script_config Config;
-
-        bool UtxoAfterGenesis;
-        bool RequireMinimal;
             
         maybe<redemption_document> Document;
             
@@ -36,7 +30,7 @@ namespace Gigamonkey::Bitcoin {
         bool increment_operation ();
         uint64 max_pubkeys_per_multisig () const;
 
-        maybe<result> step (const program_counter &Counter);
+        Error step (const program_counter &Counter);
 
         machine (maybe<redemption_document> doc = {}, const script_config &conf = {}):
             machine (enable_genesis_stack (conf.Flags) ?
@@ -44,6 +38,11 @@ namespace Gigamonkey::Bitcoin {
                 std::static_pointer_cast<two_stack> (std::make_shared<limited_two_stack<false>> ()), doc, conf) {}
 
         machine (ptr<two_stack>, maybe<redemption_document> doc = {}, const script_config & = {});
+
+        Error stack_top () const {
+            if (Stack->size () == 0) return Error::INVALID_STACK_OPERATION;
+            return nonzero (Stack->top ()) ? Error::OK : Error::FAIL;
+        }
     };
 
 }

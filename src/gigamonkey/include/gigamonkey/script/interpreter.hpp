@@ -12,6 +12,8 @@ namespace Gigamonkey::Bitcoin {
     // a Bitcoin script interpreter that can be advanced step-by-step.
     struct interpreter {
 
+        ::Error Error {::Error::OK};
+
         machine Machine;
         execution_image Program;
         cross<size_t> Stages;
@@ -23,7 +25,7 @@ namespace Gigamonkey::Bitcoin {
         interpreter (const list<script> scripts, const script_config & = {});
 
         void step ();
-        result run ();
+        ::Error run ();
 
         segment unread () const;
 
@@ -32,22 +34,22 @@ namespace Gigamonkey::Bitcoin {
     std::ostream &operator << (std::ostream &, const interpreter &);
 
     // evaluate with real signatures.
-    result inline evaluate (const script &unlock, const script &lock, const redemption_document &doc, const script_config &conf) {
+    Error inline evaluate (const script &unlock, const script &lock, const redemption_document &doc, const script_config &conf) {
         return interpreter (list<script> {unlock, lock}, doc, conf).run ();
     }
 
     // if the redemption document is not provided, all signature operations will succeed automatically.
-    result inline evaluate (const script &unlock, const script &lock, const script_config &conf) {
+    Error inline evaluate (const script &unlock, const script &lock, const script_config &conf) {
         return interpreter (list<script> {unlock, lock}, conf).run ();
     }
 
     // evaluate with real signatures.
-    result inline evaluate (const list<script> scripts, const redemption_document &doc, const script_config &conf) {
+    Error inline evaluate (const list<script> scripts, const redemption_document &doc, const script_config &conf) {
         return interpreter (scripts, doc, conf).run ();
     }
 
     // if the redemption document is not provided, all signature operations will succeed automatically.
-    result inline evaluate (const list<script> scripts, const script_config &conf) {
+    Error inline evaluate (const list<script> scripts, const script_config &conf) {
         return interpreter (scripts, conf).run ();
     }
 

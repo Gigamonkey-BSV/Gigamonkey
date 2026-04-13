@@ -39,15 +39,20 @@ namespace Gigamonkey {
     //      * the same.
     //      * different.
 
-    Bitcoin::transaction make_fake_root_tx (uint32 num_inputs, uint32 num_outputs, data::random::source &r);
+    Bitcoin::transaction make_fake_root_tx (
+        uint32 num_inputs, uint32 num_outputs, data::random::source &r);
 
-    Bitcoin::transaction make_fake_node_tx (list<Bitcoin::prevout> inputs, uint32 num_outputs, Bitcoin::satoshi sats_per_output, data::random::source &r);
+    Bitcoin::transaction make_fake_node_tx (
+        list<Bitcoin::prevout> inputs, uint32 num_outputs, Bitcoin::satoshi sats_per_output, data::random::source &r);
 
-    Merkle::dual make_fake_merkle (uint32 txs_in_block, map<uint32, digest256> roots, data::random::source &r);
+    Merkle::dual make_fake_merkle (
+        uint32 txs_in_block, map<uint32, digest256> roots, data::random::source &r);
 
-    Bitcoin::header make_next_fake_block (const digest256 &merkle_root, data::random::source &r);
+    Bitcoin::header make_next_fake_block (
+        const digest256 &merkle_root, data::random::source &r);
 
-    Bitcoin::prevout inline get_prevout (const Bitcoin::transaction &t, uint32_little i) {
+    Bitcoin::prevout inline get_prevout (
+        const Bitcoin::transaction &t, uint32_little i) {
         return Bitcoin::prevout {Bitcoin::outpoint {t.id (), i}, t.Outputs[i]};
     }
 

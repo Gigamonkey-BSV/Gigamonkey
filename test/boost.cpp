@@ -416,8 +416,7 @@ namespace Gigamonkey::Boost {
         }, serialized_input_scripts, serialized_output_scripts);
 
         bool check_scripts = dot_cross ([] (slice<const byte> in, slice<const byte> out) {
-            std::cout << "check boost scripts..." << std::endl;
-            return Bitcoin::evaluate (in, out);
+            return !bool (Bitcoin::evaluate (in, out));
         }, rest (serialized_input_scripts), rest (serialized_output_scripts));
         
         EXPECT_TRUE (check_scripts) << "Boost scripts are not valid.";
@@ -828,16 +827,16 @@ namespace Gigamonkey::Boost {
         proof p_contract_v2{locking_script_contract_v2, unlocking_script_contract_v2};
         EXPECT_TRUE (p_contract_v2.valid ());
         
-        bool script_valid_bounty_v1 = Bitcoin::evaluate (in_bounty_v1, out_bounty_v1).verify ();
+        bool script_valid_bounty_v1 = !bool (Bitcoin::evaluate (in_bounty_v1, out_bounty_v1));
         EXPECT_TRUE (script_valid_bounty_v1);
         
-        bool script_valid_bounty_v2 = Bitcoin::evaluate (in_bounty_v2, out_bounty_v2).verify ();
+        bool script_valid_bounty_v2 = !bool (Bitcoin::evaluate (in_bounty_v2, out_bounty_v2));
         EXPECT_TRUE (script_valid_bounty_v2);
         
-        bool script_valid_contract_v1 = Bitcoin::evaluate (in_contract_v1, out_contract_v1).verify ();
+        bool script_valid_contract_v1 = !bool (Bitcoin::evaluate (in_contract_v1, out_contract_v1));
         EXPECT_TRUE (script_valid_contract_v1);
         
-        bool script_valid_contract_v2 = Bitcoin::evaluate (in_contract_v2, out_contract_v2).verify ();
+        bool script_valid_contract_v2 = !bool (Bitcoin::evaluate (in_contract_v2, out_contract_v2));
         EXPECT_TRUE (script_valid_contract_v2);
         
         auto proof_contract_v1 = proof {locking_script_contract_v1, unlocking_script_contract_v1};

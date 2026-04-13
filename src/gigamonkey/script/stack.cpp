@@ -9,7 +9,8 @@ namespace Gigamonkey::Bitcoin {
         size_t before_size = val.size ();
         f (val);
         size_t after_size = val.size ();
-        if (after_size > MaxScriptElementSize) throw_push_size_exception ();
+        if (after_size > MaxScriptElementSize)
+            throw invalid_program {Error::PUSH_SIZE};
     }
 
     void limited_two_stack<true>::modify_top (std::function<void (bytes &)> f, int index) {
@@ -70,7 +71,7 @@ namespace Gigamonkey::Bitcoin {
         if (position >= 0) throw std::invalid_argument ("Invalid argument - position should be < 0.");
 
         if (element.size () > MaxScriptElementSize || this->combined_size () == MaxStackElements)
-            throw_stack_overflow_exception ();
+            throw invalid_program {Error::STACK_SIZE};
 
         Stack.insert (Stack.end () + position, integer {element});
     }

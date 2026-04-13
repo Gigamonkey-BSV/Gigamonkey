@@ -11,14 +11,14 @@ namespace Gigamonkey::Bitcoin {
     
     struct program_counter {
 
-        slice<const byte> Next;
-        slice<const byte> Script;
+        byte_slice Next;
+        byte_slice Script;
         size_t Index;
         
-        static slice<const byte> read_instruction (slice<const byte> subscript);
+        static byte_slice read_instruction (byte_slice subscript);
         
         program_counter () {}
-        program_counter (slice<const byte> s);
+        program_counter (byte_slice s);
         program_counter next () const;
 
         // pre-increment;
@@ -32,13 +32,17 @@ namespace Gigamonkey::Bitcoin {
             *this = next ();
             return z;
         }
+
+        bool valid () const {
+            return Next != byte_slice {};
+        }
         
     private:
-        program_counter (slice<const byte> n, slice<const byte> s, size_t c);
+        program_counter (byte_slice n, byte_slice s, size_t c);
     };
     
 
-    inline program_counter::program_counter (slice<const byte> s):
+    inline program_counter::program_counter (byte_slice s):
         Next {read_instruction (s)}, Script {s}, Index {0} {}
 
     program_counter inline program_counter::next () const {
@@ -47,7 +51,7 @@ namespace Gigamonkey::Bitcoin {
             Script.drop (static_cast<int32> (next_counter))), Script, next_counter};
     }
 
-    inline program_counter::program_counter (slice<const byte> n, slice<const byte> s, size_t c) :
+    inline program_counter::program_counter (byte_slice n, byte_slice s, size_t c) :
         Next {n}, Script {s}, Index {c} {}
 }
 

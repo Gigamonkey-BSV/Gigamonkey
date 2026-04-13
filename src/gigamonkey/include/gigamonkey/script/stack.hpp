@@ -22,14 +22,6 @@ namespace Gigamonkey::Bitcoin {
     // otherwise as UNIX timestamp. Thresold is Tue Nov 5 00:53:20 1985 UTC
     static const unsigned int LOCKTIME_THRESHOLD = 500000000;
 
-    void inline throw_stack_overflow_exception () {
-        throw script_exception {SCRIPT_ERR_STACK_SIZE};
-    };
-
-    void inline throw_push_size_exception () {
-        throw script_exception {SCRIPT_ERR_PUSH_SIZE};
-    };
-
     // before genesis, limited_two_stack has separate values
     // for maximum element size and for maximum number of elements.
     // after genesis, this was replaced by a requirement for maximum
@@ -65,8 +57,8 @@ namespace Gigamonkey::Bitcoin {
         // position should be negative number (distance from the top)
         virtual void insert (int position, slice<const byte>) = 0;
 
-        ScriptError to_alt ();
-        ScriptError from_alt ();
+        Error to_alt ();
+        Error from_alt ();
 
         void swap (size_t index1, size_t index2);
 
@@ -152,74 +144,74 @@ namespace Gigamonkey::Bitcoin {
     };
 
     // stack operations
-    ScriptError swap (two_stack &stack);
-    ScriptError swap_two (two_stack &stack);
-    template <bool genesis> ScriptError duplicate (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError duplicate_two (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError duplicate_three (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError drop (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError drop_two (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError over (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError over_two (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError rotate (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError rotate_two (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError nip (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError tuck (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError pick (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError roll (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError depth (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError script_size (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError script_if_dup (limited_two_stack<genesis> &);
+    Error swap (two_stack &stack);
+    Error swap_two (two_stack &stack);
+    template <bool genesis> Error duplicate (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error duplicate_two (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error duplicate_three (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error drop (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error drop_two (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error over (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error over_two (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error rotate (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error rotate_two (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error nip (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error tuck (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error pick (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error roll (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error depth (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error script_size (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error script_if_dup (limited_two_stack<genesis> &);
 
     // bitwise
-    template <bool genesis> ScriptError script_bit_and (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError script_bit_or (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError script_bit_xor (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError script_bit_invert (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError shift_left (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError shift_right (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError script_equal (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error script_bit_and (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error script_bit_or (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error script_bit_xor (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error script_bit_invert (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error shift_left (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error shift_right (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error script_equal (limited_two_stack<genesis> &stack);
 
     // string
-    template <bool genesis> ScriptError concatinate (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError split (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError bin_2_num (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError num_2_bin (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error concatinate (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error split (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error bin_2_num (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error num_2_bin (limited_two_stack<genesis> &stack);
 
     // hash
-    template <bool genesis> ScriptError script_RIPEMD160 (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError script_SHA1 (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError script_SHA256 (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError script_HASH160 (limited_two_stack<genesis> &stack);
-    template <bool genesis> ScriptError script_HASH256 (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error script_RIPEMD160 (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error script_SHA1 (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error script_SHA256 (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error script_HASH160 (limited_two_stack<genesis> &stack);
+    template <bool genesis> Error script_HASH256 (limited_two_stack<genesis> &stack);
 
     // numeric unary
-    template <bool genesis> ScriptError script_increment (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
-    template <bool genesis> ScriptError script_decrement (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
-    template <bool genesis> ScriptError script_negate (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
-    template <bool genesis> ScriptError script_abs (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
-    template <bool genesis> ScriptError script_not (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
-    template <bool genesis> ScriptError script_nonzero (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
+    template <bool genesis> Error script_increment (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
+    template <bool genesis> Error script_decrement (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
+    template <bool genesis> Error script_negate (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
+    template <bool genesis> Error script_abs (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
+    template <bool genesis> Error script_not (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
+    template <bool genesis> Error script_nonzero (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
 
     // numeric binary
-    template <bool genesis> ScriptError script_add (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
-    template <bool genesis> ScriptError script_subtract (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
-    template <bool genesis> ScriptError script_multiply (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
-    template <bool genesis> ScriptError script_divide (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
-    template <bool genesis> ScriptError script_mod (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
-    template <bool genesis> ScriptError script_bool_and (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
-    template <bool genesis> ScriptError script_bool_or (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
-    template <bool genesis> ScriptError script_numeric_equal (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
-    template <bool genesis> ScriptError script_unequal (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
-    template <bool genesis> ScriptError script_less (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
-    template <bool genesis> ScriptError script_greater (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
-    template <bool genesis> ScriptError script_less_equal (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
-    template <bool genesis> ScriptError script_greater_equal (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
-    template <bool genesis> ScriptError script_min (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
-    template <bool genesis> ScriptError script_max (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
+    template <bool genesis> Error script_add (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
+    template <bool genesis> Error script_subtract (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
+    template <bool genesis> Error script_multiply (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
+    template <bool genesis> Error script_divide (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
+    template <bool genesis> Error script_mod (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
+    template <bool genesis> Error script_bool_and (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
+    template <bool genesis> Error script_bool_or (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
+    template <bool genesis> Error script_numeric_equal (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
+    template <bool genesis> Error script_unequal (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
+    template <bool genesis> Error script_less (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
+    template <bool genesis> Error script_greater (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
+    template <bool genesis> Error script_less_equal (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
+    template <bool genesis> Error script_greater_equal (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
+    template <bool genesis> Error script_min (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
+    template <bool genesis> Error script_max (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
 
     // numeric trinary
-    template <bool genesis> ScriptError script_within (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
+    template <bool genesis> Error script_within (limited_two_stack<genesis> &stack, bool require_minimal, uint64 max_num_length);
 
     template <bool genesis> struct state : limited_two_stack<genesis> {
         cross<bool> Exec;
@@ -255,8 +247,8 @@ namespace Gigamonkey::Bitcoin {
         return Stack.at (i);
     }
 
-    ScriptError inline two_stack::from_alt () {
-        if (alt_size () < 1) return SCRIPT_ERR_INVALID_ALTSTACK_OPERATION;
+    Error inline two_stack::from_alt () {
+        if (alt_size () < 1) return Error::INVALID_ALTSTACK_OPERATION;
         // Moving element to other stack does not change the total size of stack.
         // Just use internal functions to move the element.
         Stack.push_back (std::move (AltStack.at (AltStack.size () - 1)));
@@ -264,8 +256,8 @@ namespace Gigamonkey::Bitcoin {
         return {};
     }
 
-    ScriptError inline two_stack::to_alt () {
-        if (size () < 1) return SCRIPT_ERR_INVALID_STACK_OPERATION;
+    Error inline two_stack::to_alt () {
+        if (size () < 1) return Error::INVALID_STACK_OPERATION;
         // Moving element to other stack does not change the total size of stack.
         // Just use internal functions to move the element.
         AltStack.push_back (std::move (Stack.at (Stack.size () - 1)));
@@ -294,7 +286,9 @@ namespace Gigamonkey::Bitcoin {
     }
 
     void inline limited_two_stack<true>::increase_memory_usage (uint64_t additionalSize) {
-        if (MemoryUsage + additionalSize > MaxMemoryUsage) throw_stack_overflow_exception ();
+        if (MemoryUsage + additionalSize > MaxMemoryUsage)
+            throw invalid_program {Error::STACK_SIZE};
+
         MemoryUsage += additionalSize;
     }
 
@@ -304,11 +298,12 @@ namespace Gigamonkey::Bitcoin {
     }
 
     void inline limited_two_stack<false>::push_back (slice<const byte> element) {
-        if (element.size () > MaxScriptElementSize) {
-            std::cout << " throw because we have an element of size " << element.size () << " with max element size " << MaxScriptElementSize << std::endl;
-            throw_push_size_exception ();
-        }
-        if (this->combined_size () == MaxStackElements) throw_stack_overflow_exception ();
+        if (element.size () > MaxScriptElementSize)
+            throw invalid_program {Error::PUSH_SIZE};
+
+        if (this->combined_size () == MaxStackElements)
+            throw invalid_program {Error::STACK_SIZE};
+
         Stack.emplace_back (element);
     }
 
