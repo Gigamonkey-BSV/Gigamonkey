@@ -28,8 +28,6 @@ namespace Gigamonkey::Bitcoin {
         
         signature (const secp256k1::signature raw, sighash::directive d);
         
-        static signature sign (const secp256k1::secret &s, sighash::directive d, const sighash::document &);
-        
         static bool verify (const slice<const byte> sig, const slice<const byte> pub, const sighash::document &doc);
         static bool DER (slice<const byte> x);
         
@@ -38,10 +36,13 @@ namespace Gigamonkey::Bitcoin {
         
     };
 
+    signature sign (const secp256k1::secret &s, sighash::directive d, const sighash::document &);
+    bool verify (const signature &sig, const secp256k1::pubkey &pub, const sighash::document &);
+
     std::ostream &operator << (std::ostream &o, const signature &x);
     
-    signature inline signature::sign (const secp256k1::secret &s, sighash::directive d, const sighash::document &doc) {
-        return signature {s.sign (hash (doc, d)), d};
+    signature inline sign (const secp256k1::secret &s, sighash::directive d, const sighash::document &doc) {
+        return signature {s.sign (signature::hash (doc, d)), d};
     }
 
     Bitcoin::sighash::directive inline signature::directive (slice<const byte> x) {

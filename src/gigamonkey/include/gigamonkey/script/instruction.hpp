@@ -62,10 +62,11 @@ namespace Gigamonkey::Bitcoin {
         
         integer push_data () const;
         
-        ScriptError verify (const script_config &conf) const;
+        Error verify (const script_config &conf) const;
         
         bool valid () const {
-            return verify (genesis_profile ()) == SCRIPT_ERR_OK;
+            // TODO upgrade to chronicle
+            return verify (genesis_profile ()) == Error::OK;
         };
         
         uint32 serialized_size () const;

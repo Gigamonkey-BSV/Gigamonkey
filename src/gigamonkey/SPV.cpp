@@ -119,7 +119,7 @@ namespace Gigamonkey::SPV {
 
         bool proof_validate (const proof &u, database &d, time_limit genesis_upgrade_time = time_limit::negative_infinity ()) {
 
-            //check that all txs are unique.
+            // check that all txs are unique.
             auto pp = u.Payment;
             while (!empty (pp)) {
                 const auto &x = first (pp);
@@ -184,7 +184,7 @@ namespace Gigamonkey::SPV {
                 spent += prevout.Value;
 
                 // check scripts
-                if (!bool (
+                if (bool (
                     Bitcoin::evaluate (
                         in.Script, prevout.Script,
                         Bitcoin::redemption_document {incomplete, input_index, prevout.Value},

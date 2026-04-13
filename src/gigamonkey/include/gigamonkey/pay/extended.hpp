@@ -53,10 +53,10 @@ namespace Gigamonkey::extended {
         explicit operator bytes () const;
 
         // evaluate script without signature operations.
-        Bitcoin::result evaluate (Bitcoin::flag flags = Bitcoin::genesis_profile ());
+        Error evaluate (Bitcoin::flag flags = Bitcoin::genesis_profile ());
 
         // Evaluate script with real signature operations.
-        Bitcoin::result evaluate (
+        Error evaluate (
             Bitcoin::incomplete::transaction &,
             uint32 input_index,
             Bitcoin::flag flags = Bitcoin::genesis_profile ()) const;
@@ -150,11 +150,11 @@ namespace Gigamonkey::extended {
         return static_cast<const Bitcoin::input &> (*this).serialized_size () + Prevout.serialized_size ();
     }
 
-    Bitcoin::result inline input::evaluate (Bitcoin::flag flags) {
+    Error inline input::evaluate (Bitcoin::flag flags) {
         return Bitcoin::evaluate (this->Script, Prevout.Script, flags);
     }
 
-    Bitcoin::result inline input::evaluate (Bitcoin::incomplete::transaction &tx, uint32 input_index, Bitcoin::flag flags) const {
+    Error inline input::evaluate (Bitcoin::incomplete::transaction &tx, uint32 input_index, Bitcoin::flag flags) const {
         return Bitcoin::evaluate (this->Script, Prevout.Script,
             Bitcoin::redemption_document {tx, input_index, Prevout.Value}, flags);
     }

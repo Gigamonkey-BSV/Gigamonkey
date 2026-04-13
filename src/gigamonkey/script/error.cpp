@@ -7,108 +7,108 @@
 #include <gigamonkey/script/error.h>
 #include <iostream>
 
-const char *ScriptErrorString (const ScriptError serror) {
+const char *ScriptErrorString (const Error serror) {
     switch (serror) {
-        case SCRIPT_ERR_OK:
+        case Error::OK:
             return "No error";
-        case SCRIPT_ERR_EVAL_FALSE:
+        case Error::FAIL:
             return "Script evaluated without error but finished with a "
                    "false/empty top stack element";
-        case SCRIPT_ERR_VERIFY:
+        case Error::VERIFY:
             return "Script failed an OP_VERIFY operation";
-        case SCRIPT_ERR_EQUALVERIFY:
+        case Error::EQUALVERIFY:
             return "Script failed an OP_EQUALVERIFY operation";
-        case SCRIPT_ERR_CHECKMULTISIGVERIFY:
+        case Error::CHECKMULTISIGVERIFY:
             return "Script failed an OP_CHECKMULTISIGVERIFY operation";
-        case SCRIPT_ERR_CHECKSIGVERIFY:
+        case Error::CHECKSIGVERIFY:
             return "Script failed an OP_CHECKSIGVERIFY operation";
-        case SCRIPT_ERR_NUMEQUALVERIFY:
+        case Error::NUMEQUALVERIFY:
             return "Script failed an OP_NUMEQUALVERIFY operation";
-        case SCRIPT_ERR_SCRIPT_SIZE:
+        case Error::SCRIPT_SIZE:
             return "Script is too big";
-        case SCRIPT_ERR_PUSH_SIZE:
+        case Error::PUSH_SIZE:
             return "Push value size limit exceeded";
-        case SCRIPT_ERR_OP_COUNT:
+        case Error::OP_COUNT:
             return "Operation limit exceeded";
-        case SCRIPT_ERR_STACK_SIZE:
+        case Error::STACK_SIZE:
             return "Stack size limit exceeded";
-        case SCRIPT_ERR_SIG_COUNT:
+        case Error::SIG_COUNT:
             return "Signature count negative or greater than pubkey count";
-        case SCRIPT_ERR_PUBKEY_COUNT:
+        case Error::PUBKEY_COUNT:
             return "Pubkey count negative or limit exceeded";
-        case SCRIPT_ERR_INVALID_OPERAND_SIZE:
+        case Error::INVALID_OPERAND_SIZE:
             return "Invalid operand size";
-        case SCRIPT_ERR_INVALID_NUMBER_RANGE:
+        case Error::INVALID_NUMBER_RANGE:
             return "Given operand is not a number within the valid range "
                    "[-2^31...2^31]";
-        case SCRIPT_ERR_IMPOSSIBLE_ENCODING:
+        case Error::IMPOSSIBLE_ENCODING:
             return "The requested encoding is impossible to satisfy";
-        case SCRIPT_ERR_INVALID_SPLIT_RANGE:
+        case Error::INVALID_SPLIT_RANGE:
             return "Invalid OP_SPLIT range";
-        case SCRIPT_ERR_SCRIPTNUM_OVERFLOW:
+        case Error::SCRIPTNUM_OVERFLOW:
             return "Script number overflow";
-        case SCRIPT_ERR_SCRIPTNUM_MINENCODE:
+        case Error::SCRIPTNUM_MINENCODE:
             return "Non-minimally encoded script number";
-        case SCRIPT_ERR_BAD_OPCODE:
+        case Error::BAD_OPCODE:
             return "Opcode missing or not understood";
-        case SCRIPT_ERR_DISABLED_OPCODE:
+        case Error::DISABLED_OPCODE:
             return "Attempted to use a disabled opcode";
-        case SCRIPT_ERR_INVALID_STACK_OPERATION:
+        case Error::INVALID_STACK_OPERATION:
             return "Operation not valid with the current stack size";
-        case SCRIPT_ERR_INVALID_ALTSTACK_OPERATION:
+        case Error::INVALID_ALTSTACK_OPERATION:
             return "Operation not valid with the current altstack size";
-        case SCRIPT_ERR_OP_RETURN:
+        case Error::OP_RETURN:
             return "OP_RETURN was encountered";
-        case SCRIPT_ERR_UNBALANCED_CONDITIONAL:
+        case Error::UNBALANCED_CONDITIONAL:
             return "Invalid OP_IF construction";
-        case SCRIPT_ERR_DIV_BY_ZERO:
+        case Error::DIV_BY_ZERO:
             return "Division by zero error";
-        case SCRIPT_ERR_MOD_BY_ZERO:
+        case Error::MOD_BY_ZERO:
             return "Modulo by zero error";
-        case SCRIPT_ERR_NEGATIVE_LOCKTIME:
+        case Error::NEGATIVE_LOCKTIME:
             return "Negative locktime";
-        case SCRIPT_ERR_UNSATISFIED_LOCKTIME:
+        case Error::UNSATISFIED_LOCKTIME:
             return "Locktime requirement not satisfied";
-        case SCRIPT_ERR_SIG_HASHTYPE:
+        case Error::SIG_HASHTYPE:
             return "Signature hash type missing or not understood";
-        case SCRIPT_ERR_SIG_DER:
+        case Error::SIG_DER:
             return "Non-canonical DER signature";
-        case SCRIPT_ERR_MINIMALDATA:
+        case Error::MINIMALDATA:
             return "Data push larger than necessary";
-        case SCRIPT_ERR_SIG_PUSHONLY:
+        case Error::SIG_PUSHONLY:
             return "Only non-push operators allowed in signatures";
-        case SCRIPT_ERR_SIG_HIGH_S:
+        case Error::SIG_HIGH_S:
             return "Non-canonical signature: S value is unnecessarily high";
-        case SCRIPT_ERR_SIG_NULLDUMMY:
+        case Error::SIG_NULLDUMMY:
             return "Dummy CHECKMULTISIG argument must be zero";
-        case SCRIPT_ERR_MINIMALIF:
+        case Error::MINIMALIF:
             return "OP_IF/NOTIF argument must be minimal";
-        case SCRIPT_ERR_SIG_NULLFAIL:
+        case Error::SIG_NULLFAIL:
             return "Signature must be zero for failed CHECK(MULTI)SIG "
                    "operation";
-        case SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS:
+        case Error::DISCOURAGE_UPGRADABLE_NOPS:
             return "NOPx reserved for soft-fork upgrades";
-        case SCRIPT_ERR_PUBKEYTYPE:
+        case Error::PUBKEYTYPE:
             return "Public key is neither compressed or uncompressed";
-        case SCRIPT_ERR_CLEANSTACK:
+        case Error::CLEANSTACK:
             return "Script did not clean its stack";
-        case SCRIPT_ERR_NONCOMPRESSED_PUBKEY:
+        case Error::NONCOMPRESSED_PUBKEY:
             return "Using non-compressed public key";
-        case SCRIPT_ERR_ILLEGAL_FORKID:
+        case Error::ILLEGAL_FORKID:
             return "Illegal use of SIGHASH_FORKID";
-        case SCRIPT_ERR_MUST_USE_FORKID:
+        case Error::MUST_USE_FORKID:
             return "Signature must use SIGHASH_FORKID";
-        case SCRIPT_ERR_BIG_INT:
+        case Error::BIG_INT:
             return "Big integer OpenSSL error";
-        case SCRIPT_ERR_UNKNOWN_ERROR:
-        case SCRIPT_ERR_ERROR_COUNT:
+        case Error::UNKNOWN_ERROR:
+        case Error::COUNT:
         default:
             break;
     }
     return "unknown error";
 }
 
-std::ostream &operator << (std::ostream &os, const ScriptError e) {
+std::ostream &operator << (std::ostream &os, const Error e) {
     os << ScriptErrorString (e);
     return os;
 }

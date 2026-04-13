@@ -10,45 +10,42 @@
 #include <gigamonkey/script/stack.hpp>
 
 namespace Gigamonkey::Bitcoin {
-    result verify_signature (slice<const byte> sig, slice<const byte> pub, const sighash::document &doc, flag P) {
-
-        if (!secp256k1::pubkey::valid (pub))
-            return SCRIPT_ERR_PUBKEYTYPE;
+    Error verify_signature (slice<const byte> sig, slice<const byte> pub, const sighash::document &doc, flag P) {
 
         if (verify_compressed_pubkey (P) && !secp256k1::pubkey::compressed (pub))
-            return SCRIPT_ERR_NONCOMPRESSED_PUBKEY;
+            return Error::NONCOMPRESSED_PUBKEY;
 
         if (verify_signature_strict (P) && !secp256k1::pubkey::valid (pub))
-            return SCRIPT_ERR_PUBKEYTYPE;
+            return Error::PUBKEYTYPE;
 
         // if we pass an empty signature to the secp256k1 library, the program exits.
-        if (sig.size () < 2) return false;
+        if (sig.size () < 2) return Error::FAIL;
 
         auto d = signature::directive (sig);
         auto raw = signature::raw (sig);
 
         if (!sighash::valid (d))
-            return SCRIPT_ERR_SIG_HASHTYPE;
+            return Error::SIG_HASHTYPE;
 
         if (!fork_ID_enabled (P) && sighash::has_fork_id (d))
-            return SCRIPT_ERR_ILLEGAL_FORKID;
+            return Error::ILLEGAL_FORKID;
 
         if (fork_ID_required (P) && !sighash::has_fork_id (d))
-            return SCRIPT_ERR_MUST_USE_FORKID;
+            return Error::MUST_USE_FORKID;
 
         if ((verify_signature_DER (P) ||
             verify_signature_low_S (P) ||
             verify_signature_strict (P)) && !signature::DER (sig))
-            return SCRIPT_ERR_SIG_DER;
+            return Error::SIG_DER;
 
         if (verify_signature_low_S (P))
-            if (!secp256k1::signature::normalized (raw)) return SCRIPT_ERR_SIG_HIGH_S;
+            if (!secp256k1::signature::normalized (raw)) return Error::SIG_HIGH_S;
 
-        if (signature::verify (sig, pub, doc)) return true;
+        if (signature::verify (sig, pub, doc)) return Error::OK;
 
-        if (verify_null_fail (P)) if (sig.size () != 0) return SCRIPT_ERR_SIG_NULLFAIL;
+        if (verify_null_fail (P)) if (sig.size () != 0) return Error::SIG_NULLFAIL;
 
-        return false;
+        return Error::FAIL;
     }
     
     bool redemption_document::check_locktime (const uint32_little &nLockTime) const {
