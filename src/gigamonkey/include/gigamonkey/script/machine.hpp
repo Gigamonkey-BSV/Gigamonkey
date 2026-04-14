@@ -39,7 +39,7 @@ namespace Gigamonkey::Bitcoin {
 
         machine (ptr<two_stack>, maybe<redemption_document> doc = {}, const script_config & = {});
 
-        Error stack_top () const {
+        Error top () const {
             if (Stack->size () == 0) return Error::INVALID_STACK_OPERATION;
             return nonzero (Stack->top ()) ? Error::OK : Error::FAIL;
         }

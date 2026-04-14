@@ -2,10 +2,11 @@
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/script/counter.hpp>
+#include <gigamonkey/script/program.hpp>
 
 namespace Gigamonkey::Bitcoin {
     
-    slice<const byte> program_counter::read_instruction (slice<const byte> subscript) {
+    slice<const byte> program_counter::read_next_instruction (slice<const byte> subscript) {
 
         if (subscript.size () == 0) return slice<const byte> {};
         

@@ -9,7 +9,6 @@
 
 #include <gigamonkey/script/config.hpp>
 #include <gigamonkey/script/error.h>
-//#include <sv/policy/policy.h>
 
 #include <gigamonkey/hash.hpp>
 #include <gigamonkey/numbers.hpp>

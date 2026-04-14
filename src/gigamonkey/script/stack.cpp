@@ -75,4 +75,156 @@ namespace Gigamonkey::Bitcoin {
 
         Stack.insert (Stack.end () + position, integer {element});
     }
+
+    Error swap (two_stack &stacks) {
+        if (stacks.size () < 2) return Error::INVALID_STACK_OPERATION;
+        stacks.swap (stacks.size () - 2, stacks.size () - 1);
+
+        return Error::OK;
+    }
+
+    Error swap_two (two_stack &stacks) {
+        if (stacks.size () < 4) return Error::INVALID_STACK_OPERATION;
+
+        stacks.swap (stacks.size () - 4, stacks.size () - 2);
+        stacks.swap (stacks.size () - 3, stacks.size () - 1);
+
+        return Error::OK;
+    }
+
+    Error duplicate (two_stack &stacks) {
+        if (stacks.size () < 1)
+            return Error::INVALID_STACK_OPERATION;
+
+        auto vch = stacks.top ();
+        stacks.push_back (vch);
+
+        return Error::OK;
+    }
+
+    Error duplicate_two (two_stack &stacks) {
+        if (stacks.size () < 2)
+            return Error::INVALID_STACK_OPERATION;
+
+        auto vch1 = stacks.top (-2);
+        auto vch2 = stacks.top ();
+
+        stacks.push_back (vch1);
+        stacks.push_back (vch2);
+
+        return Error::OK;
+    }
+
+    Error duplicate_three (two_stack &stacks) {
+        if (stacks.size () < 3) return Error::INVALID_STACK_OPERATION;
+
+        auto vch1 = stacks.top (-3);
+        auto vch2 = stacks.top (-2);
+        auto vch3 = stacks.top ();
+
+        stacks.push_back (vch1);
+        stacks.push_back (vch2);
+        stacks.push_back (vch3);
+
+        return Error::OK;
+    }
+
+    Error drop (two_stack &stacks) {
+        if (stacks.size () < 1) return Error::INVALID_STACK_OPERATION;
+        stacks.pop_back ();
+
+        return Error::OK;
+    }
+
+    Error drop_two (two_stack &stacks) {
+        if (stacks.size () < 2) return Error::INVALID_STACK_OPERATION;
+
+        stacks.pop_back ();
+        stacks.pop_back ();
+
+        return Error::OK;
+    }
+
+    Error over (two_stack &stacks) {
+        if (stacks.size () < 2) return Error::INVALID_STACK_OPERATION;
+        auto vch = stacks.top (-2);
+        stacks.push_back (vch);
+
+        return Error::OK;
+    }
+
+    Error over_two (two_stack &stacks) {
+        if (stacks.size () < 4)
+            return Error::INVALID_STACK_OPERATION;
+
+        auto vch1 = stacks.top (-4);
+        auto vch2 = stacks.top (-3);
+        stacks.push_back (vch1);
+        stacks.push_back (vch2);
+
+        return Error::OK;
+    }
+
+    Error rotate (two_stack &stacks) {
+        if (stacks.size () < 3)
+            return Error::INVALID_STACK_OPERATION;
+
+        stacks.swap (stacks.size () - 3, stacks.size () - 2);
+        stacks.swap (stacks.size () - 2, stacks.size () - 1);
+
+        return Error::OK;
+    }
+
+    Error rotate_two (two_stack &stacks) {
+        if (stacks.size () < 6) return Error::INVALID_STACK_OPERATION;
+
+        auto vch1 = stacks.top (-6);
+        auto vch2 = stacks.top (-5);
+
+        stacks.erase (-6, -4);
+        stacks.push_back (vch1);
+        stacks.push_back (vch2);
+
+        return Error::OK;
+    }
+
+    Error nip (two_stack &stacks) {
+        if (stacks.size () < 2)
+            return Error::INVALID_STACK_OPERATION;
+
+        stacks.erase (-2);
+        return Error::OK;
+    }
+
+    Error tuck (two_stack &stacks) {
+        if (stacks.size () < 2) return Error::INVALID_STACK_OPERATION;
+        auto vch = stacks.top ();
+        stacks.insert (-2, vch);
+        return Error::OK;
+    }
+
+    Error depth (two_stack &stacks) {
+        stacks.push_back (integer {stacks.size ()});
+        return Error::OK;
+    }
+
+    Error top_size (two_stack &stacks) {
+        if (stacks.size () < 1)
+            return Error::INVALID_STACK_OPERATION;
+
+        stacks.push_back (integer {stacks.top ().size ()});
+
+        return Error::OK;
+    }
+
+    Error if_dup (two_stack &stacks) {
+        if (stacks.size () < 1)
+            return Error::INVALID_STACK_OPERATION;
+
+        auto vch = stacks.top ();
+
+        if (nonzero (vch)) stacks.push_back (vch);
+
+        return Error::OK;
+    }
 }

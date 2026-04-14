@@ -321,120 +321,41 @@ namespace Gigamonkey::Bitcoin {
 
             case OP_FROMALTSTACK: return Stack->from_alt ();
 
-            case OP_2DROP: {
-                // (x1 x2 -- )
-                if (Stack->size () < 2) return Error::INVALID_STACK_OPERATION;
-                    
-                Stack->pop_back ();
-                Stack->pop_back ();
-                
-            } break;
+            // (x1 x2 -- )
+            case OP_2DROP: return drop_two (*Stack);
 
-            case OP_2DUP: {
-                // (x1 x2 -- x1 x2 x1 x2)
-                if (Stack->size () < 2) return Error::INVALID_STACK_OPERATION;
-                
-                auto vch1 = Stack->top (-2);
-                auto vch2 = Stack->top ();
-                
-                Stack->push_back (vch1);
-                Stack->push_back (vch2);
-                
-            } break;
+            // (x1 x2 -- x1 x2 x1 x2)
+            case OP_2DUP: return duplicate_two (*Stack);
 
-            case OP_3DUP: {
-                // (x1 x2 x3 -- x1 x2 x3 x1 x2 x3)
-                if (Stack->size () < 3) return Error::INVALID_STACK_OPERATION;
-                
-                auto vch1 = Stack->top (-3);
-                auto vch2 = Stack->top (-2);
-                auto vch3 = Stack->top ();
-                
-                Stack->push_back (vch1);
-                Stack->push_back (vch2);
-                Stack->push_back (vch3);
-                
-            } break;
+            // (x1 x2 x3 -- x1 x2 x3 x1 x2 x3)
+            case OP_3DUP: return duplicate_three (*Stack);
 
-            case OP_2OVER: {
-                // (x1 x2 x3 x4 -- x1 x2 x3 x4 x1 x2)
-                if (Stack->size () < 4) return Error::INVALID_STACK_OPERATION;
-                
-                auto vch1 = Stack->top (-4);
-                auto vch2 = Stack->top (-3);
-                Stack->push_back (vch1);
-                Stack->push_back (vch2);
-            } break;
+            // (x1 x2 x3 x4 -- x1 x2 x3 x4 x1 x2)
+            case OP_2OVER: return over_two (*Stack);
 
-            case OP_2ROT: {
-                // (x1 x2 x3 x4 x5 x6 -- x3 x4 x5 x6 x1 x2)
-                if (Stack->size () < 6) return Error::INVALID_STACK_OPERATION;
-                
-                auto vch1 = Stack->top (-6);
-                auto vch2 = Stack->top (-5);
-                
-                Stack->erase (-6, -4);
-                Stack->push_back (vch1);
-                Stack->push_back (vch2);
-                
-            } break;
+            // (x1 x2 x3 x4 x5 x6 -- x3 x4 x5 x6 x1 x2)
+            case OP_2ROT: return rotate_two (*Stack);
 
-            case OP_2SWAP: {
-                
-                // (x1 x2 x3 x4 -- x3 x4 x1 x2)
-                if (Stack->size () < 4) return Error::INVALID_STACK_OPERATION;
-                
-                Stack->swap (Stack->size () - 4, Stack->size () - 2);
-                Stack->swap (Stack->size () - 3, Stack->size () - 1);
-                
-            } break;
+            // (x1 x2 x3 x4 -- x3 x4 x1 x2)
+            case OP_2SWAP: return swap_two (*Stack);
             
-            case OP_IFDUP: {
-                // (x - 0 | x x)
-                if (Stack->size () < 1)
-                    return Error::INVALID_STACK_OPERATION;
-                
-                auto vch = Stack->top ();
+            // (x - 0 | x x)
+            case OP_IFDUP: return if_dup (*Stack);
 
-                if (nonzero (vch)) Stack->push_back (vch);
-                
-            } break;
+            // -- stacksize
+            case OP_DEPTH: return depth (*Stack);
 
-            case OP_DEPTH: {
-                // -- stacksize
-                Stack->push_back (integer {Stack->size ()});
-                
-            } break;
+            // (x -- )
+            case OP_DROP: return drop (*Stack);
 
-            case OP_DROP: {
-                // (x -- )
-                if (Stack->size () < 1) return Error::INVALID_STACK_OPERATION;
-                Stack->pop_back ();
-                
-            } break;
+            // (x -- x x)
+            case OP_DUP: return duplicate (*Stack);
 
-            case OP_DUP: {
-                // (x -- x x)
-                if (Stack->size () < 1) return Error::INVALID_STACK_OPERATION;
-                
-                auto vch = Stack->top ();
-                Stack->push_back (vch);
-            } break;
+            // (x1 x2 -- x2)
+            case OP_NIP: return nip (*Stack);
 
-            case OP_NIP: {
-                // (x1 x2 -- x2)
-                if (Stack->size () < 2) return Error::INVALID_STACK_OPERATION;
-                Stack->erase (-2);
-                
-            } break;
-
-            case OP_OVER: {
-                // (x1 x2 -- x1 x2 x1)
-                if (Stack->size () < 2) return Error::INVALID_STACK_OPERATION;
-                auto vch = Stack->top (-2);
-                Stack->push_back (vch);
-                
-            } break;
+            // (x1 x2 -- x1 x2 x1)
+            case OP_OVER: return over (*Stack);
 
             case OP_PICK:
             case OP_ROLL: {
@@ -446,50 +367,29 @@ namespace Gigamonkey::Bitcoin {
                 Stack->pop_back ();
                 if (sn < 0 || sn >= Stack->size ())
                     return Error::INVALID_STACK_OPERATION;
-                
+
                 const uint32 n = uint32 (read_as_uint32_little (sn));
                 auto vch = Stack->top (-n - 1);
 
                 if (Op == OP_ROLL) Stack->erase (-n - 1);
 
                 Stack->push_back (vch);
-                
+
             } break;
 
-            case OP_ROT: {
-                // (x1 x2 x3 -- x2 x3 x1)
-                //  x2 x1 x3  after first swap
-                //  x2 x3 x1  after second swap
-                if (Stack->size () < 3)
-                    return Error::INVALID_STACK_OPERATION;
+            // (x1 x2 x3 -- x2 x3 x1)
+            //  x2 x1 x3  after first swap
+            //  x2 x3 x1  after second swap
+            case OP_ROT: return rotate (*Stack);
 
-                Stack->swap (Stack->size () - 3, Stack->size () - 2);
-                Stack->swap (Stack->size () - 2, Stack->size () - 1);
-                
-            } break;
+            // (x1 x2 -- x2 x1)
+            case OP_SWAP: return swap (*Stack);
 
-            case OP_SWAP: {
-                // (x1 x2 -- x2 x1)
-                if (Stack->size () < 2) return Error::INVALID_STACK_OPERATION;
-                Stack->swap (Stack->size () - 2, Stack->size () - 1);
-                
-            } break;
+            // (x1 x2 -- x2 x1 x2)
+            case OP_TUCK: return tuck (*Stack);
 
-            case OP_TUCK: {
-                // (x1 x2 -- x2 x1 x2)
-                if (Stack->size () < 2) return Error::INVALID_STACK_OPERATION;
-                auto vch = Stack->top ();
-                Stack->insert (-2, vch);
-                
-            } break;
-
-            case OP_SIZE: {
-                // (in -- in size)
-                if (Stack->size () < 1) return Error::INVALID_STACK_OPERATION;
-
-                Stack->push_back (integer {Stack->top ().size ()});
-                
-            } break;
+            // (in -- in size)
+            case OP_SIZE: return top_size (*Stack);
 
             //
             // Bitwise logic
