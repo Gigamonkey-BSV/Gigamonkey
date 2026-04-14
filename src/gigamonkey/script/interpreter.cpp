@@ -45,7 +45,9 @@ namespace Gigamonkey::Bitcoin {
         try {
             auto e = read_program (lift ([&conf] (const auto &script) {
                 segment x = decompile (script);
-                for (const instruction &i : x) if (auto err = i.verify (conf); err != Error::OK) throw invalid_program {err};
+                for (const instruction &i : x) if (auto err = i.verify (conf); err != Error::OK)
+                    throw invalid_program {err};
+
                 return x;
             }, scripts), conf);
 
@@ -55,8 +57,6 @@ namespace Gigamonkey::Bitcoin {
         } catch (const invalid_program &x) {
             I.Error = x.Error;
         }
-
-        I.Counter = program_counter {I.Program.Script};
     }
 
     interpreter::interpreter (const list<script> scripts, const redemption_document &doc, const script_config &conf) :
@@ -86,8 +86,31 @@ namespace Gigamonkey::Bitcoin {
         auto r = x.step (p);
         if (bool (r)) return r;
 
+        if (p.Next[0] == OP_RETURN) {
+            // if the instruction was an OP_RETURN, we have to jump
+            // instead of increment.
+            p.jump ();
+
+            // if this is not the end of the program, we
+            // have to check the top of the stack for true.
+            // if not, we err. Otherwise we pop the top
+            // and erase the if/else stacks.
+            if (p.valid ()) {
+                if (x.Stack->size () < 1)
+                    return Error::INVALID_STACK_OPERATION;
+
+                if (Bitcoin::is_zero (x.Stack->top ()))
+                    return Error::OP_RETURN;
+
+                x.Exec = {};
+                x.Else = {};
+
+                x.Stack->pop_back ();
+            }
+        }
+
         // increment op counter.
-        ++p;
+        else ++p;
 
         return Error::OK;
     }
@@ -104,7 +127,7 @@ namespace Gigamonkey::Bitcoin {
                 if (x.Config.verify_clean_stack () && (x.Stack->size () != 1))
                     return Error::CLEANSTACK;
 
-                return x.stack_top ();
+                return x.top ();
             }
         }
     }
@@ -123,11 +146,11 @@ namespace Gigamonkey::Bitcoin {
 
     void interpreter::step () {
         if (bool (Error)) return;
-        Error = catch_all_errors (machine_step, Machine, Counter);
+        Error = catch_all_errors (machine_step, Machine, Program);
     }
 
     Error interpreter::run () {
         if (bool (Error)) return Error;
-        return catch_all_errors (machine_run, Machine, Counter);
+        return catch_all_errors (machine_run, Machine, Program);
     }
 }

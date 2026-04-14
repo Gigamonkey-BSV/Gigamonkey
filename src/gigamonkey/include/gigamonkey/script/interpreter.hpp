@@ -14,10 +14,8 @@ namespace Gigamonkey::Bitcoin {
 
         ::Error Error {::Error::OK};
 
+        program_counter Program;
         machine Machine;
-        execution_image Program;
-        cross<size_t> Stages;
-        program_counter Counter;
 
         // If the redemption document is not provided, all signature operations will succeed.
         interpreter (const list<script> scripts, const redemption_document &doc, const script_config & = {});
@@ -54,7 +52,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     segment inline interpreter::unread () const {
-        return decompile (byte_slice {Program.Script}.drop (Counter.Index));
+        return decompile (byte_slice {Program.Script}.drop (Program.Index));
     }
 
 }

@@ -5,54 +5,92 @@
 #define GIGAMONKEY_SCRIPT_COUNTER
 
 #include <gigamonkey/script/instruction.hpp>
-#include <gigamonkey/signature.hpp>
 
 namespace Gigamonkey::Bitcoin {
     
     struct program_counter {
 
-        byte_slice Next;
-        byte_slice Script;
+        bytes Script;
+        cross<size_t> Jump;
+
+        slice<const byte> Next;
+
         size_t Index;
         
-        static byte_slice read_instruction (byte_slice subscript);
+        static byte_slice read_next_instruction (byte_slice subscript);
         
         program_counter () {}
-        program_counter (byte_slice s);
-        program_counter next () const;
+
+        program_counter (const bytes &script, const cross<size_t> &jump);
+
+        program_counter (const program_counter &);
+        program_counter &operator = (const program_counter &);
+
+        program_counter (program_counter &&);
+        program_counter &operator = (program_counter &&);
 
         // pre-increment;
         program_counter &operator ++ () {
-            return *this = next ();
+            Index = Index + Next.size ();
+            Next = read_next_instruction (byte_slice (Script).drop (static_cast<int32> (Index)));
+            return *this;
         }
 
         // post-increment
         program_counter operator ++ (int) {
             program_counter z = *this;
-            *this = next ();
+            ++*this;
             return z;
         }
 
         bool valid () const {
             return Next != byte_slice {};
         }
+
+        program_counter &jump () {
+            for (size_t j : Jump) if (j > Index) {
+                Next = read_next_instruction (byte_slice (Script).drop (j));
+                Index = j;
+                return *this;
+            }
+
+            Index = Script.size ();
+            Next = {};
+            return *this;
+        }
         
     private:
         program_counter (byte_slice n, byte_slice s, size_t c);
     };
     
-
-    inline program_counter::program_counter (byte_slice s):
-        Next {read_instruction (s)}, Script {s}, Index {0} {}
-
-    program_counter inline program_counter::next () const {
-        size_t next_counter = Index + Next.size ();
-        return program_counter {read_instruction (
-            Script.drop (static_cast<int32> (next_counter))), Script, next_counter};
+    inline program_counter::program_counter (const bytes &script, const cross<size_t> &jump):
+        Script {script}, Jump {jump}, Next {}, Index {0} {
+        Next = read_next_instruction (Script);
     }
 
-    inline program_counter::program_counter (byte_slice n, byte_slice s, size_t c) :
-        Next {n}, Script {s}, Index {c} {}
+    inline program_counter::program_counter (const program_counter &p):
+        Script {p.Script}, Jump {p.Jump},
+        Next {Script.data () + (p.Next.data () - p.Script.data ()), p.Next.size ()}, Index {p.Index} {}
+
+    program_counter inline &program_counter::operator = (const program_counter &p) {
+        Script = p.Script;
+        Jump = p.Jump;
+        Next = byte_slice {p.Script.data () + (p.Next.data () - p.Script.data ()), p.Next.size ()};
+        Index = p.Index;
+        return *this;
+    }
+
+    inline program_counter::program_counter (program_counter &&p) {
+        *this = std::move (p);
+    }
+
+    program_counter inline &program_counter::operator = (program_counter &&p) {
+        Script = std::move (p.Script);
+        Jump = std::move (p.Jump);
+        Next = p.Next;
+        Index = p.Index;
+        return *this;
+    }
 }
 
 #endif

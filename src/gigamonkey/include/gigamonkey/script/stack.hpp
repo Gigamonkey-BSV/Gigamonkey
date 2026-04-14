@@ -144,24 +144,25 @@ namespace Gigamonkey::Bitcoin {
     };
 
     // stack operations
-    Error swap (two_stack &stack);
-    Error swap_two (two_stack &stack);
-    template <bool genesis> Error duplicate (limited_two_stack<genesis> &stack);
-    template <bool genesis> Error duplicate_two (limited_two_stack<genesis> &stack);
-    template <bool genesis> Error duplicate_three (limited_two_stack<genesis> &stack);
-    template <bool genesis> Error drop (limited_two_stack<genesis> &stack);
-    template <bool genesis> Error drop_two (limited_two_stack<genesis> &stack);
-    template <bool genesis> Error over (limited_two_stack<genesis> &stack);
-    template <bool genesis> Error over_two (limited_two_stack<genesis> &stack);
-    template <bool genesis> Error rotate (limited_two_stack<genesis> &stack);
-    template <bool genesis> Error rotate_two (limited_two_stack<genesis> &stack);
-    template <bool genesis> Error nip (limited_two_stack<genesis> &stack);
-    template <bool genesis> Error tuck (limited_two_stack<genesis> &stack);
-    template <bool genesis> Error pick (limited_two_stack<genesis> &stack);
-    template <bool genesis> Error roll (limited_two_stack<genesis> &stack);
-    template <bool genesis> Error depth (limited_two_stack<genesis> &stack);
-    template <bool genesis> Error script_size (limited_two_stack<genesis> &stack);
-    template <bool genesis> Error script_if_dup (limited_two_stack<genesis> &);
+    Error swap (two_stack &);
+    Error swap_two (two_stack &);
+    Error duplicate (two_stack &);
+    Error duplicate_two (two_stack &);
+    Error duplicate_three (two_stack &);
+    Error drop (two_stack &);
+    Error drop_two (two_stack &);
+    Error over (two_stack &);
+    Error over_two (two_stack &);
+    Error rotate (two_stack &);
+    Error rotate_two (two_stack &);
+    Error nip (two_stack &);
+    Error tuck (two_stack &);
+    Error depth (two_stack &);
+    Error top_size (two_stack &);
+    Error if_dup (two_stack &);
+
+    Error pick (two_stack &);
+    Error roll (two_stack &);
 
     // bitwise
     template <bool genesis> Error script_bit_and (limited_two_stack<genesis> &stack);

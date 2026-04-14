@@ -881,8 +881,21 @@ namespace Gigamonkey::Bitcoin {
 
     TEST (Script, OP_RETURN) {
 
+        EXPECT_EQ (Error::INVALID_STACK_OPERATION,
+                                (evaluate (bytes {}, bytes {OP_RETURN}, {}))) << "OP_RETURN error";
         EXPECT_EQ (Error::OK,   (evaluate (bytes {OP_TRUE}, bytes {OP_RETURN}, {}))) << "OP_RETURN true";
         EXPECT_EQ (Error::FAIL, (evaluate (bytes {OP_FALSE}, bytes {OP_RETURN}, {}))) << "OP_RETURN false";
+
+        // here we show that instructions after OP_RETURN don't get evaluated.
+        EXPECT_EQ (Error::OK,   (evaluate (bytes {OP_TRUE}, bytes {OP_RETURN, OP_FALSE}, {2}))) << "OP_RETURN true";
+        EXPECT_EQ (Error::FAIL, (evaluate (bytes {OP_FALSE}, bytes {OP_RETURN, OP_TRUE}, {2}))) << "OP_RETURN false";
+
+        // Here we show that OP_RETURN jumps to the unlock script.
+        EXPECT_EQ (Error::OK,   (evaluate (bytes {OP_TRUE, OP_RETURN}, bytes {OP_TRUE}, {2}))) << "OP_RETURN true";
+        EXPECT_EQ (Error::FAIL, (evaluate (bytes {OP_TRUE, OP_RETURN}, bytes {OP_FALSE}, {2}))) << "OP_RETURN true";
+
+        // here we show that the if/else stacks are eliminated on OP_RETURN.
+        //EXPECT_EQ (Error::OK,   (evaluate (bytes {OP_TRUE, OP_IF}, bytes {OP_RETURN}, {2}))) << "OP_RETURN true";
 
     }
 

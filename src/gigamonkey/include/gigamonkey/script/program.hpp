@@ -7,8 +7,7 @@
 #ifndef GIGAMONKEY_SCRIPT_PROGRAM
 #define GIGAMONKEY_SCRIPT_PROGRAM
 
-#include <gigamonkey/script/instruction.hpp>
-#include <data/lift.hpp>
+#include <gigamonkey/script/counter.hpp>
 #include <data/flatten.hpp>
 
 namespace Gigamonkey::Bitcoin {
@@ -41,13 +40,8 @@ namespace Gigamonkey::Bitcoin {
         return pre_verify (p, genesis_profile ()) == Error::OK;
     };
 
-    struct execution_image {
-        bytes Script;
-        cross<size_t> Jump;
-    };
-
-    execution_image compile (program p);
-    program decompile (const execution_image &p);
+    program_counter compile (program p);
+    program decompile (const program_counter &p);
 
     size_t serialized_size (segment p);
 
@@ -75,14 +69,19 @@ namespace Gigamonkey::Bitcoin {
         return true;
     }
 
-    execution_image inline compile (program p) {
-        return execution_image {
+    program_counter inline compile (program p) {
+        cross<size_t> jumps (p.size () - 1);
+        size_t total = 0;
+        program q = p;
+        for (size_t &x : jumps) {
+            total += serialized_size (first (q));
+            x = total;
+            q = rest (q);
+        }
+
+        return program_counter {
             compile (data::flatten (p)),
-            cross<size_t> {data::accumulate (data::lift ([](const segment z){
-                size_t size {0};
-                for (const instruction &in : z) size += serialized_size (in);
-                return size;
-            }, p))}};
+            jumps};
     }
 }
 
