@@ -69,17 +69,10 @@ namespace Gigamonkey::Bitcoin {
         setup_interpreter (*this, scripts, conf);
     }
 
-    list<bool> make_list (const std::vector<bool> &v) {
-        list<bool> l;
-        for (const bool &b : v) l << b;
-        return l;
-    }
-
     std::ostream &operator << (std::ostream &o, const interpreter &i) {
         return o << "interpreter {\n\tProgram: " << i.unread ()
             << ", Error: " << i.Error << ", Flags: " << i.Machine.Config.Flags
-            << ",\n\t" << *i.Machine.Stack << ", Exec: " << make_list (i.Machine.Exec)
-            << ", Else: " << make_list (i.Machine.Else) << "}";
+            << ",\n\t" << *i.Machine.Stack << ", Exec: " << i.Machine.Conditional << "}";
     }
 
     Error machine_step (machine &x, program_counter &p) {
@@ -91,19 +84,18 @@ namespace Gigamonkey::Bitcoin {
             // instead of increment.
             p.jump ();
 
+            // clear the if/else branch stack
+            x.Conditional = {x.Config.enable_genesis_opcodes ()};
+
             // if this is not the end of the program, we
             // have to check the top of the stack for true.
-            // if not, we err. Otherwise we pop the top
-            // and erase the if/else stacks.
+            // if not, we err. Otherwise we pop the top.
             if (p.valid ()) {
                 if (x.Stack->size () < 1)
                     return Error::INVALID_STACK_OPERATION;
 
                 if (Bitcoin::is_zero (x.Stack->top ()))
                     return Error::OP_RETURN;
-
-                x.Exec = {};
-                x.Else = {};
 
                 x.Stack->pop_back ();
             }
@@ -122,8 +114,15 @@ namespace Gigamonkey::Bitcoin {
             // if an error was generated, return it.
             if (bool (r)) return r;
 
-            // if there are no more instructions, return the result.
+            // if there are no more instructions, we check whether
+            // we are expecting an OP_ENDIF and it is an error if we
+            // are. If not, then we return the result from the top
+            // of the stack.
             if (!p.valid ()) {
+
+                if (x.Conditional)
+                    return Error::UNBALANCED_CONDITIONAL;
+
                 if (x.Config.verify_clean_stack () && (x.Stack->size () != 1))
                     return Error::CLEANSTACK;
 

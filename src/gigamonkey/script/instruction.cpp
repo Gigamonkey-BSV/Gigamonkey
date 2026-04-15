@@ -331,11 +331,13 @@ namespace Gigamonkey::Bitcoin {
         return p;
     }
 
+    // NOTE: this function should ultimately be elimated.
     Error valid_program (segment p, const script_config &conf, stack<op> x = {}) {
-        
+
         if (empty (p)) {
-            if (empty (x)) return Error::OK;
-            return Error::UNBALANCED_CONDITIONAL;
+            //if (empty (x))
+                return Error::OK;
+            //return Error::UNBALANCED_CONDITIONAL;
         }
         
         const instruction &i = first (p);
@@ -343,33 +345,17 @@ namespace Gigamonkey::Bitcoin {
         auto script_error = i.verify (conf);
         if (script_error != Error::OK) return script_error;
         
-        if ((verify_minimal_push (conf.Flags)) && !is_minimal_instruction (i)) return Error::MINIMALDATA;
+        if ((verify_minimal_push (conf.Flags)) && !is_minimal_instruction (i))
+            return Error::MINIMALDATA;
         
         op o = i.Op;
         
         // prior to genesis, OP_RETURN is not allowed to appear in a
         // normal script. It must be in a script consisting only of
         // itself.
-        if (o == OP_RETURN) {
-            if (!safe_return_data (conf.Flags)) return Error::OP_RETURN;
-            if (empty (x) && p.size () == 1) return Error::OK;
-            if (i.Data.size () != 0) return Error::OP_RETURN;
-        }
-        
-        if (o == OP_ENDIF) {
-            if (x.empty ()) return Error::UNBALANCED_CONDITIONAL;
-            op prev = first (x);
-            x = rest (x);
-
-            if (prev == OP_ELSE) {
-                if (x.empty ()) return Error::UNBALANCED_CONDITIONAL;
-                prev = first (x);
-                x = rest (x);
-            }
-
-            if (prev != OP_IF && prev != OP_NOTIF && prev != OP_VERIF && prev != OP_VERNOTIF)
-                return Error::UNBALANCED_CONDITIONAL;
-        } else if (o == OP_ELSE || o == OP_IF || o == OP_NOTIF || o == OP_VERIF || o == OP_VERNOTIF) x = x >> o;
+        if (o == OP_RETURN)
+            if (!safe_return_data (conf.Flags))
+                return Error::OP_RETURN;
         
         return valid_program (rest (p), conf, x);
     }

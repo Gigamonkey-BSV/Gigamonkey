@@ -332,6 +332,7 @@ namespace Gigamonkey::Bitcoin {
         constexpr bool verify_clean_stack () const;
         constexpr bool check_locktime () const;
         constexpr bool check_sequence () const;
+        constexpr bool enable_genesis_opcodes () const;
 
         bool disabled (op) const;
 
@@ -460,6 +461,10 @@ namespace Gigamonkey::Bitcoin {
 
     constexpr bool inline script_config::check_sequence () const {
         return Bitcoin::verify_check_sequence_verify (Flags);
+    }
+
+    constexpr bool inline script_config::enable_genesis_opcodes () const {
+        return Bitcoin::enable_genesis_opcodes (Flags);
     }
 
     constexpr flag inline mandatory_pre_genesis () {
