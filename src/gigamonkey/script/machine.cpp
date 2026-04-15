@@ -11,7 +11,7 @@ bool fRequireStandard = true;
 namespace Gigamonkey::Bitcoin {
 
     machine::machine (ptr<two_stack> stack, maybe<redemption_document> doc, const script_config &conf):
-        Config {conf}, Document {doc}, Stack {stack}, Exec {}, Else {}, OpCount {0}, LastCodeSeparator {0} {}
+        Config {conf}, Document {doc}, Stack {stack}, Conditional {conf.enable_genesis_opcodes ()}, OpCount {0}, LastCodeSeparator {0} {}
 
     bool inline IsValidMaxOpsPerScript (uint64_t nOpCount, const script_config &config) {
         return (nOpCount <= config.MaxOpsPerScript);
@@ -64,7 +64,7 @@ namespace Gigamonkey::Bitcoin {
     
     Error machine::step (const program_counter &Counter) {
 
-        bool UtxoAfterGenesis {bool (static_cast<uint32> (Config.Flags & flag::ENABLE_GENESIS_OPCODES))};
+        bool UtxoAfterGenesis {Config.enable_genesis_opcodes ()};
         bool RequireMinimal {Config.verify_minimal_push ()};
         
         op Op = op (Counter.Next[0]);
@@ -74,41 +74,22 @@ namespace Gigamonkey::Bitcoin {
         // Push values are not taken into consideration.
         // Note how OP_RESERVED does not count towards the opcode limit.
         if ((Op > OP_16) && !increment_operation ()) return Error::OP_COUNT;
-        
-        // whether this op code will be executed. 
-        bool executed = true;
-        for (const bool b : Exec) if (!b) {
-            executed = false;
-            break;
-        }
 
         // if not executed, then the only things we need to look for
         // are if constructions.
-        if (!executed) {
+        if (!Conditional.executed ()) {
             switch (Op) {
 
                 case OP_IF:
                 case OP_NOTIF:
                 case OP_VERIF:
                 case OP_VERNOTIF: {
-                    Exec.push_back (false);
-                    Else.push_back (false);
+                    Conditional.push (false);
                 } break;
 
-                case OP_ELSE: {
-                    // Only one ELSE is allowed in IF after genesis.
-                    if (Exec.empty () || (Else.back () && UtxoAfterGenesis))
-                        return Error::UNBALANCED_CONDITIONAL;
+                case OP_ELSE: return Conditional.flip ();
 
-                    Exec.back () = !Exec.back ();
-                    Else.back () = true;
-                } break;
-
-                case OP_ENDIF: {
-                    if (Exec.empty ()) return Error::UNBALANCED_CONDITIONAL;
-                    Exec.pop_back ();
-                    Else.pop_back ();
-                } break;
+                case OP_ENDIF: return Conditional.pop ();
             }
 
             return Error::OK;
@@ -242,7 +223,8 @@ namespace Gigamonkey::Bitcoin {
                 // endif
                 bool fValue = false;
 
-                if (Stack->size () < 1) return Error::UNBALANCED_CONDITIONAL;
+                if (Stack->size () < 1)
+                    return Error::UNBALANCED_CONDITIONAL;
 
                 auto &vch = Stack->top ();
 
@@ -256,8 +238,7 @@ namespace Gigamonkey::Bitcoin {
 
                 Stack->pop_back ();
 
-                Exec.push_back (fValue);
-                Else.push_back (false);
+                Conditional.push (fValue);
             } break;
 
             case OP_VERIF:
@@ -275,24 +256,12 @@ namespace Gigamonkey::Bitcoin {
 
                 Stack->pop_back ();
 
-                Exec.push_back (fValue);
-                Else.push_back (false);
+                Conditional.push (fValue);
             } break;
 
-            case OP_ELSE: {
-                // Only one ELSE is allowed in IF after genesis.
-                if (Exec.empty () || (Else.back () && UtxoAfterGenesis))
-                    return Error::UNBALANCED_CONDITIONAL;
+            case OP_ELSE: return Conditional.flip ();
 
-                Exec.back () = !Exec.back ();
-                Else.back () = true;
-            } break;
-
-            case OP_ENDIF: {
-                if (Exec.empty ()) return Error::UNBALANCED_CONDITIONAL;
-                Exec.pop_back ();
-                Else.pop_back ();
-            } break;
+            case OP_ENDIF: return Conditional.pop ();
 
             case OP_VERIFY: {
                 // (true -- ) or

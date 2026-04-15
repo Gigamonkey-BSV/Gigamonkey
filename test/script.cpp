@@ -121,12 +121,12 @@ namespace Gigamonkey::Bitcoin {
     // TODO different op codes should be invalid under different script profiles
     TEST (Script, InvalidOpcode) {
 
-         // invalid op codes                                                                        *
-         error (evaluate (bytes {OP_RESERVED}, bytes {}), "OP_RESERVED is an invalid op code");
-         error (evaluate (bytes {OP_RESERVED1}, bytes {}), "OP_RESERVED1 is an invalid op code");
-         error (evaluate (bytes {OP_RESERVED2}, bytes {}), "OP_RESERVED2 is an invalid op code");
-         error (evaluate (bytes {FIRST_UNDEFINED_OP_VALUE}, bytes {}), "FIRST_UNDEFINED_OP_VALUE is an invalid op code");
-         error (evaluate (bytes {OP_INVALIDOPCODE}, bytes {}), "OP_INVALIDOPCODE is an invalid op code");
+         // invalid op codes
+         EXPECT_EQ (Error::BAD_OPCODE, (evaluate (bytes {OP_RESERVED}, bytes {}))) << "OP_RESERVED is an invalid op code";
+         EXPECT_EQ (Error::BAD_OPCODE, (evaluate (bytes {OP_RESERVED1}, bytes {}))) << "OP_RESERVED1 is an invalid op code";
+         EXPECT_EQ (Error::BAD_OPCODE, (evaluate (bytes {OP_RESERVED2}, bytes {}))) << "OP_RESERVED2 is an invalid op code";
+         EXPECT_EQ (Error::BAD_OPCODE, (evaluate (bytes {FIRST_UNDEFINED_OP_VALUE}, bytes {}))) << "FIRST_UNDEFINED_OP_VALUE is an invalid op code";
+         EXPECT_EQ (Error::BAD_OPCODE, (evaluate (bytes {OP_INVALIDOPCODE}, bytes {}))) << "OP_BADOPCODE is an invalid op code";
 
     }
 
@@ -134,7 +134,7 @@ namespace Gigamonkey::Bitcoin {
     // under different script profiles.
     TEST (Script, NOP) {
 
-        error (evaluate (bytes {OP_NOP}, bytes {}, flag {}), "OP_NOP 1");
+        EXPECT_EQ (Error::INVALID_STACK_OPERATION, (evaluate (bytes {OP_NOP}, bytes {}, flag {}))) << "OP_NOP 1";
         EXPECT_EQ (Error::OK,   (evaluate (bytes {OP_1, OP_NOP}, bytes {}, flag::VERIFY_CLEANSTACK))) << "OP_NOP 2";
         EXPECT_EQ (Error::FAIL, (evaluate (bytes {OP_0, OP_NOP}, bytes {}, flag::VERIFY_CLEANSTACK))) << "OP_NOP 3";
 
@@ -160,7 +160,7 @@ namespace Gigamonkey::Bitcoin {
 
     TEST (Script, Verify) {
 
-        error (evaluate (bytes {OP_FALSE}, bytes {OP_VERIFY}, flag {}), "OP_VERIFY 1");
+        EXPECT_EQ (Error::VERIFY, (evaluate (bytes {OP_FALSE}, bytes {OP_VERIFY}, flag {}))) << "OP_VERIFY 1";
 
         EXPECT_EQ (Error::INVALID_STACK_OPERATION,
             (evaluate (bytes {OP_TRUE}, bytes {OP_VERIFY}, flag {}))) << "OP_VERIFY 2";
@@ -736,13 +736,39 @@ namespace Gigamonkey::Bitcoin {
     }
 
     TEST (Script, If) {
-        // TODO this is not the correct error
-        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL, (evaluate (bytes {OP_IF}, bytes {}, flag {}))) << "OP_IF";
-        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL, (evaluate (bytes {OP_NOTIF}, bytes {}, flag {}))) << "OP_NOTIF";
-        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL, (evaluate (bytes {OP_VERIF}, bytes {}, flag {}))) << "OP_VERIF";
-        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL, (evaluate (bytes {OP_VERNOTIF}, bytes {}, flag {}))) << "OP_VERNOTIF";
-        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL, (evaluate (bytes {OP_ELSE}, bytes {}, flag {}))) << "OP_ELSE";
-        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL, (evaluate (bytes {OP_ENDIF}, bytes {}, flag {}))) << "OP_ENDIF";
+
+        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL, (evaluate (bytes {OP_IF}, bytes {}, {2}))) << "OP_IF";
+        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL, (evaluate (bytes {OP_NOTIF}, bytes {}, {2}))) << "OP_NOTIF";
+        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL, (evaluate (bytes {OP_VERIF}, bytes {}, {2}))) << "OP_VERIF";
+        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL, (evaluate (bytes {OP_VERNOTIF}, bytes {}, {2}))) << "OP_VERNOTIF";
+        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL, (evaluate (bytes {OP_ELSE}, bytes {}, {2}))) << "OP_ELSE";
+        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL, (evaluate (bytes {OP_ENDIF}, bytes {}, {2}))) << "OP_ENDIF";
+
+        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL, (evaluate (bytes {OP_TRUE, OP_IF}, bytes {}, {2}))) << "OP_IF";
+        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL, (evaluate (bytes {OP_TRUE, OP_NOTIF}, bytes {}, {2}))) << "OP_NOTIF";
+        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL, (evaluate (bytes {OP_TRUE, OP_VERIF}, bytes {}, {2}))) << "OP_VERIF";
+        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL, (evaluate (bytes {OP_TRUE, OP_VERNOTIF}, bytes {}, {2}))) << "OP_VERNOTIF";
+
+        // these fail because the stack is empty at the end of the computation, not because the conditional is ill-formed.
+        EXPECT_EQ (Error::INVALID_STACK_OPERATION, (evaluate (bytes {OP_TRUE, OP_IF, OP_ENDIF}, bytes {}, {2}))) << "OP_IF";
+        EXPECT_EQ (Error::INVALID_STACK_OPERATION, (evaluate (bytes {OP_TRUE, OP_NOTIF, OP_ENDIF}, bytes {}, {2}))) << "OP_IF";
+        EXPECT_EQ (Error::INVALID_STACK_OPERATION, (evaluate (bytes {OP_TRUE, OP_VERIF, OP_ENDIF}, bytes {}, {2}))) << "OP_IF";
+        EXPECT_EQ (Error::INVALID_STACK_OPERATION, (evaluate (bytes {OP_TRUE, OP_VERNOTIF, OP_ENDIF}, bytes {}, {2}))) << "OP_IF";
+
+        EXPECT_EQ (Error::INVALID_STACK_OPERATION, (evaluate (bytes {OP_TRUE, OP_IF, OP_ELSE, OP_ENDIF}, bytes {}, {2}))) << "OP_IF";
+        EXPECT_EQ (Error::INVALID_STACK_OPERATION, (evaluate (bytes {OP_TRUE, OP_NOTIF, OP_ELSE, OP_ENDIF}, bytes {}, {2}))) << "OP_IF";
+        EXPECT_EQ (Error::INVALID_STACK_OPERATION, (evaluate (bytes {OP_TRUE, OP_VERIF, OP_ELSE, OP_ENDIF}, bytes {}, {2}))) << "OP_IF";
+        EXPECT_EQ (Error::INVALID_STACK_OPERATION, (evaluate (bytes {OP_TRUE, OP_VERNOTIF, OP_ELSE, OP_ENDIF}, bytes {}, {2}))) << "OP_IF";
+
+        // two elses in a row not allowed.
+        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL,
+            (evaluate (bytes {OP_TRUE, OP_IF, OP_ELSE, OP_ELSE, OP_ENDIF}, bytes {}, {2}))) << "OP_IF";
+        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL,
+            (evaluate (bytes {OP_TRUE, OP_NOTIF, OP_ELSE, OP_ELSE, OP_ENDIF}, bytes {}, {2}))) << "OP_IF";
+        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL,
+            (evaluate (bytes {OP_TRUE, OP_VERIF, OP_ELSE, OP_ELSE, OP_ENDIF}, bytes {}, {2}))) << "OP_IF";
+        EXPECT_EQ (Error::UNBALANCED_CONDITIONAL,
+            (evaluate (bytes {OP_TRUE, OP_VERNOTIF, OP_ELSE, OP_ELSE, OP_ENDIF}, bytes {}, {2}))) << "OP_IF";
 
         EXPECT_EQ (Error::OK, (evaluate (bytes {
             OP_1, OP_IF,
@@ -822,27 +848,6 @@ namespace Gigamonkey::Bitcoin {
             OP_ENDIF
         }, bytes {}, flag {}))) << "OP_NOTIF: not executed";
 
-        // missing OP_ENDIF
-        error (evaluate (bytes {
-            OP_1, OP_IF,
-            OP_1
-        }, bytes {}, script_config {}), "missing OP_ENDIF");
-
-        error (evaluate (bytes {
-            OP_0, OP_NOTIF,
-            OP_1
-        }, bytes {}, script_config {}), "missing OP_ENDIF");
-
-        // extra OP_ENDIF
-        error (evaluate (bytes {
-            OP_ENDIF
-        }, bytes {}, script_config {}), "unexpected OP_ENDIF");
-
-        // OP_ELSE without OP_IF
-        error (evaluate (bytes {
-            OP_ELSE
-        }, bytes {}, script_config {}), "OP_ELSE without OP_IF");
-
         // Unmatched inside non-executed branch
         error (evaluate (bytes {
             OP_0, OP_IF,
@@ -856,17 +861,6 @@ namespace Gigamonkey::Bitcoin {
             OP_IF,   // never executed, but still must match
             OP_ENDIF
         }, bytes {}, script_config {}), "unmatched OP_IF in dead branch");
-
-        // else twice in the same if
-        error (evaluate (bytes {
-            OP_0, OP_NOTIF,
-            OP_1,
-            OP_ELSE,
-            OP_1,
-            OP_ELSE,
-            OP_1,
-            OP_ENDIF
-        }, bytes {}, script_config {}), "multiple OP_ELSE");
 
         // test that invalid op codes cannot appear in unevaluated branches.
         error (evaluate (bytes {
@@ -895,7 +889,7 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_EQ (Error::FAIL, (evaluate (bytes {OP_TRUE, OP_RETURN}, bytes {OP_FALSE}, {2}))) << "OP_RETURN true";
 
         // here we show that the if/else stacks are eliminated on OP_RETURN.
-        //EXPECT_EQ (Error::OK,   (evaluate (bytes {OP_TRUE, OP_IF}, bytes {OP_RETURN}, {2}))) << "OP_RETURN true";
+        EXPECT_EQ (Error::OK,   (evaluate (bytes {OP_TRUE, OP_TRUE, OP_IF}, bytes {OP_RETURN}, {2}))) << "OP_RETURN true";
 
     }
 
