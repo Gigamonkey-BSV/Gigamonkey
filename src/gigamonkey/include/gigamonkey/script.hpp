@@ -43,14 +43,6 @@ namespace Gigamonkey::Bitcoin {
         bool check_sequence (const uint32_little &) const;
     };
 
-    // the signature verification algorithm used by the script interpreter.
-    // strict signatures are enabled by default because we don't know another format that is usable.
-    Error verify_signature (
-        byte_slice sig,
-        byte_slice pub,
-        const sighash::document &doc,
-        flag flags = flag::VERIFY_STRICTENC | flag::VERIFY_DERSIG);
-
     // depricated script type that is supported for backwards compatibilty.
     bool is_P2SH (byte_slice);
 
