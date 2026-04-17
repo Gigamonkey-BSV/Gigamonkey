@@ -665,7 +665,7 @@ namespace Gigamonkey::Bitcoin {
                     auto doc = add_script_code (*Document, cleanup_script_code (
                         from_last_code_separator (Counter.Script, LastCodeSeparator), sig));
 
-                    r = verify_signature (sig, pub, *doc, Config.Flags);
+                    r = verify (sig, pub, *doc, Config.Flags);
                     delete doc;
                 } else r = Error::OK;
 
@@ -756,7 +756,7 @@ namespace Gigamonkey::Bitcoin {
                     // See the script_(in)valid tests for details.
                     // Check signature
                     
-                    Error r = (doc == nullptr) ? Error::OK : verify_signature (sig, pub, *doc, Config.Flags);
+                    Error r = (doc == nullptr) ? Error::OK : verify (sig, pub, *doc, Config.Flags);
 
                     if (r == Error::OK) {
                         isig++;

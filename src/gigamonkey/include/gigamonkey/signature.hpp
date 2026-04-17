@@ -6,6 +6,8 @@
 
 #include <gigamonkey/secp256k1.hpp>
 #include <gigamonkey/sighash.hpp>
+#include <gigamonkey/script/config.hpp>
+#include <gigamonkey/script/error.h>
 
 namespace Gigamonkey::Bitcoin {
     
@@ -37,7 +39,14 @@ namespace Gigamonkey::Bitcoin {
     };
 
     signature sign (const secp256k1::secret &s, sighash::directive d, const sighash::document &);
-    bool verify (const signature &sig, const secp256k1::pubkey &pub, const sighash::document &);
+
+    // the signature verification algorithm used by the script interpreter.
+    Error verify (
+        byte_slice sig,
+        byte_slice pub,
+        const sighash::document &doc,
+        // strict signatures are enabled by default because we don't have any other format implemented.
+        flag flags = flag::VERIFY_STRICTENC | flag::VERIFY_DERSIG);
 
     std::ostream &operator << (std::ostream &o, const signature &x);
     

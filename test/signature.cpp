@@ -257,6 +257,11 @@ namespace Gigamonkey::Bitcoin {
         
     }
 
+    // the remainder of this file is devoted to proving that
+    // signature verification works as expected and that the
+    // verify function works exactly the same as verification
+    // works in the script interpreter.
+
     sighash::document inline add_script_code (const redemption_document &doc, bytes script_code) {
         return sighash::document {doc.Transaction, doc.InputIndex, doc.RedeemedValue, decompile (script_code)};
     }
@@ -338,6 +343,21 @@ namespace Gigamonkey::Bitcoin {
         auto sigi = signature {sigi_raw, sighash::directive ()};
         auto sigmi = signature {sigmi_raw, sighash::directive ()};
 
+        flag low_S_only {flag::VERIFY_LOW_S};
+        flag either_way {flag {}};
+
+        EXPECT_EQ (Error::OK,         (verify (sig, p, doc, low_S_only))) << "CHECKSIG Low S provided and required";
+        EXPECT_EQ (Error::OK,         (verify (sig, p, doc, either_way))) << "CHECKSIG Low S provided and not required";
+
+        EXPECT_EQ (Error::OK,         (verify (sigm, p, docm, low_S_only))) << "CHECKMULTISIG Low S provided and required";
+        EXPECT_EQ (Error::OK,         (verify (sigm, p, docm, either_way))) << "CHECKMULTISIG Low S provided and not required";
+
+        EXPECT_EQ (Error::SIG_HIGH_S, (verify (sigi, p, doc, low_S_only))) << "CHECKSIG High S provided and prohibited";
+        EXPECT_EQ (Error::OK,         (verify (sigi, p, doc, either_way))) << "CHECKSIG High S provided and not prohibited";
+
+        EXPECT_EQ (Error::SIG_HIGH_S, (verify (sigmi, p, docm, low_S_only))) << "CHECKMULTISIG High S provided and prohibited";
+        EXPECT_EQ (Error::OK,         (verify (sigmi, p, docm, either_way))) << "CHECKMULTISIG High S provided and not prohibited";
+
         bytes unlock = pay_to_pubkey::redeem (sig);
         bytes unlockm = multisig::redeem ({sigm});
 
@@ -345,11 +365,6 @@ namespace Gigamonkey::Bitcoin {
         bytes unlockmi = multisig::redeem ({sigmi});
 
         // now we run the scripts
-
-        script_config low_S_only {flag::VERIFY_LOW_S};
-        script_config either_way {flag {}};
-
-        // TODO don't just test scripts, test verify_signature
 
         EXPECT_EQ (Error::OK, (evaluate (unlock, lock, rd, low_S_only))) << "CHECKSIG Low S provided and required";
         EXPECT_EQ (Error::OK, (evaluate (unlock, lock, rd, either_way))) << "CHECKSIG Low S provided and not required";
@@ -406,8 +421,22 @@ namespace Gigamonkey::Bitcoin {
         bytes unlockum = multisig::redeem ({sigum});
 
         // the flags we will be checking for this test
-        script_config compressed_required {flag::VERIFY_COMPRESSED_PUBKEYTYPE | flag::VERIFY_STRICTENC};
-        script_config compressed_not_required {flag::VERIFY_STRICTENC};
+        flag compressed_required {flag::VERIFY_COMPRESSED_PUBKEYTYPE | flag::VERIFY_STRICTENC};
+        flag compressed_not_required {flag::VERIFY_STRICTENC};
+
+        EXPECT_EQ (Error::OK, (verify (sigc, pc, dc, compressed_required))) << "CHECKSIG compressed and required";
+        EXPECT_EQ (Error::OK, (verify (sigc, pc, dc, compressed_not_required))) << "CHECKSIG compressed and not required";
+
+        EXPECT_EQ (Error::OK, (verify (sigcm, pc, dcm, compressed_required))) << "CHECKMULTISIG compressed and required";
+        EXPECT_EQ (Error::OK, (verify (sigcm, pc, dcm, compressed_not_required))) << "CHECKMULTISIG compressed and not required";
+
+        EXPECT_EQ (Error::NONCOMPRESSED_PUBKEY,
+                              (verify (sigu, pu, du, compressed_required))) << "CHECKSIG uncompressed and prohibited";
+        EXPECT_EQ (Error::OK, (verify (sigu, pu, du, compressed_not_required))) << "CHECKSIG uncompressed and not prohibited";
+
+        EXPECT_EQ (Error::NONCOMPRESSED_PUBKEY,
+                              (verify (sigum, pu, dum, compressed_required))) << "CHECKMULTISIG uncompressed and prohibited";
+        EXPECT_EQ (Error::OK, (verify (sigum, pu, dum, compressed_not_required))) << "CHECKMULTISIG uncompressed and not prohibited";
 
         redemption_document rd {test_txi, 0, redeemed_value};
 
@@ -454,7 +483,7 @@ namespace Gigamonkey::Bitcoin {
         satoshi redeemed_value {0xfeee};
 
         redemption_document rd {test_txi, 0, redeemed_value};
-        std::cout << "evaluate failing case with script " << decompile (unlock_null) << decompile (lock) << std::endl;
+
         EXPECT_EQ (Error::OK, (evaluate (unlock_null, lock, rd, null_fail))) << "CHECKSIG null invalid sig and required";
 
         EXPECT_EQ (Error::OK, (evaluate (unlock_null, lock, rd, not_null_fail))) << "CHECKSIG null invalid sig and not required";
@@ -498,9 +527,9 @@ namespace Gigamonkey::Bitcoin {
 
         redemption_document rd {test_txi, 0, redeemed_value};
 
-        script_config no_fork_id {flag {}};
-        script_config fork_id_enabled {flag::ENABLE_SIGHASH_FORKID};
-        script_config fork_id_required {flag::ENABLE_SIGHASH_FORKID | flag::REQUIRE_SIGHASH_FORKID};
+        flag no_fork_id {flag {}};
+        flag fork_id_enabled {flag::ENABLE_SIGHASH_FORKID};
+        flag fork_id_required {flag::ENABLE_SIGHASH_FORKID | flag::REQUIRE_SIGHASH_FORKID};
 
         for (const auto &test: list<sighash_test> {
             {directive (sighash::all, false, false, false), true,  false},
@@ -508,19 +537,34 @@ namespace Gigamonkey::Bitcoin {
             {directive (sighash::all, false, false, true),  true,  false},
             {directive (sighash::all, false, true,  true),  false, true}}) {
 
-            bytes unlock = pay_to_pubkey::redeem (sign (x, test.Directive, doc));
-            bytes unlockm = multisig::redeem ({sign (x, test.Directive, docm)});
+            auto sig = sign (x, test.Directive, doc);
+            auto sigm = sign (x, test.Directive, docm);
+
+            bytes unlock = pay_to_pubkey::redeem (sig);
+            bytes unlockm = multisig::redeem ({sigm});
 
             auto r = evaluate (unlock, lock, rd, no_fork_id);
             auto rm = evaluate (unlockm, lockm, rd, no_fork_id);
 
+            auto er = verify (sig, p, doc, no_fork_id);
+            auto erm = verify (sigm, p, docm, no_fork_id);
+
             if (test.ValidForkIDDisabled) {
+                EXPECT_EQ (Error::OK, er) << "test CHECKSIG; forkid disabled -- success expected";
+                EXPECT_EQ (Error::OK, erm) << "test CHECKMULTISIG; forkid disabled -- success expected";
+
                 EXPECT_EQ (Error::OK, r) << "test CHECKSIG; forkid disabled -- success expected";
                 EXPECT_EQ (Error::OK, rm) << "test CHECKMULTISIG; forkid disabled -- success expected";
             } else {
+                EXPECT_EQ (Error::ILLEGAL_FORKID, er) << "test CHECKSIG; forkid disabled -- error expected";
+                EXPECT_EQ (Error::ILLEGAL_FORKID, erm) << "test CHECKMULTISIG; forkid disabled -- error expected";
+
                 EXPECT_EQ (Error::ILLEGAL_FORKID, r) << "test CHECKSIG; forkid disabled -- error expected";
                 EXPECT_EQ (Error::ILLEGAL_FORKID, rm) << "test CHECKMULTISIG; forkid disabled -- error expected";
             }
+
+            EXPECT_EQ (Error::OK, (verify (sig, p, doc, fork_id_enabled))) << "test CHECKSIG; forkid enabled -- success expected";
+            EXPECT_EQ (Error::OK, (verify (sigm, p, docm, fork_id_enabled))) << "test CHECKMULTISIG; forkid enabled -- success expected";
 
             EXPECT_EQ (Error::OK, (evaluate (unlock, lock, rd, fork_id_enabled))) << "test CHECKSIG; forkid enabled -- success expected";
             EXPECT_EQ (Error::OK, (evaluate (unlockm, lockm, rd, fork_id_enabled))) << "test CHECKMULTISIG; forkid enabled -- success expected";
@@ -528,10 +572,19 @@ namespace Gigamonkey::Bitcoin {
             r = evaluate (unlock, lock, rd, fork_id_required);
             rm = evaluate (unlockm, lockm, rd, fork_id_required);
 
+            er = verify (sig, p, doc, fork_id_required);
+            erm = verify (sigm, p, docm, fork_id_required);
+
             if (test.ValidForkIDRequired) {
+                EXPECT_EQ (Error::OK, er) << "test CHECKSIG; forkid required -- success expected";
+                EXPECT_EQ (Error::OK, erm) << "test CHECKMULTISIG; forkid required -- success expected";
+
                 EXPECT_EQ (Error::OK, r) << "test CHECKSIG; forkid required -- success expected";
                 EXPECT_EQ (Error::OK, rm) << "test CHECKMULTISIG; forkid required -- success expected";
             } else {
+                EXPECT_EQ (Error::MUST_USE_FORKID, er) << "test CHECKSIG; forkid required -- error expected";
+                EXPECT_EQ (Error::MUST_USE_FORKID, erm) << "test CHECKMULTISIG; forkid required -- error expected";
+
                 EXPECT_EQ (Error::MUST_USE_FORKID, r) << "test CHECKSIG; forkid required -- error expected";
                 EXPECT_EQ (Error::MUST_USE_FORKID, rm) << "test CHECKMULTISIG; forkid required -- error expected";
             }
@@ -539,6 +592,8 @@ namespace Gigamonkey::Bitcoin {
         }
 
     }
+
+    // finally, we have tests having to do specifically with multisig.
 
     TEST (Signature, MultisigNULLDUMMY) {
 
@@ -559,7 +614,6 @@ namespace Gigamonkey::Bitcoin {
         bytes unlockx = multisig::redeem ({sig}, OP_1);
 
         // now we run the scripts
-
         script_config null_dummy_required {flag::VERIFY_NULLDUMMY};
         script_config null_dummy_not_required {flag {}};
 
