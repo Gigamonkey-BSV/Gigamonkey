@@ -13,7 +13,7 @@ const char *ScriptErrorString (const Error serror) {
             return "No error";
         case Error::FAIL:
             return "Script evaluated without error but finished with a "
-                   "false/empty top stack element";
+                   "false top stack element";
         case Error::VERIFY:
             return "Script failed an OP_VERIFY operation";
         case Error::EQUALVERIFY:

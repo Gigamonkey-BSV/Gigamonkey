@@ -11,17 +11,17 @@ namespace Gigamonkey::Bitcoin {
     struct program_counter {
 
         bytes Script;
-        cross<size_t> Jump;
+        cross<int> Jump;
 
         slice<const byte> Next;
 
-        size_t Index;
+        int Index;
         
         static byte_slice read_next_instruction (byte_slice subscript);
         
         program_counter () {}
 
-        program_counter (const bytes &script, const cross<size_t> &jump);
+        program_counter (const bytes &script, const cross<int> &jump);
 
         program_counter (const program_counter &);
         program_counter &operator = (const program_counter &);
@@ -63,7 +63,7 @@ namespace Gigamonkey::Bitcoin {
         program_counter (byte_slice n, byte_slice s, size_t c);
     };
     
-    inline program_counter::program_counter (const bytes &script, const cross<size_t> &jump):
+    inline program_counter::program_counter (const bytes &script, const cross<int> &jump):
         Script {script}, Jump {jump}, Next {}, Index {0} {
         Next = read_next_instruction (Script);
     }

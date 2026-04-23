@@ -11,7 +11,7 @@ bool fRequireStandard = true;
 namespace Gigamonkey::Bitcoin {
 
     machine::machine (ptr<two_stack> stack, maybe<redemption_document> doc, const script_config &conf):
-        Config {conf}, Document {doc}, Stack {stack}, Conditional {conf.enable_genesis_opcodes ()}, OpCount {0}, LastCodeSeparator {0} {}
+        Config {conf}, Document {doc}, Stack {stack}, Conditional {conf.enable_genesis_opcodes ()}, OpCount {0} {}
 
     bool inline IsValidMaxOpsPerScript (uint64_t nOpCount, const script_config &config) {
         return (nOpCount <= config.MaxOpsPerScript);
@@ -59,7 +59,7 @@ namespace Gigamonkey::Bitcoin {
     // the script code is the part of the script that gets signed.
     // normally this will be the locking script.
     segment from_last_code_separator (byte_slice Script, size_t LastCodeSeparator) {
-        return decompile (slice<const byte> {Script.data () + LastCodeSeparator, Script.size () - LastCodeSeparator});
+        return decompile (slice<const byte> {Script.data () + LastCodeSeparator + 1, Script.size () - (LastCodeSeparator + 1)});
     }
     
     Error machine::step (const program_counter &Counter) {
@@ -647,9 +647,8 @@ namespace Gigamonkey::Bitcoin {
                 else if (Op == OP_HASH256) Stack->replace_back (Hash256 (Stack->top ()));
             } break;
             
-            // we take care of this elsewhere. 
             case OP_CODESEPARATOR: {
-                LastCodeSeparator = Counter.Index + 1;
+                LastCodeSeparator = Counter.Index;
             } break;
             
             case OP_CHECKSIG: 

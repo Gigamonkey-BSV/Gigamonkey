@@ -230,7 +230,7 @@ namespace Gigamonkey::Bitcoin {
                 case OP_14: return o << "(14)";
                 case OP_15: return o << "(15)";
                 case OP_16: return o << "(16)";
-                default : return o << "push_size_" << int {x};
+                default : return o << "push_size_" << std::dec << int {x};
             }
         }
         
@@ -380,15 +380,13 @@ namespace Gigamonkey::Bitcoin {
     // note: pay to script hash only applies to scripts that were created before genesis.
     program full (const segment unlock, const segment lock, bool support_p2sh) {
         if (!support_p2sh || !is_P2SH (lock) || empty (unlock))
-            // TODO the code separator should only go here if
-            // there is no code separator in the unlocking script.
-            return {unlock << instruction {OP_CODESEPARATOR}, lock};
+            return {unlock, lock};
 
         auto reversed = reverse (unlock);
         const instruction &push_redeem = first (reversed);
 
         // For P2SH scripts. This is a depricated special case that is supported for backwards compatability.
-        return {reverse (rest (reversed)) << OP_CODESEPARATOR,
+        return {reverse (rest (reversed)),
             decompile (push_redeem.push_data ()) << OP_VERIFY << push_redeem, lock};
     }
 

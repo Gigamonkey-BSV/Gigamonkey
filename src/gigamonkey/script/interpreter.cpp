@@ -71,8 +71,7 @@ namespace Gigamonkey::Bitcoin {
 
     std::ostream &operator << (std::ostream &o, const interpreter &i) {
         return o << "interpreter {\n\tProgram: " << i.unread ()
-            << ", Error: " << i.Error << ", Flags: " << i.Machine.Config.Flags
-            << ",\n\t" << *i.Machine.Stack << ", Exec: " << i.Machine.Conditional << "}";
+            << ", Error: " << i.Error << ", Machine: " << i.Machine << "}";
     }
 
     Error machine_step (machine &x, program_counter &p) {
@@ -104,15 +103,22 @@ namespace Gigamonkey::Bitcoin {
         // increment op counter.
         else ++p;
 
+        // if we crossed a jump boundary,
+        int previous_jump_boundary = 0;
+        for (int jump : p.Jump) {
+            if (jump > p.Index) break;
+            if (jump == p.Index)
+                if (x.LastCodeSeparator < previous_jump_boundary)
+                    x.LastCodeSeparator = p.Index - 1;
+
+            previous_jump_boundary = jump;
+        }
+
         return Error::OK;
     }
 
     Error machine_run (machine &x, program_counter &p) {
         while (true) {
-            auto r = machine_step (x, p);
-
-            // if an error was generated, return it.
-            if (bool (r)) return r;
 
             // if there are no more instructions, we check whether
             // we are expecting an OP_ENDIF and it is an error if we
@@ -128,6 +134,11 @@ namespace Gigamonkey::Bitcoin {
 
                 return x.top ();
             }
+
+            auto r = machine_step (x, p);
+
+            // if an error was generated, return it.
+            if (bool (r)) return r;
         }
     }
 
