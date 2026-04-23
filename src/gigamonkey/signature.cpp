@@ -6,7 +6,10 @@
 namespace Gigamonkey::Bitcoin {
     
     digest256 signature::hash (const sighash::document &doc, sighash::directive d) {
-        if (!doc.valid () || (sighash::base (d) == sighash::single && doc.InputIndex >= doc.Transaction.Outputs.size ())) return {};
+        //
+        if (!doc.valid () || (sighash::base (d) == sighash::single && doc.InputIndex >= doc.Transaction.Outputs.size ()))
+            return {};
+
         digest256 dig; {
             Hash256_writer w {dig};
             sighash::write (w, doc, d);
@@ -22,7 +25,8 @@ namespace Gigamonkey::Bitcoin {
             return Error::PUBKEYTYPE;
 
         // if we pass an empty signature to the secp256k1 library, the program exits.
-        if (sig.size () < 2) return Error::FAIL;
+        if (sig.size () < 2)
+            return Error::FAIL;
 
         auto d = signature::directive (sig);
         auto raw = signature::raw (sig);
@@ -42,13 +46,16 @@ namespace Gigamonkey::Bitcoin {
             return Error::SIG_DER;
 
         if (verify_signature_low_S (P))
-            if (!secp256k1::signature::normalized (raw)) return Error::SIG_HIGH_S;
+            if (!secp256k1::signature::normalized (raw))
+                return Error::SIG_HIGH_S;
 
-            if (signature::verify (sig, pub, doc)) return Error::OK;
+        if (signature::verify (sig, pub, doc))
+            return Error::OK;
 
-            if (verify_null_fail (P)) if (sig.size () != 0) return Error::SIG_NULLFAIL;
+        if (verify_null_fail (P)) if (sig.size () != 0)
+            return Error::SIG_NULLFAIL;
 
-            return Error::FAIL;
+        return Error::FAIL;
     }
 
 }

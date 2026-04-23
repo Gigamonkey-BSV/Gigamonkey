@@ -3,6 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <gigamonkey/signature.hpp>
+#include <gigamonkey/script/interpreter.hpp>
 #include <gigamonkey/script/pattern/pay_to_address.hpp>
 #include <gigamonkey/script/pattern/pay_to_pubkey.hpp>
 #include <gigamonkey/script/pattern/multisig.hpp>
@@ -274,6 +275,9 @@ namespace Gigamonkey::Bitcoin {
             output {1, pay_to_address::script (digest160 {uint160 {"0xbb00000000000000000000000000006565656575"}})}},
         5};
 
+    uint32 input_index = 0;
+    satoshi redeemed_value {0xfeee};
+
     data::array<bytes, 2> multisig_script (
         const redemption_document &doc,
         list<secp256k1::secret> s,
@@ -300,13 +304,10 @@ namespace Gigamonkey::Bitcoin {
         bytes lock = pay_to_pubkey (Bitcoin::pubkey (p)).script ();
         bytes lockm = multisig (1, {Bitcoin::pubkey (p)}).script ();
 
-        size_t input_index = 0;
-        satoshi redeemed_value {0xfeee};
+        sighash::document doc {test_txi, input_index, redeemed_value, decompile (lock)};
+        sighash::document docm {test_txi, input_index, redeemed_value, decompile (lockm)};
 
-        sighash::document doc {test_txi, 0, redeemed_value, decompile (lock)};
-        sighash::document docm {test_txi, 0, redeemed_value, decompile (lockm)};
-
-        redemption_document rd {test_txi, 0, redeemed_value};
+        redemption_document rd {test_txi, input_index, redeemed_value};
 
         // normally we would expect these to be normalized by
         // default but that is not what we want to test, so
@@ -398,15 +399,11 @@ namespace Gigamonkey::Bitcoin {
         bytes locku = pay_to_pubkey (Bitcoin::pubkey (pu)).script ();
         bytes lockum = multisig (1, {pu}).script ();
 
-        // generate the unlocking scripts.
-        size_t input_index = 0;
-        satoshi redeemed_value {0xfeee};
+        sighash::document dc {test_txi, input_index, redeemed_value, decompile (lockc)};
+        sighash::document dcm {test_txi, input_index, redeemed_value, decompile (lockcm)};
 
-        sighash::document dc {test_txi, 0, redeemed_value, decompile (lockc)};
-        sighash::document dcm {test_txi, 0, redeemed_value, decompile (lockcm)};
-
-        sighash::document du {test_txi, 0, redeemed_value, decompile (locku)};
-        sighash::document dum {test_txi, 0, redeemed_value, decompile (lockum)};
+        sighash::document du {test_txi, input_index, redeemed_value, decompile (locku)};
+        sighash::document dum {test_txi, input_index, redeemed_value, decompile (lockum)};
 
         auto sigc = sign (x, sighash::directive (), dc);
         auto sigcm = sign (x, sighash::directive (), dcm);
@@ -519,13 +516,10 @@ namespace Gigamonkey::Bitcoin {
         bytes lock = pay_to_pubkey (Bitcoin::pubkey {p}).script ();
         bytes lockm = multisig (1, {p}).script ();
 
-        size_t input_index = 0;
-        satoshi redeemed_value {0xfeee};
+        sighash::document doc {test_txi, input_index, redeemed_value, decompile (lock)};
+        sighash::document docm {test_txi, input_index, redeemed_value, decompile (lockm)};
 
-        sighash::document doc {test_txi, 0, redeemed_value, decompile (lock)};
-        sighash::document docm {test_txi, 0, redeemed_value, decompile (lockm)};
-
-        redemption_document rd {test_txi, 0, redeemed_value};
+        redemption_document rd {test_txi, input_index, redeemed_value};
 
         flag no_fork_id {flag {}};
         flag fork_id_enabled {flag::ENABLE_SIGHASH_FORKID};
@@ -602,10 +596,7 @@ namespace Gigamonkey::Bitcoin {
 
         bytes lock = multisig (1, {p}).script ();
 
-        size_t input_index = 0;
-        satoshi redeemed_value {0xfeee};
-
-        sighash::document doc {test_txi, 0, redeemed_value, decompile (lock)};
+        sighash::document doc {test_txi, input_index, redeemed_value, decompile (lock)};
 
         auto sig = sign (x, sighash::directive (), doc);
 
@@ -617,7 +608,7 @@ namespace Gigamonkey::Bitcoin {
         script_config null_dummy_required {flag::VERIFY_NULLDUMMY};
         script_config null_dummy_not_required {flag {}};
 
-        redemption_document rd {test_txi, 0, redeemed_value};
+        redemption_document rd {test_txi, input_index, redeemed_value};
 
         EXPECT_EQ (Error::OK, (evaluate (unlock, lock, rd, null_dummy_required))) << "CHECKSIG null dummy provided and required";
         EXPECT_EQ (Error::OK, (evaluate (unlock, lock, rd, null_dummy_not_required))) << "CHECKSIG null dummy provided and not required";
@@ -712,10 +703,7 @@ namespace Gigamonkey::Bitcoin {
         secp256k1::secret x {3023332};
         secp256k1::pubkey p = x.to_public ();
 
-        size_t input_index = 0;
-        satoshi redeemed_value {0xfeee};
-
-        redemption_document rd {test_txi, 0, redeemed_value};
+        redemption_document rd {test_txi, input_index, redeemed_value};
 
         auto get_unlock_p2pk = [] (const signature &x) {
             return pay_to_pubkey::redeem (x);
@@ -737,17 +725,17 @@ namespace Gigamonkey::Bitcoin {
             bytes lock_error = transform_sig_verify (test.Script);
 
             bytes unlock_error = test.Redeem (sign (x, sighash::directive (),
-                sighash::document {test_txi, 0, redeemed_value, decompile (lock_error)}));
+                sighash::document {test_txi, input_index, redeemed_value, decompile (lock_error)}));
 
             bytes lock_false = transform_sig_verify (test.Script, OP_FALSE);
 
             bytes unlock_false = test.Redeem (sign (x, sighash::directive (),
-                sighash::document {test_txi, 0, redeemed_value, decompile (lock_false)}));
+                sighash::document {test_txi, input_index, redeemed_value, decompile (lock_false)}));
 
             bytes lock_true = transform_sig_verify (test.Script, OP_TRUE);
 
             bytes unlock_true = test.Redeem (sign (x, sighash::directive (),
-                sighash::document {test_txi, 0, redeemed_value, decompile (lock_true)}));
+                sighash::document {test_txi, input_index, redeemed_value, decompile (lock_true)}));
 
             auto result_1 = evaluate (unlock_error, lock_error, flag {});
 
@@ -758,6 +746,158 @@ namespace Gigamonkey::Bitcoin {
             EXPECT_EQ (Error::OK, (evaluate (unlock_true, lock_true, flag {}))) << "OP_CHECKSIGVERIFY 3";
         }
 
+    }
+
+    // we use OP_SIG to denote that a push operation follows
+    // containing the expected script_code and sighash directive
+    // which is to be replaced by a real signature.
+    const op OP_SIG {0xf0};
+
+    // instances of OP_PUBKEY are replaced by pushing the public key of the private key given here
+    // instances of a push op code + 0x80 are replaced with a signature, signed using
+    // the given push as script_code + directive.
+    list<script> sign (list<script> program, const secp256k1::secret &x, const redemption_document &rd);
+
+    TEST (Signature, CodeSeparator) {
+
+        secp256k1::secret x {3023332};
+
+        redemption_document rd {test_txi, input_index, redeemed_value};
+
+        // we will use the original signature algorithm
+        sighash::directive dir = directive (sighash::all);
+
+        for (const list<script> &t :
+            cross<list<script>> {
+                // The script is just a signatue and a checksig.
+                // There is no code separator, so the signature should
+                // sign the entire script. This works with the original
+                // signature algorithm because find_and_delete will
+                // remove the signature. We only have one script segment
+                // which is not realistic.
+                // NOTE: this test case doesn't work because the way we
+                // construct the test is incorrect. We ought to make a
+                // single signature, but instead we make two signatures.
+//                list<script> {script {OP_NOP, OP_SIG, OP_PUSHSIZE4, OP_NOP, OP_PUBKEY, OP_CHECKSIG, dir, OP_PUBKEY, OP_CHECKSIG}},
+                // in this case, we do have a code separator, so the script
+                // code will not include OP_NOP.
+                list<script> {script {OP_NOP, OP_SIG, OP_PUSHSIZE3, OP_PUBKEY, OP_CHECKSIG, dir, OP_CODESEPARATOR, OP_PUBKEY, OP_CHECKSIG}},
+                // in this case, we do not have OP_CODESEPARATOR and have
+                // a separate script segment. The separation should work
+                // the same as a OP_CODESEPARATOR.
+                list<script> {script {OP_NOP, OP_SIG, OP_PUSHSIZE3, OP_PUBKEY, OP_CHECKSIG, dir}, script {OP_PUBKEY, OP_CHECKSIG}},
+                // Now we do have OP_CODESEPARATOR again and therefore
+                // the script separation should NOT act like a separator!
+                list<script> {
+                    script {OP_NOP, OP_SIG, OP_PUSHSIZE5, OP_0, OP_DROP, OP_PUBKEY, OP_CHECKSIG, dir, OP_CODESEPARATOR, OP_0, OP_DROP},
+                    script {OP_PUBKEY, OP_CHECKSIG}},
+                // next we have two cases using OP_IF. In the first one, OP_CODESEPARATOR executes.
+                // In the second one, it doesn't.
+                list<script> {script {OP_NOP, OP_SIG, OP_PUSHSIZE5, OP_ENDIF, OP_NOP, OP_PUBKEY, OP_CHECKSIG, dir,
+                        OP_TRUE, OP_IF, OP_CODESEPARATOR, OP_ENDIF, OP_NOP},
+                    script {OP_PUBKEY, OP_CHECKSIG}},
+                list<script> {script {OP_NOP, OP_SIG, OP_PUSHSIZE3, OP_PUBKEY, OP_CHECKSIG, dir,
+                        OP_FALSE, OP_IF, OP_CODESEPARATOR, OP_ENDIF, OP_NOP},
+                    script {OP_PUBKEY, OP_CHECKSIG}}
+                // TODO check more than one signature and codeseparator.
+            }) EXPECT_EQ (Error::OK, (evaluate (sign (t, x, rd), rd, script_config {2})));
+
+    }
+
+    script insert_sigs (const script &prog, const secp256k1::secret &x, const redemption_document &rd);
+
+    list<script> sign (list<script> program, const secp256k1::secret &x, const redemption_document &rd) {
+        list<script> result;
+
+        for (const script &part : program)
+            result <<= insert_sigs (part, x, rd);
+
+        return result;
+    }
+
+    slice<const byte> read_next_instruction (slice<const byte> subscript);
+
+    script insert_sigs (const script &prog, const secp256k1::secret &x, const redemption_document &rd) {
+        bytes result;
+
+        {
+            data::lazy_bytes_writer seg {result};
+            auto p = x.to_public ();
+
+            byte_slice slice = byte_slice (prog);
+
+            while (true) {
+                if (slice == byte_slice {}) break;
+
+                byte_slice next = read_next_instruction (slice);
+                slice = slice.drop (next.size ());
+
+                if (next[0] == OP_PUBKEY) {
+                    seg << compile (segment {push_data (Bitcoin::pubkey (p))});
+                } else if (next[0] == OP_SIG) {
+                    bytes sig_data {next.drop (1)};
+                    instruction z = instruction::read (sig_data);
+                    integer pushed = z.push_data ();
+                    sighash::directive d = pushed[-1];
+                    bytes script_code = insert_sigs (bytes (byte_slice (pushed).take (pushed.size () - 1)), x, rd);
+                    auto doc = add_script_code (rd, script_code);
+                    auto sig = sign (x, d, doc);
+                    seg << compile (segment {push_data (sig)});
+                } else seg << next;
+            }
+        }
+
+        return result;
+    }
+
+    slice<const byte> read_next_instruction (slice<const byte> subscript) {
+        if (subscript.size () == 0) return slice<const byte> {};
+
+        op Op = op (subscript[0]);
+
+        if (Op == OP_SIG)
+            return slice<const byte> {subscript.data (), read_next_instruction (subscript.drop (1)).size () + 1};
+
+        if (!is_push_data (Op))
+            return slice<const byte> {subscript.data (), 1};
+
+        if (Op <= OP_PUSHSIZE75)
+            return slice<const byte> {subscript.data (), std::min (size_t (Op + 1), subscript.size ())};
+
+        if (Op == OP_PUSHDATA1) {
+            if (2 > subscript.size ()) return slice<const byte> {subscript.data (), subscript.size ()};
+
+            byte size = subscript[1];
+
+            if (2 + size > subscript.size ()) return slice<const byte> {subscript.data (), subscript.size ()};
+
+            return slice<const byte> {subscript.data (), size_t (2) + size};
+        }
+
+        if (Op == OP_PUSHDATA2) {
+            if (3 > subscript.size ()) return slice<const byte> {subscript.data (), subscript.size ()};
+
+            uint16_little size;
+            std::copy (subscript.begin () + 1, subscript.begin () + 3, size.begin ());
+
+            if (3 + size > subscript.size ()) return slice<const byte> {subscript.data (), subscript.size ()};
+
+            return slice<const byte> {subscript.data (), size_t (3) + size};
+        }
+
+        if (Op == OP_PUSHDATA4) {
+            if (5 > subscript.size ()) return slice<const byte> {subscript.data (), subscript.size ()};
+
+            uint32_little size;
+            std::copy (subscript.begin () + 1, subscript.begin () + 5, size.begin ());
+
+            if (5 + size > subscript.size ()) return slice<const byte> {subscript.data (), subscript.size ()};
+
+            return slice<const byte> {subscript.data (), size_t (5) + size};
+        }
+
+        // should never happen
+        return slice<const byte> {};
     }
 
 }

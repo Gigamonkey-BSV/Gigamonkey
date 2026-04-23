@@ -54,7 +54,7 @@ namespace Gigamonkey::Bitcoin {
 
         long OpCount;
 
-        size_t LastCodeSeparator;
+        int LastCodeSeparator {-1};
 
         bool increment_operation ();
         uint64 max_pubkeys_per_multisig () const;
@@ -74,6 +74,9 @@ namespace Gigamonkey::Bitcoin {
         }
     };
 
+    std::ostream inline &operator << (std::ostream &o, const machine &m) {
+        return o << "{Flags: " << m.Config.Flags << ", Stack: " << *m.Stack << ", Conditional: " << m.Conditional << "}";
+    }
 
     inline conditional::conditional (bool utxo_after_genesis): UtxoAfterGenesis {utxo_after_genesis} {
         Branch.reserve (10);

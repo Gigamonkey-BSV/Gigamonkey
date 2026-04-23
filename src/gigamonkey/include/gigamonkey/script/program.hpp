@@ -70,18 +70,16 @@ namespace Gigamonkey::Bitcoin {
     }
 
     program_counter inline compile (program p) {
-        cross<size_t> jumps (p.size () - 1);
-        size_t total = 0;
+        cross<int> jumps (p.size () - 1);
+        int total = 0;
         program q = p;
-        for (size_t &x : jumps) {
+        for (int &x : jumps) {
             total += serialized_size (first (q));
             x = total;
             q = rest (q);
         }
 
-        return program_counter {
-            compile (data::flatten (p)),
-            jumps};
+        return program_counter {compile (data::flatten (p)), jumps};
     }
 }
 
