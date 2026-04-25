@@ -21,7 +21,7 @@ namespace Gigamonkey::base58 {
 
         byte version () const;
 
-        slice<const byte> payload () const;
+        byte_slice payload () const;
 
         static check decode (string_view);
         std::string encode () const;
@@ -48,11 +48,11 @@ namespace Gigamonkey::Bitcoin {
 
     // A Bitcoin checksum takes the hash256 value of a string
     // and appends the last 4 bytes of the result. 
-    check checksum (slice<const byte> b);
+    check checksum (byte_slice b);
 
-    bytes append_checksum (slice<const byte> b);
+    bytes append_checksum (byte_slice b);
 
-    slice<const byte> remove_checksum (slice<const byte> b);
+    byte_slice remove_checksum (byte_slice b);
 
 }
 
@@ -67,9 +67,9 @@ namespace Gigamonkey::base58 {
         return operator [] (0);
     }
 
-    slice<const byte> inline check::payload () const {
+    byte_slice inline check::payload () const {
         if (!valid ()) return {};
-        return slice<const byte> (*this).drop (1);
+        return byte_slice (*this).drop (1);
     }
 
     inline check::check (byte version, const bytes &data) : bytes {write (data.size () + 1, version, data)} {}

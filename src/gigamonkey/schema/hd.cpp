@@ -207,8 +207,8 @@ namespace Gigamonkey::HD::BIP_32 {
         
         r >> sequence;
         secret1.Sequence = sequence;
-        slice<const byte> chain_code = view.range (12, 12 + 32);
-        slice<const byte> key = view.drop (12 + 32 + 1);
+        byte_slice chain_code = view.range (12, 12 + 32);
+        byte_slice key = view.drop (12 + 32 + 1);
 
         uint256 keyuint;
 

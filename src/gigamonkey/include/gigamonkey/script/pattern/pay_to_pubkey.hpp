@@ -30,7 +30,7 @@ namespace Gigamonkey {
 
         pay_to_pubkey (const Bitcoin::pubkey &p): Pubkey {p} {}
         
-        pay_to_pubkey (slice<const byte> script) : Pubkey {} {
+        pay_to_pubkey (byte_slice script) : Pubkey {} {
             using namespace Bitcoin;
             pubkey p;
             if (!pattern (p).match (script)) return;

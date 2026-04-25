@@ -8,7 +8,7 @@ namespace Gigamonkey {
     
     // We already know that o has size at least 1 
     // when we call this function. 
-    uint32 next_instruction_size (slice<const byte> o) {
+    uint32 next_instruction_size (byte_slice o) {
         using namespace Bitcoin;
 
         op O = op (o[0]);
@@ -32,7 +32,7 @@ namespace Gigamonkey {
         return boost::endian::load_little_u32 (&o[1]) + 5;
     }
     
-    slice<const byte> pattern::atom::scan (slice<const byte> p) const {
+    byte_slice pattern::atom::scan (byte_slice p) const {
         using namespace Bitcoin;
 
         if (p.size () == 0) throw fail {};
@@ -43,20 +43,20 @@ namespace Gigamonkey {
         return p.drop (size);
     }
     
-    slice<const byte> pattern::string::scan (slice<const byte> p) const {
+    byte_slice pattern::string::scan (byte_slice p) const {
         if (p.size () < Program.size ()) throw fail {};
         for (int i = 0; i < Program.size (); i++) if (p[i] != Program[i]) throw fail {};
         return p.drop (Program.size ());
     }
     
-    slice<const byte> any::scan (slice<const byte> p) const {
+    byte_slice any::scan (byte_slice p) const {
         if (p.size () == 0) throw fail {};
         uint32 size = next_instruction_size(p);
         if (p.size () < size) throw fail {};
         return p.drop (size);
     }
     
-    slice<const byte> push::scan (slice<const byte> p) const {
+    byte_slice push::scan (byte_slice p) const {
         if (p.size () == 0) throw fail {};
         uint32 size = next_instruction_size (p);
         if (size == 0) throw fail {};
@@ -67,7 +67,7 @@ namespace Gigamonkey {
         return p.drop (size);
     }
     
-    slice<const byte> push_size::scan (slice<const byte> p) const {
+    byte_slice push_size::scan (byte_slice p) const {
         if (p.size () == 0) throw fail {};
         uint32 size = next_instruction_size (p);
 
@@ -77,7 +77,7 @@ namespace Gigamonkey {
         return p.drop (size);
     }
     
-    slice<const byte> op_return_data::scan (slice<const byte> p) const {
+    byte_slice op_return_data::scan (byte_slice p) const {
         using namespace Bitcoin;
         if (p.size () == 0) throw fail {};
         if (p[0] != OP_RETURN) throw fail {};
@@ -108,7 +108,7 @@ namespace Gigamonkey {
         return true;
     }
     
-    slice<const byte> pattern::sequence::scan (slice<const byte> p) const {
+    byte_slice pattern::sequence::scan (byte_slice p) const {
         list<ptr<pattern>> patt = Patterns; 
         while (!empty (patt)) {
             p = first (patt)->scan (p);
@@ -117,7 +117,7 @@ namespace Gigamonkey {
         return p;
     }
         
-    slice<const byte> optional::scan (slice<const byte> p) const {
+    byte_slice optional::scan (byte_slice p) const {
         try {
             return pattern::Pattern->scan (p);
         } catch (fail) {
@@ -125,7 +125,7 @@ namespace Gigamonkey {
         }
     }
     
-    slice<const byte> repeated::scan (slice<const byte> p) const {
+    byte_slice repeated::scan (byte_slice p) const {
         ptr<pattern> patt = pattern::Pattern;
         uint32 min = Second == -1 && Directive == or_less ? 0 : First;
         int64 max = Second != -1 ? Second : Directive == or_more ? -1 : First;
@@ -143,7 +143,7 @@ namespace Gigamonkey {
         }
     }
     
-    slice<const byte> alternatives::scan (slice<const byte> b) const {
+    byte_slice alternatives::scan (byte_slice b) const {
         list<ptr<pattern>> patt = Patterns;
 
         while (!empty (patt)) {

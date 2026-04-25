@@ -17,21 +17,21 @@ namespace Gigamonkey::Bitcoin {
         // aka 73
         constexpr static size_t MaxSize = secp256k1::signature::MaxSize + 1;
         
-        static Bitcoin::sighash::directive directive (slice<const byte> x);
-        static slice<const byte> raw (slice<const byte> x);
+        static Bitcoin::sighash::directive directive (byte_slice x);
+        static byte_slice raw (byte_slice x);
         
         secp256k1::signature raw () const;
         secp256k1::complex complex () const;
         Bitcoin::sighash::directive directive () const;
         
         signature ();
-        explicit signature (const slice<const byte> data);
+        explicit signature (const byte_slice data);
         signature (const secp256k1::complex raw, sighash::directive d);
         
         signature (const secp256k1::signature raw, sighash::directive d);
         
-        static bool verify (const slice<const byte> sig, const slice<const byte> pub, const sighash::document &doc);
-        static bool DER (slice<const byte> x);
+        static bool verify (const byte_slice sig, const byte_slice pub, const sighash::document &doc);
+        static bool DER (byte_slice x);
         
         // the hash that gets signed. 
         static digest256 hash (const sighash::document &doc, sighash::directive d);
@@ -54,12 +54,12 @@ namespace Gigamonkey::Bitcoin {
         return signature {s.sign (signature::hash (doc, d)), d};
     }
 
-    Bitcoin::sighash::directive inline signature::directive (slice<const byte> x) {
+    Bitcoin::sighash::directive inline signature::directive (byte_slice x) {
         return x.size () > 0 ? x[x.size () - 1] : 0;
     }
 
-    slice<const byte> inline signature::raw (slice<const byte> x) {
-        return x.size () > 0 ? x.range (0, x.size () - 1) : slice<const byte> {};
+    byte_slice inline signature::raw (byte_slice x) {
+        return x.size () > 0 ? x.range (0, x.size () - 1) : byte_slice {};
     }
 
     secp256k1::signature inline signature::raw () const {
@@ -75,7 +75,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     inline signature::signature () : bytes {} {}
-    inline signature::signature (slice<const byte> data) : bytes {data} {}
+    inline signature::signature (byte_slice data) : bytes {data} {}
 
     inline signature::signature (const secp256k1::complex raw, sighash::directive d) {
         secp256k1::signature sig {raw};
@@ -89,11 +89,11 @@ namespace Gigamonkey::Bitcoin {
         w << raw << d;
     }
 
-    bool inline signature::DER (slice<const byte> x) {
+    bool inline signature::DER (byte_slice x) {
         return x.size () > 0 && secp256k1::signature::minimal (raw (x));
     }
 
-    bool inline signature::verify (const slice<const byte> sig, const slice<const byte> pub, const sighash::document &doc) {
+    bool inline signature::verify (const byte_slice sig, const byte_slice pub, const sighash::document &doc) {
         return secp256k1::pubkey::verify (pub, hash (doc, directive (sig)), raw (sig));
     }
 

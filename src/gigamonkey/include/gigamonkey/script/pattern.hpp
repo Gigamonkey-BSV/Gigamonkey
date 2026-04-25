@@ -18,9 +18,9 @@ namespace Gigamonkey {
     struct repeated;
     
     struct pattern {
-        bool match (slice<const byte> b) const {
+        bool match (byte_slice b) const {
             try {
-                slice<const byte> rest = scan (b);
+                byte_slice rest = scan (b);
                 return rest.size () == 0;
             } catch (fail) {
                 return false;
@@ -41,7 +41,7 @@ namespace Gigamonkey {
         template <typename X, typename... P>
         pattern (X, P...);
         
-        virtual slice<const byte> scan (slice<const byte> p) const {
+        virtual byte_slice scan (byte_slice p) const {
             if (Pattern == nullptr) return p;
             return Pattern->scan (p);
         }
@@ -63,7 +63,7 @@ namespace Gigamonkey {
     // A pattern that matches anything. 
     struct any final : pattern {
         any () {}
-        virtual slice<const byte> scan (slice<const byte> p) const final override;
+        virtual byte_slice scan (byte_slice p) const final override;
     };
     
     // A pattern that represents a single instruction. 
@@ -71,7 +71,7 @@ namespace Gigamonkey {
         Bitcoin::instruction Instruction;
         atom (Bitcoin::instruction i) : Instruction {i} {}
         
-        virtual slice<const byte> scan (slice<const byte> p) const final override;
+        virtual byte_slice scan (byte_slice p) const final override;
     };
     
     // A pattern that represents any string that is part of a program. 
@@ -80,7 +80,7 @@ namespace Gigamonkey {
         string (Bitcoin::segment p) : Program {compile (p)} {}
         string (const bytes &p) : Program {p} {}
         
-        virtual slice<const byte> scan (slice<const byte> p) const final override;
+        virtual byte_slice scan (byte_slice p) const final override;
     };
     
     // A pattern that represents a push instruction 
@@ -99,13 +99,13 @@ namespace Gigamonkey {
         // match any push data of the given value
         push (const Z &v) : Type {value}, Value {v}, Data {}, Read {Data} {}
         // match a push of the given data. 
-        push (slice<const byte> b) : Type {data}, Value {0}, Data {b}, Read {Data} {}
+        push (byte_slice b) : Type {data}, Value {0}, Data {b}, Read {Data} {}
         // match any push data and save the result.
         push (bytes &r) : Type {read}, Value {0}, Data {}, Read {r} {}
         
         bool match (const Bitcoin::instruction &i) const;
         
-        virtual slice<const byte> scan (slice<const byte> p) const final override;
+        virtual byte_slice scan (byte_slice p) const final override;
         
     };
 
@@ -125,7 +125,7 @@ namespace Gigamonkey {
         
         bool match (const Bitcoin::instruction &i) const;
         
-        virtual slice<const byte> scan (slice<const byte> p) const final override;
+        virtual byte_slice scan (byte_slice p) const final override;
     };
     
     enum repeated_directive : byte {
@@ -153,7 +153,7 @@ namespace Gigamonkey {
         repeated (repeated, uint32, uint32);
         repeated (alternatives, uint32, uint32);
         
-        virtual slice<const byte> scan (slice<const byte> p) const final override;
+        virtual byte_slice scan (byte_slice p) const final override;
     };
     
     struct optional final : pattern {
@@ -166,7 +166,7 @@ namespace Gigamonkey {
         optional (pattern p);
         optional (alternatives);
         
-        virtual slice<const byte> scan (slice<const byte> p) const final override;
+        virtual byte_slice scan (byte_slice p) const final override;
     };
     
     inline pattern::pattern (Bitcoin::op o) : pattern {Bitcoin::instruction {o}} {}
@@ -181,7 +181,7 @@ namespace Gigamonkey {
         template <typename... P>
         sequence (P... p) : Patterns (make (p...)) {}
         
-        virtual slice<const byte> scan (slice<const byte> p) const override;
+        virtual byte_slice scan (byte_slice p) const override;
         
     private:
         
@@ -206,7 +206,7 @@ namespace Gigamonkey {
         template <typename... P>
         alternatives (P... p) : sequence {p...} {}
         
-        virtual slice<const byte> scan (slice<const byte>) const final override;
+        virtual byte_slice scan (byte_slice) const final override;
     };
     
     // OP_RETURN followed by arbitrary data. 
@@ -219,7 +219,7 @@ namespace Gigamonkey {
         template <typename... P>
         op_return_data (P... p) : pattern {p...} {}
         
-        virtual slice<const byte> scan (slice<const byte> p) const final override;
+        virtual byte_slice scan (byte_slice p) const final override;
     };
     
     // A pattern that matches a pubkey and grabs the value of that pubkey.

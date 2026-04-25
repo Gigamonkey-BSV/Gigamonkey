@@ -15,7 +15,7 @@ namespace Gigamonkey::Bitcoin {
     using segment = list<instruction>;
 
     // decompile throws if a push operation would include bytes past the end of the script.
-    segment decompile (slice<const byte>);
+    segment decompile (byte_slice);
 
     bool is_push (segment);
 
@@ -45,7 +45,7 @@ namespace Gigamonkey::Bitcoin {
 
     size_t serialized_size (segment p);
 
-    bool inline is_P2SH (slice<const byte> script) {
+    bool inline is_P2SH (byte_slice script) {
         return script.size () == 23 && script[0] == OP_HASH160 &&
         script[1] == 0x14 && script[22] == OP_EQUAL;
     }
@@ -64,7 +64,7 @@ namespace Gigamonkey::Bitcoin {
         return is_push (first (p).Op) && is_push (rest (p));
     }
 
-    bool inline is_minimal_script (slice<const byte> b) {
+    bool inline is_minimal_script (byte_slice b) {
         for (const instruction &i : decompile (b)) if (!is_minimal_instruction (i)) return false;
         return true;
     }

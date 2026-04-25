@@ -13,7 +13,7 @@ namespace Gigamonkey::Bitcoin {
         bytes Script;
         cross<int> Jump;
 
-        slice<const byte> Next;
+        byte_slice Next;
 
         int Index;
         

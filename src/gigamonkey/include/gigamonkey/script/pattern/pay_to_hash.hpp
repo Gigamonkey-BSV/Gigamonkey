@@ -28,13 +28,13 @@ namespace Gigamonkey {
             return script (Hash);
         }
         
-        pay_to_hash (slice<const byte> script) : Hash {} {
+        pay_to_hash (byte_slice script) : Hash {} {
             bytes hash {20};
             if (!pattern (hash).match (script)) return;
             std::copy (hash.begin (), hash.end (), Hash.Value.begin ());
         }
         
-        static bytes redeem (const slice<const byte> s) {
+        static bytes redeem (const byte_slice s) {
             using namespace Bitcoin;
             return compile (program {} << push_data (s));
         }
