@@ -23,10 +23,10 @@ namespace Gigamonkey::Bitcoin {
         return o <= OP_PUSHDATA4;
     }
     
-    bool is_minimal_script (slice<const byte>);
+    bool is_minimal_script (byte_slice);
     
     // ASM is a standard human format for Bitcoin scripts that is unique only if the script is minimally encoded. 
-    string ASM (slice<const byte>);
+    string ASM (byte_slice);
     
     // a single step in a program. 
     struct instruction; 
@@ -42,7 +42,7 @@ namespace Gigamonkey::Bitcoin {
     
     instruction push_data (int);
     instruction push_data (const Z &z);
-    instruction push_data (slice<const byte>);
+    instruction push_data (byte_slice);
 
     template <data::endian::order Order, class T, std::size_t n_bits, boost::endian::align Align>
     instruction push_data (const boost::endian::endian_arithmetic<Order, T, n_bits, Align> &x);
@@ -57,7 +57,7 @@ namespace Gigamonkey::Bitcoin {
         
         instruction ();
         instruction (op p);
-        instruction (slice<const byte> d) : instruction {push (d)} {}
+        instruction (byte_slice d) : instruction {push (d)} {}
         
         integer push_data () const;
         
@@ -74,10 +74,10 @@ namespace Gigamonkey::Bitcoin {
         bool operator != (op o) const;
         
         static instruction op_code (op o);
-        static instruction read (slice<const byte> b);
-        static instruction push (slice<const byte> d);
+        static instruction read (byte_slice b);
+        static instruction push (byte_slice d);
         
-        static size_t min_push_size (slice<const byte> b) {
+        static size_t min_push_size (byte_slice b) {
             auto x = b.size ();
             return x == 0 || (x == 1 && (b[0] == 0x81 || (b[0] >= 1 && b[0] <= 16))) ? 1 : 
                 x < 75 ? x + 1 : x < 0xff ? x + 2 : x < 0xffff ? x + 3 : x + 5;
@@ -93,7 +93,7 @@ namespace Gigamonkey::Bitcoin {
         return o.serialized_size ();
     }
 
-    bool inline provably_unspendable (slice<const byte> script, bool after_genesis) {
+    bool inline provably_unspendable (byte_slice script, bool after_genesis) {
         if (after_genesis) return script.size () >= 2 && script[0] == OP_FALSE && script[1] == OP_RETURN;
         return script.size () >= 1 && script[0] == OP_RETURN;
     }
@@ -128,17 +128,17 @@ namespace Gigamonkey::Bitcoin {
         return push_data (integer {i});
     }
     
-    instruction inline push_data (slice<const byte> b) {
+    instruction inline push_data (byte_slice b) {
         return instruction::push (b);
     }
 
     instruction inline push_data (const Z &z) {
-        return push_data (slice<const byte> (integer {z}));
+        return push_data (byte_slice (integer {z}));
     }
 
     template <data::endian::order Order, class T, std::size_t n_bits, boost::endian::align Align>
     instruction inline push_data (const boost::endian::endian_arithmetic<Order, T, n_bits, Align> &x) {
-        return push_data (slice<const byte> (x));
+        return push_data (byte_slice (x));
     }
 }
 

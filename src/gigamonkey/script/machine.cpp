@@ -21,7 +21,7 @@ namespace Gigamonkey::Bitcoin {
         return IsValidMaxOpsPerScript (++OpCount, Config);
     }
     
-    segment inline cleanup_script_code (segment script_code, slice<const byte> sig) {
+    segment inline cleanup_script_code (segment script_code, byte_slice sig) {
         return sighash::has_fork_id (signature::directive (sig)) ? script_code :
             find_and_delete (script_code, instruction::push (sig));
     }
@@ -32,7 +32,7 @@ namespace Gigamonkey::Bitcoin {
 
     constexpr auto bits_per_byte {8};
     
-    slice<const byte> get_push_data (slice<const byte> instruction) {
+    byte_slice get_push_data (byte_slice instruction) {
         if (instruction.size () < 1) return {};
         
         op Op = op (instruction[0]);
@@ -59,7 +59,7 @@ namespace Gigamonkey::Bitcoin {
     // the script code is the part of the script that gets signed.
     // normally this will be the locking script.
     segment from_last_code_separator (byte_slice Script, size_t LastCodeSeparator) {
-        return decompile (slice<const byte> {Script.data () + LastCodeSeparator + 1, Script.size () - (LastCodeSeparator + 1)});
+        return decompile (byte_slice {Script.data () + LastCodeSeparator + 1, Script.size () - (LastCodeSeparator + 1)});
     }
     
     Error machine::step (const program_counter &Counter) {

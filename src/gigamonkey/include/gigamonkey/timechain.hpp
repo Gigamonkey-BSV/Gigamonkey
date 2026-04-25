@@ -169,10 +169,10 @@ namespace Gigamonkey::Bitcoin {
 
     struct input {
         
-        static bool valid (slice<const byte>);
-        static outpoint::slice previous (slice<const byte>);
-        static slice<const byte> script (slice<const byte>);
-        static uint32_little sequence (slice<const byte>);
+        static bool valid (byte_slice);
+        static outpoint::slice previous (byte_slice);
+        static byte_slice script (byte_slice);
+        static uint32_little sequence (byte_slice);
         
         outpoint Reference;
         Bitcoin::script Script;
@@ -185,7 +185,7 @@ namespace Gigamonkey::Bitcoin {
         input () : Reference {}, Script {}, Sequence {} {}
         input (const outpoint &o, const Bitcoin::script &x, const uint32_little &z = Finalized) :
             Reference {o}, Script {x}, Sequence {z} {}
-        explicit input (slice<const byte>);
+        explicit input (byte_slice);
         
         uint64 serialized_size () const;
 
@@ -195,12 +195,12 @@ namespace Gigamonkey::Bitcoin {
     
     struct output {
         
-        static bool valid (slice<const byte> b) {
+        static bool valid (byte_slice b) {
             return output {b}.valid ();
         }
         
-        static satoshi value (slice<const byte>);
-        static slice<const byte> script (slice<const byte>);
+        static satoshi value (byte_slice);
+        static byte_slice script (byte_slice);
     
         satoshi Value; 
         Bitcoin::script Script;
@@ -208,7 +208,7 @@ namespace Gigamonkey::Bitcoin {
         output () : Value {-1}, Script {} {}
         output (satoshi v, const Bitcoin::script &x) : Value {v}, Script {x} {}
         
-        explicit output (slice<const byte>);
+        explicit output (byte_slice);
         
         bool valid () const;
         
@@ -220,15 +220,15 @@ namespace Gigamonkey::Bitcoin {
 
     struct transaction {
         
-        static bool valid (slice<const byte>);
-        static int32_little version (slice<const byte>);
-        static cross<slice<const byte>> outputs (slice<const byte>);
-        static cross<slice<const byte>> inputs (slice<const byte>);
-        static slice<const byte> output (slice<const byte>, index);
-        static slice<const byte> input (slice<const byte>, index);
-        static int32_little lock_time (slice<const byte>);
+        static bool valid (byte_slice);
+        static int32_little version (byte_slice);
+        static cross<byte_slice> outputs (byte_slice);
+        static cross<byte_slice> inputs (byte_slice);
+        static byte_slice output (byte_slice, index);
+        static byte_slice input (byte_slice, index);
+        static int32_little lock_time (byte_slice);
         
-        static TxID id (slice<const byte>);
+        static TxID id (byte_slice);
         
         static constexpr int32 LatestVersion = 2;
         
@@ -245,7 +245,7 @@ namespace Gigamonkey::Bitcoin {
             
         transaction () : Version {}, Inputs {}, Outputs {}, LockTime {} {};
         
-        explicit transaction (slice<const byte> b);
+        explicit transaction (byte_slice b);
         
         bool valid () const;
         
@@ -280,16 +280,16 @@ namespace Gigamonkey::Bitcoin {
     }
     
     struct block {
-        static inline bool valid (slice<const byte> b) {
+        static inline bool valid (byte_slice b) {
             return block {b}.valid ();
         }
         
-        static Bitcoin::header::slice header (slice<const byte>);
-        static std::vector<slice<const byte>> transactions (slice<const byte>);
+        static Bitcoin::header::slice header (byte_slice);
+        static std::vector<byte_slice> transactions (byte_slice);
         
-        static digest256 inline merkle_root (slice<const byte> b) {
+        static digest256 inline merkle_root (byte_slice b) {
             list<TxID> ids {};
-            for (slice<const byte> x : transactions (b)) ids = ids << Hash256 (x);
+            for (byte_slice x : transactions (b)) ids = ids << Hash256 (x);
             return Merkle::root (ids);
         }
         
@@ -309,7 +309,7 @@ namespace Gigamonkey::Bitcoin {
             return true;
         }
         
-        explicit block (slice<const byte> b);
+        explicit block (byte_slice b);
         
         explicit operator bytes () const;
         
@@ -460,7 +460,7 @@ namespace Gigamonkey::Bitcoin {
         return a.Timestamp <=> b.Timestamp;
     }
     
-    TxID inline transaction::id (slice<const byte> b) {
+    TxID inline transaction::id (byte_slice b) {
         return Hash256 (b);
     }
     

@@ -214,7 +214,7 @@ namespace Gigamonkey {
 
     template <size_t size>
     writer inline &operator << (writer &w, const digest<size> &s) {
-        return w << slice<const byte> (s);
+        return w << byte_slice (s);
     }
 
     template <size_t size>

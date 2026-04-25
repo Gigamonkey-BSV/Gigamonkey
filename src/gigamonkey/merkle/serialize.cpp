@@ -177,7 +177,7 @@ namespace Gigamonkey {
         return r;
     }
     
-    proofs_serialization_standard proofs_serialization_standard::read_binary (slice<const byte> b) {
+    proofs_serialization_standard proofs_serialization_standard::read_binary (byte_slice b) {
         try {
             proofs_serialization_standard x;
             

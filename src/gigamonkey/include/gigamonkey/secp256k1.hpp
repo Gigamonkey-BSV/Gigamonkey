@@ -69,17 +69,17 @@ namespace Gigamonkey::secp256k1 {
         // max size is 6 + 2 * 33
         constexpr static size_t MaxSize = 72; 
         
-        static bool valid (slice<const byte> x);
-        static bool minimal (slice<const byte> x);
-        static bool normalized (slice<const byte>);
+        static bool valid (byte_slice x);
+        static bool minimal (byte_slice x);
+        static bool normalized (byte_slice);
         
-        static slice<const byte> r (slice<const byte>);
-        static slice<const byte> s (slice<const byte>);
+        static byte_slice r (byte_slice);
+        static byte_slice s (byte_slice);
 
         scalar r () const;
         scalar s () const;
         
-        explicit signature (slice<const byte> b) : bytes {b} {}
+        explicit signature (byte_slice b) : bytes {b} {}
         
         explicit operator complex () const;
         explicit signature (const complex &z);
@@ -111,19 +111,19 @@ namespace Gigamonkey::secp256k1 {
         constexpr static size_t CompressedSize {33};
         constexpr static size_t UncompressedSize {65};
         
-        static bool valid (slice<const byte>);
+        static bool valid (byte_slice);
         
-        static bool compressed (slice<const byte> b) {
+        static bool compressed (byte_slice b) {
             return valid (b) && b.size () == CompressedSize;
         }
         
-        static bool verify (slice<const byte> pubkey, const digest&, slice<const byte> sig);
-        static bytes compress (slice<const byte>);
-        static bytes decompress (slice<const byte>);
-        static bytes negate (slice<const byte>);
-        static bytes plus (slice<const byte>, slice<const byte>);
-        static bytes tweak (slice<const byte>, const uint256 &);
-        static bytes times (slice<const byte>, slice<const byte>);
+        static bool verify (byte_slice pubkey, const digest&, byte_slice sig);
+        static bytes compress (byte_slice);
+        static bytes decompress (byte_slice);
+        static bytes negate (byte_slice);
+        static bytes plus (byte_slice, byte_slice);
+        static bytes tweak (byte_slice, const uint256 &);
+        static bytes times (byte_slice, byte_slice);
         
         static bool valid_size (size_t size) {
             return size == CompressedSize || size == UncompressedSize;
@@ -161,10 +161,10 @@ namespace Gigamonkey::secp256k1 {
     
     struct secret final : public nonzero<uint256> {
         
-        static bool valid (slice<const byte>);
-        static bytes to_public_compressed (slice<const byte>);
-        static bytes to_public_uncompressed (slice<const byte>);
-        static signature sign (slice<const byte>, const digest &);
+        static bool valid (byte_slice);
+        static bytes to_public_compressed (byte_slice);
+        static bytes to_public_uncompressed (byte_slice);
+        static signature sign (byte_slice, const digest &);
         
         static uint256 negate (const uint256 &);
         static uint256 plus (const uint256 &, const uint256 &);
@@ -276,7 +276,7 @@ namespace Gigamonkey::secp256k1 {
     }
     
     pubkey inline secret::to_public (bool compressed) const {
-        return pubkey {(compressed ? to_public_compressed : to_public_uncompressed) (slice<const byte> (Value))};
+        return pubkey {(compressed ? to_public_compressed : to_public_uncompressed) (byte_slice (Value))};
     }
     
     secret inline secret::operator - () const {
