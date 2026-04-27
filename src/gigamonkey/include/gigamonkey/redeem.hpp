@@ -41,7 +41,7 @@ namespace Gigamonkey {
 
     // an almost-complete transaction that has all the information necessary to redeem it.
     struct redeemable_transaction : transaction_design {
-        redeemable_transaction (int32_little version, list<redeemer> inputs, list<Bitcoin::output> outputs, uint32_little locktime);
+        redeemable_transaction (const Bitcoin::integer &version, list<redeemer> inputs, list<Bitcoin::output> outputs, uint32_little locktime);
 
         list<list<sigop>> Signatures;
 
@@ -49,8 +49,8 @@ namespace Gigamonkey {
     };
 
     inline redeemable_transaction::redeemable_transaction
-    (int32_little version, list<redeemer> inputs, list<Bitcoin::output> outputs, uint32_little locktime):
-        transaction_design {version, lift ([] (const redeemer r) -> transaction_design::input {
+    (const Bitcoin::integer &version, list<redeemer> inputs, list<Bitcoin::output> outputs, uint32_little locktime):
+        transaction_design {extend (version, 4), lift ([] (const redeemer r) -> transaction_design::input {
             return static_cast<transaction_design::input> (r);
         }, inputs), outputs, locktime}, Signatures {lift ([] (const redeemer r) -> list<sigop> {
             return r.Signatures;

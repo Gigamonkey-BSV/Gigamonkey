@@ -29,16 +29,16 @@ namespace Gigamonkey::Bitcoin::incomplete {
     // an incomplete transaction is a transaction with no input scripts. 
     // everything is const because some data can be cached for signature verification.
     struct transaction {
-        const int32_little Version;
+        const integer Version;
         const list<input> Inputs;
         const list<output> Outputs;
         const uint32_little LockTime;
         
-        transaction (int32_little v, list<input> i, list<output> o, uint32_little l = 0) : 
-            Version {v}, Inputs {i}, Outputs {o}, LockTime {l} {}
+        transaction (integer v, list<input> i, list<output> o, uint32_little l = 0) :
+            Version {extend (v, 4)}, Inputs {i}, Outputs {o}, LockTime {l} {}
         
         transaction (list<input> i, list<output> o, uint32_little l = 0) : 
-            transaction {int32_little {Bitcoin::transaction::LatestVersion}, i, o, l} {}
+            transaction {integer {Bitcoin::transaction::LatestVersion}, i, o, l} {}
         
         transaction (const Bitcoin::transaction &tx) : 
             Version {tx.Version}, Outputs {tx.Outputs}, Inputs {

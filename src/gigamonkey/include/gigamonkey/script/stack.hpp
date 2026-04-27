@@ -28,24 +28,26 @@ namespace Gigamonkey::Bitcoin {
     // estimate of the amount of memory used by the stack.
     template <bool genesis> struct limited_two_stack;
 
+    // we have two stacks but the interface resembles a single
+    // stack.
     struct two_stack {
     protected:
-        cross<integer> Stack;
+        cross<integer> MainStack;
         cross<integer> AltStack;
     public:
 
         // Warning: returned reference is invalidated if stack is modified.
         bytes &top (int index = -1);
 
-        const bytes &at (uint64_t i) const;
+        //const bytes &at (uint64_t i) const;
 
+        size_t size_down () const;
+        size_t size_up () const;
         size_t size () const;
-        size_t alt_size () const;
-        size_t combined_size () const;
-        bool empty () const;
+        bool empty_down () const;
 
-        virtual void pop_back () = 0;
-        virtual void push_back (byte_slice) = 0;
+        virtual void pop_down () = 0;
+        virtual void push_down (byte_slice) = 0;
 
         // erase elements from including (top - first). element until excluding (top - last). element
         // first and last should be negative numbers (distance from the top)
@@ -64,21 +66,21 @@ namespace Gigamonkey::Bitcoin {
 
         virtual void modify_top (std::function<void (bytes &)>, int index = -1) = 0;
 
-        void replace_back (const bytes &element) {
+        void replace_top (const bytes &element) {
             modify_top ([&element] (bytes &val) {
                 val = element;
             });
         }
 
-        typename std::vector<integer>::const_iterator begin () const;
-        typename std::vector<integer>::const_iterator end () const;
-        typename std::vector<integer>::iterator begin ();
-        typename std::vector<integer>::iterator end ();
+        typename std::vector<integer>::const_iterator begin_down () const;
+        typename std::vector<integer>::const_iterator end_down () const;
+        typename std::vector<integer>::iterator begin_down ();
+        typename std::vector<integer>::iterator end_down ();
 
         virtual ~two_stack () {}
 
         friend std::ostream inline &operator << (std::ostream &o, const two_stack &i) {
-            return o << std::hex << "{Stack: " << i.Stack << ", AltStack: " << i.AltStack << "}";
+            return o << std::hex << "{Stack: " << i.MainStack << ", AltStack: " << i.AltStack << "}";
         }
 
     };
@@ -92,8 +94,8 @@ namespace Gigamonkey::Bitcoin {
 
         bool valid () const;
 
-        void pop_back () override;
-        void push_back (byte_slice) override;
+        void pop_down () override;
+        void push_down (byte_slice) override;
 
         // erase elements from including (top - first). element until excluding (top - last). element
         // first and last should be negative numbers (distance from the top)
@@ -127,8 +129,8 @@ namespace Gigamonkey::Bitcoin {
         void increase_memory_usage (uint64_t additionalSize);
         void decrease_memory_usage (uint64_t additionalSize);
 
-        void pop_back () override;
-        void push_back (byte_slice) override;
+        void pop_down () override;
+        void push_down (byte_slice) override;
 
         // erase elements from including (top - first). element until excluding (top - last). element
         // first and last should be negative numbers (distance from the top)
@@ -219,67 +221,73 @@ namespace Gigamonkey::Bitcoin {
         cross<bool> Else;
     };
 
-    size_t inline two_stack::size () const {
-        return Stack.size ();
+    size_t inline two_stack::size_down () const {
+        return MainStack.size ();
     }
 
-    size_t inline two_stack::alt_size () const {
+    size_t inline two_stack::size_up () const {
         return AltStack.size ();
     }
 
-    size_t inline two_stack::combined_size () const {
-        return size () + alt_size ();
+    size_t inline two_stack::size () const {
+        return size_down () + size_up ();
     }
 
-    bool inline two_stack::empty () const {
-        return Stack.empty ();
+    bool inline two_stack::empty_down () const {
+        return MainStack.empty ();
     }
 
     bytes inline &two_stack::top (int index) {
-        if (index >= 0) throw std::invalid_argument ("Invalid argument - index should be < 0.");
-        return Stack.at (Stack.size () + index);
+        if (index >= 0)
+            throw std::invalid_argument ("Invalid argument - index should be < 0.");
+
+        return MainStack.at (MainStack.size () + index);
     }
 
     void inline two_stack::swap (size_t index1, size_t index2) {
-        std::swap (Stack.at (index1), Stack.at (index2));
+        std::swap (MainStack.at (index1), MainStack.at (index2));
     }
-
+/*
     const bytes inline &two_stack::at (uint64_t i) const {
-        return Stack.at (i);
-    }
+        return MainStack.at (i);
+    }*/
 
     Error inline two_stack::from_alt () {
-        if (alt_size () < 1) return Error::INVALID_ALTSTACK_OPERATION;
+        if (size_up () < 1)
+            return Error::INVALID_ALTSTACK_OPERATION;
+
         // Moving element to other stack does not change the total size of stack.
         // Just use internal functions to move the element.
-        Stack.push_back (std::move (AltStack.at (AltStack.size () - 1)));
+        MainStack.push_back (std::move (AltStack.at (AltStack.size () - 1)));
         AltStack.pop_back ();
         return {};
     }
 
     Error inline two_stack::to_alt () {
-        if (size () < 1) return Error::INVALID_STACK_OPERATION;
+        if (size_down () < 1)
+            return Error::INVALID_STACK_OPERATION;
+
         // Moving element to other stack does not change the total size of stack.
         // Just use internal functions to move the element.
-        AltStack.push_back (std::move (Stack.at (Stack.size () - 1)));
-        Stack.pop_back ();
+        AltStack.push_back (std::move (MainStack.at (MainStack.size () - 1)));
+        MainStack.pop_back ();
         return {};
     }
 
-    typename std::vector<integer>::const_iterator inline two_stack::begin () const {
-        return Stack.begin ();
+    typename std::vector<integer>::const_iterator inline two_stack::begin_down () const {
+        return MainStack.begin ();
     }
 
-    typename std::vector<integer>::const_iterator inline two_stack::end () const {
-        return Stack.end ();
+    typename std::vector<integer>::const_iterator inline two_stack::end_down () const {
+        return MainStack.end ();
     }
 
-    typename std::vector<integer>::iterator inline two_stack::begin () {
-        return Stack.begin ();
+    typename std::vector<integer>::iterator inline two_stack::begin_down () {
+        return MainStack.begin ();
     }
 
-    typename std::vector<integer>::iterator inline two_stack::end () {
-        return Stack.end ();
+    typename std::vector<integer>::iterator inline two_stack::end_down () {
+        return MainStack.end ();
     }
 
     void inline limited_two_stack<true>::decrease_memory_usage (uint64_t additionalSize) {
@@ -293,24 +301,26 @@ namespace Gigamonkey::Bitcoin {
         MemoryUsage += additionalSize;
     }
 
-    void inline limited_two_stack<true>::push_back (byte_slice element) {
+    void inline limited_two_stack<true>::push_down (byte_slice element) {
         increase_memory_usage (element.size () + ELEMENT_OVERHEAD);
-        Stack.emplace_back (element);
+        MainStack.emplace_back (element);
     }
 
-    void inline limited_two_stack<false>::push_back (byte_slice element) {
+    void inline limited_two_stack<false>::push_down (byte_slice element) {
         if (element.size () > MaxScriptElementSize)
             throw invalid_program {Error::PUSH_SIZE};
 
-        if (this->combined_size () == MaxStackElements)
+        if (this->size () == MaxStackElements)
             throw invalid_program {Error::STACK_SIZE};
 
-        Stack.emplace_back (element);
+        MainStack.emplace_back (element);
     }
 
-    void inline limited_two_stack<false>::pop_back () {
-        if (Stack.empty ()) throw std::runtime_error ("popstack(): stack empty");
-        Stack.pop_back ();
+    void inline limited_two_stack<false>::pop_down () {
+        if (MainStack.empty ())
+            throw std::runtime_error ("popstack(): stack empty");
+
+        MainStack.pop_back ();
     }
 
 }

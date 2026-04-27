@@ -53,7 +53,7 @@ namespace Gigamonkey::Bitcoin {
         script_config v1_before_genesis {1, epoch::exodus};
         script_config v2_before_genesis {2, epoch::exodus};
 
-        EXPECT_EQ (default_profile, v1_after_genesis);
+        EXPECT_EQ (default_profile, v2_after_genesis);
 
         // malleability checks should be turned on in version 1, off in version 2.
         EXPECT_TRUE (verify_signature_low_S (v1_before_genesis.Flags));
@@ -217,8 +217,10 @@ namespace Gigamonkey::Bitcoin {
     template <typename X>
     void test_op (op Op, list<X> start, list<X> expected, string explanation = "") {
         EXPECT_EQ (Error::OK,
-            (evaluate (compile (stack_initialize<X> (start) << Op), compile (stack_equal<X> (expected)), flag {})))
-                << explanation;
+            (evaluate (
+                compile (stack_initialize<X> (start) << Op),
+                compile (stack_equal<X> (expected)), flag {})))
+                    << explanation;
     }
 
     void test_pick_roll_error (list<int> start, string explanation) {
@@ -700,7 +702,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     TEST (Script, OP_VER) {
-        test_data_op (OP_VER, {}, {{0x01, 0x00, 0x00, 0x00}});
+        test_data_op (OP_VER, {}, {{0x02, 0x00, 0x00, 0x00}});
 
         EXPECT_EQ (Error::OK, (evaluate (list<bytes> {bytes {OP_VER, OP_PUSHSIZE4, 0x02, 0x00, 0x00, 0x00, OP_EQUAL}},
             script_config {2, epoch::chronicle}))) << "OP_VER 1";

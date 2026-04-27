@@ -48,7 +48,7 @@ namespace Gigamonkey::Bitcoin {
             
         maybe<redemption_document> Document;
             
-        ptr<two_stack> Stack;
+        ptr<two_stack> Stacks;
 
         conditional Conditional;
 
@@ -69,13 +69,13 @@ namespace Gigamonkey::Bitcoin {
         machine (ptr<two_stack>, maybe<redemption_document> doc = {}, const script_config & = {});
 
         Error top () const {
-            if (Stack->size () == 0) return Error::INVALID_STACK_OPERATION;
-            return nonzero (Stack->top ()) ? Error::OK : Error::FAIL;
+            if (Stacks->size_down () == 0) return Error::INVALID_STACK_OPERATION;
+            return nonzero (Stacks->top ()) ? Error::OK : Error::FAIL;
         }
     };
 
     std::ostream inline &operator << (std::ostream &o, const machine &m) {
-        return o << "{Flags: " << m.Config.Flags << ", Stack: " << *m.Stack << ", Conditional: " << m.Conditional << "}";
+        return o << "{Flags: " << m.Config.Flags << ", Stacks: " << *m.Stacks << ", Conditional: " << m.Conditional << "}";
     }
 
     inline conditional::conditional (bool utxo_after_genesis): UtxoAfterGenesis {utxo_after_genesis} {

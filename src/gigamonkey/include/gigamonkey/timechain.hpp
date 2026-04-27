@@ -185,6 +185,7 @@ namespace Gigamonkey::Bitcoin {
         input () : Reference {}, Script {}, Sequence {} {}
         input (const outpoint &o, const Bitcoin::script &x, const uint32_little &z = Finalized) :
             Reference {o}, Script {x}, Sequence {z} {}
+
         explicit input (byte_slice);
         
         uint64 serialized_size () const;
@@ -232,18 +233,22 @@ namespace Gigamonkey::Bitcoin {
         
         static constexpr int32 LatestVersion = 2;
         
-        int32_little Version;
+        // NOTE: Version is a 4 byte little endian number but it is
+        // incorrect to treat it as complement twos. Since it can be
+        // inserted to the stack with OP_VER, it needs to be treat
+        // as something with sign and magnetude.
+        integer Version;
         list<Bitcoin::input> Inputs;
         list<Bitcoin::output> Outputs;
         uint32_little LockTime;
         
-        transaction (int32_little v, list<Bitcoin::input> i,  list<Bitcoin::output> o, uint32_little t = 0) :
-            Version {v}, Inputs {i}, Outputs {o}, LockTime {t} {}
+        transaction (const integer &v, list<Bitcoin::input> i,  list<Bitcoin::output> o, uint32_little t = 0) :
+            Version {extend (integer {v}, 4)}, Inputs {i}, Outputs {o}, LockTime {t} {}
         
         transaction (list<Bitcoin::input> i, list<Bitcoin::output> o, uint32_little t = 0) :
-            transaction {int32_little {LatestVersion}, i, o, t} {}
+            transaction {extend (integer {LatestVersion}, 4), i, o, t} {}
             
-        transaction () : Version {}, Inputs {}, Outputs {}, LockTime {} {};
+        transaction () : Version {extend (integer {}, 4)}, Inputs {}, Outputs {}, LockTime {} {};
         
         explicit transaction (byte_slice b);
         
@@ -477,7 +482,7 @@ namespace Gigamonkey::Bitcoin {
     }
 
     bool inline transaction::valid () const {
-        return Inputs.size () > 0 && Outputs.size () > 0 && (
+        return Version.size () == 4 && Inputs.size () > 0 && Outputs.size () > 0 && (
             data::valid (Inputs) ||
             (Inputs.size () == 1 && Inputs[0].Reference == outpoint {}) // coinbase
         ) && data::valid (Outputs);

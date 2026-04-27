@@ -73,10 +73,16 @@ namespace Gigamonkey {
             }
         };
 
-        int32_little Version;
+        Bitcoin::integer Version;
         list<input> Inputs;
         list<Bitcoin::output> Outputs;
         uint32_little LockTime;
+
+        transaction_design (
+            const Bitcoin::integer &version,
+            list<input> inputs,
+            list<Bitcoin::output> outputs,
+            uint32_little lock): Version {extend (version, 4)}, Inputs {inputs}, Outputs {outputs}, LockTime {lock} {}
 
         // compare this to a satoshis_per_byte value to see if the fee is good enough.
         uint64 expected_size () const;
