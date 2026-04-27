@@ -188,12 +188,8 @@ namespace Gigamonkey::SPV {
                     Bitcoin::evaluate (
                         in.Script, prevout.Script,
                         Bitcoin::redemption_document {incomplete, input_index, prevout.Value},
-                        genesis_upgrade_time > execution_time ?
-                            Bitcoin::script_config {Bitcoin::pre_genesis_profile ()}:
-                            Bitcoin::script_config {Bitcoin::genesis_profile ()}
-                        )
-                    )
-                ) return false;
+                        Bitcoin::script_config {antecedent.Transaction.Version,
+                            genesis_upgrade_time > execution_time ? Bitcoin::epoch::genesis : Bitcoin::epoch::exodus, true}))) return false;
 
                 input_index++;
             }

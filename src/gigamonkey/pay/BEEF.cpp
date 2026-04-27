@@ -244,7 +244,7 @@ namespace Gigamonkey {
                     {"script", encoding::hex::write (out.Script)}});
 
             JSON::object_t o {
-                {"version", uint32 (tx.Version)},
+                {"version", static_cast<uint32> (int32 (tx.Version))},
                 {"inputs", ins},
                 {"outputs", outs},
                 {"lockTime", uint32 (tx.LockTime)}};

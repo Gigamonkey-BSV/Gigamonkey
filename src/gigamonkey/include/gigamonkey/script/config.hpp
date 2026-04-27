@@ -209,14 +209,14 @@ namespace Gigamonkey::Bitcoin {
      * version, flags, and script_limits. There are also simplified
      * parameters which load standard profiles.
      *
-     * Default configuration; version = 1 and use consensus parameters.
+     * Default configuration; version = 2 and use consensus parameters.
      *   script_config {}
      *
      * Infer flags from version. Assume after genesis
      * and use consensus parameters.
      *   script_config {version number};
      *
-     * Assume version 1, use consensus parameters
+     * Assume version 2, use consensus parameters
      *   script_config {bool after_genesis};
      *
      * Use consensus parameters.
@@ -225,7 +225,7 @@ namespace Gigamonkey::Bitcoin {
      * Use specific flags and use consensus parameters
      *   script_config {version number, flags};
      *
-     * Use version 1
+     * Use version 2
      *   script_config {bool after_genesis, bool consensus};
      *   script_config {flags bool consensus};
      *
@@ -257,7 +257,7 @@ namespace Gigamonkey::Bitcoin {
         uint64 MaxScriptSize;
 
         static integer default_version () {
-            return extend (integer (1), 4);
+            return extend (integer (2), 4);
         }
 
         script_config (

@@ -5,6 +5,7 @@
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/script.hpp>
+#include <gigamonkey/script/instruction.hpp>
 #include <gigamonkey/script/bitcoin_core.hpp>
 #include <gigamonkey/script/counter.hpp>
 #include <gigamonkey/script/stack.hpp>
@@ -49,7 +50,7 @@ namespace Gigamonkey::Bitcoin {
 
         // Fail if the transaction's version number is not set high enough to
         // trigger BIP 68 rules.
-        if (static_cast<uint32_t> (Transaction.Version) < 2) return false;
+        if (static_cast<uint32> (static_cast<int32> (Transaction.Version)) < 2) return false;
 
         // Sequence numbers with their most significant bit set are not consensus
         // constrained. Testing that the transaction's sequence number do not have

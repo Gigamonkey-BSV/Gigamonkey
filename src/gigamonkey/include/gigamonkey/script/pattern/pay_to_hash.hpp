@@ -34,7 +34,7 @@ namespace Gigamonkey {
             std::copy (hash.begin (), hash.end (), Hash.Value.begin ());
         }
         
-        static bytes redeem (const byte_slice s) {
+        static bytes redeem (byte_slice s) {
             using namespace Bitcoin;
             return compile (program {} << push_data (s));
         }

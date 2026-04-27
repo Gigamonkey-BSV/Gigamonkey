@@ -90,13 +90,13 @@ namespace Gigamonkey::Bitcoin {
             // have to check the top of the stack for true.
             // if not, we err. Otherwise we pop the top.
             if (p.valid ()) {
-                if (x.Stack->size () < 1)
+                if (x.Stacks->size_down () < 1)
                     return Error::INVALID_STACK_OPERATION;
 
-                if (Bitcoin::is_zero (x.Stack->top ()))
+                if (Bitcoin::is_zero (x.Stacks->top ()))
                     return Error::OP_RETURN;
 
-                x.Stack->pop_back ();
+                x.Stacks->pop_down ();
             }
         }
 
@@ -129,7 +129,7 @@ namespace Gigamonkey::Bitcoin {
                 if (x.Conditional)
                     return Error::UNBALANCED_CONDITIONAL;
 
-                if (x.Config.verify_clean_stack () && (x.Stack->size () != 1))
+                if (x.Config.verify_clean_stack () && (x.Stacks->size_down () != 1))
                     return Error::CLEANSTACK;
 
                 return x.top ();

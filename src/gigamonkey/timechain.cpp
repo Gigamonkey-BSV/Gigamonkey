@@ -78,6 +78,7 @@ namespace Gigamonkey::Bitcoin {
         }, 0u, Transactions);
     }
 
+    // TODO the read should fail if there's more in the slice.
     input::input (byte_slice b) : input {} {
         try {
             it_rdr r {b.begin (), b.end ()};
