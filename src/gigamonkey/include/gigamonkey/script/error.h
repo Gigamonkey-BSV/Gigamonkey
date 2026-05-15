@@ -8,7 +8,7 @@
 #define BITCOIN_SCRIPT_SCRIPT_ERROR_H
 
 #include <iosfwd>
-#include <data/io/exception.hpp>
+#include <data/exception.hpp>
 
 // errors that can be returned in script execution or signature verification.
 enum class Error {

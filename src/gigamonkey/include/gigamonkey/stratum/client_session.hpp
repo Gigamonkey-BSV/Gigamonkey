@@ -81,7 +81,7 @@ namespace Gigamonkey::Stratum {
         uint32 SharesAccepted {0};
         
         void pose_current_puzzle () {
-            throw data::method::unimplemented {"pose_current_puzzle"};
+            throw data::unimplemented {"pose_current_puzzle"};
         }
         
     };
