@@ -61,6 +61,19 @@ namespace Gigamonkey::Bitcoin {
     segment from_last_code_separator (byte_slice Script, size_t LastCodeSeparator) {
         return decompile (byte_slice {Script.data () + LastCodeSeparator + 1, Script.size () - (LastCodeSeparator + 1)});
     }
+
+    // read a sequence of bytes as a Bitcoin integer, returning errors
+    // if the number does not satisfy certain constraints.
+    // the input needs to be a Bitcoin::integer that has been cast to bytes
+    // because we static cast it back to Bitcoin::integer.
+    //   RequireMinimal = fail if the number is not minimally represented.
+    //   nMaxNumSize = fail if the number is too big.
+    const integer inline &read_integer (const bytes &span, bool RequireMinimal, const size_t nMaxNumSize) {
+        if (span.size () > nMaxNumSize) throw invalid_program {Error::SCRIPTNUM_OVERFLOW};
+        if (RequireMinimal && !is_minimal_number (span)) throw invalid_program {Error::SCRIPTNUM_MINENCODE};
+        // safe if span really is an integer, which it is if we read it from stacks.
+        return static_cast<const integer &> (span);
+    }
     
     Error machine::step (const program_counter &Counter) {
 
@@ -68,9 +81,6 @@ namespace Gigamonkey::Bitcoin {
         bool RequireMinimal {Config.verify_minimal_push ()};
         
         op Op = op (Counter.Next[0]);
-
-        std::cout << "  machine step: " << *this << std::endl;
-        std::cout << "  read op " << Op << std::endl;
 
         // Check opcode limits.
         //
@@ -702,9 +712,12 @@ namespace Gigamonkey::Bitcoin {
                 uint64_t i = 1;
                 if (Stacks->size_down () < i) return Error::INVALID_STACK_OPERATION;
                 
-                // initialize to max size of CScriptNum::MAXIMUM_ELEMENT_SIZE (4 bytes) 
-                // because only 4 byte integers are supported by  OP_CHECKMULTISIG / OP_CHECKMULTISIGVERIFY
-                auto nKeysCountZ = read_integer (Stacks->top (-i), RequireMinimal, MAXIMUM_ELEMENT_SIZE);
+                // initialize to max size to 4 bytes
+                // because only 4 byte integers are supported by OP_CHECKMULTISIG / OP_CHECKMULTISIGVERIFY
+                auto nKeysCountZ = read_integer (Stacks->top (-i),
+                    RequireMinimal,
+                    MAX_SCRIPT_NUM_LENGTH_BEFORE_GENESIS);
+
                 if (nKeysCountZ < 0) return Error::PUBKEY_COUNT;
                 
                 int64 nKeysCount = static_cast<int64> (nKeysCountZ);
@@ -724,7 +737,9 @@ namespace Gigamonkey::Bitcoin {
                 i += nKeysCount;
                 if (Stacks->size_down () < i) return Error::INVALID_STACK_OPERATION;
                 
-                auto nSigsCountZ = read_integer (Stacks->top (-i), RequireMinimal, MAXIMUM_ELEMENT_SIZE);
+                auto nSigsCountZ = read_integer (Stacks->top (-i),
+                    RequireMinimal,
+                    MAX_SCRIPT_NUM_LENGTH_BEFORE_GENESIS);
                     
                 if (nSigsCountZ < 0) return Error::SIG_COUNT;
                 

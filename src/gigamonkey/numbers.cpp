@@ -26,7 +26,7 @@ namespace Gigamonkey::Bitcoin {
         if (a.size () < b.size ()) return bit_and (b, a);
         bytes bb {b};
         extend_number (bb, a.size ());
-        data::arithmetic::bit_and<byte> (bb.end (), bb.begin (), const_cast<const decltype (bb) &> (bb).data (), a.data ());
+        data::arithmetic::bit_and<byte> (bb.begin (), bb.end (), const_cast<const decltype (bb) &> (bb).data (), a.data ());
         return bb;
     }
 
@@ -35,7 +35,7 @@ namespace Gigamonkey::Bitcoin {
         if (a.size () < b.size ()) return bit_xor (b, a);
         bytes bb {b};
         extend_number (bb, a.size ());
-        data::arithmetic::bit_xor<byte> (bb.end (), bb.begin (), const_cast<const decltype (bb) &> (bb).data (), a.data ());
+        data::arithmetic::bit_xor<byte> (bb.begin (), bb.end (), const_cast<const decltype (bb) &> (bb).data (), a.data ());
         return bb;
     }
 
@@ -44,14 +44,16 @@ namespace Gigamonkey::Bitcoin {
         if (a.size () < b.size ()) return bit_or (b, a);
         bytes bb {b};
         extend_number (bb, a.size ());
-        data::arithmetic::bit_or<byte> (bb.end (), bb.begin (), const_cast<const decltype (bb) &> (bb).data (), a.data ());
+        data::arithmetic::bit_or<byte> (bb.begin (), bb.end (), const_cast<const decltype (bb) &> (bb).data (), a.data ());
         return bb;
     }
 
     // implements OP_AND
     integer bit_not (byte_slice x) {
         integer result = integer::zero (x.size ());
-        data::arithmetic::bit_negate<byte> (result.end (), result.begin (), x.begin ());
+
+        data::arithmetic::bit_negate<byte> (result.begin (), result.end (), x.begin ());
+
         return result;
     }
 

@@ -6,6 +6,7 @@
 
 #include <gigamonkey/types.hpp>
 #include <gigamonkey/script/error.h>
+#include <sv/consensus/consensus.h>
 
 namespace Gigamonkey::Bitcoin {
 
@@ -19,10 +20,6 @@ namespace Gigamonkey::Bitcoin {
 
     // trim to minimal size;
     bytes &trim_number (bytes &);
-
-    static const size_t MAXIMUM_ELEMENT_SIZE = 4;
-
-    const integer &read_integer (const bytes &span, bool RequireMinimal, const size_t nMaxNumSize = MAXIMUM_ELEMENT_SIZE);
 
     // concatinate, implements OP_CAT
     integer cat (byte_slice, byte_slice);
@@ -43,9 +40,8 @@ namespace Gigamonkey::Bitcoin {
     std::pair<string_view, string_view> split (string_view, size_t);
 
     // implements OP_SUBSTR
-    // take the n rightmost bytes from the given string.
-    byte_slice substr (byte_slice, size_t n);
-    string_view substr (string_view, size_t n);
+    byte_slice substr (byte_slice, size_t n, size_t len);
+    string_view substr (string_view, size_t n, size_t len);
 
     // implements OP_0NOTEQUAL
     // also how we cast a number to bool.
@@ -83,12 +79,6 @@ namespace Gigamonkey::Bitcoin {
 
     // shift left by n bits, implements OP_LSHIFT
     integer left_shift (byte_slice, int32 n);
-
-    // shift right by n bits, implements OP_RSHIFTNUM
-    integer right_bit_shift (byte_slice, int32 n);
-
-    // shift left by n bits, implements OP_LSHIFTNUM
-    integer left_bit_shift (byte_slice, int32 n);
 
     // shift right by n bits
     data::string right_shift (const data::string &, int32 n);
@@ -140,6 +130,17 @@ namespace Gigamonkey::Bitcoin {
     integer div_2 (byte_slice);
 
     data::math::sign sign (byte_slice);
+
+    // whether the sign bit is set (therefore true for negative numbers and negative zero.)
+    bool inline sign_bit (byte_slice x) {
+        return x.size () > 0 && (x[-1] & 0x80);
+    }
+
+    // shift right by n bits, implements OP_RSHIFTNUM
+    integer right_bit_shift (byte_slice, int32 n);
+
+    // shift left by n bits, implements OP_LSHIFTNUM
+    integer left_bit_shift (byte_slice, int32 n);
 
     integer negate (byte_slice);
     integer abs (byte_slice);
@@ -194,12 +195,6 @@ namespace Gigamonkey::Bitcoin {
         return data::arithmetic::minimal_size<data::endian::little, data::arithmetic::negativity::BC, byte> (b);
     }
 
-    const integer inline &read_integer (const bytes &span, bool RequireMinimal, const size_t nMaxNumSize) {
-        if (span.size () > nMaxNumSize) throw invalid_program {Error::SCRIPTNUM_OVERFLOW};
-        if (RequireMinimal && !is_minimal_number (span)) throw invalid_program {Error::SCRIPTNUM_MINENCODE};
-        return static_cast<const integer &> (span);
-    }
-
     bool inline is_minimal_number (byte_slice span) {
         return data::arithmetic::is_minimal<data::endian::little, data::arithmetic::negativity::BC, byte> (span);
     }
@@ -233,9 +228,10 @@ namespace Gigamonkey::Bitcoin {
         return x.substr (0, n);
     }
 
+    // take the n rightmost bytes from the given string.
     string_view inline right (string_view x, size_t n) {
         if (n < 0 || n > x.size ()) throw exception {} << "invalid split range";
-        return x.substr (x.size () - n, x.size () - n);
+        return x.substr (x.size () - n);
     }
 
     // implements OP_SPLIT
@@ -337,6 +333,16 @@ namespace Gigamonkey::Bitcoin {
 
     bool inline string_equal (byte_slice a, byte_slice b) {
         return a == b;
+    }
+
+    byte_slice inline substr (byte_slice x, size_t n, size_t len) {
+        if (n + len > x.size ()) throw exception {} << "invalid substr parameters";
+        return x.range (n, n + len);
+    }
+
+    string_view inline substr (string_view x, size_t n, size_t len) {
+        if (n + len > x.size ()) throw exception {} << "invalid substr parameters";
+        return x.substr (n, len);
     }
 }
 

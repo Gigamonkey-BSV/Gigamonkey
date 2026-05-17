@@ -124,7 +124,34 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_FALSE (is_minimal (integer ("0x807f")));
         EXPECT_FALSE (is_minimal (integer ("0x00007f")));
         EXPECT_FALSE (is_minimal (integer ("0x80007f")));
+
+        EXPECT_TRUE (is_minimal_number (integer ("0")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x00")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x80")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x0000")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x8000")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x000000")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x800000")));
+
+        EXPECT_TRUE (is_minimal_number (integer ("0x01")));
+        EXPECT_TRUE (is_minimal_number (integer ("0x81")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x0001")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x8001")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x000001")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x800001")));
+
+        EXPECT_TRUE (is_minimal_number (integer ("0x7f")));
+        EXPECT_TRUE (is_minimal_number (integer ("0xff")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x007f")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x807f")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x00007f")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x80007f")));
         
+    }
+
+    TEST (Number, MinimalSize) {
+
+        EXPECT_EQ (minimal_size (integer ("0x")), 0);
     }
     
     TEST (Number, Trim) {
@@ -149,6 +176,8 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_EQ (slice<const byte> (trim (integer ("0x807f"))), *encoding::hex::read  ("ff"));
         EXPECT_EQ (slice<const byte> (trim (integer ("0x00007f"))), *encoding::hex::read  ("7f"));
         EXPECT_EQ (slice<const byte> (trim (integer ("0x80007f"))), *encoding::hex::read  ("ff"));
+
+        // TODO trim_number
         
     }
 
@@ -172,6 +201,25 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_FALSE (is_zero (integer ("0x8080")));
         EXPECT_FALSE (is_zero (integer ("0x000080")));
         EXPECT_FALSE (is_zero (integer ("0x800080")));
+
+        EXPECT_TRUE (!nonzero (integer ("0x00")));
+        EXPECT_TRUE (!nonzero (integer ("0x80")));
+        EXPECT_TRUE (!nonzero (integer ("0x0000")));
+        EXPECT_TRUE (!nonzero (integer ("0x8000")));
+        EXPECT_TRUE (!nonzero (integer ("0x000000")));
+        EXPECT_TRUE (!nonzero (integer ("0x800000")));
+
+        EXPECT_FALSE (!nonzero (integer ("0x01")));
+        EXPECT_FALSE (!nonzero (integer ("0x81")));
+        EXPECT_FALSE (!nonzero (integer ("0x0001")));
+        EXPECT_FALSE (!nonzero (integer ("0x8001")));
+        EXPECT_FALSE (!nonzero (integer ("0x000001")));
+        EXPECT_FALSE (!nonzero (integer ("0x800001")));
+
+        EXPECT_FALSE (!nonzero (integer ("0x0080")));
+        EXPECT_FALSE (!nonzero (integer ("0x8080")));
+        EXPECT_FALSE (!nonzero (integer ("0x000080")));
+        EXPECT_FALSE (!nonzero (integer ("0x800080")));
 
         EXPECT_TRUE (is_positive_zero (integer ("0x00")));
         EXPECT_FALSE (is_positive_zero (integer ("0x80")));
@@ -238,6 +286,8 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_TRUE (is_negative (integer ("0x8080")));
         EXPECT_FALSE (is_negative (integer ("0x000080")));
         EXPECT_TRUE (is_negative (integer ("0x800080")));
+
+        // TODO test sign
     
     }
 

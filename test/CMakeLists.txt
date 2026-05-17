@@ -16,6 +16,7 @@ add_executable (unit_tests
     expand_compact.cpp
     Merkle.cpp
     push.cpp
+    string.cpp
     number.cpp
     signature.cpp
     stack.cpp
