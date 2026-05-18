@@ -113,6 +113,7 @@ target_link_libraries (
   nlohmann_json::nlohmann_json
   PkgConfig::cryptopp
   util
+  sv_interface
   sv_giga
   
   secp256k1
