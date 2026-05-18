@@ -26,10 +26,6 @@ target_include_directories(sv_interface INTERFACE
 
 target_link_libraries(sv_interface INTERFACE Data::sv)
 
-# Object library for compiled code
-add_library(sv_giga OBJECT
-  random.cpp
-)
 
 target_link_libraries(sv_giga PUBLIC sv_interface)
 
