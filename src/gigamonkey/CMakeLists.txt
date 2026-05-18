@@ -113,6 +113,7 @@ target_link_libraries (
   nlohmann_json::nlohmann_json
   PkgConfig::cryptopp
   util
+  sv_interface
   sv_giga
   
   secp256k1
@@ -134,7 +135,7 @@ install (
 )
 
 install (
-  TARGETS gigamonkey base58_check sv_giga nlohmann_json
+  TARGETS gigamonkey base58_check sv_giga sv_interface nlohmann_json
   EXPORT GigamonkeyTargets
   ARCHIVE
 )
