@@ -135,7 +135,7 @@ install (
 )
 
 install (
-  TARGETS gigamonkey base58_check sv_giga nlohmann_json
+  TARGETS gigamonkey base58_check sv_giga sv_interface nlohmann_json
   EXPORT GigamonkeyTargets
   ARCHIVE
 )
