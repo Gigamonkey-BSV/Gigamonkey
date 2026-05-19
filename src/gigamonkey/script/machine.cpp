@@ -26,8 +26,8 @@ namespace Gigamonkey::Bitcoin {
             find_and_delete (script_code, instruction::push (sig));
     }
     
-    sighash::document inline *add_script_code (redemption_document &doc, segment script_code) {
-        return new sighash::document {doc.Transaction, doc.InputIndex, doc.RedeemedValue, script_code};
+    sighash::document inline add_script_code (redemption_document &doc, segment script_code) {
+        return sighash::document {doc.Transaction, doc.InputIndex, doc.RedeemedValue, script_code};
     }
 
     constexpr auto bits_per_byte {8};
@@ -677,8 +677,7 @@ namespace Gigamonkey::Bitcoin {
                     auto doc = add_script_code (*Document, cleanup_script_code (
                         from_last_code_separator (Counter.Script, LastCodeSeparator), sig));
 
-                    r = verify (sig, pub, *doc, Config.Flags);
-                    delete doc;
+                    r = verify (sig, pub, doc, Config.Flags);
                 } else r = Error::OK;
 
                 bool success = r == Error::OK;
@@ -750,7 +749,7 @@ namespace Gigamonkey::Bitcoin {
                 i += nSigsCount;
                 if (Stacks->size_down () < i) return Error::INVALID_STACK_OPERATION;
                 
-                sighash::document *doc = nullptr;
+                maybe<sighash::document> doc {};
                 if (bool (Document)) {
                     segment script_code = from_last_code_separator (Counter.Script, LastCodeSeparator);
                     
@@ -758,7 +757,7 @@ namespace Gigamonkey::Bitcoin {
                     for (auto it = Stacks->begin_down () + 1; it != Stacks->begin_down () + 1 + nSigsCount; it++)
                         script_code = cleanup_script_code (script_code, *it);
                     
-                    doc = add_script_code (*Document, script_code);
+                    doc.emplace (add_script_code (*Document, script_code));
                 }
                 
                 bool fSuccess = true;
@@ -773,7 +772,9 @@ namespace Gigamonkey::Bitcoin {
                     // See the script_(in)valid tests for details.
                     // Check signature
                     
-                    Error r = (doc == nullptr) ? Error::OK : verify (sig, pub, *doc, Config.Flags);
+                    Error r = (bool (doc)) ?
+                        verify (sig, pub, *doc, Config.Flags) :
+                        Error::OK;
 
                     if (r == Error::OK) {
                         isig++;
@@ -789,8 +790,6 @@ namespace Gigamonkey::Bitcoin {
                     if (nSigsCount > nKeysCount) fSuccess = false;
                     
                 }
-                
-                delete doc;
                 
                 // Clean up stack of actual arguments
                 while (i-- > 1) {

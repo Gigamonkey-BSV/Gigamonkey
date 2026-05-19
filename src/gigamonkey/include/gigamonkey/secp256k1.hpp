@@ -6,7 +6,6 @@
 
 #include <gigamonkey/p2p/var_int.hpp>
 #include <gigamonkey/hash.hpp>
-#include <gigamonkey/numbers.hpp>
 #include <data/encoding/integer.hpp>
 #include <data/math/number/modular.hpp>
 
