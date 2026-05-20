@@ -6,8 +6,8 @@
 
 namespace Gigamonkey::Bitcoin::sighash {
     
-    bytes remove_code_separators (program p) {
-        program r;
+    bytes remove_code_separators (segment p) {
+        list<instruction> r;
         for (const instruction &i : p) if (i.Op != OP_CODESEPARATOR) r = r << i;
         return compile (r);
     }

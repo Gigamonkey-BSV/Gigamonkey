@@ -9,34 +9,41 @@ endif ()
 include (GoogleTest)
 
 add_executable (unit_tests
-    testBase58Check.cpp
-    testFormat.cpp
-    testTimestamp.cpp
-    testAddress.cpp
-    testExpandCompact.cpp
-    testMerkle.cpp
-    testPush.cpp
-    testNumber.cpp
-    testSignature.cpp
-    testScript.cpp
-    testTransaction.cpp
-    testDifficulty.cpp
-    testWorkString.cpp
-    testWork.cpp
-    testBoost.cpp
-    testBip32.cpp
-    testBip32Derivations.cpp
-    testBip39.cpp
-    testBUMP.cpp
-    testBEEF.cpp
-    testSPV.cpp
-    testStratum.cpp
+    base_58_check.cpp
+    format.cpp
+    timestamp.cpp
+    address.cpp
+    expand_compact.cpp
+    Merkle.cpp
+    push.cpp
+    string.cpp
+    number.cpp
+    signature.cpp
+    stack.cpp
+    script.cpp
+    transaction.cpp
+    difficulty.cpp
+    work_string.cpp
+    work.cpp
+    boost.cpp
+    BIP32.cpp
+    BIP32Derivations.cpp
+    BIP39.cpp
+    BUMP.cpp
+    BEEF.cpp
+    SPV.cpp
+    Stratum.cpp
 )
 
 target_link_libraries (
     unit_tests
     PRIVATE
-    gigamonkey base58_check Data::data util gtest_main gmock
+
+    Gigamonkey::Stratum
+    util
+    gtest_main
+    gmock
+
 )
 
 gtest_discover_tests (unit_tests)

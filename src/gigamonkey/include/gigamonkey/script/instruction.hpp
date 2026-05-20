@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Bitcoin Core developers
 // Copyright (c) 2018 The Bitcoin SV developers
-// Copyright (c) 2019-2021 Daniel Krawisz
+// Copyright (c) 2019-2026 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #ifndef GIGAMONKEY_SCRIPT_INSTRUCTION
@@ -9,7 +9,6 @@
 
 #include <gigamonkey/script/config.hpp>
 #include <gigamonkey/script/error.h>
-//#include <sv/policy/policy.h>
 
 #include <gigamonkey/hash.hpp>
 #include <gigamonkey/numbers.hpp>
@@ -24,10 +23,10 @@ namespace Gigamonkey::Bitcoin {
         return o <= OP_PUSHDATA4;
     }
     
-    bool is_minimal_script (slice<const byte>);
+    bool is_minimal_script (byte_slice);
     
     // ASM is a standard human format for Bitcoin scripts that is unique only if the script is minimally encoded. 
-    string ASM (slice<const byte>);
+    string ASM (byte_slice);
     
     // a single step in a program. 
     struct instruction; 
@@ -43,7 +42,7 @@ namespace Gigamonkey::Bitcoin {
     
     instruction push_data (int);
     instruction push_data (const Z &z);
-    instruction push_data (slice<const byte>);
+    instruction push_data (byte_slice);
 
     template <data::endian::order Order, class T, std::size_t n_bits, boost::endian::align Align>
     instruction push_data (const boost::endian::endian_arithmetic<Order, T, n_bits, Align> &x);
@@ -58,14 +57,15 @@ namespace Gigamonkey::Bitcoin {
         
         instruction ();
         instruction (op p);
-        instruction (slice<const byte> d) : instruction {push (d)} {}
+        instruction (byte_slice d) : instruction {push (d)} {}
         
         integer push_data () const;
         
-        ScriptError verify (flag flags) const;
+        Error verify (const script_config &conf) const;
         
         bool valid () const {
-            return verify (genesis_profile ()) == SCRIPT_ERR_OK;
+            // TODO upgrade to chronicle
+            return verify (genesis_profile ()) == Error::OK;
         };
         
         uint32 serialized_size () const;
@@ -74,10 +74,10 @@ namespace Gigamonkey::Bitcoin {
         bool operator != (op o) const;
         
         static instruction op_code (op o);
-        static instruction read (slice<const byte> b);
-        static instruction push (slice<const byte> d);
+        static instruction read (byte_slice b);
+        static instruction push (byte_slice d);
         
-        static size_t min_push_size (slice<const byte> b) {
+        static size_t min_push_size (byte_slice b) {
             auto x = b.size ();
             return x == 0 || (x == 1 && (b[0] == 0x81 || (b[0] >= 1 && b[0] <= 16))) ? 1 : 
                 x < 75 ? x + 1 : x < 0xff ? x + 2 : x < 0xffff ? x + 3 : x + 5;
@@ -88,73 +88,12 @@ namespace Gigamonkey::Bitcoin {
     private:
         instruction (op p, const integer &d);
     };
-
-    using program = list<instruction>;
-
-    bool is_push (program);
-
-    // check flags that can be checked without running the program.
-    ScriptError pre_verify (program, flag flags);
-
-    // delete the script up to and including the last instance of OP_CODESEPARATOR.
-    // if no OP_CODESEPARATOR is found, nothing is removed.
-    // this function is needed for correctly checking and generating signatures.
-    program remove_after_last_code_separator (slice<const byte>);
-
-    // used in the original sighash algorithm to remove instances of the same
-    // signature that might have been used previously in the script.
-    program find_and_delete (program script_code, const instruction &sig);
-
-    // make the full program from the two scripts.
-    program full (const program unlock, const program lock, bool support_p2sh);
-
-    // pay to script hash only applies to scripts that were created before genesis.
-    bool is_P2SH (const program p);
-
-    bool inline valid (program p) {
-        return pre_verify (p, genesis_profile ()) == SCRIPT_ERR_OK;
-    };
-
-    bytes compile (program p);
-
-    bytes compile (instruction i);
-
-    program decompile (slice<const byte>);
-
-    // thrown if you try to decompile an invalid program.
-    struct invalid_program : exception {
-        ScriptError Error;
-        invalid_program (ScriptError err): Error {err} {
-            *this << "program is invalid: " << err;
-        }
-    };
-
-    size_t serialized_size (program p);
-
-    bool inline is_P2SH (slice<const byte> script) {
-        return script.size () == 23 && script[0] == OP_HASH160 &&
-            script[1] == 0x14 && script[22] == OP_EQUAL;
-    }
-
-    bool inline is_P2SH (const program p) {
-        return is_P2SH (compile (p));
-    }
-
-    size_t inline serialized_size (program p) {
-        if (empty (p)) return 0;
-        return serialized_size (first (p)) + serialized_size (rest (p));
-    }
-
-    bool inline is_push (program p) {
-        if (empty (p)) return true;
-        return is_push (first (p).Op) && is_push (rest (p));
-    }
     
     size_t inline serialized_size (const instruction &o) {
         return o.serialized_size ();
     }
 
-    bool inline provably_unspendable (slice<const byte> script, bool after_genesis) {
+    bool inline provably_unspendable (byte_slice script, bool after_genesis) {
         if (after_genesis) return script.size () >= 2 && script[0] == OP_FALSE && script[1] == OP_RETURN;
         return script.size () >= 1 && script[0] == OP_RETURN;
     }
@@ -189,22 +128,17 @@ namespace Gigamonkey::Bitcoin {
         return push_data (integer {i});
     }
     
-    instruction inline push_data (slice<const byte> b) {
+    instruction inline push_data (byte_slice b) {
         return instruction::push (b);
     }
 
     instruction inline push_data (const Z &z) {
-        return push_data (slice<const byte> (integer {z}));
+        return push_data (byte_slice (integer {z}));
     }
 
     template <data::endian::order Order, class T, std::size_t n_bits, boost::endian::align Align>
     instruction inline push_data (const boost::endian::endian_arithmetic<Order, T, n_bits, Align> &x) {
-        return push_data (slice<const byte> (x));
-    }
-
-    bool inline is_minimal_script (slice<const byte> b) {
-        for (const instruction &i : decompile (b)) if (!is_minimal_instruction (i)) return false;
-        return true;
+        return push_data (byte_slice (x));
     }
 }
 

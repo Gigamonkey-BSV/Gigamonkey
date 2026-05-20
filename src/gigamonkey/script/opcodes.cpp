@@ -9,7 +9,7 @@
 namespace Gigamonkey::Bitcoin {
     std::ostream &operator << (std::ostream &os, op opcode) {
         if (opcode >= 1 && opcode <= 75) {
-            os << static_cast<int> (opcode);
+            os << "OP_PUSHSIZE" << std::dec << static_cast<int> (opcode);
             return os;
         }
 

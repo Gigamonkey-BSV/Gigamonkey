@@ -14,8 +14,8 @@
 #include "config/bitcoin-config.h"
 #endif
 
-#include "compat.h"
-#include "utiltime.h"
+#include <sv/compat.h>
+#include <sv/utiltime.h>
 
 #include <atomic>
 #include <array>

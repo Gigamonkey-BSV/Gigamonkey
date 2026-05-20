@@ -7,7 +7,7 @@
 namespace Gigamonkey::Bitcoin {
     // The Bitcoin script pattern which takes a target in 
     // exponential format and converts it to expanded format. 
-    const program expand_target {
+    const segment expand_target {
         OP_SIZE, push_data (4), OP_EQUALVERIFY, push_data (3), OP_SPLIT,
         OP_DUP, OP_BIN2NUM, push_data (3), push_data (33), OP_WITHIN, OP_VERIFY, OP_TOALTSTACK,
         OP_DUP, OP_BIN2NUM, OP_0, OP_GREATERTHAN, OP_VERIFY, // significant must be positive
@@ -16,13 +16,13 @@ namespace Gigamonkey::Bitcoin {
     
     // check top stack element for positive zero (as opposed to negative zero) 
     // and replace it with true or false. 
-    const program check_positive_zero {OP_DUP, OP_NOTIF, OP_1, OP_RSHIFT,
+    const segment check_positive_zero {OP_DUP, OP_NOTIF, OP_1, OP_RSHIFT,
         OP_NOTIF, OP_TRUE, OP_ELSE, OP_FALSE, OP_ENDIF, OP_ELSE, OP_DROP, OP_FALSE, OP_ENDIF};
     
-    const program check_negative_zero {OP_DUP, OP_NOTIF, OP_1, OP_RSHIFT,
+    const segment check_negative_zero {OP_DUP, OP_NOTIF, OP_1, OP_RSHIFT,
         push_data (bytes {0x40}), OP_EQUAL, OP_IF, OP_TRUE, OP_ELSE, OP_FALSE, OP_ENDIF, OP_ELSE, OP_DROP, OP_FALSE, OP_ENDIF};
     
-    const program ensure_positive {push_data (bytes {0x00}), OP_CAT, OP_BIN2NUM};
+    const segment ensure_positive {push_data (bytes {0x00}), OP_CAT, OP_BIN2NUM};
 }   
 
 namespace Gigamonkey::Boost {
@@ -202,9 +202,9 @@ namespace Gigamonkey::Boost {
         return x;
     }
     
-    program input_script::program () const {
+    input_script::operator Bitcoin::segment () const {
         if (Type == Boost::invalid) return {};
-        Bitcoin::program p {
+        Bitcoin::segment p {
             push_data (byte_slice (Signature)),
             push_data (Pubkey),
             push_data (Nonce),
@@ -218,7 +218,7 @@ namespace Gigamonkey::Boost {
     
     script output_script::write () const {
         if (Type == Boost::invalid) return {};
-        program boost_output_script = program {push_data (bytes {0x62, 0x6F, 0x6F, 0x73, 0x74, 0x70, 0x6F, 0x77}), OP_DROP}; // "boostpow"
+        segment boost_output_script = segment {push_data (bytes {0x62, 0x6F, 0x6F, 0x73, 0x74, 0x70, 0x6F, 0x77}), OP_DROP}; // "boostpow"
         
         if (Type == Boost::contract) 
             boost_output_script = boost_output_script.append (push_data (MinerPubkeyHash));
@@ -398,10 +398,10 @@ namespace Gigamonkey::Boost {
     bytes puzzle::redeem (const work::solution &solution, list<Bitcoin::output> outs) const {
         
         // construct the incomplete inputs
-        list<incomplete::input> incomplete_inputs = data::for_each (
+        list<incomplete::input> incomplete_inputs = data::lift (
             [] (const Boost::candidate::prevout &prev) -> incomplete::input {
                 return incomplete::input {static_cast<Bitcoin::outpoint> (prev), Bitcoin::input::Finalized};
-            }, Prevouts);
+            }, values (Prevouts));
         
         bytes script = Script;
         Boost::output_script boost_script {script};
@@ -416,7 +416,7 @@ namespace Gigamonkey::Boost {
         
         uint32 index = 0;
         
-        return bytes (transaction {1, data::map_thread (
+        return bytes (transaction {1, data::lift (
             [&sk, &script, &incomplete, &pk, &solution, boost_type, category_mask, &index](
                 const incomplete::input &i, 
                 const prevout &prev) -> input {

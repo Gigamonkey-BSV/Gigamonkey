@@ -53,34 +53,34 @@ namespace Gigamonkey::extended {
         explicit operator bytes () const;
 
         // evaluate script without signature operations.
-        Bitcoin::result evaluate (Bitcoin::flag flags = Bitcoin::genesis_profile ());
+        Error evaluate (Bitcoin::flag);
 
         // Evaluate script with real signature operations.
-        Bitcoin::result evaluate (
+        Error evaluate (
             Bitcoin::incomplete::transaction &,
             uint32 input_index,
-            Bitcoin::flag flags = Bitcoin::genesis_profile ()) const;
+            Bitcoin::flag) const;
 
     };
 
     struct transaction {
 
-        int32_little Version;
+        Bitcoin::integer Version;
         list<input> Inputs;
         list<Bitcoin::output> Outputs;
         uint32_little LockTime;
 
         transaction (): Version {0}, Inputs {}, Outputs {}, LockTime {} {}
-        transaction (int32_little v, list<input> i, list<Bitcoin::output> o, uint32_little l = 0) :
-            Version {v}, Inputs {i}, Outputs {o}, LockTime {l} {}
+        transaction (const Bitcoin::integer &v, list<input> i, list<Bitcoin::output> o, uint32_little l = 0) :
+            Version {extend (v, 4)}, Inputs {i}, Outputs {o}, LockTime {l} {}
 
         transaction (list<input> i, list<Bitcoin::output> o, uint32_little l = 0) :
-            transaction {int32_little {Bitcoin::transaction::LatestVersion}, i, o, l} {}
+            transaction {Bitcoin::transaction::LatestVersion, i, o, l} {}
 
         // check all scripts and check that the fee is non-negative.
         // NOTE this function makes no sense because we don't know how old the old outputs are.
         bool valid () const {
-            return Inputs.size () > 0 && Outputs.size () > 0 && (
+            return Version.size () == 4 && Inputs.size () > 0 && Outputs.size () > 0 && (
                 data::valid (Inputs) ||
                 (Inputs.size () == 1 && Inputs[0].Reference == Bitcoin::outpoint {} && Inputs[0].Prevout.Script == bytes {}) // coinbase
             ) && data::valid (Outputs) && sent () <= spent ();
@@ -88,7 +88,7 @@ namespace Gigamonkey::extended {
 
         explicit operator Bitcoin::transaction () const;
 
-        Bitcoin::TXID id () const;
+        Bitcoin::TxID id () const;
 
         // the extended tx has a serialized form for broadcasting.
         uint64 serialized_size () const;
@@ -150,11 +150,11 @@ namespace Gigamonkey::extended {
         return static_cast<const Bitcoin::input &> (*this).serialized_size () + Prevout.serialized_size ();
     }
 
-    Bitcoin::result inline input::evaluate (Bitcoin::flag flags) {
+    Error inline input::evaluate (Bitcoin::flag flags) {
         return Bitcoin::evaluate (this->Script, Prevout.Script, flags);
     }
 
-    Bitcoin::result inline input::evaluate (Bitcoin::incomplete::transaction &tx, uint32 input_index, Bitcoin::flag flags) const {
+    Error inline input::evaluate (Bitcoin::incomplete::transaction &tx, uint32 input_index, Bitcoin::flag flags) const {
         return Bitcoin::evaluate (this->Script, Prevout.Script,
             Bitcoin::redemption_document {tx, input_index, Prevout.Value}, flags);
     }
@@ -168,12 +168,12 @@ namespace Gigamonkey::extended {
     }
 
     inline transaction::operator Bitcoin::transaction () const {
-        return Bitcoin::transaction {Version, for_each ([] (const input &in) -> Bitcoin::input {
+        return Bitcoin::transaction {Version, lift ([] (const input &in) -> Bitcoin::input {
             return static_cast<Bitcoin::input> (in);
         }, Inputs), Outputs, LockTime};
     }
 
-    Bitcoin::TXID inline transaction::id () const {
+    Bitcoin::TxID inline transaction::id () const {
         return Bitcoin::transaction (*this).id ();
     }
 

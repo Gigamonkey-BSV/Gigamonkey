@@ -17,10 +17,10 @@ namespace Gigamonkey::work {
     };
     
     bool check (list<test_case> test_cases) {
-        list<uint256> input = data::for_each ([] (test_case t) -> uint256 {
+        list<uint256> input = data::lift ([] (test_case t) -> uint256 {
             return t.Input;
         }, test_cases) ;
-        list<uint256> expected = data::for_each ([] (test_case t) -> uint256 {
+        list<uint256> expected = data::lift ([] (test_case t) -> uint256 {
             return t.Expected;
         }, test_cases);
         auto expect_equal = [] (uint256 a, uint256 b) -> bool {
@@ -31,7 +31,7 @@ namespace Gigamonkey::work {
     }
 
     // can result in stack smashing
-    TEST (ExpandCompactTest, TestExpandCompact) {
+    TEST (ExpandCompact, ExpandCompact) {
         
         // Negative tests
         auto negative_test = compact {32, 0x800000};

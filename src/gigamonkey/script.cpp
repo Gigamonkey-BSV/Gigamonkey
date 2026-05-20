@@ -5,50 +5,12 @@
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
 #include <gigamonkey/script.hpp>
+#include <gigamonkey/script/instruction.hpp>
 #include <gigamonkey/script/bitcoin_core.hpp>
 #include <gigamonkey/script/counter.hpp>
 #include <gigamonkey/script/stack.hpp>
 
 namespace Gigamonkey::Bitcoin {
-    result verify_signature (slice<const byte> sig, slice<const byte> pub, const sighash::document &doc, flag P) {
-
-        if (verify_compressed_pubkey (P))
-            if (!secp256k1::pubkey::compressed (pub)) return SCRIPT_ERR_NONCOMPRESSED_PUBKEY;
-
-        if (verify_signature_strict (P))
-            if (!secp256k1::pubkey::valid (pub)) return SCRIPT_ERR_PUBKEYTYPE;
-
-        auto d = signature::directive (sig);
-        auto raw = signature::raw (sig);
-
-        if (!sighash::valid (d)) return SCRIPT_ERR_SIG_HASHTYPE;
-
-        //std::cout << "Signature; fork id enabled ? " << std::boolalpha << fork_ID_enabled (P) << "; required ? " <<  std::endl;
-
-        if (!fork_ID_enabled (P))
-            if (sighash::has_fork_id (d)) return SCRIPT_ERR_ILLEGAL_FORKID;
-
-        if (fork_ID_required (P))
-            if (!sighash::has_fork_id (d)) return SCRIPT_ERR_MUST_USE_FORKID;
-
-        if (verify_signature_DER (P) || verify_signature_low_S (P) || verify_signature_strict (P))
-            if (!signature::DER (sig)) return SCRIPT_ERR_SIG_DER;
-
-        if (verify_signature_low_S (P))
-            if (!secp256k1::signature::normalized (raw)) return SCRIPT_ERR_SIG_HIGH_S;
-
-        if (signature::verify (sig, pub, doc)) return true;
-
-        if (verify_null_fail (P)) if (sig.size () != 0) return SCRIPT_ERR_SIG_NULLFAIL;
-
-        return false;
-    }
-
-    program remove_after_last_code_separator (slice<const byte> b) {
-        program_counter counter {b};
-        while (counter.Next.size () > 0) counter = counter.next ();
-        return counter.to_last_code_separator ();
-    }
     
     bool redemption_document::check_locktime (const uint32_little &nLockTime) const {
         // There are two kinds of nLockTime: lock-by-blockheight and
@@ -88,7 +50,7 @@ namespace Gigamonkey::Bitcoin {
 
         // Fail if the transaction's version number is not set high enough to
         // trigger BIP 68 rules.
-        if (static_cast<uint32_t> (Transaction.Version) < 2) return false;
+        if (static_cast<uint32> (static_cast<int32> (Transaction.Version)) < 2) return false;
 
         // Sequence numbers with their most significant bit set are not consensus
         // constrained. Testing that the transaction's sequence number do not have

@@ -51,9 +51,6 @@ namespace Gigamonkey {
             // the expected size of the input script.
             uint64 ExpectedScriptSize;
 
-            // The signature may sometimes sign part of the input script,
-            // if OP_CODESEPARATOR is used and FORKID is not used. This allows
-            // one signature to sign previous signatures. This will contain
             // a part of the input script that has been previously generated.
             bytes InputScriptSoFar;
 
@@ -63,15 +60,29 @@ namespace Gigamonkey {
 
             bytes script_so_far () const;
 
-            extended::input complete (slice<const byte> script) const {
+            extended::input complete (byte_slice script) const {
                 return extended::input {Prevout, static_cast<const Bitcoin::incomplete::input &> (*this).complete (script)};
+            }
+
+            Bitcoin::satoshi value () const {
+                return Prevout.Value;
+            }
+
+            Bitcoin::script script () const {
+                return Prevout.Script;
             }
         };
 
-        int32_little Version;
+        Bitcoin::integer Version;
         list<input> Inputs;
         list<Bitcoin::output> Outputs;
         uint32_little LockTime;
+
+        transaction_design (
+            const Bitcoin::integer &version,
+            list<input> inputs,
+            list<Bitcoin::output> outputs,
+            uint32_little lock): Version {extend (version, 4)}, Inputs {inputs}, Outputs {outputs}, LockTime {lock} {}
 
         // compare this to a satoshis_per_byte value to see if the fee is good enough.
         uint64 expected_size () const;
@@ -84,7 +95,6 @@ namespace Gigamonkey {
         explicit operator Bitcoin::incomplete::transaction () const;
 
         extended::transaction complete (list<Bitcoin::script> redeem) const;
-
     };
 
     inline transaction_design::input::input (Bitcoin::prevout p, uint64 expected_script_size, uint32_little q, bytes z):
@@ -96,7 +106,7 @@ namespace Gigamonkey {
     }
 
     bytes inline transaction_design::input::script_so_far () const {
-        return write_bytes (Prevout.Script.size () + InputScriptSoFar.size () + 1,
+        return data::write<bytes> (Prevout.Script.size () + InputScriptSoFar.size () + 1,
             InputScriptSoFar, byte (Bitcoin::OP_CODESEPARATOR), Prevout.Script);
     }
 
@@ -132,14 +142,16 @@ namespace Gigamonkey {
 
     // convert to an incomplete tx for signing.
     inline transaction_design::operator Bitcoin::incomplete::transaction () const {
-        return Bitcoin::incomplete::transaction {Version, data::for_each ([] (const input &in) -> Bitcoin::incomplete::input {
+        return Bitcoin::incomplete::transaction {Version, data::lift ([] (const input &in) -> Bitcoin::incomplete::input {
             return in;
         }, Inputs), Outputs, LockTime};
     }
 
     extended::transaction inline transaction_design::complete (list<Bitcoin::script> scripts) const {
-        if (scripts.size () != Inputs.size ()) throw std::logic_error {"need one script for each input."};
-        return extended::transaction {Version, data::map_thread ([] (const input &in, const bytes &script) -> extended::input {
+        if (scripts.size () != Inputs.size ())
+            throw std::logic_error {"need one script for each input."};
+
+        return extended::transaction {Version, data::lift ([] (const input &in, const bytes &script) -> extended::input {
             return in.complete (script);
         }, Inputs, scripts), Outputs, LockTime};
     }

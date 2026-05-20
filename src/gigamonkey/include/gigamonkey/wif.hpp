@@ -58,6 +58,9 @@ namespace Gigamonkey::Bitcoin {
         operator string () const;
     };
 
+    // WIF (Wallet Import Format) is a string in base 58 that
+    // represents a private key from which an address can be
+    // derived.
     struct WIF : string {
 
         // The serialized form of the key has a different prefix
@@ -91,7 +94,7 @@ namespace Gigamonkey::Bitcoin {
 
         Bitcoin::secret decode () const;
 
-        WIF (): string {} {}
+        using string::string;
     };
     
     bool inline operator == (const secret &a, const secret &b) {
@@ -141,7 +144,7 @@ namespace Gigamonkey::Bitcoin {
     }
     
     signature inline secret::sign (const sighash::document &document, sighash::directive d) const {
-        return signature::sign (Secret, d, document);
+        return Bitcoin::sign (Secret, d, document);
     }
         
     bytes inline secret::encrypt (const bytes &message) const {

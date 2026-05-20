@@ -11,12 +11,12 @@
 #include <boost/endian/conversion.hpp>
 
 #include <data/stream.hpp>
-#include <data/tools.hpp>
+#include <data/dispatch.hpp>
+#include <data/string.hpp>
 #include <data/numbers.hpp>
 #include <data/math.hpp>
 #include <data/fold.hpp>
-#include <data/for_each.hpp>
-#include <data/string.hpp>
+#include <data/lift.hpp>
 #include <data/encoding/hex.hpp>
 #include <data/math/nonzero.hpp>
 
@@ -43,6 +43,7 @@ namespace Gigamonkey {
     // Fixed-size unsigned, little endian
     template <size_t size> using uint = data::uint_little<size>;
     template <size_t size> using uint_little = data::uint_little<size>;
+    template <size_t size> using uint_big = data::uint_big<size>;
     using uint160 = uint<20>;
     using uint256 = uint<32>;
     using uint512 = uint<64>;
@@ -116,17 +117,17 @@ namespace Gigamonkey {
     }
     
     template <typename X, typename ... P>
-    writer inline &write (writer &b, X x, P... p) {
-        return write (write (b, x), p...);
+    writer inline &write (writer &b, X &&x, P &&...p) {
+        return write (write (b, std::forward<X> (x)), std::forward<P> (p)...);
     }
 
     template <typename word, typename it> using it_wtr = data::iterator_writer<word, it>;
     template <typename it> using it_rdr = data::iterator_reader<it>;
 
-    template <typename ... P> inline bytes write (size_t size, P... p) {
+    template <typename ... P> inline bytes write (size_t size, P &&...p) {
         bytes x (size);
         it_wtr w {x.begin (), x.end ()};
-        write (w, p...);
+        write (w, std::forward<P> (p)...);
         return x;
     }
     

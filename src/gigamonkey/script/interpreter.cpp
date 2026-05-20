@@ -4,119 +4,163 @@
 #include <gigamonkey/script/interpreter.hpp>
 #include <gigamonkey/script/bitcoin_core.hpp>
 #include <sv/policy/policy.h>
-#include <data/io/wait_for_enter.hpp>
 
 namespace Gigamonkey::Bitcoin {
 
-    void setup_interpreter (interpreter &I, const script &ux, const script &lx, const script_config &conf) {
+    std::expected<program, Error> read_program (const program scripts, const script_config &conf) {
+        if (size (scripts) == 0) return scripts;
+
+        segment unlock = first (scripts);
+        if (conf.verify_unlock_push_only () && !is_push (unlock)) return std::unexpected (Error::SIG_PUSHONLY);
+
+        if (size (scripts) == 1) return scripts;
+
         program p;
+        if (size (scripts) == 2) {
+            segment lock = scripts[1];
 
-        try {
-            program unlock = decompile (ux);
-            program lock = decompile (lx);
+            if (conf.verify_P2SH () && is_P2SH (lock)) {
+                if (empty (unlock)) return std::unexpected (Error::INVALID_STACK_OPERATION);
+                else if (!is_push (unlock)) return std::unexpected (Error::SIG_PUSHONLY);
+            }
 
+            // the full program is the two scripts merged
+            // together, unless this is P2SH, which is
+            // a special case no longer supported.
             p = full (unlock, lock, conf.verify_P2SH ());
+        } else p = scripts;
 
-            if (conf.verify_unlock_push_only () && !is_push (unlock)) I.Machine.Result = SCRIPT_ERR_SIG_PUSHONLY;
-            else if (conf.verify_P2SH () && is_P2SH (lock)) {
-                if (empty (unlock)) I.Machine.Result =  SCRIPT_ERR_INVALID_STACK_OPERATION;
-                else if (!is_push (unlock)) I.Machine.Result = SCRIPT_ERR_SIG_PUSHONLY;
-            } else I.Machine.Result = pre_verify (p, conf.Flags);
+        ::Error v = pre_verify (p, conf.Flags);
+
+        if (bool (v)) return std::unexpected (v);
+        return p;
+
+    }
+
+    void setup_interpreter (interpreter &I, const list<script> scripts, const script_config &conf) {
+
+        // this try block should not be necessary. We should
+        // remove all error throwing that could occurr within
+        // this block.
+        try {
+            auto e = read_program (lift ([&conf] (const auto &script) {
+                segment x = decompile (script);
+                for (const instruction &i : x) if (auto err = i.verify (conf); err != Error::OK)
+                    throw invalid_program {err};
+
+                return x;
+            }, scripts), conf);
+
+            if (e) I.Program = compile (*e);
+            else I.Error = e.error ();
 
         } catch (const invalid_program &x) {
-            I.Machine.Result.Error = x.Error;
+            I.Error = x.Error;
         }
-
-        if (I.Machine.Result.Error != SCRIPT_ERR_OK) I.Machine.Halt = true;
-
-        I.Script = compile (p);
-        I.Counter = program_counter {I.Script};
     }
 
-    interpreter::interpreter (const script &unlock, const script &lock, const redemption_document &doc, const script_config &conf) :
+    interpreter::interpreter (const list<script> scripts, const redemption_document &doc, const script_config &conf) :
         Machine {{doc}, conf} {
-        setup_interpreter (*this, unlock, lock, conf);
+        setup_interpreter (*this, scripts, conf);
     }
 
-    interpreter::interpreter (const script &unlock, const script &lock, const script_config &conf) :
+    interpreter::interpreter (const list<script> scripts, const script_config &conf) :
         Machine {{}, conf} {
-        setup_interpreter (*this, unlock, lock, conf);
-    }
-
-    list<bool> make_list (const std::vector<bool> &v) {
-        list<bool> l;
-        for (const bool &b : v) l << b;
-        return l;
+        setup_interpreter (*this, scripts, conf);
     }
 
     std::ostream &operator << (std::ostream &o, const interpreter &i) {
         return o << "interpreter {\n\tProgram: " << i.unread ()
-            << ",\n\tHalt: " << (i.Machine.Halt ? "true" : "false")
-            << ", Result: " << i.Machine.Result << ", Flags: " << i.Machine.Config.Flags
-            << ",\n\t" << *i.Machine.Stack << ", Exec: " << make_list (i.Machine.Exec)
-            << ", Else: " << make_list (i.Machine.Else) << "}";
+            << ", Error: " << i.Error << ", Machine: " << i.Machine << "}";
     }
 
-    result step_through (interpreter &m) {
-        while (true) {
-            std::cout << m << std::endl;
-            if (m.Machine.Halt) break;
-            data::wait_for_enter ();
-            m.step ();
-        }
-
-        std::cout << "Result " << m.Machine.Result << std::endl;
-        return m.Machine.Result;
-    }
-
-    maybe<result> machine_step (machine &x, program_counter &p) {
+    Error machine_step (machine &x, program_counter &p) {
         auto r = x.step (p);
-        if (!bool (r)) ++p;
-        return r;
+        if (bool (r)) return r;
+
+        if (p.Next[0] == OP_RETURN) {
+            // if the instruction was an OP_RETURN, we have to jump
+            // instead of increment.
+            p.jump ();
+
+            // clear the if/else branch stack
+            x.Conditional = {x.Config.enable_genesis_opcodes ()};
+
+            // if this is not the end of the program, we
+            // have to check the top of the stack for true.
+            // if not, we err. Otherwise we pop the top.
+            if (p.valid ()) {
+                if (x.Stacks->size_down () < 1)
+                    return Error::INVALID_STACK_OPERATION;
+
+                if (Bitcoin::is_zero (x.Stacks->top ()))
+                    return Error::OP_RETURN;
+
+                x.Stacks->pop_down ();
+            }
+        }
+
+        // increment op counter.
+        else ++p;
+
+        // if we crossed a jump boundary,
+        int previous_jump_boundary = 0;
+        for (int jump : p.Jump) {
+            if (jump > p.Index) break;
+            if (jump == p.Index)
+                if (x.LastCodeSeparator < previous_jump_boundary)
+                    x.LastCodeSeparator = p.Index - 1;
+
+            previous_jump_boundary = jump;
+        }
+
+        return Error::OK;
     }
 
-    result machine_run (machine &x, program_counter &p) {
+    Error machine_run (machine &x, program_counter &p) {
         while (true) {
-            auto r = x.step (p);
-            if (bool (r)) return *r;
-            else ++p;
+
+            // if there are no more instructions, we check whether
+            // we are expecting an OP_ENDIF and it is an error if we
+            // are. If not, then we return the result from the top
+            // of the stack.
+            if (!p.valid ()) {
+
+                if (x.Conditional)
+                    return Error::UNBALANCED_CONDITIONAL;
+
+                if (x.Config.verify_clean_stack () && (x.Stacks->size_down () != 1))
+                    return Error::CLEANSTACK;
+
+                return x.top ();
+            }
+
+            auto r = machine_step (x, p);
+
+            // if an error was generated, return it.
+            if (bool (r)) return r;
         }
     }
 
-    template <typename R>
-    R catch_all_errors (R (*fn) (machine &, program_counter &), machine &x, program_counter &p) {
+    Error catch_all_errors (Error (*fn) (machine &, program_counter &), machine &x, program_counter &p) {
         try {
             return fn (x, p);
-        } catch (script_exception &err) {
+        } catch (const invalid_program &err) {
             return err.Error;
-        } /*catch (scriptnum_overflow_error &err) {
-            return SCRIPT_ERR_SCRIPTNUM_OVERFLOW;
-        } catch (scriptnum_minencode_error &err) {
-            return SCRIPT_ERR_SCRIPTNUM_MINENCODE;
-        } catch (const bsv::big_int_error &) {
-            return SCRIPT_ERR_BIG_INT;
-        } */catch (std::out_of_range &err) {
-            return SCRIPT_ERR_INVALID_STACK_OPERATION;
+        } catch (const std::out_of_range &err) {
+            return Error::INVALID_STACK_OPERATION;
         } catch (...) {
-            return SCRIPT_ERR_UNKNOWN_ERROR;
+            return Error::UNKNOWN_ERROR;
         }
     }
 
     void interpreter::step () {
-        if (Machine.Halt) return;
-        auto r = catch_all_errors<maybe<result>> (machine_step, Machine, Counter);
-        if (bool (r)) {
-            Machine.Halt = true;
-            Machine.Result = *r;
-        }
+        if (bool (Error)) return;
+        Error = catch_all_errors (machine_step, Machine, Program);
     }
 
-    result interpreter::run () {
-        if (!Machine.Halt) {
-            Machine.Result = catch_all_errors<result> (machine_run, Machine, Counter);
-            Machine.Halt = true;
-        }
-
-        return Machine.Result;
+    Error interpreter::run () {
+        if (bool (Error)) return Error;
+        return catch_all_errors (machine_run, Machine, Program);
     }
 }

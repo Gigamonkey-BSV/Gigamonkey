@@ -26,7 +26,7 @@ namespace Gigamonkey::MAPI {
         co_return res;
     }
     
-    HTTP::request client::transaction_status_HTTP_request (const Bitcoin::TXID &request) const {
+    HTTP::request client::transaction_status_HTTP_request (const Bitcoin::TxID &request) const {
         if (!request.valid ()) throw std::invalid_argument {"invalid txid"};
         std::stringstream ss;
         ss << "/mapi/tx/" << request;
@@ -36,14 +36,14 @@ namespace Gigamonkey::MAPI {
     namespace {
 
         data::ASCII to_url_params (const submit_transaction_parameters &ts) {
-            list<data::entry<UTF8, UTF8>> params;
+            dispatch<UTF8, UTF8> params;
 
-            if (ts.CallbackURL) params = params << data::entry<UTF8, UTF8> {"callbackUrl", *ts.CallbackURL};
-            if (ts.CallbackToken) params = params << data::entry<UTF8, UTF8> {"callbackToken", *ts.CallbackToken};
-            if (ts.MerkleProof) params = params << data::entry<UTF8, UTF8> {"merkleProof", std::to_string (*ts.MerkleProof)};
-            if (ts.MerkleFormat) params = params << data::entry<UTF8, UTF8> {"merkleFormat", *ts.MerkleFormat};
-            if (ts.DSCheck) params = params << data::entry<UTF8, UTF8> {"dsCheck", std::to_string (*ts.DSCheck)};
-            if (ts.CallbackEncryption) params = params << data::entry<UTF8, UTF8> {"callbackEncryption", *ts.CallbackEncryption};
+            if (ts.CallbackURL) params <<= {"callbackUrl", *ts.CallbackURL};
+            if (ts.CallbackToken) params <<= {"callbackToken", *ts.CallbackToken};
+            if (ts.MerkleProof) params <<= {"merkleProof", std::to_string (*ts.MerkleProof)};
+            if (ts.MerkleFormat) params <<= {"merkleFormat", *ts.MerkleFormat};
+            if (ts.DSCheck) params <<= {"dsCheck", std::to_string (*ts.DSCheck)};
+            if (ts.CallbackEncryption) params <<= {"callbackEncryption", *ts.CallbackEncryption};
 
             return HTTP::REST::encode_form_data (params);
         }
@@ -135,8 +135,8 @@ namespace Gigamonkey::MAPI {
                 x.ConflictedWith = cw;
             }
 
-            x.TXID = read_reverse_hex<32> (std::string (j["txid"]));
-            if (!x.TXID.valid ()) return {};
+            x.TxID = read_reverse_hex<32> (std::string (j["txid"]));
+            if (!x.TxID.valid ()) return {};
 
             x.ResultDescription = j["resultDescription"];
 
@@ -179,7 +179,7 @@ namespace Gigamonkey::MAPI {
             if (!tst.valid ()) return {};
 
             JSON j {
-                {"txid", write_reverse_hex (tst.TXID)},
+                {"txid", write_reverse_hex (tst.TxID)},
                 {"returnResult", to_JSON (tst.ReturnResult)},
                 {"resultDescription", tst.ResultDescription}};
 
@@ -193,22 +193,20 @@ namespace Gigamonkey::MAPI {
     HTTP::request client::submit_transaction_HTTP_request (const submit_transaction_request &request) const {
         if (!request.valid ()) throw std::invalid_argument {"invalid transaction submission request"};
 
-        HTTP::request::make r = HTTP::request::make {}.method (HTTP::method::post).path (REST.Path + "/mapi/tx");
+        HTTP::request::make r = REST (HTTP::method::post, "/mapi/tx");
 
         if (request.ContentType == application_JSON)
-            r = r.body (JSON (static_cast<const transaction_submission> (request)));
-        else r = r.query (to_url_params (request.Parameters)).body (request.Transaction);
-
-        return REST (r);
+            return r.body (JSON (static_cast<const transaction_submission> (request)));
+        else return r.query (to_url_params (request.Parameters)).body (request.Transaction);
 
     }
     
     HTTP::request client::submit_transactions_HTTP_request (const submit_transactions_request &request) const {
         if (!request.valid ()) throw std::invalid_argument {"invalid transactions submission request"};
 
-        return REST (HTTP::request::make {}.method (HTTP::method::post).path (REST.Path + "/mapi/txs").
+        return REST (HTTP::method::post, "/mapi/txs").
             query (to_url_params (request.DefaultParameters)).
-            body (to_JSON (request.Submissions)));
+            body (to_JSON (request.Submissions));
 
     }
     
@@ -227,7 +225,7 @@ namespace Gigamonkey::MAPI {
     
     conflicted_with::operator JSON () const {
         return JSON {
-            {"txid", to_JSON (TXID)},
+            {"txid", to_JSON (TxID)},
             {"size", Size}, 
             {"hex", encoding::hex::write (Transaction)}
         };
@@ -243,7 +241,7 @@ namespace Gigamonkey::MAPI {
         auto tx = encoding::hex::read (std::string (j["hex"]));
         if (!bool (tx)) return;
         
-        TXID = read_reverse_hex<32> (std::string (j["txid"]));
+        TxID = read_reverse_hex<32> (std::string (j["txid"]));
         Size = uint64 (j["size"]);
         Transaction = *tx;
         
@@ -386,7 +384,7 @@ namespace Gigamonkey::MAPI {
     
     status::operator JSON () const {
         JSON j {
-            {"txid", to_JSON (TXID) },
+            {"txid", to_JSON (TxID) },
             {"returnResult", to_JSON (ReturnResult) },
             {"resultDescription", ResultDescription }
         };

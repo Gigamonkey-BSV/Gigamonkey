@@ -9,35 +9,35 @@ namespace Gigamonkey::Bitcoin {
     
     TEST (Number, Push) {
         
-        EXPECT_EQ (compile (push_data (0)), bytes {OP_0});
-        EXPECT_EQ (compile (push_data (integer (0))), bytes {OP_0});
-        EXPECT_EQ (compile (push_data (1)), bytes {OP_1});
-        EXPECT_EQ (compile (push_data (integer (1))), bytes {OP_1});
-        EXPECT_EQ (compile (push_data (-1)), bytes {OP_1NEGATE});
-        EXPECT_EQ (compile (push_data (integer (-1))), bytes {OP_1NEGATE});
-        EXPECT_EQ (compile (push_data (16)), bytes {OP_16});
-        EXPECT_EQ (compile (push_data (integer (16))), bytes {OP_16});
+        EXPECT_EQ (compile ({push_data (0)}), bytes {OP_0});
+        EXPECT_EQ (compile ({push_data (integer (0))}), bytes {OP_0});
+        EXPECT_EQ (compile ({push_data (1)}), bytes {OP_1});
+        EXPECT_EQ (compile ({push_data (integer (1))}), bytes {OP_1});
+        EXPECT_EQ (compile ({push_data (-1)}), bytes {OP_1NEGATE});
+        EXPECT_EQ (compile ({push_data (integer (-1))}), bytes {OP_1NEGATE});
+        EXPECT_EQ (compile ({push_data (16)}), bytes {OP_16});
+        EXPECT_EQ (compile ({push_data (integer (16))}), bytes {OP_16});
 
         auto test_program_1 = bytes {OP_PUSHSIZE1, 0x82};
         auto test_program_2 = bytes {OP_PUSHSIZE1, 0x11};
-        EXPECT_EQ (compile (push_data (-2)), test_program_1);
-        EXPECT_EQ (compile (push_data (integer (-2))), test_program_1);
-        EXPECT_EQ (compile (push_data (17)), test_program_2);
-        EXPECT_EQ (compile (push_data (integer (17))), test_program_2);
+        EXPECT_EQ (compile ({push_data (-2)}), test_program_1);
+        EXPECT_EQ (compile ({push_data (integer (-2))}), test_program_1);
+        EXPECT_EQ (compile ({push_data (17)}), test_program_2);
+        EXPECT_EQ (compile ({push_data (integer (17))}), test_program_2);
         
         auto test_program_3 = bytes {OP_PUSHSIZE1, 0xff};
         auto test_program_4 = bytes {OP_PUSHSIZE1, 0x7f};
-        EXPECT_EQ (compile (push_data (-127)), test_program_3);
-        EXPECT_EQ (compile (push_data (integer (-127))), test_program_3);
-        EXPECT_EQ (compile (push_data (127)), test_program_4);
-        EXPECT_EQ (compile (push_data (integer (127))), test_program_4);
+        EXPECT_EQ (compile ({push_data (-127)}), test_program_3);
+        EXPECT_EQ (compile ({push_data (integer (-127))}), test_program_3);
+        EXPECT_EQ (compile ({push_data (127)}), test_program_4);
+        EXPECT_EQ (compile ({push_data (integer (127))}), test_program_4);
         
         auto test_program_5 = bytes {OP_PUSHSIZE2, 0xff, 0x80};
         auto test_program_6 = bytes {OP_PUSHSIZE2, 0xff, 0x00};
-        EXPECT_EQ (compile (push_data (-255)), test_program_5);
-        EXPECT_EQ (compile (push_data (integer (-255))), test_program_5);
-        EXPECT_EQ (compile (push_data (255)), test_program_6);
-        EXPECT_EQ (compile (push_data (integer (255))), test_program_6);
+        EXPECT_EQ (compile ({push_data (-255)}), test_program_5);
+        EXPECT_EQ (compile ({push_data (integer (-255))}), test_program_5);
+        EXPECT_EQ (compile ({push_data (255)}), test_program_6);
+        EXPECT_EQ (compile ({push_data (integer (255))}), test_program_6);
         
     }
 
@@ -124,7 +124,34 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_FALSE (is_minimal (integer ("0x807f")));
         EXPECT_FALSE (is_minimal (integer ("0x00007f")));
         EXPECT_FALSE (is_minimal (integer ("0x80007f")));
+
+        EXPECT_TRUE (is_minimal_number (integer ("0")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x00")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x80")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x0000")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x8000")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x000000")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x800000")));
+
+        EXPECT_TRUE (is_minimal_number (integer ("0x01")));
+        EXPECT_TRUE (is_minimal_number (integer ("0x81")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x0001")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x8001")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x000001")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x800001")));
+
+        EXPECT_TRUE (is_minimal_number (integer ("0x7f")));
+        EXPECT_TRUE (is_minimal_number (integer ("0xff")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x007f")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x807f")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x00007f")));
+        EXPECT_FALSE (is_minimal_number (integer ("0x80007f")));
         
+    }
+
+    TEST (Number, MinimalSize) {
+
+        EXPECT_EQ (minimal_size (integer ("0x")), 0);
     }
     
     TEST (Number, Trim) {
@@ -149,6 +176,8 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_EQ (slice<const byte> (trim (integer ("0x807f"))), *encoding::hex::read  ("ff"));
         EXPECT_EQ (slice<const byte> (trim (integer ("0x00007f"))), *encoding::hex::read  ("7f"));
         EXPECT_EQ (slice<const byte> (trim (integer ("0x80007f"))), *encoding::hex::read  ("ff"));
+
+        // TODO trim_number
         
     }
 
@@ -172,6 +201,25 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_FALSE (is_zero (integer ("0x8080")));
         EXPECT_FALSE (is_zero (integer ("0x000080")));
         EXPECT_FALSE (is_zero (integer ("0x800080")));
+
+        EXPECT_TRUE (!nonzero (integer ("0x00")));
+        EXPECT_TRUE (!nonzero (integer ("0x80")));
+        EXPECT_TRUE (!nonzero (integer ("0x0000")));
+        EXPECT_TRUE (!nonzero (integer ("0x8000")));
+        EXPECT_TRUE (!nonzero (integer ("0x000000")));
+        EXPECT_TRUE (!nonzero (integer ("0x800000")));
+
+        EXPECT_FALSE (!nonzero (integer ("0x01")));
+        EXPECT_FALSE (!nonzero (integer ("0x81")));
+        EXPECT_FALSE (!nonzero (integer ("0x0001")));
+        EXPECT_FALSE (!nonzero (integer ("0x8001")));
+        EXPECT_FALSE (!nonzero (integer ("0x000001")));
+        EXPECT_FALSE (!nonzero (integer ("0x800001")));
+
+        EXPECT_FALSE (!nonzero (integer ("0x0080")));
+        EXPECT_FALSE (!nonzero (integer ("0x8080")));
+        EXPECT_FALSE (!nonzero (integer ("0x000080")));
+        EXPECT_FALSE (!nonzero (integer ("0x800080")));
 
         EXPECT_TRUE (is_positive_zero (integer ("0x00")));
         EXPECT_FALSE (is_positive_zero (integer ("0x80")));
@@ -238,6 +286,8 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_TRUE (is_negative (integer ("0x8080")));
         EXPECT_FALSE (is_negative (integer ("0x000080")));
         EXPECT_TRUE (is_negative (integer ("0x800080")));
+
+        // TODO test sign
     
     }
 
@@ -406,7 +456,81 @@ namespace Gigamonkey::Bitcoin {
     }
 
     TEST (Number, IncrementAndDecrement) {
-        // TODO
+
+        EXPECT_EQ ((increment (integer ("0"))), integer ("1"));
+        EXPECT_EQ ((increment (integer ("1"))), integer ("2"));
+        EXPECT_EQ ((increment (integer ("-1"))), integer ("0"));
+
+        EXPECT_EQ ((decrement (integer ("0"))), integer ("-1"));
+        EXPECT_EQ ((decrement (integer ("1"))), integer ("0"));
+        EXPECT_EQ ((decrement (integer ("-1"))), integer ("-2"));
+
+        EXPECT_EQ ((increment (integer ("-2"))), integer ("-1"));
+        EXPECT_EQ ((increment (integer ("-1"))), integer ("0"));
+        EXPECT_EQ ((increment (integer ("0"))), integer ("1"));
+
+        EXPECT_EQ ((decrement (integer ("2"))), integer ("1"));
+        EXPECT_EQ ((decrement (integer ("1"))), integer ("0"));
+        EXPECT_EQ ((decrement (integer ("0"))), integer ("-1"));
+
+        // increment past int32 max
+        EXPECT_EQ ((increment (integer("2147483647"))), integer("2147483648"));
+
+        // decrement at int32 max
+        EXPECT_EQ ((decrement (integer("2147483647"))), integer("2147483646"));
+
+        // decrement past int32 min
+        EXPECT_EQ ((decrement (integer("-2147483648"))), integer ("-2147483649"));
+
+        // increment at int32 min
+        EXPECT_EQ ((increment (integer("-2147483648"))), integer ("-2147483647"));
+
+        // increment past uint32 max
+        EXPECT_EQ ((increment (integer("4294967295"))), integer ("4294967296"));
+
+        // decrement at uint32 max
+        EXPECT_EQ ((decrement (integer("4294967295"))), integer ("4294967294"));
+
+        // around zero boundary
+        EXPECT_EQ ((decrement (integer("0"))), integer ("-1"));
+        EXPECT_EQ ((increment (integer("0"))), integer ("1"));
+
+        // increment past int64 max
+        EXPECT_EQ ((increment (integer("9223372036854775807"))), integer ("9223372036854775808"));
+
+        // decrement at int64 max
+        EXPECT_EQ ((decrement (integer("9223372036854775807"))), integer ("9223372036854775806"));
+
+        // decrement past int64 min
+        EXPECT_EQ ((decrement (integer("-9223372036854775808"))), integer ("-9223372036854775809"));
+
+        // increment at int64 min
+        EXPECT_EQ ((increment (integer("-9223372036854775808"))), integer ("-9223372036854775807"));
+
+        // increment past uint64 max
+        EXPECT_EQ ((increment (integer("18446744073709551615"))), integer ("18446744073709551616"));
+
+        // decrement at uint64 max
+        EXPECT_EQ ((decrement (integer ("18446744073709551615"))), integer ("18446744073709551614"));
+
+        // large positive
+        EXPECT_EQ ((increment (integer ("999999999999999999999999999999"))),
+                  integer("1000000000000000000000000000000"));
+
+        // large negative
+        EXPECT_EQ ((decrement (integer ("-999999999999999999999999999999"))),
+                  integer("-1000000000000000000000000000000"));
+
+        // carry across many digits
+        EXPECT_EQ ((increment (integer ("999999999999999999"))),
+                  integer("1000000000000000000"));
+
+        // borrow across many digits
+        EXPECT_EQ ((decrement (integer ("1000000000000000000"))),
+                  integer("999999999999999999"));
+
+        EXPECT_EQ ((increment (integer ("-1"))), integer ("0"));
+        EXPECT_EQ ((decrement (integer ("1"))), integer ("0"));
     }
 
     TEST (Number, Plus) {
@@ -626,6 +750,72 @@ namespace Gigamonkey::Bitcoin {
         EXPECT_EQ (integer {10} % integer {-3}, integer {1});
         EXPECT_EQ (integer {-10} / integer {-3}, integer {3});
         EXPECT_EQ (integer {-10} % integer {-3}, integer {-1});
+    }
+
+    // TODO here we assume that shift is equivalent to repeated 2DIV and 2MUL
+    void test_bit_shift_left (const std::string& x_str, uint32_t u) {
+        integer x {x_str};
+
+        integer expected = int (sign (x)) * (abs (x) << u);
+
+        auto result = bit_shift_left (x, u);
+        EXPECT_EQ (result, expected);
+        EXPECT_EQ ((x << u), expected);
+    }
+
+    void test_bit_shift_right (const std::string &x_str, uint32_t u) {
+        integer x {x_str};
+
+        integer expected = int (sign (x)) * (abs (x) >> u);
+
+        auto result = right_bit_shift (x, u);
+        EXPECT_EQ (result, expected) << "expected " << x << " >> " << u << " -> " << expected << " but got " << result;
+        EXPECT_EQ ((x >> u), expected);
+    }
+
+    TEST (Number, BitShift) {
+
+        test_bit_shift_left ("0", 1);
+        test_bit_shift_left ("1", 1);
+        test_bit_shift_left ("2", 2);
+
+        test_bit_shift_right ("1", 1);
+        test_bit_shift_right ("2", 1);
+        test_bit_shift_right ("4", 2);
+
+        test_bit_shift_left ("-1", 1);
+        test_bit_shift_left ("-3", 1);
+        test_bit_shift_left ("-5", 2);
+
+        test_bit_shift_right ("-2", 1);
+        test_bit_shift_right ("-4", 2);
+
+        test_bit_shift_right ("-1", 1);  // should be 0, not -1        test_bit_shift_right ("-3", 1);  // should be -1, not -2
+        test_bit_shift_right ("-5", 1);  // should be -2, not -3
+        test_bit_shift_right ("-7", 1);  // should be -3, not -4
+        test_bit_shift_right ("-9", 1);  // should be -4, not -5
+
+        test_bit_shift_right ("-15", 2); // should be -3, not -4
+        test_bit_shift_right ("-17", 3); // should be -2, not -3
+
+        test_bit_shift_left ("0", 10);
+        test_bit_shift_right ("0", 10);
+
+        test_bit_shift_right ("1", 100);
+        test_bit_shift_right ("-1", 100);
+
+        test_bit_shift_left ("12345678901234567890", 5);
+        test_bit_shift_right ("12345678901234567890", 5);
+
+        test_bit_shift_left ("-12345678901234567890", 5);
+        test_bit_shift_right ("-12345678901234567890", 5);
+
+        test_bit_shift_left ("999999999999999999", 10);
+        test_bit_shift_left ("1", 128);
+
+        test_bit_shift_left ("1", 256);
+        test_bit_shift_right ("1", 256);
+        test_bit_shift_right ("-1", 256);
     }
 
 }

@@ -2,12 +2,31 @@
 
 namespace Gigamonkey::Bitcoin {
 
+    data::math::sign sign (byte_slice b) {
+        // an empty number is zero.
+        if (b.size () == 0) return data::math::zero;
+
+        // get last digit
+        byte last = b[b.size () - 1];
+        // get sign bit
+        data::math::sign sign_bit = last & 0x80 ? data::math::negative : data::math::positive;
+
+        // if the last digit other than the sign bit is non zero, return sign bit
+        if (last & ~0x80) return sign_bit;
+
+        // if any other digit is non zero, return sign bit;
+        for (int i = b.size () - 2; i > 0; i--) if (b[i] != 0) return sign_bit;
+
+        // otherwise, the number is zero.
+        return data::math::zero;
+    }
+
     // implements OP_AND
     integer bit_and (byte_slice a, byte_slice b) {
         if (a.size () < b.size ()) return bit_and (b, a);
         bytes bb {b};
         extend_number (bb, a.size ());
-        data::arithmetic::bit_and<byte> (bb.end (), bb.begin (), const_cast<const decltype (bb) &> (bb).data (), a.data ());
+        data::arithmetic::bit_and<byte> (bb.begin (), bb.end (), const_cast<const decltype (bb) &> (bb).data (), a.data ());
         return bb;
     }
 
@@ -16,7 +35,7 @@ namespace Gigamonkey::Bitcoin {
         if (a.size () < b.size ()) return bit_xor (b, a);
         bytes bb {b};
         extend_number (bb, a.size ());
-        data::arithmetic::bit_xor<byte> (bb.end (), bb.begin (), const_cast<const decltype (bb) &> (bb).data (), a.data ());
+        data::arithmetic::bit_xor<byte> (bb.begin (), bb.end (), const_cast<const decltype (bb) &> (bb).data (), a.data ());
         return bb;
     }
 
@@ -25,14 +44,16 @@ namespace Gigamonkey::Bitcoin {
         if (a.size () < b.size ()) return bit_or (b, a);
         bytes bb {b};
         extend_number (bb, a.size ());
-        data::arithmetic::bit_or<byte> (bb.end (), bb.begin (), const_cast<const decltype (bb) &> (bb).data (), a.data ());
+        data::arithmetic::bit_or<byte> (bb.begin (), bb.end (), const_cast<const decltype (bb) &> (bb).data (), a.data ());
         return bb;
     }
 
     // implements OP_AND
     integer bit_not (byte_slice x) {
         integer result = integer::zero (x.size ());
-        data::arithmetic::bit_negate<byte> (result.end (), result.begin (), x.begin ());
+
+        data::arithmetic::bit_negate<byte> (result.begin (), result.end (), x.begin ());
+
         return result;
     }
 
@@ -137,6 +158,45 @@ namespace Gigamonkey::Bitcoin {
         }
 
         return result;
+    }
+
+    data::string right_shift (const data::string &x, int32 n) {
+        integer z = right_shift (byte_slice {(const byte *) x.data (), x.size ()}, n);
+        data::string result;
+        result.resize (z.size ());
+        std::copy (z.data (), z.data () + z.size (), (byte *) result.data ());
+        return result;
+    }
+
+    data::string left_shift (const data::string &x, int32 n) {
+        integer z = left_shift (byte_slice {(const byte *) x.data (), x.size ()}, n);
+        data::string result;
+        result.resize (z.size ());
+        std::copy (z.data (), z.data () + z.size (), (byte *) result.data ());
+        return result;
+    }
+
+    // shift right by n bits, implements OP_RSHIFTNUM
+    integer right_bit_shift (byte_slice x, int32 n) {
+        if (n < 0) return left_bit_shift (x, -n);
+        if (n == 0) return integer {x};
+        if (is_zero (x)) return integer {};
+        bool neg = is_negative (x);
+        integer result = neg ? -integer {x} : integer {x};
+        result.words ().bit_shift_right (static_cast<uint32> (n));
+        return neg ? -result : result;
+    }
+
+    // shift left by n bits, implements OP_LSHIFTNUM
+    integer left_bit_shift (byte_slice x, int32 n) {
+        if (n < 0) return right_bit_shift (x, -n);
+        if (n == 0) return integer {x};
+        if (is_zero (x)) return integer {};
+        bool neg = is_negative (x);
+        integer result = neg ? -integer {x} : integer {x};
+        result = extend (result, result.size () + ((n + 7) / 8));
+        result.words ().bit_shift_left (static_cast<uint32> (n));
+        return neg ? -result : result;
     }
 
 }

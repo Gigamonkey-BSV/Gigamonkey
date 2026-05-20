@@ -6,7 +6,6 @@
 
 #include <gigamonkey/schema/bip_39.hpp>
 #include <data/encoding/unicode.hpp>
-#include <data/io/unimplemented.hpp>
 
 namespace Gigamonkey {
     using unicode = data::unicode;
@@ -22,12 +21,12 @@ namespace Gigamonkey::HD::Electrum_SV {
     UTF8 generate (entropy, BIP_39::language lang = BIP_39::language::english);
     bool valid (UTF8 words, BIP_39::language lang = BIP_39::language::english);
 
-    UTF8 generate (entropy, BIP_39::language lang) {
-        throw data::method::unimplemented {"Electrum_SV::generate"};
+    UTF8 inline generate (entropy, BIP_39::language lang) {
+        throw data::unimplemented {"Electrum_SV::generate"};
     }
 
     bool inline valid (UTF8 words, BIP_39::language lang) {
-        throw data::method::unimplemented {"Electrum_SV::valid"};
+        throw data::unimplemented {"Electrum_SV::valid"};
     }
 
 }

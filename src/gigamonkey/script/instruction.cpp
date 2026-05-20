@@ -20,25 +20,27 @@ namespace Gigamonkey::Bitcoin {
     
     namespace {
     
-        ScriptError verify_instruction (const instruction &i) {
+        // TODO we do not use conf here just yet but some op codes
+        // are invalid under some parameters and others aren't.
+        Error verify_instruction (const instruction &i) {
             if (i.Op == OP_INVALIDOPCODE ||
                 i.Op == OP_RESERVED ||
                 i.Op == OP_RESERVED1 ||
                 i.Op == OP_RESERVED2 ||
-                i.Op >= FIRST_UNDEFINED_OP_VALUE) return SCRIPT_ERR_BAD_OPCODE;
+                i.Op >= FIRST_UNDEFINED_OP_VALUE) return Error::BAD_OPCODE;
             
             size_t size = i.Data.size ();
             if (!is_push_data (i.Op)) {
-                if (size > 0) return SCRIPT_ERR_PUSH_SIZE;
-                return SCRIPT_ERR_OK;
+                if (size > 0) return Error::PUSH_SIZE;
+                return Error::OK;
             }
             
             if ((i.Op <= OP_PUSHSIZE75 && i.Op != size) 
                 || (i.Op == OP_PUSHDATA1 && size > 0xffff) 
                 || (i.Op == OP_PUSHDATA2 && size > 0xffffffff) 
-                || (i.Op == OP_PUSHDATA4 && size > 0xffffffffffffffff)) return SCRIPT_ERR_PUSH_SIZE;
+                || (i.Op == OP_PUSHDATA4 && size > 0xffffffffffffffff)) return Error::PUSH_SIZE;
             
-            return SCRIPT_ERR_OK;
+            return Error::OK;
         }
         
         bool is_minimal_push (const op o, const bytes &data) {
@@ -58,7 +60,7 @@ namespace Gigamonkey::Bitcoin {
                 return *this;
             }
             
-            script_writer &operator << (program p) {
+            script_writer &operator << (segment p) {
                 return p.size () == 0 ? *this : (*this << first (p) << rest (p));
             }
             
@@ -92,7 +94,7 @@ namespace Gigamonkey::Bitcoin {
             }
             
             if ((r.End - r.Begin) < size)
-                throw invalid_program {SCRIPT_ERR_PUSH_SIZE};
+                throw invalid_program {Error::PUSH_SIZE};
             
             rest.Data = bytes (size);
             r >> rest.Data;
@@ -105,7 +107,7 @@ namespace Gigamonkey::Bitcoin {
 
             script_reader operator >> (instruction &i) {
                 if ((Reader.End - Reader.Begin) == 0)
-                    throw invalid_program {SCRIPT_ERR_UNKNOWN_ERROR};
+                    throw invalid_program {Error::UNKNOWN_ERROR};
                 
                 byte next;
                 Reader >> next;
@@ -133,26 +135,25 @@ namespace Gigamonkey::Bitcoin {
     
     }
 
-    ScriptError instruction::verify (flag flags) const {
+    Error instruction::verify (const script_config &conf) const {
         auto script_error = verify_instruction (*this);
-        if (script_error != SCRIPT_ERR_OK) return script_error;
+        if (script_error != Error::OK) return script_error;
+        if (verify_minimal_push (conf.Flags) && !is_minimal_push (Op, Data)) return Error::MINIMALDATA;
         
-        if (verify_minimal_push (flags) && !is_minimal_push (Op, Data)) return SCRIPT_ERR_MINIMALDATA;
-        
-        return SCRIPT_ERR_OK;
+        return Error::OK;
     }
 
     bool is_minimal_instruction (const instruction &i) {
-        return verify_instruction (i) == SCRIPT_ERR_OK && is_minimal_push (i.Op, i.Data);
+        return verify_instruction (i) == Error::OK && is_minimal_push (i.Op, i.Data);
     }
     
-    instruction instruction::read (slice<const byte> b) {
+    instruction instruction::read (byte_slice b) {
         instruction i;
         script_reader {it_rdr {b.data (), b.data () + b.size ()}} >> i;
         return i;
     }
     
-    instruction instruction::push (slice<const byte> data) {
+    instruction instruction::push (byte_slice data) {
         int size = data.size ();
         if (size == 0) return instruction {OP_0};
         
@@ -191,9 +192,9 @@ namespace Gigamonkey::Bitcoin {
         return o << i.Op;
     }
     
-    string ASM (slice<const byte> b) {
+    string ASM (byte_slice b) {
         std::stringstream ss;
-        program p = decompile (b);
+        segment p = decompile (b);
 
         if (p.size () != 0) {
             auto i = p.begin ();
@@ -229,7 +230,7 @@ namespace Gigamonkey::Bitcoin {
                 case OP_14: return o << "(14)";
                 case OP_15: return o << "(15)";
                 case OP_16: return o << "(16)";
-                default : return o << "push_size_" << int {x};
+                default : return o << "push_size_" << std::dec << int {x};
             }
         }
         
@@ -237,6 +238,8 @@ namespace Gigamonkey::Bitcoin {
             default : return o << x;
             case OP_CHECKSIG: return o << "checksig";
             case OP_CHECKSIGVERIFY: return o << "checksig_verify";
+            case OP_CHECKMULTISIG: return o << "checkmultisig";
+            case OP_CHECKMULTISIGVERIFY: return o << "checkmultisig_verify";
             case OP_EQUALVERIFY: return o << "equal_verify";
             
             case OP_HASH256: return o << "hash256";
@@ -299,7 +302,7 @@ namespace Gigamonkey::Bitcoin {
         return write_op_code (o, i.Op) << "{" << encoding::hex::write (i.Data) << "}";
     }
     
-    bytes compile (program p) {
+    bytes compile (segment p) {
         bytes compiled (serialized_size (p));
         it_wtr b {compiled.begin (), compiled.end ()};
         script_writer {b} << p;
@@ -313,111 +316,82 @@ namespace Gigamonkey::Bitcoin {
         return compiled;
     }
     
-    program decompile (slice<const byte> b) {
+    segment decompile (byte_slice b) {
         
-        program p {};
+        list<instruction> p {};
         script_reader r {it_rdr {b.data (), b.data () + b.size ()}};
-        
-        stack<op> Control;
-        
+
         while (!r.empty ()) {
             instruction i {};
             r = r >> i;
-            
-            if (auto err = i.verify (flag {}); err != SCRIPT_ERR_OK) throw invalid_program {err};
-            
-            if (i.Op == OP_ENDIF) {
-                if (Control.empty ()) throw invalid_program {SCRIPT_ERR_UNBALANCED_CONDITIONAL};
-                op prev = first (Control);
-                Control = rest (Control);
 
-                if (prev == OP_ELSE) {
-                    if (Control.empty ()) throw invalid_program {SCRIPT_ERR_UNBALANCED_CONDITIONAL};
-                    prev = first (Control);
-                    Control = rest (Control);
-                }
-
-                if (prev != OP_IF && prev != OP_NOTIF) invalid_program {SCRIPT_ERR_UNBALANCED_CONDITIONAL};
-            } else if (i.Op == OP_ELSE || i.Op == OP_IF || i.Op == OP_NOTIF) Control = Control >> i.Op;
-            
             p = p << i;
         }
         
         return p;
     }
-    
-    // TODO need to take into account OP_VER etc
-    ScriptError valid_program (program p, stack<op> x, flag flags) {
-        
+
+    // NOTE: this function should ultimately be elimated.
+    Error valid_program (segment p, const script_config &conf, stack<op> x = {}) {
+
         if (empty (p)) {
-            if (empty (x)) return SCRIPT_ERR_OK;
-            return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
+            //if (empty (x))
+                return Error::OK;
+            //return Error::UNBALANCED_CONDITIONAL;
         }
         
         const instruction &i = first (p);
         
-        auto script_error = i.verify (flags);
-        if (script_error != SCRIPT_ERR_OK) return script_error;
+        auto script_error = i.verify (conf);
+        if (script_error != Error::OK) return script_error;
         
-        if ((verify_minimal_push (flags)) && !is_minimal_instruction (i)) return SCRIPT_ERR_MINIMALDATA;
+        if ((verify_minimal_push (conf.Flags)) && !is_minimal_instruction (i))
+            return Error::MINIMALDATA;
         
         op o = i.Op;
         
         // prior to genesis, OP_RETURN is not allowed to appear in a
         // normal script. It must be in a script consisting only of
         // itself.
-        if (o == OP_RETURN) {
-            if (!safe_return_data (flags)) return SCRIPT_ERR_OP_RETURN;
-            if (empty (x) && p.size () == 1) return SCRIPT_ERR_OK;
-            if (i.Data.size () != 0) return SCRIPT_ERR_OP_RETURN;
-        }
+        if (o == OP_RETURN)
+            if (!safe_return_data (conf.Flags))
+                return Error::OP_RETURN;
         
-        if (o == OP_ENDIF) {
-            if (x.empty ()) return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
-            op prev = first (x);
-            x = rest (x);
-
-            if (prev == OP_ELSE) {
-                if (x.empty ()) return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
-                prev = first (x);
-                x = rest (x);
-            }
-
-            if (prev != OP_IF && prev != OP_NOTIF) return SCRIPT_ERR_UNBALANCED_CONDITIONAL;
-        } else if (o == OP_ELSE || o == OP_IF || o == OP_NOTIF) x = x >> o;
-        
-        return valid_program (rest (p), x, flags);
+        return valid_program (rest (p), conf, x);
     }
 
-    ScriptError pre_verify (program p, flag flags) {
-        if (empty (p)) return SCRIPT_ERR_OK;
+    // TODO pre_verify is not actually needed.
+    Error pre_verify (program x, const script_config &conf) {
+        // an empty program isn't really ok, so why does this line say it is?
+        if (empty (x)) return Error::OK;
 
         // first we check for OP_RETURN data.
-        if (safe_return_data (flags)) {
-            if (p.size () == 2 && first (p).Op == OP_FALSE && data::valid (first (p)) && first (rest (p)).Op == OP_RETURN)
-                return SCRIPT_ERR_OK;
-        } else if (p.size () == 1 && first (p).Op == OP_RETURN) return SCRIPT_ERR_OK;
+        if (x.size () == 1) {
+            auto p = first (x);
+            if (safe_return_data (conf.Flags)) {
+                if (p.size () == 2 && first (p).Op == OP_FALSE && data::valid (first (p)) && first (rest (p)).Op == OP_RETURN)
+                    return Error::OK;
+            } else if (p.size () == 1 && first (p).Op == OP_RETURN) return Error::OK;
+        }
 
-        return valid_program (p, {}, flags);
+        return valid_program (flatten (x), conf);
     }
 
     // note: pay to script hash only applies to scripts that were created before genesis.
-    program full (const program unlock, const program lock, bool support_p2sh) {
+    program full (const segment unlock, const segment lock, bool support_p2sh) {
         if (!support_p2sh || !is_P2SH (lock) || empty (unlock))
-            // TODO the code separator should only go here if
-            // there is no code separator in the unlocking script.
-            return (unlock << OP_CODESEPARATOR) + lock;
+            return {unlock, lock};
 
         auto reversed = reverse (unlock);
         const instruction &push_redeem = first (reversed);
 
         // For P2SH scripts. This is a depricated special case that is supported for backwards compatability.
-        return (reverse (rest (reversed)) << OP_CODESEPARATOR) +
-            (decompile (push_redeem.push_data ()) << OP_VERIFY << push_redeem) + lock;
+        return {reverse (rest (reversed)),
+            decompile (push_redeem.push_data ()) << OP_VERIFY << push_redeem, lock};
     }
 
-    program find_and_delete (program p, const instruction &sig) {
-        program q;
+    segment find_and_delete (segment p, const instruction &sig) {
+        list<instruction> q;
         for (const instruction &i : p) if (i != sig) q <<= i;
         return q;
     }

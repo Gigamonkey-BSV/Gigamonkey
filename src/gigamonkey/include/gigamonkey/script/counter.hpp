@@ -5,60 +5,92 @@
 #define GIGAMONKEY_SCRIPT_COUNTER
 
 #include <gigamonkey/script/instruction.hpp>
-#include <gigamonkey/signature.hpp>
 
 namespace Gigamonkey::Bitcoin {
     
     struct program_counter {
 
-        slice<const byte> Next;
-        slice<const byte> Script;
-        size_t Counter;
-        size_t LastCodeSeparator;
+        bytes Script;
+        cross<int> Jump;
+
+        byte_slice Next;
+
+        int Index;
         
-        static slice<const byte> read_instruction (slice<const byte> subscript);
+        static byte_slice read_next_instruction (byte_slice subscript);
         
         program_counter () {}
-        program_counter (slice<const byte> s);
-        program_counter next () const;
 
-        // the script code is the part of the script that gets signed.
-        // normally this will be the locking script.
-        program to_last_code_separator () const;
+        program_counter (const bytes &script, const cross<int> &jump);
+
+        program_counter (const program_counter &);
+        program_counter &operator = (const program_counter &);
+
+        program_counter (program_counter &&);
+        program_counter &operator = (program_counter &&);
 
         // pre-increment;
         program_counter &operator ++ () {
-            return *this = next ();
+            Index = Index + Next.size ();
+            Next = read_next_instruction (byte_slice (Script).drop (static_cast<int32> (Index)));
+            return *this;
         }
 
         // post-increment
         program_counter operator ++ (int) {
             program_counter z = *this;
-            *this = next ();
+            ++*this;
             return z;
+        }
+
+        bool valid () const {
+            return Next != byte_slice {};
+        }
+
+        program_counter &jump () {
+            for (size_t j : Jump) if (j > Index) {
+                Next = read_next_instruction (byte_slice (Script).drop (j));
+                Index = j;
+                return *this;
+            }
+
+            Index = Script.size ();
+            Next = {};
+            return *this;
         }
         
     private:
-        program_counter (slice<const byte> n, slice<const byte> s, size_t c, size_t l);
+        program_counter (byte_slice n, byte_slice s, size_t c);
     };
     
-
-    inline program_counter::program_counter (slice<const byte> s):
-        Next {read_instruction (s)}, Script {s}, Counter {0}, LastCodeSeparator {0} {}
-
-    program_counter inline program_counter::next () const {
-        size_t next_counter = Counter + Next.size ();
-        return program_counter {read_instruction (
-            Script.drop (static_cast<int32> (next_counter))), Script, next_counter,
-            Next.size () > 0 && Next[0] == OP_CODESEPARATOR ? next_counter : LastCodeSeparator};
+    inline program_counter::program_counter (const bytes &script, const cross<int> &jump):
+        Script {script}, Jump {jump}, Next {}, Index {0} {
+        Next = read_next_instruction (Script);
     }
 
-    program inline program_counter::to_last_code_separator () const {
-        return decompile (slice<const byte> {Script.data () + LastCodeSeparator, Script.size () - LastCodeSeparator});
+    inline program_counter::program_counter (const program_counter &p):
+        Script {p.Script}, Jump {p.Jump},
+        Next {Script.data () + (p.Next.data () - p.Script.data ()), p.Next.size ()}, Index {p.Index} {}
+
+    program_counter inline &program_counter::operator = (const program_counter &p) {
+        Script = p.Script;
+        Jump = p.Jump;
+        Next = byte_slice {p.Script.data () + (p.Next.data () - p.Script.data ()), p.Next.size ()};
+        Index = p.Index;
+        return *this;
     }
 
-    inline program_counter::program_counter (slice<const byte> n, slice<const byte> s, size_t c, size_t l) :
-        Next {n}, Script {s}, Counter {c}, LastCodeSeparator {l} {}
+    inline program_counter::program_counter (program_counter &&p) {
+        *this = std::move (p);
+    }
+
+    program_counter inline &program_counter::operator = (program_counter &&p) {
+        Script = std::move (p.Script);
+        Jump = std::move (p.Jump);
+        Next = p.Next;
+        Index = p.Index;
+        return *this;
+    }
 }
 
 #endif

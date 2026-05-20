@@ -19,13 +19,13 @@ namespace Gigamonkey {
 
     struct BEEF {
         explicit BEEF () = default;
-        explicit BEEF (slice<const byte>);
+        explicit BEEF (byte_slice);
         explicit operator bytes () const;
 
         explicit BEEF (const SPV::proof &);
 
-        // It's valid if it follows the right format. Use
-        // validate to check all the merkle proofs.
+        // valid means that the format is correct.
+        // Use validate to check all the merkle proofs.
         bool valid () const;
 
         // if this BEEF is valid, then this list should
@@ -73,6 +73,9 @@ namespace Gigamonkey {
             }
         };
 
+        // the transactions in chronological order.
+        // Thus, no tx should redeem an output from
+        // a later tx in the sequence.
         stack<transaction> Transactions {};
 
         bool operator == (const BEEF &beef) const {
@@ -103,7 +106,7 @@ namespace Gigamonkey {
         return 4 + Bitcoin::var_sequence<Merkle::BUMP>::size (BUMPs) + Bitcoin::var_sequence<transaction>::size (Transactions);
     }
 
-    inline BEEF::BEEF (slice<const byte> b) {
+    inline BEEF::BEEF (byte_slice b) {
         it_rdr r {b.data (), b.data () + b.size ()};
         r >> *this;
     }

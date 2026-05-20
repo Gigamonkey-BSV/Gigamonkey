@@ -5,28 +5,16 @@
 
 namespace Gigamonkey::ARC {
 
-    HTTP::request::make inline policy_request (const std::string &base_path) {
-        return HTTP::request::make {}.method (HTTP::method::get).path (base_path + "/v1/policy");
-    }
-
-    HTTP::request::make inline health_request (const std::string &base_path) {
-        return HTTP::request::make {}.method (HTTP::method::get).path (base_path + "/v1/health");
-    }
-
-    HTTP::request::make inline status_request (const std::string &base_path, const Bitcoin::TXID &txid) {
-        return HTTP::request::make {}.method (HTTP::method::get).path (base_path + std::string {"/v1/tx/"} + Gigamonkey::write_reverse_hex (txid));
-    }
-
     awaitable<policy_response> client::policy () {
-        co_return co_await this->operator () (this->REST (policy_request (REST.Path)));
+        co_return co_await this->operator () (this->REST (HTTP::method::get, "/v1/policy"));
     }
 
     awaitable<health_response> client::health () {
-        co_return co_await this->operator () (this->REST (health_request (REST.Path)));
+        co_return co_await this->operator () (this->REST (HTTP::method::get, "/v1/health"));
     }
 
-    awaitable<status_response> client::status (const Bitcoin::TXID &txid) {
-        co_return co_await this->operator () (this->REST (status_request (REST.Path, txid)));
+    awaitable<status_response> client::status (const Bitcoin::TxID &txid) {
+        co_return co_await this->operator () (this->REST (HTTP::method::get, std::string {"/v1/tx/"} + write_reverse_hex (txid)));
     }
 
     bool response::valid (const HTTP::response &r) {
@@ -87,7 +75,7 @@ namespace Gigamonkey::ARC {
     }
 
     awaitable<submit_response> client::submit (const submit_request &x) {
-        HTTP::request::make r = HTTP::request::make {}.method (HTTP::method::post).path (REST.Path + "/v1/tx").add_headers (x.Submit.headers ());
+        HTTP::request::make r = REST (HTTP::method::post, "/v1/tx").add_headers (x.Submit.headers ());
         switch (x.Submit.ContentType) {
             case (octet): {
                 r = r.body (bytes (x.Transaction));
@@ -102,11 +90,11 @@ namespace Gigamonkey::ARC {
             } break;
             default: throw data::exception {} << "Invalid ARC content type";
         }
-        co_return co_await this->operator () (this->REST (r));
+        co_return co_await this->operator () (r);
     }
 
     awaitable<submit_txs_response> client::submit_txs (const submit_txs_request &x) {
-        HTTP::request::make r = HTTP::request::make {}.method (HTTP::method::post).path (REST.Path + "/v1/txs").add_headers (x.Submit.headers ());
+        HTTP::request::make r = REST (HTTP::method::post, "/v1/txs").add_headers (x.Submit.headers ());
 
         switch (x.Submit.ContentType) {
             case octet: {
@@ -129,14 +117,14 @@ namespace Gigamonkey::ARC {
                 r = r.body (JSON (a).dump ());
             } break;
             case text: {
-                r = r.body (string_join (for_each ([] (const extended::transaction &tx) -> string {
+                r = r.body (string_join (lift ([] (const extended::transaction &tx) -> string {
                     return encoding::hex::write (bytes (tx));
                 }, x.Transactions), "\n"));
             } break;
             default: throw data::exception {} << "Invalid ARC content type";
         }
 
-        co_return co_await this->operator () (this->REST (r));
+        co_return co_await this->operator () (r);
     }
 
     namespace {

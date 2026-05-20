@@ -46,7 +46,7 @@ namespace Gigamonkey::Bitcoin {
 
         incomplete::transaction incomplete_tx {
             transaction::LatestVersion,
-            list<incomplete::input> {incomplete::input {outpoint {Bitcoin::TXID {307}, 7}}},
+            list<incomplete::input> {incomplete::input {outpoint {Bitcoin::TxID {307}, 7}}},
             list<output> {}, 0};
 
         redemption_document doc {incomplete_tx, 0, redeemed_value};
@@ -88,72 +88,76 @@ namespace Gigamonkey::Bitcoin {
             EXPECT_EQ (pubkey_compressed, pubkey_uncompressed.compress ());
             EXPECT_EQ (pubkey_uncompressed, pubkey_compressed.decompress ());
 
+            // TODO test chronicle update
             flag flag_original = flag::VERIFY_NONE;
             flag flag_fork_id = flag::ENABLE_SIGHASH_FORKID;
 
-            // note: we need to use the right flags to support the original signature algorithm.
             auto evaluate_p2pk_compressed_fork_id = evaluate (redeem_p2pk_compressed_fork_id,
                 script_p2pk_compressed, doc, flag_fork_id);
+
+            EXPECT_EQ (Error::OK, evaluate_p2pk_compressed_fork_id) << evaluate_p2pk_compressed_fork_id;
 
             auto evaluate_p2pk_uncompressed_fork_id = evaluate (redeem_p2pk_uncompressed_fork_id,
                 script_p2pk_uncompressed, doc, flag_fork_id);
 
+            EXPECT_EQ (Error::OK, evaluate_p2pk_uncompressed_fork_id) << evaluate_p2pk_uncompressed_fork_id;
+
             auto evaluate_p2pkh_compressed_fork_id = evaluate (redeem_p2pkh_compressed_fork_id,
                 script_p2pkh_compressed, doc, flag_fork_id);
+
+            EXPECT_EQ (Error::OK, evaluate_p2pkh_compressed_fork_id) << evaluate_p2pkh_compressed_fork_id;
 
             auto evaluate_p2pkh_uncompressed_fork_id = evaluate (redeem_p2pkh_uncompressed_fork_id,
                 script_p2pkh_uncompressed, doc, flag_fork_id);
 
+            EXPECT_EQ (Error::OK, evaluate_p2pkh_uncompressed_fork_id) << evaluate_p2pkh_uncompressed_fork_id;
+
             auto evaluate_p2pk_compressed_original = evaluate (redeem_p2pk_compressed_original,
                 script_p2pk_compressed, doc, flag_original);
+
+            EXPECT_EQ (Error::OK, evaluate_p2pk_compressed_original) << evaluate_p2pk_compressed_original;
 
             auto evaluate_p2pk_uncompressed_original = evaluate (redeem_p2pk_uncompressed_original,
                 script_p2pk_uncompressed, doc, flag_original);
 
+            EXPECT_EQ (Error::OK, evaluate_p2pk_uncompressed_original) << evaluate_p2pk_uncompressed_original;
+
             auto evaluate_p2pkh_compressed_original = evaluate (redeem_p2pkh_compressed_original,
                 script_p2pkh_compressed, doc, flag_original);
+
+            EXPECT_EQ (Error::OK, evaluate_p2pkh_compressed_original) << evaluate_p2pkh_compressed_original;
 
             auto evaluate_p2pkh_uncompressed_original = evaluate (redeem_p2pkh_uncompressed_original,
                 script_p2pkh_uncompressed, doc, flag_original);
 
-            EXPECT_TRUE (evaluate_p2pk_compressed_fork_id) << evaluate_p2pk_compressed_fork_id;
-            EXPECT_TRUE (evaluate_p2pk_uncompressed_fork_id) << evaluate_p2pk_uncompressed_fork_id;
-
-            EXPECT_TRUE (evaluate_p2pkh_compressed_fork_id) << evaluate_p2pkh_compressed_fork_id;
-            EXPECT_TRUE (evaluate_p2pkh_uncompressed_fork_id) << evaluate_p2pkh_uncompressed_fork_id;
-
-            EXPECT_TRUE (evaluate_p2pk_compressed_original) << evaluate_p2pk_compressed_original;
-            EXPECT_TRUE (evaluate_p2pk_uncompressed_original) << evaluate_p2pk_uncompressed_original;
-
-            EXPECT_TRUE (evaluate_p2pkh_compressed_original) << evaluate_p2pkh_compressed_original;
-            EXPECT_TRUE (evaluate_p2pkh_uncompressed_original) << evaluate_p2pkh_uncompressed_original;
+            EXPECT_EQ (Error::OK, evaluate_p2pkh_uncompressed_original) << evaluate_p2pkh_uncompressed_original;
 
             // these next four fail because the signature is incorrect
             // due to the public key being included in the script code.
-            EXPECT_FALSE (evaluate (redeem_p2pk_uncompressed_fork_id, script_p2pk_compressed, doc, flag_fork_id));
-            EXPECT_FALSE (evaluate (redeem_p2pk_compressed_fork_id, script_p2pk_uncompressed, doc, flag_fork_id));
+            EXPECT_EQ (Error::FAIL, evaluate (redeem_p2pk_uncompressed_fork_id, script_p2pk_compressed, doc, flag_fork_id));
+            EXPECT_EQ (Error::FAIL, evaluate (redeem_p2pk_compressed_fork_id, script_p2pk_uncompressed, doc, flag_fork_id));
 
-            EXPECT_FALSE (evaluate (redeem_p2pk_uncompressed_original, script_p2pk_compressed, doc, flag_original));
-            EXPECT_FALSE (evaluate (redeem_p2pk_compressed_original, script_p2pk_uncompressed, doc, flag_original));
+            EXPECT_EQ (Error::FAIL, evaluate (redeem_p2pk_uncompressed_original, script_p2pk_compressed, doc, flag_original));
+            EXPECT_EQ (Error::FAIL, evaluate (redeem_p2pk_compressed_original, script_p2pk_uncompressed, doc, flag_original));
 
             // these fail because the address is wrong.
-            EXPECT_FALSE (evaluate (redeem_p2pkh_uncompressed_fork_id, script_p2pkh_compressed, doc, flag_fork_id));
-            EXPECT_FALSE (evaluate (redeem_p2pkh_compressed_fork_id, script_p2pkh_uncompressed, doc, flag_fork_id));
+            EXPECT_EQ (Error::EQUALVERIFY, evaluate (redeem_p2pkh_uncompressed_fork_id, script_p2pkh_compressed, doc, flag_fork_id));
+            EXPECT_EQ (Error::EQUALVERIFY, evaluate (redeem_p2pkh_compressed_fork_id, script_p2pkh_uncompressed, doc, flag_fork_id));
 
-            EXPECT_FALSE (evaluate (redeem_p2pkh_uncompressed_original, script_p2pkh_compressed, doc, flag_original));
-            EXPECT_FALSE (evaluate (redeem_p2pkh_compressed_original, script_p2pkh_uncompressed, doc, flag_original));
+            EXPECT_EQ (Error::EQUALVERIFY, evaluate (redeem_p2pkh_uncompressed_original, script_p2pkh_compressed, doc, flag_original));
+            EXPECT_EQ (Error::EQUALVERIFY, evaluate (redeem_p2pkh_compressed_original, script_p2pkh_uncompressed, doc, flag_original));
 
-            EXPECT_FALSE (evaluate (redeem_p2pkh_compressed_fork_id, script_p2pk_compressed, doc, flag_fork_id));
-            EXPECT_FALSE (evaluate (redeem_p2pkh_uncompressed_fork_id, script_p2pk_uncompressed, doc, flag_fork_id));
+            EXPECT_EQ (Error::FAIL, evaluate (redeem_p2pkh_compressed_fork_id, script_p2pk_compressed, doc, flag_fork_id));
+            EXPECT_EQ (Error::FAIL, evaluate (redeem_p2pkh_uncompressed_fork_id, script_p2pk_uncompressed, doc, flag_fork_id));
 
-            EXPECT_FALSE (evaluate (redeem_p2pk_compressed_fork_id, script_p2pkh_compressed, doc, flag_fork_id));
-            EXPECT_FALSE (evaluate (redeem_p2pk_uncompressed_fork_id, script_p2pkh_uncompressed, doc, flag_fork_id));
+            EXPECT_EQ (Error::EQUALVERIFY, evaluate (redeem_p2pk_compressed_fork_id, script_p2pkh_compressed, doc, flag_fork_id));
+            EXPECT_EQ (Error::EQUALVERIFY, evaluate (redeem_p2pk_uncompressed_fork_id, script_p2pkh_uncompressed, doc, flag_fork_id));
 
-            EXPECT_FALSE (evaluate (redeem_p2pkh_compressed_fork_id, script_p2pk_uncompressed, doc, flag_fork_id));
-            EXPECT_FALSE (evaluate (redeem_p2pkh_uncompressed_fork_id, script_p2pk_compressed, doc, flag_fork_id));
+            EXPECT_EQ (Error::FAIL, evaluate (redeem_p2pkh_compressed_fork_id, script_p2pk_uncompressed, doc, flag_fork_id));
+            EXPECT_EQ (Error::FAIL, evaluate (redeem_p2pkh_uncompressed_fork_id, script_p2pk_compressed, doc, flag_fork_id));
 
-            EXPECT_FALSE (evaluate (redeem_p2pk_compressed_fork_id, script_p2pkh_uncompressed, doc, flag_fork_id));
-            EXPECT_FALSE (evaluate (redeem_p2pk_uncompressed_fork_id, script_p2pkh_compressed, doc, flag_fork_id));
+            EXPECT_EQ (Error::EQUALVERIFY, evaluate (redeem_p2pk_compressed_fork_id, script_p2pkh_uncompressed, doc, flag_fork_id));
+            EXPECT_EQ (Error::EQUALVERIFY, evaluate (redeem_p2pk_uncompressed_fork_id, script_p2pkh_compressed, doc, flag_fork_id));
 
         }
 
@@ -197,35 +201,36 @@ namespace Gigamonkey::Bitcoin {
             flag flag_p2sh = flag::VERIFY_P2SH | flag::VERIFY_CLEANSTACK;
             flag flag_no_p2sh = flag::VERIFY_CLEANSTACK;
 
-            EXPECT_TRUE (evaluate (redeem_p2sh_p2pk_compressed_original, p2sh_p2pk_compressed, flag_p2sh));
-            EXPECT_TRUE (evaluate (redeem_p2sh_p2pk_uncompressed_original, p2sh_p2pk_uncompressed, flag_p2sh));
-            EXPECT_TRUE (evaluate (redeem_p2sh_p2pkh_compressed_original, p2sh_p2pkh_compressed, flag_p2sh));
-            EXPECT_TRUE (evaluate (redeem_p2sh_p2pkh_uncompressed_original, p2sh_p2pkh_uncompressed, flag_p2sh));
+            EXPECT_EQ (Error::OK, evaluate (redeem_p2sh_p2pk_compressed_original, p2sh_p2pk_compressed, flag_p2sh));
+            EXPECT_EQ (Error::OK, evaluate (redeem_p2sh_p2pk_uncompressed_original, p2sh_p2pk_uncompressed, flag_p2sh));
+            EXPECT_EQ (Error::OK, evaluate (redeem_p2sh_p2pkh_compressed_original, p2sh_p2pkh_compressed, flag_p2sh));
+            EXPECT_EQ (Error::OK, evaluate (redeem_p2sh_p2pkh_uncompressed_original, p2sh_p2pkh_uncompressed, flag_p2sh));
 
             // script should be invalid if the flag is not set.
-            EXPECT_FALSE (evaluate (redeem_p2sh_p2pk_compressed_original, p2sh_p2pk_compressed, flag_no_p2sh));
-            EXPECT_FALSE (evaluate (redeem_p2sh_p2pk_uncompressed_original, p2sh_p2pk_uncompressed, flag_no_p2sh));
-            EXPECT_FALSE (evaluate (redeem_p2sh_p2pkh_compressed_original, p2sh_p2pkh_compressed, flag_no_p2sh));
-            EXPECT_FALSE (evaluate (redeem_p2sh_p2pkh_uncompressed_original, p2sh_p2pkh_uncompressed, flag_no_p2sh));
+            EXPECT_NE (Error::OK, evaluate (redeem_p2sh_p2pk_compressed_original, p2sh_p2pk_compressed, flag_no_p2sh));
+            EXPECT_NE (Error::OK, evaluate (redeem_p2sh_p2pk_uncompressed_original, p2sh_p2pk_uncompressed, flag_no_p2sh));
+            EXPECT_NE (Error::OK, evaluate (redeem_p2sh_p2pkh_compressed_original, p2sh_p2pkh_compressed, flag_no_p2sh));
+            EXPECT_NE (Error::OK, evaluate (redeem_p2sh_p2pkh_uncompressed_original, p2sh_p2pkh_uncompressed, flag_no_p2sh));
         }
 
     };
 
-    TEST (AddressTest, TestAddresses) {
+    TEST (Address, Addresses) {
         test_standard_scripts {}.test_p2pk_and_p2pkh ();
     }
 
     // use the address tests above to test P2SH
-    TEST (AddressTest, TestP2SH) {
+    TEST (Address, P2SH) {
         test_standard_scripts {}.test_p2sh ();
     }
     
-    TEST (AddressTest, TestRecoverBase58) {
+    TEST (Address, RecoverBase58) {
         
-        ptr<data::entropy> entropy = std::static_pointer_cast<data::entropy> (std::make_shared<data::fixed_entropy> (
-            byte_slice (bytes (string ("atehu=eSRCjt.r83085[934[498[35")))));
+        auto entropy = bytes (string ("atehu=eSRCjt.r83085[934[498[35"));
+        auto nonce = bytes (string ("stiiigooo"));
+        auto personalization = bytes (string ("zimmmmmmmmmm343434"));
         
-        crypto::NIST::DRBG random {crypto::NIST::DRBG::HMAC, {*entropy, bytes {}, 305}};
+        crypto::NIST::HMAC_DRBG<crypto::hash::SHA2_256> random {entropy, nonce, personalization};
         
         digest160 pubkey_hash;
         
@@ -283,7 +288,7 @@ namespace Gigamonkey::Bitcoin {
         
     }
     
-    TEST (ScriptTest, TestBIP276) {
+    TEST (Script, BIP276) {
         
         digest160 digest_one {"0x1111111111111111111111111111111111111111"};
         digest160 digest_two {"0x2222222222222222222222222222222222222222"};

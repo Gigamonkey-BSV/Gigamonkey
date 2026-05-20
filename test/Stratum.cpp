@@ -10,7 +10,7 @@
 
 namespace Gigamonkey::Stratum {
     
-    TEST (StratumTest, TestStratumSessionID) {
+    TEST (Stratum, StratumSessionID) {
         
         uint32 a = 303829;
         uint32 b = 773822929;
@@ -36,7 +36,7 @@ namespace Gigamonkey::Stratum {
     }
     
     // taken from https://braiins.com/stratum-v1/docs
-    TEST(StratumTest, TestStratumPuzzle) {
+    TEST(Stratum, StratumPuzzle) {
         
         mining::subscribe_response subscribe_response {JSON::parse (
             R"({"id": 1, "result": [ [ ["mining.set_difficulty", "b4b6693b72a50c7116db18d6497cac52"], ["mining.notify", "ae6812eb4cd7735a302a8a9dd95cf71f"]], "08000002", 4], "error": null})")};
@@ -76,7 +76,7 @@ namespace Gigamonkey::Stratum {
 }
 
 namespace Gigamonkey::Stratum::mining { 
-    TEST (StratumTest, TestBooleanResponse) {
+    TEST (Stratum, BooleanResponse) {
         
         struct response_test_case {
             message_id ID;
@@ -130,7 +130,7 @@ namespace Gigamonkey::Stratum::mining {
         
     }
 
-    TEST (StratumTest, TestMiningAuthorize) {
+    TEST (Stratum, MiningAuthorize) {
         
         struct request_test_case {
             message_id ID;
@@ -171,7 +171,7 @@ namespace Gigamonkey::Stratum::mining {
         
     }
     
-    TEST (StratumTest, TestMiningSubscribe) {
+    TEST (Stratum, MiningSubscribe) {
         
         struct request_test_case {
             message_id ID;
@@ -245,7 +245,7 @@ namespace Gigamonkey::Stratum::mining {
         
     }
     
-    TEST (StratumTest, TestMiningSubmit) {
+    TEST (Stratum, MiningSubmit) {
         
         struct notification_test_case {
             message_id ID;
@@ -279,7 +279,7 @@ namespace Gigamonkey::Stratum::mining {
         }
     }
     
-    TEST (StratumTest, TestMiningNotify) {
+    TEST (Stratum, MiningNotify) {
         
         struct request_test_case {
             message_id ID;
@@ -314,7 +314,7 @@ namespace Gigamonkey::Stratum::mining {
         }
     }
     
-    TEST (StratumTest, TestStratumDifficulty) {
+    TEST (Stratum, StratumDifficulty) {
         
         difficulty d1 {work::difficulty {.0001}};
         difficulty d2 {555};
@@ -327,7 +327,7 @@ namespace Gigamonkey::Stratum::mining {
         
     }
     
-    TEST (StratumTest, TestStratumProof) {
+    TEST (Stratum, StratumProof) {
         
         job_id jid = "2333";
         extranonce en {1, 8};
@@ -389,7 +389,7 @@ namespace Gigamonkey::Stratum::mining {
         
     }
     
-    TEST (StratumTest, TestMiningConfigure) {
+    TEST (Stratum, MiningConfigure) {
         //extensions::requests{ };
     }
 

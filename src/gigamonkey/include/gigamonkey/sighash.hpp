@@ -6,7 +6,7 @@
 
 #include <gigamonkey/hash.hpp>
 #include <gigamonkey/incomplete.hpp>
-#include <gigamonkey/script/instruction.hpp>
+#include <gigamonkey/script/program.hpp>
 #include <data/tools/lazy_writer.hpp>
 
 namespace Gigamonkey::Bitcoin {
@@ -30,9 +30,10 @@ namespace Gigamonkey::Bitcoin {
             // the output with the same index number as the input in which this sig
             single = 3, 
 
-            // added in Bitcoin Cash, used to implement replace protection. The signature algorithm 
-            // is different when enabled. Will be depricated eventually. 
+            // if enabled, we use the original signature hash algorithm.
+            chronicle = 0x20,
 
+            // added in Bitcoin Cash, used to implement replay protection.
             fork_id = 0x40,
 
             // If enabled, inputs are not signed, meaning anybody can add new inputs to this tx.
@@ -50,9 +51,13 @@ namespace Gigamonkey::Bitcoin {
         bool inline has_fork_id (directive d) {
             return (d & fork_id) != 0;
         }
+
+        bool inline has_chronicle (directive d) {
+            return (d & chronicle) != 0;
+        }
         
         bool inline valid (directive d) {
-            return !(d & 0x3c);
+            return !(d & 0x1c);
         }
         
         // the information that contains the information that gets hashed to produce the signature, 
@@ -61,8 +66,15 @@ namespace Gigamonkey::Bitcoin {
         
     };
     
-    sighash::directive inline directive (sighash::type t, bool anyone_can_pay = false, bool fork_id = true) {
-        return sighash::directive (t + sighash::fork_id * fork_id + sighash::anyone_can_pay * anyone_can_pay);
+    sighash::directive inline directive (
+        sighash::type t,
+        bool anyone_can_pay = false,
+        bool fork_id = true,
+        bool chronicle = true) {
+        return sighash::directive (t +
+            sighash::fork_id * fork_id +
+            sighash::anyone_can_pay * anyone_can_pay +
+            sighash::chronicle * chronicle);
     }
     
     namespace sighash {
@@ -83,25 +95,24 @@ namespace Gigamonkey::Bitcoin {
             // the script code contains the previous output script with the 
             // latest instance of OP_CODESEPARATOR before the signature operation 
             // being evaluated and everything earlier removed.
-            program ScriptCode;
+            segment ScriptCode;
             
             bool valid () const {
                 return RedeemedValue >= 0 && InputIndex < Transaction.Inputs.size ();
             }
             
-            document (incomplete::transaction &tx, index i, satoshi r, program script_code) :
+            document (incomplete::transaction &tx, index i, satoshi r, segment script_code) :
                 Transaction {tx}, InputIndex {i}, RedeemedValue {r}, ScriptCode {script_code} {}
-            
         };
         
         bytes write (const document &, sighash::directive);
         
         writer &write (writer &w, const document &doc, sighash::directive d);
-        
+
         bytes inline write (const document &doc, sighash::directive d) {
-            data::lazy_bytes_writer w;
-            write (w, doc, d);
-            return w;
+            return data::write<bytes> ([&] (auto &&w) {
+                write (w, doc, d);
+            });
         }
         
         // two different functions are in use, due to the bitcoin Cash hard fork. 
@@ -112,15 +123,15 @@ namespace Gigamonkey::Bitcoin {
         writer &write_Bitcoin_Cash (writer &, const document &, sighash::directive);
         
         bytes inline write_original (const document &doc, sighash::directive d) {
-            data::lazy_bytes_writer w;
-            write_original (w, doc, d);
-            return w;
+            return data::write<bytes> ([&] (auto &&w) {
+                write_original (w, doc, d);
+            });
         }
         
         bytes inline write_Bitcoin_Cash (const document &doc, sighash::directive d) {
-            data::lazy_bytes_writer w;
-            write_Bitcoin_Cash (w, doc, d);
-            return w;
+            return data::write<bytes> ([&] (auto &&w) {
+                write_Bitcoin_Cash (w, doc, d);
+            });
         }
         
         writer inline &write (writer &w, const document &doc, sighash::directive d) {
@@ -137,39 +148,41 @@ namespace Gigamonkey::Bitcoin {
         namespace Amaury {
             bytes write (const document &, sighash::directive);
             writer &write (writer &w, const document &doc, sighash::directive d);
-            digest256 hash_prevouts (const incomplete::transaction &);
-            digest256 hash_sequence (const incomplete::transaction &);
-            digest256 hash_outputs (const incomplete::transaction &);
+            void hash_prevouts (digest256 &, const incomplete::transaction &);
+            void hash_sequence (digest256 &, const incomplete::transaction &);
+            void hash_outputs (digest256 &, const incomplete::transaction &);
         }
         
         writer inline &write_Bitcoin_Cash (writer &w, const document &doc, sighash::directive d) {
-            return sighash::has_fork_id (d) ? Amaury::write (w, doc, d) : write_original (w, doc, d & ~sighash::fork_id);
+            return sighash::has_chronicle (d) || !sighash::has_fork_id (d) ?
+                write_original (w, doc, d & ~(sighash::fork_id | sighash::chronicle)) :
+                Amaury::write (w, doc, d & ~sighash::chronicle);
         }
         
         namespace Amaury {
         
             bytes inline write (const document &doc, sighash::directive d) {
-                data::lazy_bytes_writer w;
-                Amaury::write (w, doc, d);
-                return w;
+                return data::write<bytes> ([&] (auto &&w) {
+                    Amaury::write (w, doc, d);
+                });
             }
 
             digest256 inline hash_prevouts (const incomplete::transaction &tx) {
-                Hash256_writer w;
-                for (const incomplete::input &in : tx.Inputs) w << in.Reference;
-                return w.complete ();
+                return data::hash::write<Hash256_writer> ([&] (auto &&w) {
+                    for (const incomplete::input &in : tx.Inputs) w << in.Reference;
+                });
             }
 
             digest256 inline hash_sequence (const incomplete::transaction &tx) {
-                Hash256_writer w;
-                for (const incomplete::input &in : tx.Inputs) w << in.Sequence;
-                return w.complete ();
+                return data::hash::write<Hash256_writer> ([&] (auto &&w) {
+                    for (const incomplete::input &in : tx.Inputs) w << in.Sequence;
+                });
             }
 
             digest256 inline hash_outputs (const incomplete::transaction &tx) {
-                Hash256_writer w;
-                for (const output &out : tx.Outputs) w << out;
-                return w.complete ();
+                return data::hash::write<Hash256_writer> ([&] (auto &&w) {
+                    for (const output &out : tx.Outputs) w << out;
+                });
             }
             
         }

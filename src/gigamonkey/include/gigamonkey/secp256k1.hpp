@@ -6,25 +6,54 @@
 
 #include <gigamonkey/p2p/var_int.hpp>
 #include <gigamonkey/hash.hpp>
-#include <gigamonkey/numbers.hpp>
 #include <data/encoding/integer.hpp>
-#include <data/crypto/encrypted.hpp>
+#include <data/math/number/modular.hpp>
 
 namespace Gigamonkey::secp256k1 {
+
+    constexpr const data::uint256 prime {"0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F"};
+    constexpr const data::uint256 base_order {"0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141"};
     
-    using coordinate = uint256;
-    
-    struct point {
-        coordinate R;
-        coordinate S;
-        
-        point (const coordinate &r, const coordinate &s) : R {r}, S {s} {}
+    using scalar = data::math::number::modular<base_order>;
+    using coordinate = data::math::number::modular<prime>;
+
+    enum sign {
+        even = 0x02,
+        odd = 0x03
     };
-    
-    writer &operator << (writer &, const point &);
-    reader &operator >> (reader &, point &);
-    
+
+    struct point {
+        coordinate X;
+        coordinate Y;
+        constexpr point (const coordinate &x, const coordinate &y) : X {x}, Y {y} {}
+        secp256k1::sign sign () const;
+    };
+
     bool operator == (const point &, const point &);
+
+    point operator - (const point &);
+    point operator + (const point &, const point &);
+    point operator - (const point &, const point &);
+    point operator * (const point &, const scalar &s);
+
+    point to_public (const scalar &);
+
+    // a complex is an unserialized signature.
+    struct complex {
+        scalar R;
+        scalar S;
+        
+        complex (const scalar &r, const scalar &s) : R {r}, S {s} {}
+    };
+
+    std::ostream inline &operator << (std::ostream &o, const complex &z) {
+        return o << "{R: " << z.R << ", S: " << z.S << "}";
+    }
+
+    bool operator == (const complex &, const complex &);
+
+    // convert between low/high S.
+    complex operator - (const complex &);
     
     struct secret;
     struct pubkey;
@@ -39,22 +68,24 @@ namespace Gigamonkey::secp256k1 {
         // max size is 6 + 2 * 33
         constexpr static size_t MaxSize = 72; 
         
-        static bool valid (slice<const byte> x);
-        static bool minimal (slice<const byte> x);
-        static bool normalized (slice<const byte>);
+        static bool valid (byte_slice x);
+        static bool minimal (byte_slice x);
+        static bool normalized (byte_slice);
         
-        static slice<const byte> R (slice<const byte>);
-        static slice<const byte> S (slice<const byte>);
+        static byte_slice r (byte_slice);
+        static byte_slice s (byte_slice);
+
+        scalar r () const;
+        scalar s () const;
         
-        explicit signature (slice<const byte> b) : bytes {b} {}
+        explicit signature (byte_slice b) : bytes {b} {}
         
-        explicit operator point () const;
-        explicit signature (const point &);
+        explicit operator complex () const;
+        explicit signature (const complex &z);
+        explicit signature (const scalar &r, const scalar &s): signature {complex {r, s}} {}
+
+        // low S
         signature normalize () const;
-        
-        static size_t serialized_size (const point &p) {
-            return p.S.size () + p.R.size () + 6;
-        }
         
         signature () : bytes {} {}
     };
@@ -79,19 +110,19 @@ namespace Gigamonkey::secp256k1 {
         constexpr static size_t CompressedSize {33};
         constexpr static size_t UncompressedSize {65};
         
-        static bool valid (slice<const byte>);
+        static bool valid (byte_slice);
         
-        static bool compressed (slice<const byte> b) {
+        static bool compressed (byte_slice b) {
             return valid (b) && b.size () == CompressedSize;
         }
         
-        static bool verify (slice<const byte> pubkey, const digest&, slice<const byte> sig);
-        static bytes compress (slice<const byte>);
-        static bytes decompress (slice<const byte>);
-        static bytes negate (slice<const byte>);
-        static bytes plus (slice<const byte>, slice<const byte>);
-        static bytes tweak (slice<const byte>, const uint256 &);
-        static bytes times (slice<const byte>, slice<const byte>);
+        static bool verify (byte_slice pubkey, const digest&, byte_slice sig);
+        static bytes compress (byte_slice);
+        static bytes decompress (byte_slice);
+        static bytes negate (byte_slice);
+        static bytes plus (byte_slice, byte_slice);
+        static bytes tweak (byte_slice, const uint256 &);
+        static bytes times (byte_slice, byte_slice);
         
         static bool valid_size (size_t size) {
             return size == CompressedSize || size == UncompressedSize;
@@ -129,10 +160,10 @@ namespace Gigamonkey::secp256k1 {
     
     struct secret final : public nonzero<uint256> {
         
-        static bool valid (slice<const byte>);
-        static bytes to_public_compressed (slice<const byte>);
-        static bytes to_public_uncompressed (slice<const byte>);
-        static signature sign (slice<const byte>, const digest &);
+        static bool valid (byte_slice);
+        static bytes to_public_compressed (byte_slice);
+        static bytes to_public_uncompressed (byte_slice);
+        static signature sign (byte_slice, const digest &);
         
         static uint256 negate (const uint256 &);
         static uint256 plus (const uint256 &, const uint256 &);
@@ -158,26 +189,29 @@ namespace Gigamonkey::secp256k1 {
         secret operator * (const secret &) const;
         
     };
-    
-    bool inline operator == (const point &a, const point &b) {
+
+    bool inline operator == (const complex &a, const complex &b) {
         return a.R == b.R && a.S == b.S;
     }
+
+    complex inline operator - (const complex &z) {
+        return complex {z.R, -z.S};
+    }
     
-    writer inline &operator << (writer &w, const point &p) {
-        return w << byte (0x30) <<
-            Bitcoin::var_int {Bitcoin::serialized_size (p.R) + Bitcoin::serialized_size (p.S) + 4} << p.R << p.S;
+    bool inline operator == (const point &a, const point &b) {
+        return a.X == b.X && a.Y == b.Y;
     }
     
     std::ostream inline &operator << (std::ostream &o, const secret &s) {
-        return o << "secret{" << s.Value << "}";
+        return o << "secret {" << s.Value << "}";
     }
 
     std::ostream inline &operator << (std::ostream &o, const pubkey &p) {
-        return o << "pubkey{" << encoding::hex::write (p) << "}";
+        return o << "pubkey {" << encoding::hex::write (p) << "}";
     }
 
     std::ostream inline &operator << (std::ostream &o, const signature &x) {
-        return o << "signature{" << encoding::hex::write (bytes (x)) << "}";
+        return o << "signature {" << encoding::hex::write (bytes (x)) << "}";
     }
     
     bool inline valid (const secret &s) {
@@ -204,7 +238,7 @@ namespace Gigamonkey::secp256k1 {
         return p.valid ();
     }
     
-    bool inline verify (const pubkey &p, const digest& d, const signature& s) {
+    bool inline verify (const pubkey &p, const digest &d, const signature &s) {
         return p.verify (d, s);
     }
     
@@ -241,7 +275,7 @@ namespace Gigamonkey::secp256k1 {
     }
     
     pubkey inline secret::to_public (bool compressed) const {
-        return pubkey {(compressed ? to_public_compressed : to_public_uncompressed) (slice<const byte> (Value))};
+        return pubkey {(compressed ? to_public_compressed : to_public_uncompressed) (byte_slice (Value))};
     }
     
     secret inline secret::operator - () const {
