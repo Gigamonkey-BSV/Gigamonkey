@@ -4,20 +4,21 @@
 #ifndef GIGAMONKEY_PAY_MAPI
 #define GIGAMONKEY_PAY_MAPI
 
-#include <data/net/HTTP_client.hpp>
-#include <data/net/TCP.hpp>
+#include <net/HTTP_client.hpp>
+#include <net/TCP.hpp>
+
 #include <gigamonkey/pay/envelope.hpp>
 #include <gigamonkey/fees.hpp>
 
 // https://github.com/bitcoin-sv-specs/brfc-merchantapi 
 namespace Gigamonkey {
-    namespace HTTP = data::net::HTTP;
+    namespace HTTP = net::HTTP;
 
     using unicode = data::unicode;
     using UTF8 = data::UTF8;
-    using ip_address = data::net::IP::address;
+    using ip_address = net::IP::address;
 
-    template <typename X> using awaitable = boost::asio::awaitable<X>;
+    template <typename X> using awaitable = data::awaitable<X>;
 }
 
 namespace Gigamonkey::MAPI {

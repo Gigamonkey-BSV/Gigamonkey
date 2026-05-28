@@ -2,10 +2,13 @@
 // Copyright (c) 2019 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#include <gigamonkey/work/proof.hpp>
 #include "dot_cross.hpp"
-#include "gtest/gtest.h"
+
 #include <iostream>
+
+#include <gigamonkey/work/proof.hpp>
+
+#include <gtest/gtest.h>
 
 namespace Gigamonkey::work {
     

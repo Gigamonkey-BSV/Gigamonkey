@@ -5,7 +5,7 @@
 #ifndef GIGAMONKEY_P2P_NET_ADDRESS
 #define GIGAMONKEY_P2P_NET_ADDRESS
 
-#include <data/net/URL.hpp>
+#include <net/URL.hpp>
 #include <gigamonkey/timestamp.hpp>
 
 namespace Gigamonkey::Bitcoin::p2p {
@@ -21,17 +21,10 @@ namespace Gigamonkey::Bitcoin::p2p {
         uint_little<16> IPAddress;
         uint16_little Port;
 
-        endpoint () : IPAddress {0}, Port {0} {}
-        endpoint (const uint_little<16> &ip_address, uint16_little port): IPAddress {ip_address}, Port {port} {}
-        endpoint (const data::net::IP::TCP::endpoint &e): endpoint {e.address (), e.port ()} {}
-        endpoint (const data::net::IP::address &addr, uint16 port) : endpoint {} {
-            if (!addr.valid ()) return;
-
-            Port = port;
-
-            bytes b = bytes (addr);
-            std::copy (b.begin (), b.end (), IPAddress.end () - b.size ());
-        }
+        endpoint ();
+        endpoint (const uint_little<16> &ip_address, uint16_little port);
+        endpoint (const net::IP::TCP::endpoint &e);
+        endpoint (const net::IP::address &addr, uint16 port);
 
         static size_t serialized_size () {
             return 18;
@@ -86,6 +79,21 @@ namespace Gigamonkey::Bitcoin::p2p {
 
     writer inline &operator << (writer &w, const last_seen_net_address &h) {
         return w << static_cast<net_address> (h) << h.LastSeen;
+    }
+
+    inline endpoint::endpoint () : IPAddress {0}, Port {0} {}
+
+    inline endpoint::endpoint (const uint_little<16> &ip_address, uint16_little port): IPAddress {ip_address}, Port {port} {}
+
+    inline endpoint::endpoint (const net::IP::TCP::endpoint &e): endpoint {e.address (), e.port ()} {}
+
+    inline endpoint::endpoint (const net::IP::address &addr, uint16 port) : endpoint {} {
+        if (!addr.valid ()) return;
+
+        Port = port;
+
+        bytes b = bytes (addr);
+        std::copy (b.begin (), b.end (), IPAddress.end () - b.size ());
     }
 
 }

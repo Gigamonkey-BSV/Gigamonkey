@@ -6,9 +6,9 @@
 
 namespace Gigamonkey::Bitcoin {
 
-    address address::encode (net n, const digest160 &d) {
+    address address::encode (Bitcoin::network n, const digest160 &d) {
 
-        prefix p = n == net::Main ? main : test;
+        prefix p = n == Bitcoin::network::Main ? main : test;
 
         address addr {};
         static_cast<string &> (addr) = std::move (base58::check {byte (p), byte_slice {d}}.encode ());
@@ -28,7 +28,7 @@ namespace Gigamonkey::Bitcoin {
 
         if (!valid_prefix (p)) return {};
 
-        d.Network = p == main ? net::Main : net::Test;
+        d.Network = p == main ? network::Main : network::Test;
 
         if (b58.payload ().size () > 20) return {};
         std::copy (b58.payload ().begin (), b58.payload ().end (), d.Digest.begin ());

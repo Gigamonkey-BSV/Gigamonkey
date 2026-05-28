@@ -6,6 +6,11 @@
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "cert-err58-cpp"
 
+#include <iostream>
+
+#include <data/crypto/NIST_DRBG.hpp>
+#include <data/encoding/hex.hpp>
+
 #include <gigamonkey/wif.hpp>
 #include <gigamonkey/p2p/checksum.hpp>
 #include <gigamonkey/script/interpreter.hpp>
@@ -13,10 +18,8 @@
 #include <gigamonkey/script/pattern/pay_to_pubkey.hpp>
 #include <gigamonkey/script/pattern/pay_to_script_hash.hpp>
 #include <gigamonkey/script/typed_data_bip_276.hpp>
-#include <data/crypto/NIST_DRBG.hpp>
-#include <data/encoding/hex.hpp>
-#include "gtest/gtest.h"
-#include <iostream>
+
+#include <gtest/gtest.h>
 
 namespace Gigamonkey::Bitcoin {
 
@@ -27,7 +30,7 @@ namespace Gigamonkey::Bitcoin {
     struct test_standard_scripts {
 
         // We start with a secret key.
-        secret key {net::Test, secp256k1::secret {uint256 {"0x00000000000000000000000000000000000000000000000000000000000101a7"}}};
+        secret key {Bitcoin::network::Test, secp256k1::secret {uint256 {"0x00000000000000000000000000000000000000000000000000000000000101a7"}}};
 
         pubkey pubkey_compressed {key.to_public ().compress ()};
         pubkey pubkey_uncompressed {key.to_public ().decompress ()};
@@ -236,7 +239,7 @@ namespace Gigamonkey::Bitcoin {
         
         random >> pubkey_hash;
         
-        Bitcoin::address address {Bitcoin::net::Main, pubkey_hash};
+        Bitcoin::address address {Bitcoin::network::Main, pubkey_hash};
         
         base58::check address_check (address);
         

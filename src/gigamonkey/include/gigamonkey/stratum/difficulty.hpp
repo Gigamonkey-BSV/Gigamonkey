@@ -4,11 +4,12 @@
 #ifndef GIGAMONKEY_STRATUM_DIFFICULTY
 #define GIGAMONKEY_STRATUM_DIFFICULTY
 
+#include <net/JSON.hpp>
+
 #include <gigamonkey/work/target.hpp>
-#include <data/net/JSON.hpp>
 
 namespace Gigamonkey {
-    using JSON = data::JSON;
+    using JSON = net::JSON;
 }
 
 namespace Gigamonkey::Stratum {

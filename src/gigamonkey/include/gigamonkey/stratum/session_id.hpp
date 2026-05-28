@@ -4,11 +4,12 @@
 #ifndef GIGAMONKEY_STRATUM_SESSION_ID
 #define GIGAMONKEY_STRATUM_SESSION_ID
 
+#include <net/JSON.hpp>
+
 #include <gigamonkey/types.hpp>
-#include <data/net/JSON.hpp>
 
 namespace Gigamonkey {
-    using JSON = data::JSON;
+    using JSON = net::JSON;
 }
 
 namespace Gigamonkey::Stratum {

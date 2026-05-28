@@ -12,19 +12,15 @@ namespace HD = Gigamonkey::HD;
 namespace Bitcoin = Gigamonkey::Bitcoin;
 
 class Bip39Tests : public ::testing::TestWithParam<std::tuple<HD::BIP_39::language, std::string, std::string, std::string, std::string, std::string>>
-{
+{};
 
-};
-
-TEST_P (Bip39Tests, EntropyToWords)
-{
+TEST_P (Bip39Tests, EntropyToWords) {
     HD::entropy ent = *data::encoding::hex::read (std::get<1> (GetParam ()));
     std::string output = HD::BIP_39::generate (ent, std::get<0> (GetParam ()));
     ASSERT_EQ (output, std::get<2> (GetParam ())) << "Given Entropy doesn't match the expected word list";
 }
 
-std::string hexStr (Gigamonkey::byte *data, int len)
-{
+std::string hexStr (Gigamonkey::byte *data, int len) {
      std::stringstream ss;
      ss << std::hex;
 
@@ -45,7 +41,7 @@ TEST_P (Bip39Tests, WordsToKey) {
     const std::string &words = std::get<2> (GetParam ());
     HD::seed seed = HD::BIP_39::read (words,std::get<3> (GetParam ()), std::get<0> (GetParam ()));
 
-    HD::BIP_32::secret secret = HD::BIP_32::secret::from_seed (seed, Bitcoin::net::Main);
+    HD::BIP_32::secret secret = HD::BIP_32::secret::from_seed (seed, Bitcoin::network::Main);
     ASSERT_EQ (secret.write(), std::get<5> (GetParam ())) << "Words do not become the right key";
 }
 
@@ -55,7 +51,7 @@ TEST_P (Bip39Tests, EntropyToKey) {
     std::string output=HD::BIP_39::generate (ent);
     HD::seed seed=HD::BIP_39::read (output,std::get<3> (GetParam ()),std::get<0> (GetParam()));
 
-    HD::BIP_32::secret secret=HD::BIP_32::secret::from_seed (seed, Bitcoin::net::Main);
+    HD::BIP_32::secret secret=HD::BIP_32::secret::from_seed (seed, Bitcoin::network::Main);
     ASSERT_EQ(secret.write(),std::get<5>(GetParam())) << "Entropy does not become the right key";
 
 }
@@ -64,7 +60,7 @@ TEST_P (Bip39Tests, WrongPassphraseFails) {
     const std::string &words=std::get<2>(GetParam ());
     HD::seed seed = HD::BIP_39::read(words,"IFailToPassOrCode",std::get<0>(GetParam()));
 
-    HD::BIP_32::secret secret = HD::BIP_32::secret::from_seed (seed, Bitcoin::net::Main);
+    HD::BIP_32::secret secret = HD::BIP_32::secret::from_seed (seed, Bitcoin::network::Main);
     ASSERT_NE (secret.write (), std::get<5> (GetParam ())) << "Words become right key without correct passphrase";
 }
 

@@ -61,7 +61,7 @@ namespace Gigamonkey::HD {
         ASSERT_EQ (read.Sequence, 0) << "Invalid Sequence";
         ASSERT_EQ (read.Depth, 0) << "Invalid Depth";
         ASSERT_EQ (read.Parent, 0) << "Invalid Parent Fingerprint";
-        ASSERT_EQ (read.Network, Bitcoin::net::Main) << "Invalid Network";
+        ASSERT_EQ (read.Network, Bitcoin::network::Main) << "Invalid Network";
         ASSERT_EQ ((static_cast<data::array<byte, 32>> (read.ChainCode)), (data::array<byte, 32>
             {0x87, 0x3D, 0xFF, 0x81, 0xC0, 0x2F, 0x52, 0x56, 0x23, 0xFD, 0x1F, 0xE5, 0x16, 0x7E, 0xAC, 0x3A, 0x55, 0xA0, 0x49,
              0xDE, 0x3D, 0x31, 0x4B, 0xB4, 0x2E, 0xE2, 0x27, 0xFF, 0xED, 0x37, 0xD5, 0x08})) << "Invalid ChainCode";
@@ -80,7 +80,7 @@ namespace Gigamonkey::HD {
     TEST (Bip32, ToPublic) {
         data::bytes seed = *data::encoding::hex::read ("000102030405060708090a0b0c0d0e0f");
 
-        BIP_32::secret secret = BIP_32::secret::from_seed (seed, Bitcoin::net::Main);
+        BIP_32::secret secret = BIP_32::secret::from_seed (seed, Bitcoin::network::Main);
         BIP_32::secret secret2 = BIP_32::secret::read
             ("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi");
         BIP_32::pubkey pubkey = secret.to_public ();

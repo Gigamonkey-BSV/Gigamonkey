@@ -4,28 +4,30 @@
 #ifndef GIGAMONKEY_STRATUM_REMOTE
 #define GIGAMONKEY_STRATUM_REMOTE
 
+#include <boost/system/error_code.hpp>
+
+#include <net/TCP.hpp>
+#include <net/JSON.hpp>
+
 #include <gigamonkey/stratum/stratum.hpp>
 #include <gigamonkey/stratum/mining_configure.hpp>
 #include <gigamonkey/stratum/mining_authorize.hpp>
 #include <gigamonkey/stratum/mining_subscribe.hpp>
 #include <gigamonkey/stratum/mining_submit.hpp>
 #include <gigamonkey/stratum/client_get_version.hpp>
-#include <boost/system/error_code.hpp>
-#include <data/net/TCP.hpp>
-#include <data/net/JSON.hpp>
 
 namespace Gigamonkey {
 
-    using URL = data::net::URL;
+    using URL = net::URL;
     using ASCII = data::ASCII;
     using unicode = data::unicode;
     using UTF8 = data::UTF8;
-    using ip_address = data::net::IP::address;
+    using ip_address = net::IP::address;
 }
 
 namespace Gigamonkey::Stratum {
 
-    using stream = ptr<data::net::out_stream<JSON>>;
+    using stream = ptr<net::out_stream<JSON>>;
 
     template <typename X> using awaitable = data::awaitable<X>;
     

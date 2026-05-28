@@ -74,7 +74,7 @@ protected:
     HD::BIP_32::secret seedkey;
     void SetUp() override {
         data::bytes seed = *data::encoding::hex::read (GetParam ().seed);
-        seedkey = Gigamonkey::HD::BIP_32::secret::from_seed (seed, Gigamonkey::Bitcoin::net::Main);
+        seedkey = Gigamonkey::HD::BIP_32::secret::from_seed (seed, Gigamonkey::Bitcoin::network::Main);
     }
 };
 

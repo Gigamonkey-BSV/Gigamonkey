@@ -27,7 +27,7 @@ namespace Gigamonkey::Bitcoin {
     // changes the address. 
     struct secret {
         
-        net Network;
+        network Network;
         secp256k1::secret Secret;
         
         // whether the corresponding public key is compressed. 
@@ -38,7 +38,7 @@ namespace Gigamonkey::Bitcoin {
         bool valid () const;
         
         secret ();
-        secret (net p, secp256k1::secret s, bool c = true);
+        secret (network p, secp256k1::secret s, bool c = true);
         
         secret (string_view s);
         
@@ -80,15 +80,15 @@ namespace Gigamonkey::Bitcoin {
         constexpr static byte CompressedSuffix = 0x01;
 
         static bool valid (string_view);
-        static net network (string_view);
+        static Bitcoin::network network (string_view);
         static secp256k1::secret secret (string_view);
         static bool compressed (string_view);
 
-        static WIF encode (net, const secp256k1::secret &, bool compressed = true);
+        static WIF encode (Bitcoin::network, const secp256k1::secret &, bool compressed = true);
         static Bitcoin::secret decode (string_view);
 
         bool valid () const;
-        net network () const;
+        Bitcoin::network network () const;
         secp256k1::secret secret () const;
         bool compressed () const;
 
@@ -114,12 +114,12 @@ namespace Gigamonkey::Bitcoin {
     }
     
     bool inline secret::valid () const {
-        return Secret.valid () && (Network == net::Main || Network == net::Test);
+        return Secret.valid () && (Network == Bitcoin::network::Main || Network == Bitcoin::network::Test);
     }
     
-    inline secret::secret () : Network {net::Invalid}, Secret {}, Compressed {false} {}
+    inline secret::secret () : Network {Bitcoin::network::Invalid}, Secret {}, Compressed {false} {}
     
-    inline secret::secret (net p, secp256k1::secret s, bool c) : Network {p}, Secret {s}, Compressed {c} {}
+    inline secret::secret (Bitcoin::network p, secp256k1::secret s, bool c) : Network {p}, Secret {s}, Compressed {c} {}
     
     inline secret::secret (string_view s) : secret {WIF::decode (s)} {}
         
@@ -159,7 +159,7 @@ namespace Gigamonkey::Bitcoin {
         return decode (x).valid ();
     }
 
-    net inline WIF::network (string_view x) {
+    Bitcoin::network inline WIF::network (string_view x) {
         return decode (x).Network;
     }
 
@@ -175,7 +175,7 @@ namespace Gigamonkey::Bitcoin {
         return valid (*this);
     }
 
-    net inline WIF::network () const {
+    Bitcoin::network inline WIF::network () const {
         return network (*this);
     }
 

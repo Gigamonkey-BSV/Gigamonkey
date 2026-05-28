@@ -111,7 +111,7 @@ namespace Gigamonkey::Boost {
             Bitcoin::timestamp start, 
             Stratum::session_id n1, 
             uint64_big n2, uint64 key) {
-            Bitcoin::secret s (Bitcoin::net::Main, secp256k1::secret (uint256 (key)));
+            Bitcoin::secret s (Bitcoin::network::Main, secp256k1::secret (uint256 (key)));
             
             bytes extra_nonce_2 (8);
             std::copy (n2.begin (), n2.end (), extra_nonce_2.begin ());
@@ -129,7 +129,7 @@ namespace Gigamonkey::Boost {
             Stratum::session_id n1,  
             uint64_big n2, 
             uint64 key) { 
-            Bitcoin::secret s (Bitcoin::net::Main, secp256k1::secret (uint256 (key)));
+            Bitcoin::secret s (Bitcoin::network::Main, secp256k1::secret (uint256 (key)));
             digest160 address = Bitcoin::Hash160 (s.to_public ());
             
             output_script o = type == contract ? 
@@ -153,7 +153,7 @@ namespace Gigamonkey::Boost {
             Stratum::session_id n1, 
             uint64_big n2, 
             uint64 key) { 
-            Bitcoin::secret s (Bitcoin::net::Main, secp256k1::secret (uint256 (key)));
+            Bitcoin::secret s (Bitcoin::network::Main, secp256k1::secret (uint256 (key)));
             digest160 address = Bitcoin::Hash160 (s.to_public ());
             
             output_script o = type == contract ? 
@@ -854,7 +854,7 @@ namespace Gigamonkey::Boost {
     // this is used to test against the boostpow-js library. 
     TEST (Boost, AgainstBoostPoWJSRedeem) {
         
-        Bitcoin::secret from_key {Bitcoin::net::Main,
+        Bitcoin::secret from_key {Bitcoin::network::Main,
             secp256k1::secret {uint256 {"0x0000000000000000000000000000000000000000000000000000000000000003"}}};
         
         bytes content_string = bytes (string ("hello animal"));

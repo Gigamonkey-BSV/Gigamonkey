@@ -25,33 +25,33 @@ namespace Gigamonkey::Bitcoin {
         };
 
         static bool valid (string_view);
-        static net network (string_view);
+        static Bitcoin::network network (string_view);
         static digest160 digest (string_view);
 
         bool valid () const;
 
-        net network () const;
+        Bitcoin::network network () const;
         digest160 digest () const;
 
         address ();
-        address (net p, const digest160 &d);
+        address (Bitcoin::network p, const digest160 &d);
 
         explicit address (string_view s);
 
-        static address encode (net network, const digest160 &d);
+        static address encode (Bitcoin::network network, const digest160 &d);
 
         static bool valid_prefix (prefix p);
 
         // the decoded form of the address, consisting
         // of a prefix and the Hash160 digest.
         struct decoded {
-            net Network;
+            Bitcoin::network Network;
             digest160 Digest;
 
             bool valid () const;
 
             decoded ();
-            decoded (net, const digest160 &);
+            decoded (Bitcoin::network, const digest160 &);
             decoded (string_view);
 
             address encode () const;
@@ -106,7 +106,7 @@ namespace Gigamonkey::Bitcoin {
         return decode (x).valid ();
     }
 
-    net inline address::network (string_view x) {
+    Bitcoin::network inline address::network (string_view x) {
         return decode (x).Network;
     }
 
@@ -114,7 +114,7 @@ namespace Gigamonkey::Bitcoin {
         return decode (x).Digest;
     }
 
-    net inline address::network () const {
+    Bitcoin::network inline address::network () const {
         return network (*this);
     }
 
@@ -126,18 +126,18 @@ namespace Gigamonkey::Bitcoin {
         return valid (*this);
     }
 
-    inline address::decoded::decoded () : Network {net::Invalid}, Digest {} {}
-    inline address::decoded::decoded (net network, const digest160 &dig) : Network {network}, Digest {dig} {}
+    inline address::decoded::decoded () : Network {Bitcoin::network::Invalid}, Digest {} {}
+    inline address::decoded::decoded (Bitcoin::network network, const digest160 &dig) : Network {network}, Digest {dig} {}
 
     inline address::address () : string {} {}
-    inline address::address (net network, const digest160 &dig) : address {encode (network, dig)} {}
+    inline address::address (Bitcoin::network network, const digest160 &dig) : address {encode (network, dig)} {}
 
     bool inline address::valid_prefix (prefix p) {
         return p == main || p == test;
     }
 
     bool inline address::decoded::valid () const {
-        return Digest.valid () && (Network == net::Main || Network == net::Test);
+        return Digest.valid () && (Network == Bitcoin::network::Main || Network == Bitcoin::network::Test);
     }
 
     inline address::address (address::decoded d) : address {d.encode ()} {}

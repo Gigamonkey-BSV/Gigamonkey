@@ -77,6 +77,9 @@ target_link_libraries (
   PUBLIC
 
   Data::numbers
+
+  # for URL. We don't actually need networking. Thus URL ought to be its own library.
+  Net::net
 )
 
 target_sources (
@@ -167,6 +170,7 @@ target_link_libraries (
   PUBLIC
 
   Data::numbers
+
   nlohmann_json::nlohmann_json
 )
 
@@ -252,6 +256,7 @@ target_link_libraries (
   Gigamonkey::secp256k1
   Gigamonkey::numbers
   Gigamonkey::base58_check
+
   nlohmann_json::nlohmann_json
 )
 
@@ -297,11 +302,15 @@ target_link_libraries (
   Gigamonkey::tx
   Gigamonkey::Merkle
   Gigamonkey::numbers
+
+  Net::net
+
   Data::crypto
-  Data::net
   Data::data
+
   nlohmann_json::nlohmann_json
   PkgConfig::cryptopp
+
   util
   sv_giga
 

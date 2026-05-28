@@ -4,23 +4,24 @@
 #ifndef GIGAMONKEY_PAY_ARC
 #define GIGAMONKEY_PAY_ARC
 
-#include <data/net/error.hpp>
-#include <data/net/HTTP_client.hpp>
+#include <net/JSON.hpp>
+#include <net/error.hpp>
+#include <net/HTTP_client.hpp>
+
 #include <gigamonkey/pay/extended.hpp>
-#include <data/net/JSON.hpp>
 
 // https://bitcoin-sv.github.io/arc/api.html
 namespace Gigamonkey {
-    using JSON = data::JSON;
-    namespace HTTP = data::net::HTTP;
+    using JSON = net::JSON;
+    namespace HTTP = net::HTTP;
 
-    using URL = data::net::URL;
+    using URL = net::URL;
     using ASCII = data::ASCII;
     using unicode = data::unicode;
     using UTF8 = data::UTF8;
-    using ip_address = data::net::IP::address;
+    using ip_address = net::IP::address;
 
-    template <typename X> using awaitable = boost::asio::awaitable<X>;
+    template <typename X> using awaitable = data::awaitable<X>;
 }
 
 namespace Gigamonkey::ARC {
@@ -45,8 +46,8 @@ namespace Gigamonkey::ARC {
     };
 
     // failed queries may contain errors.
-    struct error : data::net::error {
-        using ::data::net::error::error;
+    struct error : net::error {
+        using net::error::error;
         maybe<Bitcoin::TxID> txid () const;
         maybe<string> extra_info () const;
     };

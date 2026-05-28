@@ -188,14 +188,14 @@ namespace Gigamonkey {
     std::map<digest160, Bitcoin::secret> keys;
 
     Bitcoin::secret get_next_key () {
-        Bitcoin::secret key {Bitcoin::net::Test, secp256k1::secret {next_key}};
+        Bitcoin::secret key {Bitcoin::network::Test, secp256k1::secret {next_key}};
         keys[key.address ().Digest] = key;
         next_key++;
         return key;
     }
 
     digest160 get_next_address () {
-        Bitcoin::secret key {Bitcoin::net::Test, secp256k1::secret {next_key}};
+        Bitcoin::secret key {Bitcoin::network::Test, secp256k1::secret {next_key}};
         digest160 address = key.address ().Digest;
         keys[address] = key;
         next_key++;

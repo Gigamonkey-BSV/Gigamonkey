@@ -20,7 +20,7 @@ namespace Gigamonkey::Bitcoin {
     
     class random_key_source final : public key_source {
         data::random::source &Random;
-        net Network;
+        network Network;
         bool Compressed;
         
     public:
@@ -35,7 +35,7 @@ namespace Gigamonkey::Bitcoin {
             return x;
         }
         
-        random_key_source (data::random::source &r, net net = net::Main, bool compressed = true) :
+        random_key_source (data::random::source &r, network net = network::Main, bool compressed = true) :
             Random {r}, Network {net}, Compressed {compressed} {}
     };
 

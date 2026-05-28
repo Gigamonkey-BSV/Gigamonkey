@@ -51,18 +51,18 @@ namespace Gigamonkey::HD {
             
             secp256k1::pubkey Pubkey {};
             chain_code ChainCode {};
-            Bitcoin::net Network {Bitcoin::net::Main};
+            Bitcoin::network Network {Bitcoin::network::Main};
             byte Depth {0};
             uint32 Parent {0};
             uint32 Sequence {0};
             
             bool valid () const {
                 return Pubkey.valid () && Pubkey.size () == secp256k1::pubkey::CompressedSize &&
-                    (Network == Bitcoin::net::Main || Network == Bitcoin::net::Test);
+                    (Network == Bitcoin::network::Main || Network == Bitcoin::network::Test);
             }
             
             pubkey (const secp256k1::pubkey &p, const chain_code &cc,
-                Bitcoin::net network = Bitcoin::net::Main,
+                Bitcoin::network network = Bitcoin::network::Main,
                 byte depth = 0, uint32 parent = 0, uint32 sequence = 0) :
                 Pubkey {p}, ChainCode {cc}, Network {network}, Depth {depth}, Parent {parent}, Sequence {sequence} {}
 
@@ -70,7 +70,7 @@ namespace Gigamonkey::HD {
             pubkey () = default;
             
             static pubkey read (string_view);
-            static pubkey from_seed (seed entropy, Bitcoin::net net);
+            static pubkey from_seed (seed entropy, Bitcoin::network net);
 
             string write () const;
 
@@ -96,13 +96,13 @@ namespace Gigamonkey::HD {
             
             secp256k1::secret Secret {};
             chain_code ChainCode {};
-            Bitcoin::net Network {Bitcoin::net::Main};
+            Bitcoin::network Network {Bitcoin::network::Main};
             byte Depth {0};
             uint32 Parent {0};
             uint32 Sequence {0};
 
             secret (const secp256k1::secret &s, const chain_code &cc,
-                Bitcoin::net network = Bitcoin::net::Main,
+                Bitcoin::network network = Bitcoin::network::Main,
                 byte depth = 0, uint32 parent = 0, uint32 sequence = 0) :
                 Secret {s}, ChainCode {cc}, Network {network}, Depth {depth}, Parent {parent}, Sequence {sequence} {}
 
@@ -110,13 +110,13 @@ namespace Gigamonkey::HD {
             secret () = default;
 
             static secret read (string_view);
-            static secret from_seed (seed entropy, Bitcoin::net network = Bitcoin::net::Main);
+            static secret from_seed (seed entropy, Bitcoin::network network = Bitcoin::network::Main);
 
             string write () const;
             pubkey to_public () const;
             
             bool valid () const {
-                return Secret.valid () && (Network == Bitcoin::net::Main || Network == Bitcoin::net::Test);
+                return Secret.valid () && (Network == Bitcoin::network::Main || Network == Bitcoin::network::Test);
             }
 
             bool operator == (const secret &rhs) const;

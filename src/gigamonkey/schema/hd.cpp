@@ -1,22 +1,23 @@
 // Copyright (c) 2020 Daniel Krawisz
 // Distributed under the Open BSV software license, see the accompanying file LICENSE.
 
-#include <gigamonkey/p2p/checksum.hpp>
-#include <gigamonkey/schema/hd.hpp>
+#include <cmath>
+#include <bitset>
+
+#include <boost/locale.hpp>
+
 #include <data/encoding/base58.hpp>
 #include <data/encoding/endian.hpp>
+
 #include <cryptopp/cryptlib.h>
 #include <cryptopp/hmac.h>
 #include <cryptopp/files.h>
 #include <cryptopp/sha.h>
 #include <cryptopp/hex.h>
 #include <cryptopp/pwdbased.h>
-#include <boost/locale.hpp>
-#include <cmath>
-//#include <unicode/normalizer2.h>
-//#include <unicode/utypes.h>
-//#include <unicode/unistr.h>
-#include <bitset>
+
+#include <gigamonkey/p2p/checksum.hpp>
+#include <gigamonkey/schema/hd.hpp>
 
 namespace Gigamonkey::HD::BIP_32 {
 
@@ -150,7 +151,7 @@ namespace Gigamonkey::HD::BIP_32 {
     string secret::write () const {
         bytes output;
 
-        bytes prv = Network == Bitcoin::net::Main ? bytes ({0x88, 0xAD, 0xE4}) : bytes ({0x35, 0x83, 0x94});
+        bytes prv = Network == Bitcoin::network::Main ? bytes ({0x88, 0xAD, 0xE4}) : bytes ({0x35, 0x83, 0x94});
 
         for (int i = 0; i < prv.size (); i++) output.push_back (prv[i]);
         output.push_back (Depth);
@@ -190,8 +191,8 @@ namespace Gigamonkey::HD::BIP_32 {
         secret secret1;
 
         auto check = view.range (0, 3);
-        if (bytes ({0x88, 0xAD, 0xE4}) == check) secret1.Network = Bitcoin::net::Main;
-        else if (bytes ({0x35, 0x83, 0x94}) == check) secret1.Network = Bitcoin::net::Test;
+        if (bytes ({0x88, 0xAD, 0xE4}) == check) secret1.Network = Bitcoin::network::Main;
+        else if (bytes ({0x35, 0x83, 0x94}) == check) secret1.Network = Bitcoin::network::Test;
         else return secret {};
 
         it_rdr r (view.begin () + 3, view.end ());
@@ -224,7 +225,7 @@ namespace Gigamonkey::HD::BIP_32 {
         return secret1;
     }
 
-    secret secret::from_seed (seed entropy, Bitcoin::net net) {
+    secret secret::from_seed (seed entropy, Bitcoin::network net) {
         const char *keyText = "Bitcoin seed";
         byte hmaced[CryptoPP::HMAC<CryptoPP::SHA512>::DIGESTSIZE];
         try {
@@ -263,13 +264,13 @@ namespace Gigamonkey::HD::BIP_32 {
             std::tie (rhs.Secret, rhs.ChainCode, rhs.Network, rhs.Depth, rhs.Parent, rhs.Sequence);
     }
 
-    pubkey pubkey::from_seed (seed entropy, Bitcoin::net net) {
+    pubkey pubkey::from_seed (seed entropy, Bitcoin::network net) {
         return secret::from_seed (entropy, net).to_public ();
     }
 
     string pubkey::write () const {
         bytes output;
-        bytes prv = Network == Bitcoin::net::Main ? bytes ({0x88, 0xB2, 0x1E}) : bytes ({0x35, 0x87, 0xCF});
+        bytes prv = Network == Bitcoin::network::Main ? bytes ({0x88, 0xB2, 0x1E}) : bytes ({0x35, 0x87, 0xCF});
 
         for (int i = 0; i < prv.size (); i++) output.push_back (prv[i]);
 
@@ -302,8 +303,8 @@ namespace Gigamonkey::HD::BIP_32 {
         pubkey pubkey1;
 
         auto check = view.range (0, 3);
-        if (bytes ({0x88, 0xB2, 0x1E}) == check) pubkey1.Network = Bitcoin::net::Main;
-        else if (bytes ({0x35, 0x87, 0xCF}) == check) pubkey1.Network = Bitcoin::net::Test;
+        if (bytes ({0x88, 0xB2, 0x1E}) == check) pubkey1.Network = Bitcoin::network::Main;
+        else if (bytes ({0x35, 0x87, 0xCF}) == check) pubkey1.Network = Bitcoin::network::Test;
         else return pubkey {};
 
         it_rdr r (view.begin () + 3, view.end ());

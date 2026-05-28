@@ -3,7 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <gigamonkey/numbers.hpp>
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 namespace Gigamonkey::Bitcoin {
 

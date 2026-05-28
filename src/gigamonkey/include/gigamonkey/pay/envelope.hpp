@@ -4,13 +4,16 @@
 #ifndef GIGAMONKEY_PAY_JSONENVELOPE
 #define GIGAMONKEY_PAY_JSONENVELOPE
 
-#include <gigamonkey/secp256k1.hpp>
 #include <data/encoding/base64.hpp>
 #include <data/encoding/unicode.hpp>
-#include <data/net/JSON.hpp>
+
+#include <net/JSON.hpp>
+
+#include <gigamonkey/secp256k1.hpp>
+
 
 namespace Gigamonkey {
-    using JSON = data::JSON;
+    using JSON = net::JSON;
 }
 
 // https://github.com/bitcoin-sv-specs/brfc-misc/tree/master/jsonenvelope
