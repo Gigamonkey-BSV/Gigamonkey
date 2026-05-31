@@ -77,9 +77,6 @@ target_link_libraries (
   PUBLIC
 
   Data::numbers
-
-  # for URL. We don't actually need networking. Thus URL ought to be its own library.
-  Net::net
 )
 
 target_sources (
