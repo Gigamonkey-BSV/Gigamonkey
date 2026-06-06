@@ -15,5 +15,5 @@ RUN cmake --install /tmp/net/build
 WORKDIR /home/Gigamonkey
 COPY . .
 RUN cmake -G Ninja -B build -S . -DPACKAGE_TESTS=OFF
-RUN cmake --build . -j 4
-RUN cmake --install .
+RUN cmake --build build -j 4
+RUN cmake --install build
