@@ -422,7 +422,7 @@ namespace Gigamonkey::MAPI {
         
         APIVersion = j["apiVersion"];
         Timestamp = j["timestamp"];
-        BlockHeight = j["blockHeight"];
+        BlockHeight = (uint32) (j["blockHeight"]);
         TxSecondMempoolExpiry = uint32 (j["txSecondMempoolExpiry"]);
         
         if (j.contains ("confirmations")) Confirmations = uint64 (j["confirmations"]);

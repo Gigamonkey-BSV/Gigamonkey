@@ -117,7 +117,7 @@ namespace Gigamonkey::Stratum {
     }
     
     void inline client_session::receive_set_difficulty (const difficulty &x) {
-        Difficulty = x;
+        Difficulty = difficulty (x);
     }
     
     void inline client_session::receive_set_extranonce (const mining::set_extranonce::parameters &x) {

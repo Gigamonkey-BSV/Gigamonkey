@@ -1,4 +1,4 @@
-FROM gigamonkey/gigamonkey-base-dev:v2.3
+FROM gigamonkey/gigamonkey-base-dev:v2.3.1
 
 ADD https://api.github.com/repos/DanielKrawisz/data/git/refs/heads/master /root/data_version.json
 RUN git clone --depth 1 --branch master https://github.com/DanielKrawisz/data.git /tmp/data

@@ -367,7 +367,7 @@ install (
 )
 
 install (
-  TARGETS Stratum gigamonkey tx keys Merkle numbers gigamonkey_secp256k1 base58_check sv_giga nlohmann_json
+  TARGETS Stratum gigamonkey tx keys Merkle numbers gigamonkey_secp256k1 base58_check sv_giga
   EXPORT GigamonkeyTargets
   ARCHIVE
 )
